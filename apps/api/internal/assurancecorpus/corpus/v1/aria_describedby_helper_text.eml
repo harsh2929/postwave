@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <aria-describedby-helper-text.v1@example.com>
+Subject: Update your address
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-describedby-v1"
+
+--pw-describedby-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Update your delivery address: https://app.example.com/address
+--pw-describedby-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Update your address</h1><p>We could not deliver to the address on file.</p><p><a href="https://app.example.com/address" aria-describedby="addr-help">Update address</a></p><p id="addr-help" style="font-size:12px;color:#666666">Opens your account settings.</p></body></html>
+--pw-describedby-v1--

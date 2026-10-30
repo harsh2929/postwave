@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <table-caption-visually-hidden.v1@example.com>
+Subject: Usage this month
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-caption-hidden-v1"
+
+--pw-caption-hidden-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+You sent 4,120 messages this month. https://app.example.com/usage
+--pw-caption-hidden-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Usage this month</h1><table><caption style="position:absolute;left:-9999px">Messages sent by week</caption><tr><th>Week</th><th>Sent</th></tr><tr><td>1</td><td>1,010</td></tr></table><p><a href="https://app.example.com/usage">See usage</a></p></body></html>
+--pw-caption-hidden-v1--

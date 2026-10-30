@@ -1,0 +1,37 @@
+---
+title: Voice AI
+---
+
+# Voice AI
+
+Voice AI solves the **activation problem**: ~80% of newsletter operators on every ESP we've studied never set up a single automated sequence. The reason is rarely "they don't want to" — it's that writing 5–10 emails up front is too much work and feels too high-stakes to do without a clear voice match.
+
+Voice AI fixes both halves: it generates the drafts, and it does it in *your* voice — not a generic SaaS-marketing voice — by training on a fingerprint of how you actually write.
+
+## The voice-fingerprint approach
+
+A "voice profile" in Moosewave is **not** a fine-tuned model. It's a structured summary of *how you write* extracted from your past content:
+
+- Stylistic features (sentence length distribution, paragraph cadence, openings, sign-offs).
+- Vocabulary (your recurring words, your avoided words, your specific phrases).
+- Structural patterns (do you use lists? subheaders? bold? em-dashes?).
+- Tonal range (formal/informal, warm/direct, humour density).
+- Persona attributes (1st-person vs editorial-we, expertise framing).
+
+Generation conditions a base LLM on this profile plus a chosen [template](/voice-ai/templates), then scores each output for [fidelity](/voice-ai/fidelity-scoring) and auto-retries below threshold.
+
+## What this is good for
+
+- **First sequences** — welcome series, onboarding, re-engagement. Hardest to start; easiest to ship with AI scaffolding.
+- **Template-shaped content** — launch sequences, course sales, year-in-review. Patterns are well-known; voice match is the differentiator.
+- **Drafts to edit** — Voice AI is best as a 70% solution; you do the last mile.
+
+## What it's not good for
+
+See [Best practices](/voice-ai/best-practices) for the do/don't list. The short version: **don't ship crisis communications, regulatory disclosures, or anything personal-relationship-sensitive without editing**.
+
+## Next steps
+
+- [Sources](/voice-ai/sources) — what to feed it.
+- [Profile](/voice-ai/profile) — what it builds from those sources.
+- [Templates](/voice-ai/templates) — the 50 pre-built sequence starters.

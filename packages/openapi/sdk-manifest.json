@@ -1,0 +1,89 @@
+{
+  "$comment": "The single declarative source of the Moosewave SDK surface. Before this file the two-tier reality (3 full SDKs vs 6 resource stubs) was smeared across scripts/check-sdk-parity.mjs (named only ts/py/php), scripts/release/npm-release-plan.mjs (listed only sdk-ts), and docs/ecosystem/parity-matrix.md (a stale hand-maintained doc). scripts/check-sdk-tiers.mjs enforces this manifest against the packages/sdk-* tree so a stub cannot silently rot (declared resource removed) or half-grow (resource added without a conscious tier decision). Full-tier method/error parity (ts↔py↔php) stays in check-sdk-parity.mjs; this owns the tier boundary + stub surface. Generating the full SDKs from OpenAPI, and OpenAPI from the Go gateway, are the deferred XL long-poles.",
+  "fullTier": {
+    "description": "Full-surface SDKs that track the TS canonical (check-sdk-parity enforces method + error-taxonomy parity). Promoting a stub to full means adding it here AND to check-sdk-parity.",
+    "members": ["sdk-ts", "sdk-py", "sdk-php"]
+  },
+  "sdks": [
+    {
+      "dir": "sdk-ts",
+      "language": "typescript",
+      "tier": "full",
+      "canonical": true,
+      "manifestFile": "package.json",
+      "npmPackage": "@postwave/sdk"
+    },
+    {
+      "dir": "sdk-py",
+      "language": "python",
+      "tier": "full",
+      "manifestFile": "pyproject.toml"
+    },
+    {
+      "dir": "sdk-php",
+      "language": "php",
+      "tier": "full",
+      "manifestFile": "composer.json"
+    },
+    {
+      "dir": "sdk-go",
+      "language": "go",
+      "tier": "stub",
+      "manifestFile": "go.mod",
+      "resourceDir": ".",
+      "resourceExt": ".go",
+      "resources": ["campaign_assurance", "campaign_direct_attribution", "campaign_polls", "campaigns", "conversion_ingest", "conversion_ingest_secrets", "emails", "events", "lists", "segments", "subscribers"],
+      "nonResourceFiles": ["postwave.go", "webhook.go"]
+    },
+    {
+      "dir": "sdk-ruby",
+      "language": "ruby",
+      "tier": "stub",
+      "manifestFile": "postwave.gemspec",
+      "resourceDir": "lib/postwave",
+      "resourceExt": ".rb",
+      "resources": ["emails", "subscribers"],
+      "nonResourceFiles": ["webhook.rb"]
+    },
+    {
+      "dir": "sdk-rust",
+      "language": "rust",
+      "tier": "stub",
+      "manifestFile": "Cargo.toml",
+      "resourceDir": "src",
+      "resourceExt": ".rs",
+      "resources": ["emails", "subscribers"],
+      "nonResourceFiles": ["lib.rs", "webhook.rs"]
+    },
+    {
+      "dir": "sdk-java",
+      "language": "java",
+      "tier": "stub",
+      "manifestFile": "pom.xml",
+      "resourceDir": "src",
+      "resourceExt": ".java",
+      "resources": ["emails", "subscribers"],
+      "nonResourceFiles": ["Smoke.java", "PostwaveError.java", "Json.java", "Moosewave.java", "Webhook.java"]
+    },
+    {
+      "dir": "sdk-dotnet",
+      "language": "csharp",
+      "tier": "stub",
+      "manifestFile": "Moosewave.csproj",
+      "resourceDir": "src",
+      "resourceExt": ".cs",
+      "resources": ["emails", "subscribers"],
+      "nonResourceFiles": ["PostwaveClient.cs", "Webhook.cs"]
+    },
+    {
+      "dir": "sdk-elixir",
+      "language": "elixir",
+      "tier": "stub",
+      "manifestFile": "mix.exs",
+      "resourceDir": "lib",
+      "resourceExt": ".ex",
+      "resources": ["emails", "subscribers"],
+      "nonResourceFiles": ["postwave.ex", "webhook.ex"]
+    }
+  ]
+}

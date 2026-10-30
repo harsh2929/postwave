@@ -1,0 +1,19 @@
+{
+  "archive_scope": "active_only",
+  "generated_at": "2026-09-15T04:48:05.927289Z",
+  "items": [
+    {
+      "archived": false,
+      "email": "consented-0cf4f1d4-f9a8-496e-a26e-52f43cd11f16@example.test",
+      "subscriber_id": "e4ccb8fe-84e0-4efa-848a-66a751bd71ea"
+    },
+    {
+      "archived": false,
+      "email": "unconsented-0cf4f1d4-f9a8-496e-a26e-52f43cd11f16@example.test",
+      "subscriber_id": "24d696af-4da5-4232-9c70-d0fc2a4a2054"
+    }
+  ],
+  "page": 1,
+  "per_page": 50,
+  "total": 2
+}

@@ -1,0 +1,61 @@
+{
+  "name": "@postwave/audit-portal-react",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "React SDK wrapping the Moosewave embeddable audit portal in a sandboxed iframe with one-time fragment bootstrap and HttpOnly tenant-bound sessions.",
+  "keywords": [
+    "postwave",
+    "audit",
+    "portal",
+    "react",
+    "iframe"
+  ],
+  "author": "Moosewave",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "test": "vitest run"
+  },
+  "license": "MIT",
+  "homepage": "https://docs.moosewave.com/audit-portal",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/audit-portal-react"
+  },
+  "bugs": {
+    "url": "https://github.com/harsh2929/postwave/issues"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "react": "^19",
+    "react-dom": "^19",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

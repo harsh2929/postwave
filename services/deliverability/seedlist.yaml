@@ -1,0 +1,48 @@
+# Seedlist mailbox stub config.
+#
+# This credential-free development fixture is not production capacity.
+# Production must satisfy the private live-capacity gate using its configured
+# active roster and approved provider profiles. Credentials never live in this
+# file: each entry references an env var name that holds the IMAP password at
+# runtime.
+#
+# To add a real inbox: provision the account, store its password in the
+# referenced env var, and flip status to "active". The poller will pick it up
+# on next start.
+
+inboxes:
+  - id: gmail-001
+    provider: gmail
+    address: seed01@gmail.example.invalid
+    imap_host: imap.gmail.com
+    imap_port: 993
+    imap_user: seed01@gmail.example.invalid
+    imap_password_env: SEED_GMAIL_001_PASSWORD
+    status: inactive
+
+  - id: gmail-002
+    provider: gmail
+    address: seed02@gmail.example.invalid
+    imap_host: imap.gmail.com
+    imap_port: 993
+    imap_user: seed02@gmail.example.invalid
+    imap_password_env: SEED_GMAIL_002_PASSWORD
+    status: inactive
+
+  - id: outlook-001
+    provider: outlook_com
+    address: seed01@outlook.example.invalid
+    imap_host: outlook.office365.com
+    imap_port: 993
+    imap_user: seed01@outlook.example.invalid
+    imap_password_env: SEED_OUTLOOK_001_PASSWORD
+    status: inactive
+
+  - id: icloud-001
+    provider: icloud
+    address: seed01@icloud.example.invalid
+    imap_host: imap.mail.me.com
+    imap_port: 993
+    imap_user: seed01@icloud.example.invalid
+    imap_password_env: SEED_ICLOUD_001_PASSWORD
+    status: inactive

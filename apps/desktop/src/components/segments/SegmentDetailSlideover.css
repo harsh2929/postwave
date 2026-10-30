@@ -1,0 +1,218 @@
+.segment-detail-slideover,
+.segment-detail-content,
+.segment-detail-heading,
+.segment-detail-card,
+.segment-detail-card-header > div,
+.segment-detail-action-header > div {
+  min-width: 0;
+}
+
+.segment-detail-heading {
+  padding-right: 8px;
+}
+
+.segment-detail-heading .slideover-title,
+.segment-detail-heading .slideover-subtitle,
+.segment-detail-description,
+.segment-detail-card p,
+.segment-detail-metadata dd {
+  overflow-wrap: anywhere;
+}
+
+.segment-detail-content {
+  gap: 12px;
+}
+
+.segment-detail-card {
+  padding: 12px;
+}
+
+.segment-detail-card-header,
+.segment-detail-action-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.segment-detail-card-header .section-title,
+.segment-detail-action-header .section-title,
+.segment-detail-card > .section-title {
+  margin: 0;
+}
+
+.segment-detail-card-header p,
+.segment-detail-action-header p,
+.segment-detail-predicate-copy {
+  max-width: 72ch;
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.segment-detail-description {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.segment-detail-metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 12px 0 0;
+}
+
+.segment-detail-metadata > div {
+  min-width: 0;
+}
+
+.segment-detail-metadata dt {
+  color: var(--pw-fg-muted);
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.segment-detail-metadata dd {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.segment-detail-metadata code {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.segment-detail-wide-fact {
+  grid-column: 1 / -1;
+}
+
+.segment-detail-unverified {
+  color: var(--pw-danger);
+  font-weight: 650;
+}
+
+.segment-detail-action {
+  flex: none;
+}
+
+.segment-detail-action[aria-disabled="true"],
+.segment-detail-close[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
+.segment-detail-action-reason {
+  margin: 10px 0 0;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.segment-detail-error,
+.segment-detail-confirmation,
+.segment-detail-empty-predicate {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--pw-border);
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.segment-detail-error {
+  border-color: var(--pw-danger);
+}
+
+.segment-detail-confirmation {
+  border-color: var(--pw-success);
+}
+
+.segment-detail-predicate {
+  margin-top: 10px;
+}
+
+.segment-detail-predicate > summary {
+  width: fit-content;
+  color: var(--pw-fg);
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.segment-detail-predicate > summary:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--pw-accent);
+  outline-offset: 3px;
+}
+
+.segment-detail-predicate .notice {
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.segment-detail-predicate pre {
+  max-width: 100%;
+  margin: 10px 0 0;
+  padding: 10px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border);
+  border-radius: 6px;
+  color: var(--pw-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.segment-detail-danger-zone {
+  border-color: color-mix(in srgb, var(--pw-danger) 56%, var(--pw-border));
+}
+
+@media (max-width: 560px) {
+  .segment-detail-metadata {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .segment-detail-wide-fact {
+    grid-column: auto;
+  }
+
+  .segment-detail-card-header,
+  .segment-detail-action-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .segment-detail-action {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment-detail-content {
+    scroll-behavior: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .segment-detail-card,
+  .segment-detail-error,
+  .segment-detail-confirmation,
+  .segment-detail-empty-predicate,
+  .segment-detail-predicate pre,
+  .segment-detail-danger-zone {
+    border-color: CanvasText;
+  }
+
+  .segment-detail-action[aria-disabled="true"],
+  .segment-detail-close[aria-disabled="true"] {
+    color: GrayText;
+    opacity: 1;
+  }
+}

@@ -1,0 +1,95 @@
+---
+title: Pre-Send Predictor
+---
+
+import { Callout } from "nextra/components";
+
+# Pre-Send Predictor
+
+The Predictor estimates **inbox / promotions / spam** placement _before_ you send. It runs in &lt;1s on every draft when you click **Predict** in the campaign composer.
+
+## The v1 model
+
+The v1 Predictor is a **heuristic** model — not ML. We chose heuristic for v1 because:
+
+- The features have well-understood causal relationships with placement.
+- Heuristics are interpretable: every score change has a why.
+- No training data needed; it works for a brand-new sender on day 1.
+
+The formula:
+
+```text
+score = 0.40 * sender_reputation
+      + 0.30 * content_quality
+      + 0.15 * authentication
+      + 0.15 * audience_health
+```
+
+Each component is a 0.0–1.0 score:
+
+### `sender_reputation` (40% weight)
+
+The strongest predictor. Pulled from:
+
+- Trailing-30-day open rate vs your historical baseline.
+- Trailing-30-day complaint rate (penalised steeply above 0.10%).
+- DNSBL listings (any current listing → significant penalty).
+- Gmail Postmaster IP reputation (if connected).
+
+### `content_quality` (30% weight)
+
+Computed from this draft's HTML and copy:
+
+- Link density (&gt;1 link per 50 words → penalised).
+- Image-to-text ratio (&gt;50% image-area → penalised; image-only → heavy penalty).
+- Spammy-token density (case-insensitive scan against a curated list — "FREE!!", "ACT NOW", etc.).
+- Unsubscribe link present and visible.
+- Plain-text alternative present.
+- HTML size &lt;102KB (Gmail clipping threshold).
+
+### `authentication` (15% weight)
+
+- SPF: green/yellow/red from [validator](/deliverability/spf).
+- DKIM: green/yellow/red from [validator](/deliverability/dkim).
+- DMARC: extra credit for `p=quarantine`/`p=reject`.
+
+### `audience_health` (15% weight)
+
+For the segment this campaign targets:
+
+- % of recipients who opened your last 5 sends.
+- % of recipients in the segment with &gt;90 days since last open (low engagement).
+- Segment size — penalised below 100 (too small to matter) and above 100k targeted-once (too broad to be relevant).
+
+## Output — the 3-stack-bar prediction
+
+The Predictor outputs a stacked horizontal bar:
+
+```text
+[████████████████████░░░░░░░░░░░░░░░░░░░░] Inbox       62%
+[░░░░░░░░░░░░░░░░░░░░██████████░░░░░░░░░░] Promotions  28%
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██████░░░░] Spam        10%
+```
+
+How to interpret:
+
+- **Inbox &gt; 70%, Spam &lt; 5%** — ship it.
+- **Inbox 50–70%, Spam 5–10%** — yellow zone. Look at which component is dragging the score; if `content_quality` is the issue, edit and re-predict.
+- **Inbox &lt; 50%, Spam &gt; 10%** — don't send to your full audience. Either fix the issues (likely `sender_reputation` or `audience_health`) or send to a smaller, healthier segment first.
+
+<Callout type="info">
+  The Predictor's spam estimate is **conservative**. We'd rather flag a campaign
+  as risky and have you ship it anyway than under-call risk. Treat the spam % as
+  the upper bound of plausible spam placement, not the expected value.
+</Callout>
+
+## What the Predictor doesn't do
+
+- It doesn't replace [seedlist](/deliverability/seedlist) testing — seedlist measures real placement, the Predictor estimates it.
+- It doesn't account for per-recipient personalization (Gmail's "you marked them not-spam 3 months ago" effect).
+- It doesn't catch deliverability issues introduced by content rendering on specific clients (that requires a configured cross-client rendering provider; see [deployment capability boundaries](/self-host/limits)).
+
+## Next steps
+
+- After predicting, [run a seedlist](/deliverability/seedlist) for ground truth.
+- [Improving placement](/deliverability/improving-placement) — the "raise the floor" playbook.

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <mobile-only-variant-display-none.v1@example.com>
+Subject: Weekly summary
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-mediaquery-v1"
+
+--pw-mediaquery-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your weekly summary: https://app.example.com/weekly
+--pw-mediaquery-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><style>@media (max-width:480px){.desktop-only{display:none}}</style></head><body><h1>Weekly summary</h1><p class="desktop-only">Three reports were generated this week.</p><p><a href="https://app.example.com/weekly">Open the summary</a></p></body></html>
+--pw-mediaquery-v1--

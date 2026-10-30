@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <accented-and-emoji-names.v1@example.com>
+Subject: Merci, Zoé ✨
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-accent-v1"
+
+--pw-accent-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Merci Zoé — votre commande est confirmée. https://shop.example.com/fr/42
+--pw-accent-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Merci, Zoé ✨</h1><p>Votre commande est confirmée.</p><p><a href="https://shop.example.com/fr/42">Voir la commande</a></p></body></html>
+--pw-accent-v1--

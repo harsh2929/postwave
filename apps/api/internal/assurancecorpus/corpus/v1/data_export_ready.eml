@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <data-export-ready.v1@example.com>
+Subject: Your export is ready
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-export-v1"
+
+--pw-export-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your export is ready and expires in 7 days. https://app.example.com/exports/5
+--pw-export-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Your export is ready</h1><p>The download link expires in seven days.</p><p><a href="https://app.example.com/exports/5">Download the export</a></p></body></html>
+--pw-export-v1--

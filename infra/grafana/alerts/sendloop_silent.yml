@@ -1,0 +1,80 @@
+# Moosewave send-loop silent-failure alert.
+#
+# Drop this file into Prometheus's `rule_files:` glob (or load via the
+# operator's preferred Prometheus-rule mechanism — for k8s setups this
+# is typically a PrometheusRule CRD wrapping the same group/rules
+# block). The metric postwave_sendloop_last_success_timestamp is
+# emitted by apps/api/internal/sending/metrics.go and is bumped on
+# every Guard.RunOnce success, including no-op iterations. If the gauge
+# stops advancing for >5min (alerted "for 5m" + 300s threshold), the
+# loop is wedged or the API process crashed without taking the goroutine
+# down cleanly — both cases page on-call.
+#
+# Why 300s: the loop interval defaults to 5s and the longest expected
+# pause (a 50-row batch x 5s Listmonk timeout each = 250s worst case)
+# fits inside this budget. Tighten or relax as load patterns evolve.
+
+groups:
+  - name: sendloop
+    rules:
+      - alert: SendLoopSilent
+        expr: time() - postwave_sendloop_last_success_timestamp > 300
+        for: 5m
+        labels:
+          severity: critical
+          component: api-gateway
+          subsystem: sendloop
+        annotations:
+          summary: "Send loop has not iterated successfully in 5 minutes"
+          description: |
+            postwave_sendloop_last_success_timestamp has not advanced for
+            >5 minutes. Either the Guard.Loop goroutine has died, the
+            Postgres pool is unreachable, or every tenant tick is failing
+            inside Quiet-hours / rate-limit checks (which would also be
+            visible on the recipients-by-outcome panel).
+
+            Runbook:
+              1. Check API gateway logs for "send guard loop exited".
+              2. SELECT count(*) FROM campaign_recipients WHERE status='pending';
+              3. Verify Postgres connectivity from the API pod.
+              4. Roll the API deployment as a last resort — the loop
+                 restarts cleanly on process boot.
+          runbook_path: "docs/runbooks/sendloop.md"
+
+      - alert: SendLoopHighFailureRate
+        expr: |
+          sum(rate(postwave_sendloop_recipients_drained_total{result="failed"}[5m]))
+          /
+          ignoring(result) sum(rate(postwave_sendloop_recipients_drained_total[5m]))
+          > 0.10
+        for: 10m
+        labels:
+          severity: warning
+          component: api-gateway
+          subsystem: sendloop
+        annotations:
+          summary: "Send loop failure rate above 10% for 10 minutes"
+          description: |
+            More than 10% of attempted sends are landing in status=failed
+            over the last 5 minutes. Likely Listmonk degradation, an
+            expired SMTP credential, or a tenant with a bad FROM domain.
+            Inspect recent campaign_recipients.error values for the top
+            failing tenants.
+
+  - name: recurrence_scanner
+    rules:
+      - alert: RecurrenceScannerStalled
+        expr: time() - postwave_recurrence_scanner_last_run_timestamp > 172800
+        for: 30m
+        labels:
+          severity: warning
+          component: automation-service
+          subsystem: recurrence
+        annotations:
+          summary: "Recurrence scanner has not run in 48 hours"
+          description: |
+            The recurrence scanner is supposed to tick every 24h. If
+            this timestamp lags >48h, the goroutine is probably dead
+            (process restart that didn't re-wire the scanner) or the
+            DB pool is unreachable. Without the scanner, recurring
+            campaigns silently stop materializing children.

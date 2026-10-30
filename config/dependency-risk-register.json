@@ -1,0 +1,12 @@
+{
+  "$schema": "./schemas/dependency-risk-register.schema.json",
+  "schemaVersion": 1,
+  "policy": {
+    "ecosystem": "npm",
+    "scope": "production",
+    "minimumSeverity": "moderate",
+    "maximumAcceptanceDays": 45,
+    "maximumReviewAgeDays": 30
+  },
+  "acceptedRisks": []
+}

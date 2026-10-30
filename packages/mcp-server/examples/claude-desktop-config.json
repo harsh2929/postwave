@@ -1,0 +1,7 @@
+{
+  "releaseHold": {
+    "code": "mcp_distribution_release_held",
+    "runnable": false,
+    "catalogProvenance": "mutable_source_candidate"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "ops": [
+    "coerce_bool",
+    "coerce_number",
+    "country_iso2",
+    "default_value",
+    "delete",
+    "email_normalize",
+    "lowercase",
+    "phone_e164",
+    "regex_replace",
+    "strip_html",
+    "title_case",
+    "trim",
+    "truncate",
+    "uppercase"
+  ]
+}

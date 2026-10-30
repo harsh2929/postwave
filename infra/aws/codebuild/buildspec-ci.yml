@@ -1,0 +1,62 @@
+version: 0.2
+
+# AWS CodeBuild buildspec for the repository's CI when GitHub-hosted runners
+# are unavailable. One build runs one CI_GROUP (see ci-group.sh for the group
+# → workflow-job mapping); scripts/ci/aws-ci.sh fans a commit out into one
+# build per group, waits, and posts the results to GitHub as commit statuses.
+#
+# Image: aws/codebuild/standard:7.0 (Ubuntu 22.04) with privileged mode so the
+# Postgres container, the migrator image build, the ops image build and the
+# compose smoke stack can run. Toolchains the workflows pin (Go 1.26.8, Node
+# 20.19.5 / 24.16.0, pnpm 9.12.0, Python 3.12, golangci-lint v2.12.2) are
+# installed by ci-group.sh, not taken from the image.
+
+env:
+  variables:
+    CI_GROUP: contracts
+    CI_SHA: ""
+    GOFLAGS: -buildvcs=false
+    GOPATH: /root/go
+    GOMODCACHE: /root/go/pkg/mod
+    GOCACHE: /root/.cache/go-build
+    PNPM_HOME: /root/.local/share/pnpm
+    CI: "true"
+    NODE_OPTIONS: --max-old-space-size=4096
+    NEXT_TELEMETRY_DISABLED: "1"
+    DO_NOT_TRACK: "1"
+    EXPO_NO_TELEMETRY: "1"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - export PATH="/usr/local/go/bin:/root/go/bin:$PNPM_HOME:$PATH"
+      - chmod +x infra/aws/codebuild/ci-group.sh
+      - git --version && docker --version
+      # The S3 source is a bare tree; give it a single-commit history so the
+      # git-aware gates (ls-files, gitleaks, tracked-binary checks) work.
+      # scripts/ci/aws-ci.sh verifies the zip holds exactly the commit's
+      # tracked files, so `add -A -f` (tracked files can match .gitignore)
+      # rebuilds the commit's own file list.
+      - |
+        if [ ! -d .git ]; then
+          git init -q
+          git add -A -f . >/dev/null
+          git -c user.name=ci -c user.email=ci@postwave.invalid commit -q -m "snapshot of ${CI_SHA:-source}" >/dev/null
+        fi
+  build:
+    commands:
+      - export PATH="/usr/local/go/bin:/root/go/bin:$PNPM_HOME:$PATH"
+      - infra/aws/codebuild/ci-group.sh
+  post_build:
+    commands:
+      - docker rm -f postwave-ci-pg >/dev/null 2>&1 || true
+      - echo "group=$CI_GROUP sha=$CI_SHA status=$CODEBUILD_BUILD_SUCCEEDING"
+
+cache:
+  paths:
+    - /root/.local/share/pnpm/store/**/*
+    - /root/go/pkg/mod/**/*
+    - /root/.cache/go-build/**/*
+    - /root/.cache/ms-playwright/**/*

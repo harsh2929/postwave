@@ -1,0 +1,258 @@
+---
+title: Integrations API
+---
+
+# Integrations API
+
+The Integrations API is the canonical facade behind the in-app integrations
+hub. It gives you one honest catalog for native-managed foundations, partner apps,
+Zapier and webhook bridges, API/SDK surfaces, migration-only adapters, and
+planned tiles.
+
+## Badges
+
+| Badge            | Meaning                                                                                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `native`         | Moosewave owns the connector foundation. Check `runtime_status`, `native_verified`, and `implementation_depth` before treating it as fully API-verified. |
+| `partner`        | A partner or marketplace app owns part of the runtime.                                                                                                  |
+| `zapier`         | Supported through Zapier or a bridge recipe.                                                                                                            |
+| `webhook`        | Supported through inbound/outbound webhooks or direct API calls.                                                                                        |
+| `api_sdk`        | Developer surface rather than a managed third-party connector.                                                                                          |
+| `migration_only` | Import adapter, not an ongoing sync connector.                                                                                                          |
+| `planned`        | Visible for roadmap and parity accounting; not connectable yet.                                                                                         |
+
+No catalog tile should claim `native` unless Moosewave owns the connector
+foundation. A tile with `runtime_status=partial` is not a fully built-out native
+integration yet; it is a provider-specific buildout target.
+
+Approved Developer Marketplace listings are folded into this same catalog as
+`partner` tiles when their listing is `published` and review state is
+`approved`. Partner tiles can be searched, opened, inspected for contract and
+health metadata, and delegated through bridge recipes, but they never override
+Moosewave's static/native catalog entries when slugs collide.
+Coverage, stack coverage, recipes, and readiness use that same merged catalog,
+so reviewed partner apps count toward the 350+ public-entry target without
+inflating the native-managed connector count.
+
+## Endpoints
+
+| Method | Path                                           | Purpose                                                                                                 |
+| ------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/v1/integrations/catalog`                 | Search and filter the public catalog.                                                                   |
+| GET    | `/api/v1/integrations/connections`             | List runtime connection state across connector surfaces.                                                |
+| GET    | `/api/v1/integrations/coverage`                | Report public/native/bridge/planned parity progress.                                                    |
+| GET    | `/api/v1/integrations/stacks`                  | Evaluate newsletter-plus-commerce stack coverage.                                                       |
+| GET    | `/api/v1/integrations/readiness`               | Audit whether public parity claims are safe to ship.                                                    |
+| GET    | `/api/v1/integrations/recipes`                 | List guided bridge/setup recipes.                                                                       |
+| GET    | `/api/v1/integrations/recipes/{id}`            | Read one recipe with source/target tiles.                                                               |
+| POST   | `/api/v1/integrations/recipes/{id}/apply`      | Delegate recipe setup to the owning surface.                                                            |
+| GET    | `/api/v1/integrations/{slug}`                  | Read catalog detail, connection, setup, health, contract, recipes.                                      |
+| GET    | `/api/v1/integrations/{slug}/health`           | Read health checks, sync history, retry policy, audit trail.                                            |
+| GET    | `/api/v1/integrations/{slug}/contract`         | Read the public connector contract.                                                                     |
+| POST   | `/api/v1/integrations/{slug}/connect/start`    | Start or delegate setup.                                                                                |
+| POST   | `/api/v1/integrations/{slug}/connect/callback` | Finish or delegate setup.                                                                               |
+| POST   | `/api/v1/integrations/{slug}/sync`             | Run or delegate an incremental sync, or import payload rows for ingest-backed partial foundations.      |
+| POST   | `/api/v1/integrations/{slug}/backfill`         | Run or delegate a historical backfill, or import historical rows for ingest-backed partial foundations. |
+| POST   | `/api/v1/integrations/{slug}/pause`            | Pause or delegate pause.                                                                                |
+| DELETE | `/api/v1/integrations/{slug}`                  | Disconnect or delegate disconnect.                                                                      |
+
+See the generated endpoint pages under [API reference](/api-reference) for full
+schemas and status codes.
+
+## Search The Catalog
+
+```bash
+curl "https://api.moosewave.com/api/v1/integrations/catalog?q=Shopify&badge=native&capability=orders" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "X-Tenant-Slug: $TENANT"
+```
+
+The response includes the parity targets, filter vocabularies, counts, and
+matching catalog items:
+
+```json
+{
+  "schema_version": "2026-06.integrations.v1",
+  "target_public_entries": 350,
+  "target_native_managed": 60,
+  "honest_badges": [
+    "native",
+    "partner",
+    "zapier",
+    "webhook",
+    "api_sdk",
+    "migration_only",
+    "planned"
+  ],
+  "items": [
+    {
+      "slug": "shopify",
+      "name": "Shopify",
+      "category": "ecommerce",
+      "badge": "native",
+      "runtime_status": "delegated",
+      "capabilities": ["profiles", "events", "commerce", "orders", "products"],
+      "native": true,
+      "setup_path": "/commerce"
+    }
+  ],
+  "counts": {
+    "badge:native": 1,
+    "native_managed": 1,
+    "native_verified": 0,
+    "runtime:delegated": 1
+  }
+}
+```
+
+## Connection State
+
+`GET /api/v1/integrations/connections` returns the normalized connection state
+for every catalog tile. Native and delegated surfaces expose concrete IDs where
+Moosewave can resolve them:
+
+```json
+{
+  "items": [
+    {
+      "slug": "snowflake",
+      "connected": true,
+      "status": "active",
+      "count": 1,
+      "primary_connection_id": "warehouse_01",
+      "connection_ids": ["warehouse_01"],
+      "health_state": "needs_attention",
+      "health_message": "Snowflake warehouse manifest runs are configured; provider_driver_attachment=manifest_worker until SQL/COPY driver lands."
+    }
+  ],
+  "summary": { "connected": 1 }
+}
+```
+
+Lifecycle action responses use `primary_connection_id` to substitute owning
+surface routes:
+
+```json
+{
+  "slug": "snowflake",
+  "action": "sync",
+  "status": "delegated",
+  "message": "Snowflake warehouse sync is a manifest-worker run; SQL API/COPY execution remains provider-driver work.",
+  "delegated_to": "POST /api/v1/warehouse/connections/warehouse_01/runs",
+  "primary_connection_id": "warehouse_01"
+}
+```
+
+## Readiness Gate
+
+`GET /api/v1/integrations/readiness` runs the claim-safety checks for release
+gates: catalog parity, native-managed parity, native API verification parity,
+duplicate slugs, missing setup surfaces, native connector health metadata,
+lifecycle actions, and recipe source/target integrity.
+
+```bash
+curl "https://api.moosewave.com/api/v1/integrations/readiness" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "X-Tenant-Slug: $TENANT"
+```
+
+Only use the public parity claim when `marketable_public_claim` is `true`.
+For the stronger fully native claim, also require
+`native_verification_parity=true`.
+
+## TypeScript
+
+```ts
+import { PostwaveClient } from "@postwave/sdk";
+
+const pw = new PostwaveClient({
+  apiKey: process.env.POSTWAVE_API_KEY!,
+  tenantId: "acme",
+});
+
+const catalog = await pw.integrations.catalog({
+  q: "HubSpot",
+  badge: "native",
+  capability: "profiles",
+});
+
+const hubspot = catalog.items[0];
+if (hubspot) {
+  const readiness = await pw.integrations.readiness();
+  console.log(readiness.public_claim);
+
+  const detail = await pw.integrations.detail(hubspot.slug);
+  console.log(detail.contract.public_claim);
+  if (detail.item.runtime_status === "partial") {
+    await pw.nativeIntegrations.crm.sync(
+      detail.connection.primary_connection_id!,
+      {
+        contacts: [{ email: "ada@example.com" }],
+      },
+    );
+  }
+}
+```
+
+## Python
+
+```python
+from postwave import Moosewave
+
+pw = Moosewave(api_key=os.environ["POSTWAVE_API_KEY"], tenant_id="acme")
+
+catalog = pw.integrations.catalog(q="Snowflake", badge="native")
+snowflake = catalog["items"][0]
+
+detail = pw.integrations.detail(snowflake["slug"])
+print(detail["health"]["message"])
+
+pw.integrations.backfill(snowflake["slug"])  # queues a manifest-worker run today
+```
+
+## PHP
+
+```php
+use Moosewave\Client;
+
+$pw = new Client(apiKey: getenv('POSTWAVE_API_KEY'));
+
+$catalog = $pw->integrations->catalog([
+    'q' => 'Shopify',
+    'badge' => 'native',
+    'capability' => 'orders',
+]);
+
+$shopify = $catalog['items'][0] ?? null;
+if ($shopify) {
+    $detail = $pw->integrations->detail($shopify['slug']);
+    echo $detail['health']['message'] ?? '';
+
+    $pw->integrations->sync($shopify['slug']);
+}
+```
+
+## Recipes
+
+Recipes expose guided bridge setup without pretending the bridge is native:
+
+```bash
+curl "https://api.moosewave.com/api/v1/integrations/recipes?source=typeform&available=true" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "X-Tenant-Slug: $TENANT"
+```
+
+`POST /api/v1/integrations/recipes/{id}/apply` returns a blueprint and the
+owning Moosewave surface to open. Available recipes return `202`; planned
+recipes return `501` with `status=planned`.
+
+## Compliance Notes
+
+- Secrets stay in the owning connector surface and are stored through encrypted
+  credential references, never raw JSON config.
+- Health includes retry policy, recent sync history, audit trail, and data
+  delete/remediation actions.
+- Ads audience sync, subscription changes, and warehouse exports retain the
+  gates documented by their owning surfaces. SMS is stricter: scope, consent,
+  and audit checks cannot override its structural dispatch/provider holds;
+  current verdict is **HOLD / NO-GO**.

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <back-in-stock.v1@example.com>
+Subject: Back in stock
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-bis-v1"
+
+--pw-bis-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The enamel mug is back: https://shop.example.com/mug
+--pw-bis-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Back in stock</h1><p>The enamel mug is available again.</p><p><a href="https://shop.example.com/mug">Buy the mug</a></p></body></html>
+--pw-bis-v1--

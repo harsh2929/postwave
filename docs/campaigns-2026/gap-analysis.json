@@ -1,0 +1,952 @@
+{
+  "executive_summary": "Moosewave Campaigns has solid table-stakes plus differentiators competitors lack: collaborative cursors, per-campaign feedback threads, sandbox lifecycle, fingerprint-gated approvals, dynamic-content regions, voice-drift banner, Inbox Reality predictor, STO. Three strongest 2026 themes: (1) Reply-as-channel — Litmus Live 2026 frames replies as cleanest engagement signal, Moosewave can extend feedback surfaces into inbound classification; (2) Per-recipient send-time + bandit allocation layered on existing SendTimeOptBanner; (3) Bot-stripped Human metrics + per-campaign timeseries — today’s report is point-in-time and Apple MPP makes raw opens noise. Moosewave’s voice profile, presend verdict, and audit log are unique assets to weaponize vs Klaviyo Composer and Brevo Aura.",
+  "gap_count": 22,
+  "shortlist_ids": [
+    "G7",
+    "G3",
+    "G2",
+    "G10",
+    "G17",
+    "G5",
+    "G16",
+    "G11"
+  ],
+  "all_gaps": [
+    {
+      "id": "G1",
+      "title": "Per-campaign hourly engagement time-series",
+      "description": "CampaignReport returns point-in-time totals only. Add /campaigns/{id}/timeseries endpoint emitting hourly buckets for opens/clicks/unsubs over campaign lifetime; render sparkline per KPI in slideover plus stacked area chart in report tab. Foundation for per-campaign anomaly detection and decay-curve insight.",
+      "category": "reporting",
+      "evidence": "Audit notes ResultsCard sparkline explicitly deferred and no per-campaign timeseries; Mailchimp/Klaviyo ship hourly engagement curves; Litmus 2026 frames decay curves as raw-open replacement.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": false,
+      "depends_on": [
+        "campaign_report_events bucketing query"
+      ]
+    },
+    {
+      "id": "G2",
+      "title": "Human-engagement metric (MPP/bot-stripped opens & clicks)",
+      "description": "Add human_opens / human_clicks / human_open_rate to CampaignReport by filtering opens whose UA matches Apple MPP/Gmail prefetch/scanner signatures and deduping clicks <2s post-open as bot. Toggle on report card. Listmonk events already carry UA.",
+      "category": "reporting",
+      "evidence": "Customer.io shipped Human Opened/Clicked June 2025; Litmus reports 95% Apple Mail MPP coverage; Litmus Live 2026 calls reply rate only unambiguous human signal.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": true,
+      "depends_on": [
+        "UA classifier table",
+        "campaign_report_events.user_agent column"
+      ]
+    },
+    {
+      "id": "G3",
+      "title": "Reply-loop tooling: inbound triage + feature-reply block",
+      "description": "Parse replies to campaign reply-to into a Replies column on the slideover (next to Activity/Feedback); classify intent (question/praise/unsub/OOO) via existing AI; add editor block 'Quote a reader reply' that templates a styled blockquote into the next draft. Pairs with VoiceProfile for tone match.",
+      "category": "lifecycle",
+      "evidence": "Buttondown reply-loop pattern; Litmus Live 2026 reply-as-channel keynote; Outreach reply-sentiment classifier; Moosewave has CampaignFeedback threads + AI to extend.",
+      "impact": "high",
+      "effort": "L",
+      "fits_2026": true,
+      "depends_on": [
+        "inbound MX/SMTP receiver",
+        "reply intent classifier",
+        "feedback.go reuse"
+      ]
+    },
+    {
+      "id": "G4",
+      "title": "Multi-armed bandit A/B allocation",
+      "description": "abtest.go currently uses fixed fnv-1a64 mod split with no dynamic reallocation. Add bandit_strategy='thompson'|'epsilon_greedy'|'fixed' to ab_test JSON, recompute variant weights every N minutes from open/click posterior, re-bucket queue-fill audience. Show allocation-drift chart in A/B Results modal beside existing Bayesian view.",
+      "category": "ab-testing",
+      "evidence": "Smartlead SmartAgents bandit (up to 10 variants); Braze documents MAB; Moosewave already has Bayesian stats — bandit is the action layer.",
+      "impact": "high",
+      "effort": "L",
+      "fits_2026": true,
+      "depends_on": [
+        "abtests scheduler extension",
+        "bucket recompute job",
+        "ab_test JSON schema bump"
+      ]
+    },
+    {
+      "id": "G5",
+      "title": "Per-recipient send-time within a window (PSTO)",
+      "description": "Extend SendTimeOptBanner from 'one slot for campaign' to 'best moment per recipient within set window'. Add window_start/end on schedule modal; job consults per-subscriber open history to compute each recipient's optimal hour bucket inside window and staggers queue-fill release. Toggle 'Personalized within window'.",
+      "category": "sending",
+      "evidence": "Klaviyo Personalized Send Time (RL, 35% click lift beta); ActiveCampaign Predictive Sending +17% CTR Jan 2025; HubSpot per-contact STO beta Sept 2025.",
+      "impact": "high",
+      "effort": "L",
+      "fits_2026": true,
+      "depends_on": [
+        "subscriber open-history table",
+        "queue release-rate scheduler",
+        "SendTimeOptBanner API"
+      ]
+    },
+    {
+      "id": "G6",
+      "title": "Audience picker in compose modal (static vs dynamic)",
+      "description": "Create modal has no audience step today. Add segment/list picker with toggle 'static snapshot now' vs 'dynamic at send time', recipient_count preview via existing /audience/count, plus chip-style exclusion picker.",
+      "category": "create-flow",
+      "evidence": "Beehiiv Segments at compose time; Klaviyo built-in exclusion options per campaign; audit shows no recipient_count surfaced in create modal.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": false,
+      "depends_on": [
+        "AudienceCounter already exists",
+        "segment static-snapshot column"
+      ]
+    },
+    {
+      "id": "G7",
+      "title": "Recipient-count + cost preview in send-confirm",
+      "description": "Send confirm shows 'every subscribed recipient' or segment-id slice with no count (audit flags slideover :847-854). Wire AudienceCounter into the modal: N recipients + tier-quota consumption + suppression delta ('X excluded by suppression').",
+      "category": "sending",
+      "evidence": "Audit comment: 'No recipient count — explicitly acknowledged in code comments'; backend already exposes counters via send.go:71-84.",
+      "impact": "critical",
+      "effort": "S",
+      "fits_2026": false,
+      "depends_on": []
+    },
+    {
+      "id": "G8",
+      "title": "Inbox preview screenshots across 10+ clients",
+      "description": "Headless Chromium worker renders body in 3-4 CSS-emulation profiles (Gmail web/iOS, Apple Mail iOS/macOS, Outlook web/Win, Yahoo, dark-mode) and stores PNGs. Surface as 'Preview across clients' tab in editor.",
+      "category": "preview",
+      "evidence": "Mailchimp Litmus-powered Inbox Preview (25+ clients); Brevo 3-category preview; all four ESPs ship some form. Moosewave only has Edit/Preview tabs.",
+      "impact": "medium",
+      "effort": "L",
+      "fits_2026": false,
+      "depends_on": [
+        "headless renderer worker",
+        "S3 screenshot storage"
+      ]
+    },
+    {
+      "id": "G9",
+      "title": "Reading-time pill + preview-text composer field",
+      "description": "Auto-compute reading_minutes from word count as optional byline pill; promote preview_text from JSON setting to labelled field in Create+Edit with inbox-preview tester rendering subject+preheader in Gmail/Apple Mail mock chrome live. preview_text column already exists.",
+      "category": "editor",
+      "evidence": "Beehiiv Show Reading Time toggle; Kit Broadcasts dedicated +Add preview text field; audit notes preview_text struct field exists but isn't surfaced.",
+      "impact": "medium",
+      "effort": "S",
+      "fits_2026": false,
+      "depends_on": []
+    },
+    {
+      "id": "G10",
+      "title": "Brand Voice profile + drift scoring on AI compose",
+      "description": "Moosewave has VoiceDriftBanner — extend from advisory to actionable: persist tenant brand_voice_profile (tone, writing rules, sample corpus), feed into AI subject+body draft endpoints so output is profile-conditioned, add numeric drift_score (0-100) with one-click 'Rewrite to match brand voice' calling AI with profile.",
+      "category": "ai",
+      "evidence": "Klaviyo Brand Voice AI (voice descriptors+writing rules); ActiveCampaign Brand Kit auto-extracted from website; Lemlist AI tone tuning. Moosewave has drift banner but no profile binding.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": true,
+      "depends_on": [
+        "tenant brand_voice_profile table",
+        "AI compose endpoint accepts profile_id"
+      ]
+    },
+    {
+      "id": "G11",
+      "title": "Subject Lab with confidence-scored variants",
+      "description": "SubjectLineSuggestions streams 3 unscored variants today. Build Subject Lab: 5-8 variants conditioned on audience past CTR + brand voice profile + axis (length/emoji/question/personalization), score each on predicted_open_rate from tenant's send corpus with CI. One-click 'Run as 3-arm bandit A/B' wires into G4.",
+      "category": "ai",
+      "evidence": "Klaviyo AI subject A/B with explicit axes; Smartlead Subject Analyser+Generator scoring on engagement+spam-risk; research notes nobody ships calibrated CI — Moosewave differentiator.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": true,
+      "depends_on": [
+        "G4 bandit",
+        "tenant subject_history model"
+      ]
+    },
+    {
+      "id": "G12",
+      "title": "Bulk row actions + column sort on list view",
+      "description": "Audit notes 'no multi-select, no column sort headers, no bulk delete/move/tag'. Add checkbox column with bulk toolbar (Move folder, Delete, Tag, Export CSV) and sortable Name/Status/Sent/Open/Click headers. Server-side query=? exists — wire client search to it.",
+      "category": "list-view",
+      "evidence": "Audit: 'Sort/bulk ops - none'; server-side query exists but client filters in-memory; standard across all four competitors.",
+      "impact": "medium",
+      "effort": "S",
+      "fits_2026": false,
+      "depends_on": []
+    },
+    {
+      "id": "G13",
+      "title": "Campaign calendar view (toggle on list page)",
+      "description": "Add List|Calendar toggle to /campaigns. Calendar shows scheduled_at + sent_at as drag-able cards on month/week grid with status color; click opens slideover. Drag-to-reschedule fires PATCH scheduled_at within existing validation. Reuses list query.",
+      "category": "list-view",
+      "evidence": "Klaviyo campaign calendar view; Beehiiv calendar; Mailchimp calendar — all four creator/B2C platforms ship this.",
+      "impact": "medium",
+      "effort": "M",
+      "fits_2026": false,
+      "depends_on": [
+        "G12 sort to share groundwork"
+      ]
+    },
+    {
+      "id": "G14",
+      "title": "Multivariate test beyond subject (content + from + send-time)",
+      "description": "Extend ab-test create to accept variant axes: subject[], from_name[], body_html_variants[], send_time_offset_minutes[]. Generate cross-product up to 8 combinations. delivery_settings.ab_test already supports total_variants — extend variant payload with axis dimensions.",
+      "category": "ab-testing",
+      "evidence": "Mailchimp 4-axis multivariate (8 combos); ActiveCampaign 5-variant split inside automations; audit shows abtest.go takes only subject_variants[2..8].",
+      "impact": "medium",
+      "effort": "M",
+      "fits_2026": false,
+      "depends_on": [
+        "G4 bandit allocation recommended"
+      ]
+    },
+    {
+      "id": "G15",
+      "title": "Conversion goal per campaign with attribution window",
+      "description": "Add Goal picker to compose: tracked event (purchase/signup/custom) + window (1h/24h/7d/30d). Persist on campaign row; /campaigns/{id}/goal-results computes conversion_count + rate + attributed_revenue via existing revenue.go. Surface in report next to Open/Click.",
+      "category": "reporting",
+      "evidence": "Customer.io conversion goals on every message with configurable window; ActiveCampaign goal events; Moosewave has revenue.go but no per-campaign goal binding.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": true,
+      "depends_on": [
+        "goal_event_id + window_days columns",
+        "events.go conversion query"
+      ]
+    },
+    {
+      "id": "G16",
+      "title": "Frequency cap + recipient-local quiet hours engine",
+      "description": "Tenant-level frequency_cap_rules (max N per M hours per recipient, evaluated at queue-fill, skips violators with reason logged) and per-recipient quiet_hours (suppress 22:00-08:00 in subscriber local TZ). Run inside QueueAndStartCampaign next to suppression filter. Show skip/defer counters in send report.",
+      "category": "sending",
+      "evidence": "Customer.io first-class global frequency caps; Customer.io quiet hours per recipient local TZ per channel; cross-cutting table shows all 4 competitors only partial.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": true,
+      "depends_on": [
+        "subscriber.timezone populated",
+        "frequency_cap_rules table",
+        "QueueAndStartCampaign extension"
+      ]
+    },
+    {
+      "id": "G17",
+      "title": "AI post-send summary with baseline comparison",
+      "description": "After status=sent generate structured summary: 'Open 24% (+3.2pp vs 30d baseline 20.8%, +1.5pp vs industry); top link /product/X drove 47% clicks; reply intent positive (8 praise / 2 questions); voice drift 0.12. Suggested: resend non-openers in 48h, A/B test CTA copy.' Renders in slideover.",
+      "category": "ai",
+      "evidence": "HubSpot Campaign AI Insights with explicit historical-uplift baseline; Moosewave already has campaign_benchmarks + AI + (post G3) reply data.",
+      "impact": "high",
+      "effort": "M",
+      "fits_2026": true,
+      "depends_on": [
+        "G3 reply intent",
+        "G10 voice drift score",
+        "campaign_benchmarks exists"
+      ]
+    },
+    {
+      "id": "G18",
+      "title": "Per-campaign anomaly detection (extend workspace anomalies)",
+      "description": "anomalies.go keys on (tenant_id, metric, day_bucket) — workspace only today. Add (tenant_id, campaign_id, metric, hour_bucket) z-score variant firing mid-send: 'Click rate dropping faster than 90d baseline — investigate top link' as real-time strip on live SSE feed.",
+      "category": "reporting",
+      "evidence": "Audit: 'Not per-campaign. Anomalies key on (tenant_id, metric, day_bucket) - no campaign_id dimension'; Klaviyo AI campaign monitoring with real-time dip alerts.",
+      "impact": "medium",
+      "effort": "M",
+      "fits_2026": true,
+      "depends_on": [
+        "G1 timeseries",
+        "anomalies.go schema extension"
+      ]
+    },
+    {
+      "id": "G19",
+      "title": "Multi-language variant matrix per campaign",
+      "description": "Pick N languages in compose; each gets its own subject + body_html variant; recipient.locale routes per-subscriber at queue-fill via existing hash bucketing. One campaign, N localizations, aggregated report with per-language tabs. Distinctive vs Klaviyo/Mailchimp.",
+      "category": "create-flow",
+      "evidence": "Cross-cutting research table explicitly flags multi-language variant matrices as industry-wide gap and 'potential Moosewave differentiator'.",
+      "impact": "medium",
+      "effort": "L",
+      "fits_2026": true,
+      "depends_on": [
+        "subscriber.locale column",
+        "campaign_translations table"
+      ]
+    },
+    {
+      "id": "G20",
+      "title": "Multi-stage approval chain (extend single gate)",
+      "description": "approvals.go is one-shot consume-after-queue-fill today. Extend to N-stage chain: tenant defines roles (Editor → Legal → CMO) and order; each stage notified, must approve before next; full audit trail in existing audit log. Content fingerprint check stays.",
+      "category": "approvals",
+      "evidence": "Cross-cutting table: 'Approval chains - partial across all 4'; research notes 'formal multi-stage approval chains' as Moosewave differentiator. Moosewave has audit log + approval primitives.",
+      "impact": "high",
+      "effort": "L",
+      "fits_2026": true,
+      "depends_on": [
+        "approval_stages table",
+        "audit log exists"
+      ]
+    },
+    {
+      "id": "G21",
+      "title": "Auto-publish web archive + shareable link on send",
+      "description": "Listmonk already renders public archive per sent campaign. Surface archive URL inline in slideover after send + as 'Web version' chip in editor with copy-link button and social meta (og:title, og:image from first body image). Optional per-recipient view-in-browser token link.",
+      "category": "lifecycle",
+      "evidence": "Substack default publish (email + web simultaneously) drives SEO + referral; modern newsletter table-stakes. Underlying Listmonk renders archive — UX surfacing only.",
+      "impact": "medium",
+      "effort": "S",
+      "fits_2026": false,
+      "depends_on": []
+    },
+    {
+      "id": "G22",
+      "title": "Personalization preview (render as specific subscriber)",
+      "description": "Add 'Preview as subscriber' picker in editor: search any subscriber, render body with all merge tags + dynamic regions + conditional content resolved for that subscriber's fields (first_name, segment membership, predicted CLV). Today Preview tab renders raw merge syntax.",
+      "category": "preview",
+      "evidence": "Brevo personalization preview tab (renders as specific recipient); Mailchimp/Klaviyo both ship this; Moosewave has dynamic-content regions but no resolved preview.",
+      "impact": "medium",
+      "effort": "S",
+      "fits_2026": false,
+      "depends_on": [
+        "existing merge-tag renderer + DynamicContentPanel"
+      ]
+    }
+  ],
+  "specs": [
+    {
+      "id": "G7",
+      "title": "Recipient-count + cost preview in send-confirm modal",
+      "overview": "Send-confirm modal in CampaignDetailSlideover.tsx:837-885 shows \"every subscribed recipient\" or a truncated segment id with no number — code at 847-854 admits the gap. Audit flags critical: operators send blind. Backend has AudienceCounter, WarmupGate, SuppressionLookup.LookupBulk, Repo.AudienceEmails but nothing assembles them. Add GET /api/v1/campaigns/{id}/send-preview and an AudiencePreviewPanel at the top of the Modal showing recipients, suppression delta, deliverable, and today's warmup-cap consumption.",
+      "user_flow": "1. Operator opens a draft and clicks \"Send now\". 2. Modal opens; AudiencePreviewPanel renders loading. 3. Within ~500ms shows: \"12,480 recipients in segment 'Black Friday VIPs'\", \"− 312 excluded by suppression\", \"= 12,168 will receive this email\". 4. Tier-quota row: \"Today's cap: 50,000 · 38,200 remaining · 26,032 left after\" or \"Pro tier — no daily cap\". 5. If deliverable > remaining cap, panel shows a red over-cap banner and InboxRealityBanner Continue is disabled. 6. Otherwise VoiceDriftBanner + InboxRealityBanner render below unchanged; operator clicks Continue. 7. On preview fetch failure, panel degrades to old static copy with \"Recipient count unavailable\" subtitle; Send stays enabled.",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/components/AudiencePreviewPanel.tsx",
+          "change": "New component (~120 lines). Props: { campaignId: string | number; segmentLabel?: string | null; onOverCapChange?: (over: boolean) => void }. On mount calls api.getCampaignSendPreview(campaignId). Renders loading / error / ready states. Uses Intl.NumberFormat for thousands separators. Shows recipients, suppression delta with tooltip, deliverable in bold, tier-cap row. When over_cap=true renders red callout with role='alert'. Calls onOverCapChange(over_cap) on every successful load."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "Replace static <div className='muted'> block at 847-863 with <AudiencePreviewPanel campaignId={id!} segmentLabel={detail.segment_name ?? null} onOverCapChange={setSendBlockedByCap} />. Add useState<boolean>(false) for sendBlockedByCap near line 100. Pass disabled={busy || sendBlockedByCap} to InboxRealityBanner via a new prop. Import AudiencePreviewPanel at top."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "After getCampaignChecklist (~line 3192) add getCampaignSendPreview(campaignID) that GETs /api/v1/campaigns/{id}/send-preview. Export interface CampaignSendPreview { campaign_id; recipients; suppressed_excluded; deliverable; tier_cap_today; tier_cap_remaining; tier_cap_remaining_after; over_cap; segment_label; audience_kind; counted_at } near CampaignChecklist."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/InboxRealityBanner.tsx",
+          "change": "Add optional prop disabled?: boolean. When true the primary Continue button receives disabled=true and title='Send is blocked: over today's warmup cap'. No layout change."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/campaigns/send_preview.go",
+          "change": "New file (~180 lines). Defines SendPreviewResponse + SendPreviewDeps{Repo, Audience AudienceCounter, Warmup WarmupGate, Suppressions SuppressionLookup}. MountSendPreview wires GET /api/v1/campaigns/{id}/send-preview with ScopeReadCampaigns. Handler: load campaign under tenant scope (mirror send.go:135-143 error mapping); determine audience_kind ('segment'|'list'|'workspace'); call countCampaignAudience for total; resolve segment label when SegmentID set. Call Repo.AudienceEmails + Suppressions.LookupBulk; suppressed_excluded=len(hits); deliverable=max(0,recipients-suppressed). Call Warmup.CapForToday — if -1 set caps=-1, over_cap=false. Else fetch SentToday; tier_cap_remaining=cap-sent_today; tier_cap_remaining_after=max(0, remaining-deliverable); over_cap=deliverable>remaining. Wrap AudienceEmails+LookupBulk in 3s ctx timeout; on timeout return recipients only with suppressed_excluded=-1 sentinel."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/send.go",
+          "change": "Extend WarmupGate interface (line 54-58) with SentToday(ctx, tenantID) (int, error) for preview's remaining-cap math. CapForToday signature unchanged. Add comment noting SentToday is preview-only and falls back to 0 when tracker doesn't implement it."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "Mount the preview route alongside MountChecklist at line 2997: campaigns.MountSendPreview(r, campaignDeps, &campaigns.SendPreviewDeps{Repo: campaignDeps.Repo, Audience: newAudienceCounter(pool), Warmup: newWarmupGate(warmupTracker), Suppressions: suppressionStore}). Extend warmupGate struct (line 4363) with SentToday method reading tracker.Get(ctx, tenantID).SentToday (or 0 when state nil)."
+        },
+        {
+          "file": "<repo>/apps/api/internal/sending/warmup.go",
+          "change": "WarmupState carries today_sent; add SentToday(ctx, tenantID) (int, error) on WarmupTracker. PostgresWarmupTracker reads sending_state.today_sent_count; MemoryWarmupTracker reads in-memory map."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/send_preview_test.go",
+          "change": "New file (~250 lines). Table-driven tests: (a) workspace audience no warmup, (b) segment audience with 3 of 10 suppressed, (c) over-cap (cap=100, sent=80, deliverable=50), (d) Pro tier cap=-1, (e) AudienceEmails timeout degrades to recipients-only, (f) tenant mismatch returns 404."
+        }
+      ],
+      "db_changes": [],
+      "api_contract": "GET /api/v1/campaigns/{id}/send-preview\n  auth: cookie session OR API key with scope=read_campaigns\n  request: no body\n  response 200 application/json:\n    {\n      \"campaign_id\": \"01HXYZ...\",\n      \"audience_kind\": \"segment\" | \"list\" | \"workspace\",\n      \"segment_label\": \"Black Friday VIPs\" | null,\n      \"recipients\": 12480,\n      \"suppressed_excluded\": 312,           // -1 sentinel on degraded path\n      \"deliverable\": 12168,\n      \"tier_cap_today\": 50000,              // -1 = no cap (Pro / warmup complete)\n      \"tier_cap_remaining\": 38200,          // -1 when no cap\n      \"tier_cap_remaining_after\": 26032,    // max(0, remaining-deliverable); -1 when no cap\n      \"over_cap\": false,\n      \"counted_at\": \"2026-06-03T14:22:01Z\"\n    }\n  response 404: {\"error\":{\"code\":\"not_found\",\"message\":\"campaign not found\"}}\n  response 401: {\"error\":{\"code\":\"no_tenant\",\"message\":\"tenant required\"}}\n  response 500: {\"error\":{\"code\":\"preview_failed\",\"message\":\"...\"}}",
+      "rollout_plan": "No feature flag. Route is additive; panel degrades to old copy on 404. WarmupGate gains SentToday but existing send.go callers don't use it — main.go adapter provides default-zero impl, no other call sites change. Ship with next desktop+api release; no migration. After 1 week of clean prod telemetry (zero 5xx, p95<500ms), remove legacy 'every subscribed recipient' fallback copy and require panel to load before enabling Send.",
+      "acceptance_criteria": [
+        "Opening send-confirm for a draft with segment_id renders AudiencePreviewPanel within 1s showing recipients, suppression delta, and deliverable formatted with thousands separators.",
+        "Opening send-confirm WITHOUT segment_id renders panel with audience_kind='workspace' and a count matching the Subscribers page subscribed total.",
+        "When deliverable > tier_cap_remaining, panel renders a red over-cap callout and the InboxRealityBanner Continue button is disabled with an explanatory title.",
+        "When CapForToday returns -1 (Pro tier), tier-cap row reads 'Pro tier — no daily cap' and over_cap is never set, regardless of audience size.",
+        "If /send-preview returns network error or 500, modal falls back to the existing static 'every subscribed recipient' copy with a 'Recipient count unavailable' subtitle; Send remains enabled.",
+        "Backend table-driven test covers workspace audience, segment audience, suppression filter, over-cap, Pro tier no-cap, AudienceEmails timeout — all green.",
+        "Viewer role (canMutate=false) sees the preview but the existing Send button stays disabled with its current 'Viewer role can't send campaigns' title — no role bypass via the new read route."
+      ],
+      "estimated_lines": 650,
+      "open_questions": [
+        "Should suppressed_excluded break out by category (bounced/unsubscribed/complained) in the tooltip, or is a single number enough for v1? LookupBulk returns map[string]bool without categories — splitting needs a new SuppressionLookup method.",
+        "Should over_cap hard-disable Send in the UI, or only warn and let the operator proceed (backend already returns 429 on actual send)? Spec assumes hard-disable; backend 429 stays as belt-and-suspenders.",
+        "Cost preview: gap title says 'cost preview' but Moosewave isn't per-send priced. Show 'sends consumed from monthly quota' in addition to warmup cap, or is warmup-cap consumption sufficient? Spec ships warmup-cap only; monthly-quota row follows once billing exposes remaining-sends."
+      ]
+    },
+    {
+      "id": "G3",
+      "title": "Reply-loop tooling: inbound triage + 'Quote a reader reply' block",
+      "overview": "Moosewave already ingests inbound mail and links it to campaigns via in_reply_to, but operators never see those replies threaded against the campaign. This ships a Replies section on CampaignDetailSlideover (peer to Feedback/Activity), classifies each reply's intent (question/praise/unsub/ooo/other) via the existing aicompose voice client plus a regex heuristic short-circuit, and adds a 'Quote a reader reply' editor action that drops a styled blockquote into the draft so VoiceProfile follow-ups inherit reader voice. Clones feedback.go's CRUD shape end-to-end.",
+      "user_flow": "1. Operator opens the campaign slideover for a sent broadcast. 2. Below Performance a 'Replies (12)' section appears with tabs {All/Questions/Praise/Unsub/OOO}. 3. Each row shows from_email, received_at, intent badge, 240-char excerpt, and buttons 'Quote in next draft' (canWrite && editing) and 'View thread'. 4. Rows missing an intent show a 'Classify' button that POSTs and updates the badge inline. 5. 'View thread' opens a Modal with the sanitized full body. 6. In the editor when isDraft && editing, a '+ Quote a reader reply' button in the DynamicContentPanel action row opens ReplyQuotePicker; selecting a reply appends a styled blockquote + attribution to draft.body. 7. Next 'Compose follow-up' picks up the quote as VoiceProfile context.",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignReplies.tsx",
+          "change": "NEW component, sibling to CampaignFeedback.tsx. Props: { campaignID; isDraft; editing; onInsertQuote?: (next:string)=>void; body?: string }. Loads api.listCampaignReplies(id), renders SectionHeader('Replies') + intent-filter tabs reusing .tabs/.tab classes from CampaignDetailSlideover line 614. Each row uses .card: from_email, fmtWhen(received_at), <span className='badge accent|success|danger|warning|muted'> for intent, 240-char excerpt, 'Classify' button (when intent_class==''), 'Quote in next draft' button (canWrite && editing && onInsertQuote && body!=null), 'View thread' button → local Modal with body_text + body_html_sanitized. Empty state 'No replies yet.' Uses useCanWrite() from lib/store. ~220 LOC."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "At line 825 (after <CampaignFeedback campaignID={id} />), add: <CampaignReplies campaignID={id} isDraft={isDraft} editing={editing} body={editing ? draft.body : asString(detail.body_html ?? detail.plain_text ?? '')} onInsertQuote={editing ? (next) => setDraft(d => ({...d, body: next})) : undefined} />. Add import on line 20."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/DynamicContentPanel.tsx",
+          "change": "Add second action button next to '+ Region' in the SectionHeader actions row at line ~124: '+ Quote a reader reply'. Disabled when no onInsertSkeleton. On click opens <ReplyQuotePicker>. Selection appends literal `\\n<blockquote class=\"pw-reader-quote\">{quoteText}</blockquote>\\n<p class=\"pw-reader-attrib\">— {author}</p>\\n` (pre-filled values, NOT {{var}} tokens) to body and calls onInsertSkeleton(next). Needs new prop campaignID which the parent already has. ~80 LOC."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/ReplyQuotePicker.tsx",
+          "change": "NEW small Modal. Props: { campaignID; open; onClose; onInsert(quoteText, author) }. Reuses Modal + ModalFooter. Fetches api.listCampaignReplies(campaignID), renders a scrollable radio-list with 280-char previews, 'Cancel' + 'Insert quote' buttons. Insert closes and fires onInsert with the chosen row's body_text_excerpt + from_email. ~120 LOC."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "Add CampaignReply type and three methods at line 3188 (after resolveCampaignFeedback): listCampaignReplies(campaignID, intent?) → GET /api/v1/campaigns/{id}/replies?intent=…; classifyCampaignReply(campaignID, replyID) → POST /api/v1/campaigns/{id}/replies/{rid}/classify; getCampaignReply(campaignID, replyID) → GET /api/v1/campaigns/{id}/replies/{rid}. Mirrors listCampaignFeedback verbatim. ~60 LOC."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/campaigns/replies.go",
+          "change": "NEW file modelled on feedback.go. Reply struct (id, campaign_id, subscriber_id, from_email, subject, body_text_excerpt, received_at, intent_class, intent_confidence, intent_classified_at, classifier). MountReplies(r, d) wires GET /api/v1/campaigns/{id}/replies (ScopeReadCampaigns), GET /api/v1/campaigns/{id}/replies/{rid} (ScopeReadCampaigns, returns body_text + body_html_sanitized + headers), POST /api/v1/campaigns/{id}/replies/{rid}/classify (ScopeWriteCampaigns). List handler accepts ?intent=question|praise|unsub|ooo|other (400 on invalid) and ?limit (default 50 / max 200). Repo SELECTs from inbound_emails LEFT JOIN inbound_email_intent ON (tenant_id, inbound_emails.id = inbound_email_id) WHERE campaign_id::text = $2. Excerpt = left(body_text, 280). ~250 LOC."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/replies_classify.go",
+          "change": "NEW. ClassifyReply handler: Repo.GetReply, call d.IntentClassifier.ClassifyReply(ctx, tenantID, subject, bodyText), UPSERT inbound_email_intent on (tenant_id, inbound_email_id) with classifier='ai'|'heuristic', write db.Audit row 'campaigns.reply_classified' with {reply_id, intent_class, confidence, classifier}, return updated Reply. Returns 503 'classifier_unavailable' when d.IntentClassifier == nil or returns ErrVoiceUnavailable — never a 500. ~150 LOC."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/replies_intent.go",
+          "change": "NEW. IntentClassifier interface (ClassifyReply(ctx, tenantID, subject, body) (class string, confidence float64, classifier string, err error)). AIIntentClassifier wraps aicompose.VoiceClient with a structured prompt asking for one of {question,praise,unsub,ooo,other} + a 0-1 confidence float, parses the JSON response. FastClassifier regex heuristics: subject matches `(?i)^(out of office|auto[- ]?reply|automatic reply)` → ooo conf=0.95; body contains `(?i)\\bunsubscribe\\b` → unsub conf=0.9; subject ends in '?' or starts with `^(?i)(why|how|what|when|where|can|could|would)` → question conf=0.85. NewAIIntentClassifier(voice) returns a composite that runs FastClassifier first and only calls voice when confidence < 0.85. ~180 LOC."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/types.go",
+          "change": "Extend Deps struct: add field IntentClassifier IntentClassifier (interface from replies_intent.go) with comment 'nil-safe: nil disables the classify endpoint (returns 503).'"
+        },
+        {
+          "file": "<repo>/apps/api/internal/aicompose/aicompose.go",
+          "change": "Add KindReplyIntent ChatKind = 'reply_intent' alongside the existing Kind* constants at line ~58. No prompt logic here; the consumer in replies_intent.go owns the template; this just makes the wire enum honest so the voice service can route to a system prompt."
+        },
+        {
+          "file": "<repo>/apps/api/internal/inbound_email/handlers.go",
+          "change": "Add Classifier AsyncClassifier field on Deps struct (interface with ClassifyAndPersist(ctx, tenantID, emailID int64, subject, body string)). In Ingest, after successful d.Repo.Insert + campaign association, if d.Classifier != nil spawn: go func(){ ctx,cancel:=context.WithTimeout(context.Background(),20*time.Second); defer cancel(); _=d.Classifier.ClassifyAndPersist(ctx, tenantID, emailID, subject, bodyText) }(). Errors swallow + log via d.Logger. Nil-safe so existing tests don't break."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "After line 2996 (campaigns.MountFeedback(...)) add: campaigns.MountReplies(r, campaignDeps). Before campaignDeps construction, behind feature flag: if cfg.FeatureReplyLoop { voice := aicompose.NewHTTPVoiceClient(cfg.VoiceServiceURL); classifier := campaigns.NewAIIntentClassifier(voice); campaignDeps.IntentClassifier = classifier; inboundDeps.Classifier = campaigns.NewAsyncClassifierAdapter(classifier, inboundRepo) }. Add FeatureReplyLoop bool to cfg (env POSTWAVE_FEATURE_REPLY_LOOP, default false)."
+        }
+      ],
+      "db_changes": [
+        {
+          "migration": "<repo>/infra/migrations/0242_inbound_email_intent.sql",
+          "sql_sketch": "BEGIN;\nCREATE TABLE inbound_email_intent (\n    tenant_id          uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,\n    inbound_email_id   bigint NOT NULL,\n    intent_class       text NOT NULL CHECK (intent_class IN ('question','praise','unsub','ooo','other')),\n    intent_confidence  numeric(4,3) NOT NULL DEFAULT 0,\n    classifier         text NOT NULL DEFAULT 'ai' CHECK (classifier IN ('ai','heuristic','manual')),\n    classified_at      timestamptz NOT NULL DEFAULT now(),\n    PRIMARY KEY (tenant_id, inbound_email_id)\n);\nCREATE INDEX inbound_email_intent_class_idx\n    ON inbound_email_intent (tenant_id, intent_class, classified_at DESC);\nGRANT SELECT, INSERT, UPDATE, DELETE ON inbound_email_intent TO postwave_app;\nALTER TABLE inbound_email_intent ENABLE ROW LEVEL SECURITY;\nALTER TABLE inbound_email_intent FORCE  ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON inbound_email_intent\n    AS RESTRICTIVE FOR ALL\n    USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)\n    WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);\nCOMMIT;"
+        }
+      ],
+      "api_contract": "GET /api/v1/campaigns/{id}/replies?intent={question|praise|unsub|ooo|other}&limit={1..200}\n  scope: ScopeReadCampaigns\n  200 { items: Reply[] }\n  Reply: { id: string (inbound_emails.id stringified), campaign_id: string, subscriber_id: string, from_email: string, subject: string, body_text_excerpt: string, received_at: RFC3339, intent_class: 'question'|'praise'|'unsub'|'ooo'|'other'|'', intent_confidence: number, intent_classified_at: RFC3339|null, classifier: 'ai'|'heuristic'|'manual'|'' }\n  400 { code: 'invalid_intent', message } on unknown intent value\n  401 { code: 'no_tenant', message }\n\nGET /api/v1/campaigns/{id}/replies/{reply_id}\n  scope: ScopeReadCampaigns\n  200 Reply & { body_text: string, body_html_sanitized: string, message_id: string, in_reply_to: string }\n  404 { code: 'not_found' }\n\nPOST /api/v1/campaigns/{id}/replies/{reply_id}/classify\n  scope: ScopeWriteCampaigns\n  body: {} (server reads the inbound row)\n  200 Reply (with intent_class + intent_confidence + classifier populated)\n  404 { code: 'not_found' }\n  503 { code: 'classifier_unavailable', message } — feature flag off OR voice service down; row left unclassified\n  Audit: writes 'campaigns.reply_classified' on success with payload { reply_id, intent_class, confidence, classifier }.",
+      "rollout_plan": "Feature flag POSTWAVE_FEATURE_REPLY_LOOP (cfg.FeatureReplyLoop, default false). OFF: migration ships (additive), GET /replies returns rows with empty intent_class, POST /classify returns 503. Frontend hides the intent-tab strip when all rows have empty intent. ON: classifier runs on ingest (async goroutine) + via the manual Classify button. New shape + new route, no existing API changes. Roll out per-tenant via the existing feature_flags table gating cfg lookup.",
+      "acceptance_criteria": [
+        "GET /api/v1/campaigns/{id}/replies returns every inbound_emails row where campaign_id = {id} for the calling tenant, newest first, with intent_class populated from inbound_email_intent via LEFT JOIN (unclassified rows return intent_class='').",
+        "Filtering: ?intent=question returns only rows where intent_class='question'; ?intent=garbage returns 400 with code='invalid_intent'.",
+        "With FEATURE_REPLY_LOOP=1: a freshly-ingested reply with subject 'Out of office: back Monday' is classified ooo with confidence>=0.9 by the heuristic alone (no voice service call), within 2s of ingest — verified by a Go test that inserts an inbound row, waits on a channel from the async classifier, then SELECTs from inbound_email_intent.",
+        "With FEATURE_REPLY_LOOP=0: POST /classify returns 503 code='classifier_unavailable', no row written to inbound_email_intent; GET /replies still returns the row with empty intent_class.",
+        "RLS proven: tenant_a calling GET /api/v1/campaigns/{tenant_b_campaign}/replies receives 404, and a raw SELECT FROM inbound_email_intent under tenant_a's GUC returns zero of tenant_b's rows — verified by a postgres-level integration test that SETs LOCAL app.tenant_id.",
+        "Frontend: in the slideover, clicking 'Quote in next draft' on a reply while editing appends a <blockquote class='pw-reader-quote'>…</blockquote> + attribution to draft.body and the textarea reflects it immediately; the resulting HTML survives a save+reload cycle (round-trips through PATCH /campaigns/{id}).",
+        "Audit log contains exactly one 'campaigns.reply_classified' row per successful classify call with the actor user id, reply id, resulting intent_class, and classifier name."
+      ],
+      "estimated_lines": 1180,
+      "open_questions": [
+        "Where should the Replies tab live in the slideover: as a sibling section below Feedback (current spec, low risk), or as a top-level tab strip {Performance|Feedback|Replies|Activity}? The latter is closer to Mailchimp UX but requires restructuring lines 600–830 of CampaignDetailSlideover.tsx (~150 LOC of refactor).",
+        "Should we mask reply from_email PII based on the existing PrivacySettings.MaskInboundPII flag? Today the inbox view shows raw addresses, but the Replies surface is more prominent. Default in spec: respect the same flag — show 'r***@example.com' when MaskInboundPII=true.",
+        "Reply intent prompt: which voice-service ChatKind owns it? Spec assumes a new KindReplyIntent. Alternative is to reuse KindFreeForm with a structured prompt. The new kind is honest but adds a wire value the voice service must understand — confirm with the voice-service owner before merge.",
+        "Heuristic short-circuit confidence threshold (0.85) — too high wastes tokens, too low mislabels. Tune from production metrics after a week of real traffic.",
+        "Do we want a 'Mark as not interesting / archive' action on a reply row? Out of scope for v1 but trivial (add archived_at column + WHERE archived_at IS NULL in the list query)."
+      ]
+    },
+    {
+      "id": "G2",
+      "title": "Human-engagement metric (MPP/bot-stripped opens & clicks) on CampaignReport",
+      "overview": "CampaignReport today exposes raw opens/clicks from campaign_report_events. With Apple MPP at ~95% iOS coverage plus Gmail proxy / SafeLinks scanners, open_rate is inflated 25-40%. The platform already ships bot_open_signatures + a regex classifier (apps/api/internal/bot_open_filter) for the dashboard-level panel; this gap extends the same classifier into per-campaign reporting and adds a Raw/Human toggle on the slideover. Human clicks additionally strip any click firing <2s after a same-subscriber open (scanner unfurl). No ingest work — user_agent is already populated.",
+      "user_flow": "Operator opens a sent campaign; CampaignDetailSlideover loads. In the Performance header, a Raw/Human segmented toggle sits to the right of the LiveDot, defaulting to Human. With Human selected, stat cards plus bounces/complaints/unsubs render human_opens / human_clicks / human_open_rate; a small MPP-stripped caption appears under Open rate with a tooltip listing matched signatures. With Raw selected, original values render unchanged. Top-links re-renders against human_top_links when Human is on. Live SSE deltas carry both raw and human counts so flipping the toggle is local-state only. Toggle persists per-operator in localStorage. Tenant signature overrides flow through automatically.",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "Extend the CampaignReport interface at line 6209 with: human_opens, human_unique_opens, human_clicks, human_unique_clicks, human_open_rate, human_click_rate, human_click_to_open_rate (all number), human_top_links: {url:string;clicks:number}[], and bot_signatures_applied: string[]. Keep existing fields untouched for wire-compat."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "Add `const [engagementMode, setEngagementMode] = useState<'raw'|'human'>(() => (localStorage.getItem('postwave.campaignReport.engagementMode') as any) ?? 'human')` near line 87, persist via useEffect. Around line 709 (Performance label row), insert a new SegmentedToggle to the right of the LiveDot with Raw / Human options; gate visibility on `report && ((report.human_opens ?? 0) > 0 || (report.bot_signatures_applied ?? []).length > 0)`. Replace fmtPct(report?.open_rate) at line 736 with `engagementMode==='human' ? fmtPct(report?.human_open_rate) : fmtPct(report?.open_rate)`, same for click_rate at line 742. Add a `<span className='stat-caption' title={(report?.bot_signatures_applied ?? []).join(', ')}>MPP-stripped</span>` below the Open rate value when mode='human'. In the Top-links block (lines 747-772) switch the slice source to `(engagementMode==='human' ? report.human_top_links : report.top_links)`. No changes to canMutate / ConfirmModal / Modal."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "Add a small inline SegmentedToggle helper at file bottom (~25 lines): two-button pill with aria-pressed, arrow-key navigation, matches existing stat-card visual rhythm."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/analytics/analytics.go",
+          "change": "Extend the CampaignReport struct at line 43 with: HumanOpens, HumanUniqueOpens, HumanClicks, HumanUniqueClicks int; HumanOpenRate, HumanClickRate, HumanClickToOpenRate float64; HumanTopLinks []LinkStats; BotSignaturesApplied []string. Add a helper `loadBotPattern(ctx, tx, tenantID) (combined string, labels []string, err error)` mirroring bot_open_filter.combinedPattern (SELECT pattern, label FROM bot_open_signatures WHERE enabled AND (tenant_id IS NULL OR tenant_id=$1::uuid)). Inside Repo.CampaignReport (line 146), after the existing GROUP BY pass, run one extra query: `SELECT event_type, count(*) FILTER (WHERE COALESCE(user_agent,'') !~ $1)::int, count(DISTINCT subscriber_email) FILTER (WHERE COALESCE(user_agent,'') !~ $1)::int FROM campaign_report_events WHERE tenant_id=$2::uuid AND campaign_id=$3::uuid AND event_type IN ('opened','clicked') GROUP BY event_type` to populate HumanOpens / HumanUniqueOpens / HumanClicks / HumanUniqueClicks. For click-dedup-vs-open <2s, run a CTE: WITH opens AS (SELECT subscriber_email, at FROM campaign_report_events WHERE tenant+campaign filter, event_type='opened') subtract clicked rows whose at BETWEEN o.at AND o.at + interval '2 seconds' from HumanClicks. Add HumanTopLinks variant of the existing top-5 query with `COALESCE(user_agent,'') !~ $1` predicate. Set BotSignaturesApplied = labels that produced at least one match (subquery: SELECT DISTINCT s.label FROM bot_open_signatures s WHERE EXISTS …). Compute HumanOpenRate / HumanClickRate / HumanClickToOpenRate via the existing pct() helper with the same deliveredOrSent denominator. If combined pattern is empty OR Repo.HumanEngagementEnabled is false, leave Human* fields at zero and BotSignaturesApplied nil."
+        },
+        {
+          "file": "<repo>/apps/api/internal/analytics/analytics.go",
+          "change": "Add field `HumanEngagementEnabled bool` to the Repo struct (around line 138). Short-circuit inside CampaignReport: if !r.HumanEngagementEnabled return early after the legacy block. Lets the test suite toggle independently of env."
+        },
+        {
+          "file": "<repo>/apps/api/internal/analytics/sse.go",
+          "change": "Extend reportsEqual at line 157 to also compare HumanOpens, HumanUniqueOpens, HumanClicks, HumanUniqueClicks so the SSE delta fires when MPP-stripped counts move (otherwise the toggle would show stale numbers until a raw count changed). No protocol change — same snapshot/delta event names."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "Where analyticsDeps is constructed (near line 1733, search for analytics.Deps), set Repo.HumanEngagementEnabled = os.Getenv(\"POSTWAVE_HUMAN_ENGAGEMENT\") == \"true\". No new route registration — the endpoint shape is additive."
+        },
+        {
+          "file": "<repo>/apps/api/internal/analytics/analytics_test.go",
+          "change": "Add tests: TestCampaignReport_HumanCountsZeroWhenFlagOff, TestCampaignReport_StripsMPPOpens (insert events with Apple MPP UA + a Chrome UA; assert human_opens excludes the MPP rows), TestCampaignReport_StripsScannerClicksWithin2s (insert open at T then click at T+1.5s; assert human_clicks==0), TestCampaignReport_HumanTopLinksFiltersBots, TestCampaignReport_RespectsTenantSignatureOverride (tenant adds 'TestBot/' pattern; assert it's applied). Seed via the existing analytics test harness; ~120 lines."
+        }
+      ],
+      "db_changes": [],
+      "api_contract": "GET /api/v1/campaigns/{id}/report\n  Auth: bearer + scope read:reports (unchanged)\n  Response 200 application/json (additive — existing fields unchanged):\n  {\n    \"campaign_id\": \"uuid\",\n    \"sent\": int, \"delivered\": int,\n    \"opens\": int, \"unique_opens\": int,\n    \"clicks\": int, \"unique_clicks\": int,\n    \"bounces\": int, \"complaints\": int, \"unsubscribes\": int,\n    \"open_rate\": float, \"click_rate\": float, \"click_to_open_rate\": float,\n    \"bounce_rate\": float, \"unsub_rate\": float,\n    \"top_links\": [{\"url\": \"string\", \"clicks\": int}],\n    // NEW (additive, zero when POSTWAVE_HUMAN_ENGAGEMENT != \"true\"):\n    \"human_opens\": int,\n    \"human_unique_opens\": int,\n    \"human_clicks\": int,\n    \"human_unique_clicks\": int,\n    \"human_open_rate\": float,\n    \"human_click_rate\": float,\n    \"human_click_to_open_rate\": float,\n    \"human_top_links\": [{\"url\": \"string\", \"clicks\": int}],\n    \"bot_signatures_applied\": [\"Apple Mail Privacy Protection\", \"Google Image Proxy\", ...]\n  }\n  Response 404: {\"error\":{\"code\":\"not_found\",\"message\":\"no events for this campaign\"}} (unchanged)\n\nGET /api/v1/campaigns/{id}/events  (SSE, unchanged path/auth)\n  event: snapshot|delta\n  data: <same CampaignReport JSON as above, including the new human_* fields>\n  No new event types. reportsEqual extended to gate delta emission on human-count changes too.",
+      "rollout_plan": "Behind env flag POSTWAVE_HUMAN_ENGAGEMENT (default off). When off, Repo skips the classifier queries and emits zeros for human_* fields plus empty bot_signatures_applied; the frontend toggle is hidden because its visibility gate is data-driven. Reuses existing bot_open_signatures table — no migration, no backfill. Wire-compat: additive JSON fields only; SDK consumers ignoring unknown fields keep working. localStorage key is greenfield. Backout = flip env var off.",
+      "acceptance_criteria": [
+        "With POSTWAVE_HUMAN_ENGAGEMENT=true and a campaign that has 10 raw opens — 6 from Apple MPP UA and 4 from human UAs — GET /campaigns/{id}/report returns opens=10, human_opens=4, human_open_rate matches 4/delivered, and bot_signatures_applied contains 'Apple Mail Privacy Protection'.",
+        "A clicked event whose at column is within 2 seconds of the same subscriber's opened event is excluded from human_clicks but kept in clicks.",
+        "With POSTWAVE_HUMAN_ENGAGEMENT=false (default), the response includes the new keys but human_opens/human_clicks/human_open_rate/human_click_rate are all zero and bot_signatures_applied is an empty array — existing fields are byte-identical to today's response.",
+        "On the CampaignDetailSlideover, the Raw/Human toggle is hidden when bot_signatures_applied is empty and human_opens is zero; visible otherwise; defaults to Human; persists per-operator across reloads via localStorage.",
+        "Switching the toggle from Human to Raw updates all four stat cards plus the Top links table without issuing a new network request (state is local-only).",
+        "The SSE delta stream emits a new event whenever human_opens, human_unique_opens, human_clicks, or human_unique_clicks change (verified by inserting an MPP-tagged event mid-stream and confirming a delta arrives within one poll interval).",
+        "Tenant-scoped overrides in bot_open_signatures (created via POST /api/v1/bot-opens/signatures) are reflected in the same campaign's report on the next request — no caching across tenants."
+      ],
+      "estimated_lines": 420,
+      "open_questions": [
+        "Default toggle position: spec says Human (matches Customer.io / Mailchimp post-June-2025 default). Confirm with product before flipping — operators used to inflated rates may push back.",
+        "Scope: G2 lists CampaignReport only, but should we batch the same Raw/Human split into CompareRow / GeographyRow / DeviceRow on the Analytics page? Spec ships CampaignReport only.",
+        "bot_signatures_applied semantics: list only signatures that actually matched at least one event in this campaign (current spec) versus every enabled signature platform-wide. Confirm before locking the helper query.",
+        "The 2s open->click bot-dedup window comes from Customer.io's public methodology — confirm 2s vs 1s or 3s before locking, or promote to env var POSTWAVE_HUMAN_CLICK_DEDUP_SECONDS if we expect to tune."
+      ]
+    },
+    {
+      "id": "G10",
+      "title": "Brand Voice profile + drift scoring on AI compose",
+      "overview": "Moosewave's VoiceDriftBanner is advisory and reads only the auto-extracted voice_profiles JSON. Operators cannot author the brand voice (descriptors, writing rules, sample snippets), so drift output is unreliable for tenants with sparse corpora and there is no \"Rewrite\" affordance. This adds an authored brand_voice_profiles row, conditions /api/v1/voice/generate and /api/v1/ai/compose/* on it, surfaces a numeric drift score inline in the campaign editor, and ships POST /api/v1/ai/compose/rewrite for one-click \"Rewrite to match brand voice\".",
+      "user_flow": "1. Operator opens Settings -> AI -> new \"Brand Voice\" sub-tab; sees descriptor chips, writing-rules list, samples textarea. Empty state offers \"Extract from past campaigns\". 2. Picks descriptors, adds rules, pastes 3-10 samples, Save (admin-only). 3. In CampaignDetailSlideover edit mode, VoiceFidelityPanel below body polls /voice/drift (debounced 1.5s) with profile_id, shows \"Brand voice 72/100\", a reason, and a \"Rewrite to match brand voice\" button (canMutate && score<75). 4. Click Rewrite -> RewriteDiffModal POSTs /ai/compose/rewrite, shows original vs rewritten subject+body, Accept replaces editor state. 5. PostwaveAI chat now grounds on the authored profile; chip reads \"Voice: warm, direct\". 6. Send-confirm banner reads the same profile so scores stay consistent.",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/pages/Settings.tsx",
+          "change": "Add 'Brand Voice' sub-tab next to AI settings. Mounts <BrandVoiceProfileEditor/>. Tab visible to all but Save gated on useCanAdmin()."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/ai/BrandVoiceProfileEditor.tsx",
+          "change": "NEW ~280 LOC. Loads api.getBrandVoiceProfile(); renders descriptor chip multi-select (20 presets + free-text add), writing-rules list with add/remove, sample-snippets textarea (3-10 entries split on '---'), Save calling api.upsertBrandVoiceProfile, 'Extract from past campaigns' (canAdmin) calling POST /api/v1/voice/brand-profile/extract with a ConfirmModal before overwrite."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/VoiceFidelityPanel.tsx",
+          "change": "NEW ~160 LOC. Expanded VoiceDriftBanner variant. Props {bodyHtml,subject,profileId,canMutate,onRewriteApplied}. Calls api.voiceDriftCheck() debounced 1.5s; renders numeric badge, reason, 'Rewrite to match brand voice' button (canMutate && score<75). Click opens <RewriteDiffModal/>. Reuses severityClass."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/ai/RewriteDiffModal.tsx",
+          "change": "NEW ~140 LOC. Uses existing <Modal/>. Calls api.aiComposeRewrite({subject,html,profile_id}); side-by-side <pre> diff of original vs rewritten subject+body; Discard / Accept rewrite buttons. Accept calls onApply(newSubject,newHtml). Honest-fallback on 503."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "Keep existing VoiceDriftBanner at line ~867 (send-confirm modal) unchanged. In EDIT-mode form below the body textarea, insert <VoiceFidelityPanel bodyHtml={editBodyHtml} subject={editSubject} profileId={activeBrandVoiceProfileId} canMutate={canMutate} onRewriteApplied={(s,h)=>{setEditSubject(s); setEditBodyHtml(h);}} />. Source activeBrandVoiceProfileId from new useBrandVoiceProfileId() hook."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/store.ts",
+          "change": "Add useBrandVoiceProfileId() hook caching api.getBrandVoiceProfile() (60s TTL) -> {id,descriptors,label}|null. Shared by VoiceFidelityPanel and PostwaveAI to avoid N round-trips."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "After existing voice block (~line 3815) add: getBrandVoiceProfile GET /api/v1/voice/brand-profile; upsertBrandVoiceProfile PUT /api/v1/voice/brand-profile; extractBrandVoiceProfile POST /api/v1/voice/brand-profile/extract; aiComposeRewrite({subject,html,profile_id}) POST /api/v1/ai/compose/rewrite -> ApiResult<{subject,body,drift_score,drift_severity}>. Update voiceDriftCheck() to forward profile_id. Add types BrandVoiceProfile, BrandVoiceProfileInput, AIComposeRewriteResponse. Add drift_score number to VoiceDriftResponse."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/pages/PostwaveAI.tsx",
+          "change": "Line ~482: alongside getVoiceProfile, fetch getBrandVoiceProfile and stash brandProfileId. Pass via contextRefs entry {type:'voice_profile', id: brandProfileId} so voice service applies the authored profile. Voice profile chip label becomes 'Voice: <descriptors>' when authored profile exists."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/brandvoice/store.go",
+          "change": "NEW package ~220 LOC. Postgres CRUD on brand_voice_profiles via pgxpool. Get(ctx,tenantID)(*BrandVoiceProfile,error); Upsert(ctx,tenantID,in)(*BrandVoiceProfile,error); Touch(ctx,tenantID,extractedAt). Uses SET LOCAL app.tenant_id GUC idiom. Type BrandVoiceProfile{ID,TenantID,Descriptors []string,WritingRules []string,SampleSnippets []string,ExtractedAt *time.Time,UpdatedAt time.Time}."
+        },
+        {
+          "file": "<repo>/apps/api/internal/brandvoice/handlers.go",
+          "change": "NEW ~260 LOC. Deps{Store,Voice aicompose.VoiceClient,Audit middleware.AuditRecorder}. MountRoutes registers: GET /api/v1/voice/brand-profile (ScopeReadCampaigns), PUT (ScopeAdmin), POST /api/v1/voice/brand-profile/extract (ScopeAdmin + expensiveTenantLimit), POST /api/v1/ai/compose/rewrite (ScopeWriteCampaigns + expensiveTenantLimit). Mutating handlers record audit object_type='brand_voice_profile'. Validate: descriptors 1..20, rules 0..30, snippets 0..10 each <=4096 chars."
+        },
+        {
+          "file": "<repo>/apps/api/internal/brandvoice/extract.go",
+          "change": "NEW ~120 LOC. Extract(ctx,tenantID,voice VoiceClient,campaignRepo) (BrandVoiceProfile,error): pulls 10 most-recent sent campaigns' subject+body, prompts voice service to return {descriptors:[],writing_rules:[],sample_snippets:[]} JSON, validates, returns. Does NOT persist; client PUTs to commit."
+        },
+        {
+          "file": "<repo>/apps/api/internal/aicompose/aicompose.go",
+          "change": "Add ProfileID to ComposeBroadcastInput; before voice call, load profile via injected BrandVoiceStore and prepend descriptors+rules+samples to contextText. Add ComposeRewriteInput{Subject,HTML,ProfileID}, ComposeRewriteOutput{Subject,Body,DriftScore,DriftSeverity}, method (c *Composer) ComposeRewrite(ctx,tenantID,in)(ComposeRewriteOutput,error): loads profile, calls voice.Generate(KindCampaignDraft) with 'rewrite preserving meaning, links, merge tags' prompt, calls /v1/voice/drift to score result, returns combined output."
+        },
+        {
+          "file": "<repo>/apps/api/internal/aicompose/handlers.go",
+          "change": "Add ComposeRewrite handler mounted as POST /api/v1/ai/compose/rewrite in MountRoutes. Same shape as ComposeBroadcast handler. Deps now needs BrandVoiceStore injected from apps/api/main.go."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "Around line 3008 (existing aicompose.MountRoutes): construct bvStore := brandvoice.NewPostgresStore(pool); pass into aicompose.New(...) and mount brandvoice.MountRoutes(r, &brandvoice.Deps{Store: bvStore, Voice: aicompose.NewHTTPVoiceClient(cfg.VoiceServiceURL), Audit: auditRecorder}). Register the four new /api/v1/voice/brand-profile* and /api/v1/ai/compose/rewrite routes BEFORE the existing voiceProxy wildcard so in-process handlers win. Gate behind cfg.BrandVoiceEnabled feature flag."
+        },
+        {
+          "file": "<repo>/services/voice/internal/handlers/chat.go",
+          "change": "Line ~472 (voice_profile case in enrichContextRefs): when ref.id is a brand_voice_profiles uuid, fetch via new bvStore and render a <brand_voice descriptors=\"...\" rules=\"...\" /> XML block in addition to the existing <voice_profile/>. Authored block prepended so the LLM weights it higher. ~50 LOC."
+        },
+        {
+          "file": "<repo>/services/voice/internal/handlers/drift.go",
+          "change": "Accept optional profile_id in request body. When present and resolves to brand_voice_profiles row, score computed against authored descriptors + writing-rules adherence (heuristic regex check for banned words + embedding-cosine against samples if embedding client configured) instead of corpus-extracted profile. ~80 LOC delta."
+        },
+        {
+          "file": "<repo>/packages/openapi/route-contracts.json",
+          "change": "Add entries for GET/PUT /api/v1/voice/brand-profile, POST /api/v1/voice/brand-profile/extract, POST /api/v1/ai/compose/rewrite with request/response schemas so audit:mailchimp + audit:klaviyo stay green."
+        }
+      ],
+      "db_changes": [
+        {
+          "migration": "<repo>/infra/migrations/0242_brand_voice_profiles.sql",
+          "sql_sketch": "BEGIN;\nCREATE TABLE brand_voice_profiles (\n  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  tenant_id       uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,\n  descriptors     jsonb NOT NULL DEFAULT '[]'::jsonb,\n  writing_rules   jsonb NOT NULL DEFAULT '[]'::jsonb,\n  sample_snippets jsonb NOT NULL DEFAULT '[]'::jsonb,\n  is_active       boolean NOT NULL DEFAULT true,\n  extracted_at    timestamptz,\n  created_at      timestamptz NOT NULL DEFAULT now(),\n  updated_at      timestamptz NOT NULL DEFAULT now()\n);\nCREATE UNIQUE INDEX brand_voice_profiles_tenant_active_idx ON brand_voice_profiles(tenant_id) WHERE is_active;\nCREATE TRIGGER brand_voice_profiles_set_updated_at BEFORE UPDATE ON brand_voice_profiles FOR EACH ROW EXECUTE FUNCTION set_updated_at();\nGRANT SELECT, INSERT, UPDATE, DELETE ON brand_voice_profiles TO postwave_app;\nALTER TABLE brand_voice_profiles ENABLE ROW LEVEL SECURITY;\nALTER TABLE brand_voice_profiles FORCE  ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON brand_voice_profiles\n  FOR ALL\n  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)\n  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);\nCOMMIT;"
+        }
+      ],
+      "api_contract": "GET /api/v1/voice/brand-profile (scope: read_campaigns)\n  200 -> {id:uuid, descriptors:string[], writing_rules:string[], sample_snippets:string[], extracted_at:string|null, updated_at:string} | 404 if none\n\nPUT /api/v1/voice/brand-profile (scope: admin)\n  body -> {descriptors:string[1..20], writing_rules:string[0..30], sample_snippets:string[0..10] each <=4096 chars}\n  200 -> same shape as GET. 400 {code,message} on validation. Audit: brand_voice.upsert.\n\nPOST /api/v1/voice/brand-profile/extract (scope: admin, expensiveTenantLimit)\n  body -> {}\n  200 -> {id, descriptors, writing_rules, sample_snippets, extracted_at}\n  503 -> {code:\"voice_unavailable\"}. Does NOT auto-save; client must PUT to commit.\n\nPOST /api/v1/ai/compose/rewrite (scope: write_campaigns, expensiveTenantLimit)\n  body -> {subject:string (required), html:string (required, <=256KB), profile_id?:uuid (default=active)}\n  200 -> {subject:string, body:string, drift_score:int(0..100), drift_severity:\"ok\"|\"warn\"|\"critical\"}\n  503 voice_unavailable | 400 bad_request | 502 compose_failed\n\nPOST /api/v1/voice/drift (existing, ADDITIVE)\n  body now accepts optional {profile_id:uuid}. When supplied, score computed vs authored brand_voice_profile. Response adds drift_score (alias of score) for forward-compat.",
+      "rollout_plan": "Env flag POSTWAVE_BRAND_VOICE_ENABLED (default false). When off: tab hides, new routes 404, VoiceFidelityPanel falls back to current banner. Backwards compat: callers omitting profile_id keep current corpus-extracted behavior; existing send-confirm VoiceDriftBanner untouched. Migration additive only. Order: migration -> backend with flag false -> staging verify -> flip prod -> announce. OpenAPI route-contracts + Klaviyo/Mailchimp parity registers updated in same PR.",
+      "acceptance_criteria": [
+        "PUT /api/v1/voice/brand-profile persists and round-trips via GET; updated_at advances; RLS test confirms tenant B cannot read tenant A's profile.",
+        "POST /api/v1/voice/generate with contextRef {type:'voice_profile', id:<authored>} yields output that contains at least one descriptor term OR avoids every banned word from writing_rules in the first 200 chars (integration test against stub voice client).",
+        "VoiceFidelityPanel renders a numeric score within 2s of body change (1.5s debounce), and 'Rewrite to match brand voice' button only appears when canMutate && drift_score < 75.",
+        "Clicking Rewrite -> Accept replaces editor subject + body; drift_score returned by /ai/compose/rewrite is strictly greater than the original (Playwright e2e against fixture profile).",
+        "When POSTWAVE_BRAND_VOICE_ENABLED=false, the Settings tab is not rendered, the four new routes return 404, and the existing send-confirm VoiceDriftBanner renders unchanged.",
+        "POST /api/v1/voice/brand-profile/extract returns within 30s for a tenant with 10 sent campaigns and proposes at least 3 distinct descriptor tone words; honest fallbacks emitted for no-campaigns or voice-503.",
+        "Every mutation (PUT, extract apply via PUT, rewrite accept) emits an audit-log entry with object_type='brand_voice_profile' visible in Audit.tsx filtered view."
+      ],
+      "estimated_lines": 1450,
+      "open_questions": [
+        "Single-active profile per tenant (current spec, unique index WHERE is_active), or versioned profiles with A/B picker (~120 LOC)?",
+        "Should Rewrite preserve {{merge_tag}} tokens exactly (pre/post token-diff guardrail, ~60 LOC, recommended) or is best-effort acceptable?",
+        "Descriptor chips free-form (simpler) or constrained taxonomy the drift scorer can map to weights (more reliable)? Recommend free-form + suggested-chips sidebar.",
+        "Audit-log retention for brand_voice_profile mutations - covered by existing 90-day policy or treat as permanent compliance artifact since it shapes outbound copy?"
+      ]
+    },
+    {
+      "id": "G17",
+      "title": "AI post-send summary with baseline comparison",
+      "overview": "After a campaign reaches status=sent, generate a baseline-aware AI summary in the existing CampaignDetailSlideover. Ties together campaign_benchmarks (rolling baseline + percentile), getCampaignReport, getCampaignLinkReport (top-link concentration), reply_analytics (intent buckets from G3), and voice_drift_score (G10). Persisted once per campaign so reopening is cheap, exportable, auditable. Renders as a new \"AI summary\" card below Performance with chips, suggested actions, copy/regenerate.",
+      "user_flow": "1. Operator opens a sent campaign; slideover loads. 2. Below Performance, an \"AI summary\" card shows a 200ms shimmer. 3. On first open after sent, desktop POSTs /api/v1/campaigns/{id}/ai-summary; subsequent opens GET the cached row. 4. Card renders: headline (\"Open 24% (+3.2pp vs 30d baseline)\"), 4 verdict chips (Open Δ, Click Δ, Reply intent, Voice drift), a top-link line, a reply-intent counts line, and up to 3 suggested-action buttons. 5. \"Resend to non-openers in 48h\" opens the clone flow prefilled; \"A/B test CTA\" duplicates and opens the AB tester. 6. Footer: \"Regenerate\" (admin only), \"Copy summary\", \"Generated Xm ago · model M\". 7. If LLM is down, deterministic fallback renders the same shape — never \"unavailable\".",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignAISummaryCard.tsx",
+          "change": "New component. Props: { campaignID, status, canMutate, canAdmin }. On mount when status==='sent'|'running', calls api.getCampaignAISummary(id); on 404 and canMutate, auto-POSTs api.generateCampaignAISummary(id). Renders headline, 4 chips (Open Δ, Click Δ, Reply intent, Voice drift) using VoiceDriftBanner color scheme, top-link line, reply-intent counts line, and up to 3 suggested-action buttons. Footer: 'Regenerate' (admin only, force=true), 'Copy summary' (clipboard), 'Generated <t> ago · model <m>'. Falls back to baseline-only rendering when source==='deterministic'."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "Import CampaignAISummaryCard and useCanAdmin. After the Performance card block (around line 794, right after the metrics+top_links/bounces section, before SendChecklist), render `{id != null && !isDraft ? <CampaignAISummaryCard campaignID={id} status={status} canMutate={canMutate} canAdmin={useCanAdmin()} /> : null}`. Wire suggestion handlers: onResendNonOpeners → api.cloneCampaign({sourceId:id, segmentSelector:'non_openers', scheduleAt: now+48h}); onABTestCTA → api.createABTest(id,{dimension:'cta'}). Both gated by canMutate."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "Around line 2113 (after BenchmarkMetric block) add: `export interface CampaignAISummary { campaign_id:string; generated_at:string; model:string; source:'llm'|'deterministic'; headline:string; narrative:string; metrics:{name:string; value:number; baseline:number; delta:number; delta_pct:number; verdict:'above'|'on_par'|'below'}[]; top_link:{url:string; click_share:number}|null; reply_intent:{praise:number; questions:number; negative:number; total:number}|null; voice_drift_score:number|null; suggestions:{kind:string; label:string; rationale:string}[]; baseline_days:number; baseline_sample_size:number; }`. Add getCampaignAISummary(id) → GET /api/v1/campaigns/{id}/ai-summary and generateCampaignAISummary(id, {force?:boolean}) → POST same path."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/store.ts",
+          "change": "Confirm useCanAdmin export exists; if absent, mirror useCanWrite checking role==='admin'."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignAISummaryCard.test.tsx",
+          "change": "Vitest + RTL: shimmer on null; deterministic fallback when source==='deterministic'; verdict color for delta_pct ≥+10/≤-10/between; suggestion buttons disabled when canMutate=false; Regenerate hidden when canAdmin=false; Copy summary writes expected text to navigator.clipboard."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/campaign_ai_summary/campaign_ai_summary.go",
+          "change": "New package. Deps{Pool *db.Pool, VoiceClient aicompose.VoiceClient, Now func() time.Time}. MountRoutes registers GET /api/v1/campaigns/{id}/ai-summary (ScopeReadReports) and POST /api/v1/campaigns/{id}/ai-summary (ScopeWriteCampaigns, body {force:bool}). Get(): reads campaign_ai_summaries by PK; 404 if absent. Generate(): verifies campaigns.status IN ('sent','running','sending'), aggregates via campaign_benchmarks.BuildSnapshot + top-link share query on subscriber_events FILTER event_type='clicked' GROUP BY link_url + reply intent buckets on campaign_replies.intent_label (tolerate NULL) + voice_drift_score column read (tolerate missing). Builds Snapshot, runs deterministic Renderer. If VoiceClient non-nil, optionally calls Generate(ChatKind='free_form') to rewrite headline + reorder suggestions; deterministic numbers always win. Upserts row, writes audit via db.Audit action='campaign.ai_summary.generated'."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaign_ai_summary/renderer.go",
+          "change": "RenderDeterministic(Snapshot) → (headline, narrative, []Suggestion). Suggestion rules: open_rate.delta_pct ≤ -10 → 'send_window_shift' if send_time_opt has a different recommended hour, else 'reuse_subject_pattern'; click_rate.delta_pct ≥ +10 AND top_link.click_share ≥ 0.40 → 'ab_test_cta'; reply_intent.questions ≥ 3 → 'create_help_doc'; open_rate > baseline AND non_openers > 100 → 'resend_non_openers'; voice_drift_score ≥ 0.20 → 'review_voice_profile'. Sort by impact tier, cap at 3."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaign_benchmarks/campaign_benchmarks.go",
+          "change": "Extract Get() body into exported BuildSnapshot(ctx, tx, tenantID, campaignID, baselineDays) (CampaignRates, BaselineRates, []Metric, int /* sample size */, error). Keep Get() as thin HTTP adapter calling BuildSnapshot. No behavior change to existing endpoint."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "Add import 'campaign_ai_summary' near the campaign_benchmarks import (line 67). Inside the existing expensiveTenantLimit r.Group at main.go:3006 (where aicompose is mounted), add `campaign_ai_summary.MountRoutes(r, &campaign_ai_summary.Deps{Pool: pool, VoiceClient: aicompose.NewHTTPVoiceClient(cfg.VoiceServiceURL), Now: time.Now})` so the Generate path inherits the same per-tenant rate cap."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaign_ai_summary/campaign_ai_summary_test.go",
+          "change": "Table tests: Get returns 404 with no row; Generate refuses status='draft' with 409; deterministic suggestions cover each rule branch; Renderer tolerates NULL reply_intent / voice_drift; force=true bypasses cache; audit row written with correct action."
+        },
+        {
+          "file": "<repo>/packages/openapi/route-contracts.json",
+          "change": "Register GET + POST /api/v1/campaigns/{id}/ai-summary with the CampaignAISummary schema so the route-contracts diff test stays green."
+        }
+      ],
+      "db_changes": [
+        {
+          "migration": "<repo>/infra/migrations/0242_campaign_ai_summaries.sql",
+          "sql_sketch": "CREATE TABLE IF NOT EXISTS campaign_ai_summaries (\n  campaign_id uuid PRIMARY KEY,\n  tenant_id uuid NOT NULL,\n  generated_at timestamptz NOT NULL DEFAULT now(),\n  model text NOT NULL,\n  source text NOT NULL CHECK (source IN ('llm','deterministic')),\n  headline text NOT NULL,\n  narrative text NOT NULL,\n  snapshot jsonb NOT NULL,\n  suggestions jsonb NOT NULL DEFAULT '[]',\n  baseline_days int NOT NULL DEFAULT 30,\n  baseline_sample_size int NOT NULL DEFAULT 0\n);\nCREATE INDEX IF NOT EXISTS idx_campaign_ai_summaries_tenant ON campaign_ai_summaries(tenant_id, generated_at DESC);\nALTER TABLE campaign_ai_summaries ENABLE ROW LEVEL SECURITY;\nDROP POLICY IF EXISTS tenant_visible ON campaign_ai_summaries;\nCREATE POLICY tenant_visible ON campaign_ai_summaries AS PERMISSIVE FOR ALL TO postwave_app\n  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)\n  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);"
+        }
+      ],
+      "api_contract": "GET /api/v1/campaigns/{id}/ai-summary\n  scope: read_reports\n  200: CampaignAISummary\n  404: { error: { code: 'no_summary' } }\n\nPOST /api/v1/campaigns/{id}/ai-summary\n  scope: write_campaigns\n  body: { force?: boolean }\n  200: CampaignAISummary\n  403: { error: { code: 'admin_required' } }\n  409: { error: { code: 'campaign_not_sent' } }\n\nCampaignAISummary:\n  campaign_id, generated_at, model, source ('llm'|'deterministic'),\n  headline, narrative,\n  metrics: [{ name, value, baseline, delta, delta_pct, verdict }],\n  top_link: { url, click_share } | null,\n  reply_intent: { praise, questions, negative, total } | null,\n  voice_drift_score: number | null,\n  suggestions: [{ kind, label, rationale }] // max 3\n  baseline_days, baseline_sample_size",
+      "rollout_plan": "Behind tenant flag `campaigns.ai_post_send_summary` (off prod; on staging/dev/demo). Card renders nothing when off — slideover unchanged. New table + routes only; no breaking change. Deterministic renderer is safety floor: VoiceClient nil/down returns source='deterministic' with 200. G3/G10 columns are deps but code branches on column presence via to_regclass/pg_attribute, so ships before they fully land.",
+      "acceptance_criteria": [
+        "Opening a sent campaign in CampaignDetailSlideover with the flag on triggers GET /api/v1/campaigns/{id}/ai-summary; on 404 the desktop auto-POSTs and renders the result without a manual refresh",
+        "POST returns 409 with code 'campaign_not_sent' when status is draft/scheduled/paused",
+        "With VoiceClient unreachable, GET/POST still succeed with source='deterministic' and a non-empty headline, narrative, and at least one suggestion when any rule branch fires",
+        "Cached read returns the row in <50ms p95 on a 100k-row campaign_replies table (PK lookup, no aggregation)",
+        "Regenerate (force=true) is rejected with 403 'admin_required' when caller role != admin",
+        "Audit log contains exactly one row per generation with action='campaign.ai_summary.generated' and metadata.campaign_id matching",
+        "Suggestion buttons are disabled with the standard 'Viewer role can't…' tooltip when canMutate=false; clicking 'Resend to non-openers in 48h' opens the clone flow with segmentSelector='non_openers' and scheduleAt = generated_at + 48h"
+      ],
+      "estimated_lines": 920,
+      "open_questions": [
+        "Confirm campaigns.voice_drift_score (G10) is stored as a fraction in [0,1] — the renderer threshold (≥ 0.20) assumes that range, not the 0–100 score VoiceDriftBanner shows.",
+        "Confirm campaign_replies.intent_label values from G3 are exactly 'praise'|'question'|'negative'|'unknown' — the CASE bucketing depends on this.",
+        "Should regenerate share expensiveTenantLimit with /ai/compose, or get a dedicated ai_summary bucket? Spec reuses the existing bucket.",
+        "Per-campaign daily regenerate cap (e.g., 5/day) to stop a single campaign from burning LLM budget?",
+        "Mirror this on apps/web's public campaign report page, or keep desktop-only for v1?"
+      ]
+    },
+    {
+      "id": "G5",
+      "title": "Per-recipient send-time within a window (PSTO)",
+      "overview": "Schedule modal today writes one campaigns.scheduled_at. PSTO adds a \"Personalized within window\" toggle + window_start/end inputs. Scheduler materializes per-recipient send-at using the existing send_time_opt.Repo (best_send_hour per subscriber, computed nightly); send loop fires each campaign_recipients row at its own scheduled_send_at under current rate caps. Klaviyo/AC show 17-35% lift. Data is already there — this is plumbing, not modeling.",
+      "user_flow": "1. Operator opens a draft in CampaignDetailSlideover, clicks Schedule. 2. Modal renders SendTimeOptBanner plus a new \"Personalized within window\" toggle (off by default). 3. Toggle ON hides the single picker, shows Window start + Window end inputs and a helper line about per-recipient delivery with segment-median fallback. 4. Operator clicks Schedule; desktop PATCHes status=scheduled + window_start + window_end + per_recipient_optimize=true. 5. Scheduler picks up campaign at window_start and routes to materializePSTO which inserts campaign_recipients with scheduled_send_at set. 6. Send loop only claims rows where scheduled_send_at IS NULL OR <= now() — natural stagger. 7. Detail header shows a PSTO badge and the window range during sending.",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "In the Schedule modal block at line 891 (Modal open={scheduleOpen}), add state near scheduleAt: const [psto, setPsto] = useState(false); const [winStart, setWinStart] = useState(''); const [winEnd, setWinEnd] = useState(''); Below the datetime-local input at lines 919-925, add a Toggle (styled checkbox matching canMutate-gated controls) bound to psto with id='cam-psto-toggle'. When psto=true, hide the single 'Send at' input and render two new datetime-local inputs id='cam-win-start' / id='cam-win-end' plus a muted helper paragraph showing SendTimeOptBanner's already-fetched segment-median label. Rewrite schedule() (lines 268-310): if psto, validate winEnd >= winStart + 1h and winStart >= now - 60s, then call api.updateCampaign(id, { status: 'scheduled', scheduled_at: winStart_iso, window_start: winStart_iso, window_end: winEnd_iso, per_recipient_optimize: true }). Reset psto/winStart/winEnd on modal close. Gate on canMutate (already in scope line 123). Pass 'personalized' to trackTelemetry('campaign_scheduled', { source: 'slideover', personalized: psto })."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "Extend CampaignDetail + Campaign + UpdateCampaignInput types with optional window_start?: string; window_end?: string; per_recipient_optimize?: boolean (next to scheduled_at?: string in the campaign interfaces). Pure type-surface change — PATCH /api/v1/campaigns/{id} already passes the body through."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "In the read-only campaign detail header (where status + scheduled_at currently render), when per_recipient_optimize=true and status in {scheduled, sending}, render a small badge 'Personalized within window' next to scheduled_at and a secondary muted line 'Window: <start> — <end>'. Reuses existing badge + muted CSS. ~15 lines."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/SendTimeOptBanner.tsx",
+          "change": "Add prop mode?: 'single' | 'window' (default 'single'). When 'window', swap CTA to 'Use as window center' and emit two ISOs via new onApplyWindow?: (startIso: string, endIso: string) => void (default ±12h around the recommended slot, clamped >= now+5min). Keep existing onApply path for other callers. Add one test in __tests__/components/send-time-opt-banner.test.ts for the window callback. ~30 lines."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/pages/Campaigns.tsx",
+          "change": "In the campaigns table row renderer, if row.per_recipient_optimize=true add a small 'PSTO' chip next to the status pill. Pure visual hint, ~5 lines."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/campaigns/types.go",
+          "change": "Extend Campaign (after ScheduledAt line 42) with WindowStart *time.Time `json:\"window_start,omitempty\"`, WindowEnd *time.Time `json:\"window_end,omitempty\"`, PerRecipientOptimize bool `json:\"per_recipient_optimize,omitempty\"`. Same three on CreateInput; on UpdateInput use *bool for the toggle. Add validateWindow(start, end *time.Time, on bool) error: when on, both must be non-nil, end-start >= 1h, end-start <= 30d."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/repo.go",
+          "change": "Add window_start, window_end, per_recipient_optimize to campaignColumns and to all SELECT/INSERT/UPDATE statements (Insert lines 182-196, Update lines 285-310, scanCampaign). On Update, when in.PerRecipientOptimize is non-nil && true, call validateWindow and return a coded error on failure. Extend ScheduledCampaign struct + FindDueScheduled RETURNING with per_recipient_optimize so the scheduler knows the dispatch path."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/send.go",
+          "change": "Add STORepo *send_time_opt.Repo field to SendDeps. In Scheduler.dispatchOne (~line 455), after the sandbox check at line 478, branch on dc.Personalized: if true, call s.SendDeps.materializePSTO(ctx, c); else fall through to today's QueueScheduledCampaign. materializePSTO: 1) resolve audience emails via the same path queueCampaignCore uses; 2) STORepo.LookupBestHoursByEmails -> map[email]int; 3) STORepo.TenantMeanBestHour for fallback; 4) per email compute sendAt = send_time_opt.ClampWithinWindow(*c.WindowStart, *c.WindowEnd, bestHour); 5) Repo.EnqueueRecipientsWithSchedule. At top of Scheduler.tickOnce add recovery sweep: SELECT campaigns WHERE status='sending' AND per_recipient_optimize AND window_end < now()-5min; for each call Repo.ForceDrainWindow so stragglers send. ~140 lines."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/repo_send_domain.go",
+          "change": "1) Add EnqueueRecipientsWithSchedule(ctx, tenantID, campaignID, []ScheduledRecipient{Email string; SendAt time.Time}) (int, error) doing batched INSERT INTO campaign_recipients(...,status,scheduled_send_at) VALUES (...). 2) Modify PendingBatch query (lines 355-360) to add: AND (scheduled_send_at IS NULL OR scheduled_send_at <= now()), ORDER BY scheduled_send_at NULLS FIRST, id. 3) Add ForceDrainWindow(ctx, tenantID, campaignID) doing UPDATE campaign_recipients SET scheduled_send_at = NULL WHERE campaign_id=$1 AND status='pending' AND scheduled_send_at IS NOT NULL."
+        },
+        {
+          "file": "<repo>/apps/api/internal/send_time_opt/send_time_opt.go",
+          "change": "Export new methods on *Repo: LookupBestHoursByEmails(ctx, tenantID string, emails []string) (map[string]int, error) doing single SELECT email,best_send_hour WHERE tenant_id=$1 AND email=ANY($2) AND best_send_hour IS NOT NULL under tenant GUC. TenantMeanBestHour(ctx, tenantID string) (int, error) returning rounded mean over enabled subscribers with non-null best_send_hour (defaults to 9 if empty). Helper ClampWithinWindow(windowStart, windowEnd time.Time, bestHourOfWeek int) time.Time: next hour-of-week occurrence at-or-after windowStart, else clamp to windowEnd. ~80 lines + tests."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "After line 2088 where stoDeps is built, set campaignsSendDeps.STORepo = stoDeps.Repo so materializePSTO can call it. (Find the existing campaigns SendDeps assignment higher in main.go and add the new field plumbing.) No new MountRoutes — PATCH /api/v1/campaigns/{id} is the entry point."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/handlers.go",
+          "change": "In the UpdateCampaign handler, after a successful Update where the body had per_recipient_optimize=true, call audit middleware: audit.Record(r.Context(), 'campaign.scheduled.personalized', map[string]any{'campaign_id': id, 'window_start': in.WindowStart, 'window_end': in.WindowEnd}). Uses apps/api/internal/middleware/audit.go. Also add new GET /api/v1/campaigns/{id}/psto-preview handler that resolves audience + calls STORepo.LookupBestHoursByEmails and returns the bucket histogram described in api_contract."
+        }
+      ],
+      "db_changes": [
+        {
+          "migration": "infra/migrations/0242_campaigns_psto_window.sql",
+          "sql_sketch": "BEGIN;\nALTER TABLE campaigns\n    ADD COLUMN IF NOT EXISTS window_start timestamptz,\n    ADD COLUMN IF NOT EXISTS window_end   timestamptz,\n    ADD COLUMN IF NOT EXISTS per_recipient_optimize boolean NOT NULL DEFAULT false;\nALTER TABLE campaigns\n    ADD CONSTRAINT campaigns_psto_window_chk\n    CHECK (NOT per_recipient_optimize\n           OR (window_start IS NOT NULL\n               AND window_end IS NOT NULL\n               AND window_end > window_start));\nALTER TABLE campaign_recipients\n    ADD COLUMN IF NOT EXISTS scheduled_send_at timestamptz;\nCOMMIT;\n-- Outside tx: partial index, indexing only the in-flight subset stays tiny.\nCREATE INDEX CONCURRENTLY IF NOT EXISTS campaign_recipients_pending_due_idx\n    ON campaign_recipients (campaign_id, scheduled_send_at NULLS FIRST)\n    WHERE status = 'pending';\n-- Existing tenant_isolation RLS on both tables already covers new columns; no policy changes."
+        }
+      ],
+      "api_contract": "PATCH /api/v1/campaigns/{id}\n  body (additive — existing fields unchanged):\n    {\n      \"status\": \"scheduled\",\n      \"scheduled_at\": \"2026-06-04T09:00:00Z\",     // = window_start when PSTO on\n      \"window_start\": \"2026-06-04T09:00:00Z\",     // required when per_recipient_optimize=true\n      \"window_end\":   \"2026-06-06T18:00:00Z\",     // >= start+1h, <= start+30d\n      \"per_recipient_optimize\": true              // default false\n    }\n  200 -> Campaign (now includes window_start, window_end, per_recipient_optimize)\n  400 {\"error\":{\"code\":\"window_required\",\"message\":\"window_start and window_end are required when per_recipient_optimize is true\"}}\n  400 {\"error\":{\"code\":\"window_invalid\",\"message\":\"window_end must be 1h-30d after window_start\"}}\n  403 {\"error\":{\"code\":\"forbidden\",\"message\":\"viewer role can't schedule campaigns\"}}\n\nGET /api/v1/campaigns/{id} — response now includes the three new fields when set.\n\nGET /api/v1/campaigns/{id}/psto-preview (NEW, same PR)\n  query: ?window_start=<iso>&window_end=<iso>\n  200:\n    {\n      \"campaign_id\": \"uuid\",\n      \"audience_size\": 12500,\n      \"with_history\": 9200,\n      \"without_history\": 3300,\n      \"fallback_hour_utc\": 10,\n      \"buckets\": [ { \"hour_utc\": 9, \"count\": 1240 }, ... up to 24 ],\n      \"window_start\": \"...\",\n      \"window_end\": \"...\"\n    }\n    404 {\"error\":\"insufficient_data\",\"message\":\"...\"}  // matches existing send-time-opt fallback\n\n(No change to existing GET /api/v1/send-time-opt or POST /api/v1/campaigns/{id}/schedule-by-best-time.)",
+      "rollout_plan": "Behind per-tenant flag campaigns.psto_window enforced in PATCH (400 feature_disabled if off + toggle=true). Default OFF in prod; ON for staging + 3 design-partner tenants day 1. Desktop hides the toggle when /api/v1/features omits the flag — zero diff for others. Migration 0242 is additive (nullable cols, default-false bool), rollback = flag flip. Telemetry: psto_materialized, psto_window_overrun. Promote 100% after 2 clean weeks.",
+      "acceptance_criteria": [
+        "PATCH /api/v1/campaigns/{id} with per_recipient_optimize=true + window_start + window_end persists all three fields; GET returns them and status='scheduled'.",
+        "validateWindow rejects (end < start + 1h), (window > 30d), and (toggle on with missing window) with 400 codes window_required / window_invalid — covered by a new table test in repo_test.go.",
+        "Scheduler dispatching a PSTO campaign creates campaign_recipients with scheduled_send_at populated; rows for emails with best_send_hour land inside [window_start, window_end] at next hour-of-week occurrence; emails without history get window_start offset by (tenantMean - currentHour) hours, clamped.",
+        "Modified PendingBatch returns only rows whose scheduled_send_at <= now() (or NULL); verified by inserting 3 recipients at +0/+2h/+24h and asserting only +0h returns at t=0, +2h at t=2h.",
+        "5 min after window_end, remaining pending rows have scheduled_send_at force-NULLed by ForceDrainWindow so they drain on the next send-loop tick (unit test + scheduler clock-fast-forward integration test).",
+        "Viewer role cannot toggle Personalized — toggle disabled with the existing canMutate tooltip; PATCH handler still enforces server-side via existing role middleware.",
+        "Audit middleware records 'campaign.scheduled.personalized' with tenant_id, campaign_id, window_start, window_end, actor on every successful PSTO schedule."
+      ],
+      "estimated_lines": 720,
+      "open_questions": [
+        "Quiet hours interaction: tenant_sending_settings.quiet_hours_start/end is honored by the send loop today by skipping batches inside the quiet window. If a recipient's best_send_hour falls inside quiet hours, do we (a) let the existing send-loop skip push them to the next post-quiet hour (free, matches Klaviyo), or (b) reject the schedule up-front? Recommend (a).",
+        "Should PSTO be allowed on a recurring campaign (recurrence_cron != NULL)? Recurrence builds child campaigns at each cron fire; carrying the window forward needs design. Propose disallowing in v1 (refuse PATCH if both per_recipient_optimize=true AND recurrence_cron set).",
+        "Window upper bound — we propose 30d; Klaviyo caps 24h, AC caps 7d. 30d lets 'send during waking hours over 3 weeks' work but stresses the partial index. Get product/ops to ratify before launch.",
+        "Audience snapshot timing: queueCampaignCore resolves the audience at dispatch (window_start). If a subscriber unsubscribes at window_start+1d but their materialized row scheduled_send_at is window_start+2d, we'd send to them. The existing send.go IsSuppressed pre-POST check handles this automatically — confirm it still fires on the PSTO path.",
+        "KPI surfacing: do we want 'X% of recipients delivered at their best hour' as a post-send campaign metric? Out of scope for v1; tag as follow-up so we don't backfill scheduled_send_at later."
+      ]
+    },
+    {
+      "id": "G16",
+      "title": "Frequency cap rules + recipient-local quiet hours at queue-fill",
+      "overview": "Adds two send-time guardrails to /queue: (a) tenant-level frequency_cap_rules (e.g. max 3/24h) evaluated against a new subscriber_send_log, and (b) per-recipient quiet hours that suppress sends when the recipient's local clock (subscribers.timezone, fallback tenant TZ) falls inside the configured window. Both run inside queueCampaignCore after suppression/holdout/A-B, surface skip/defer counters in queueResponse + CampaignReport, and are tenant-opt-in (empty rules + null window = pass-through). Closes parity with Customer.io's global frequency caps and per-recipient quiet hours.",
+      "user_flow": "1. Admin opens Settings → Sending settings, scrolls to a new \"Frequency caps\" card, clicks Add rule, enters \"Max 3 / 24h\", saves. 2. In the existing Quiet hours card, admin toggles \"Use recipient local time\" and confirms 22:00–08:00. 3. Operator queues a campaign. queueCampaignCore runs audience → suppression → holdout → A/B, then evaluates frequency caps (subscriber_send_log per email) and per-recipient quiet hours (subscriber.timezone). 4. Response now carries recipients_queued, recipients_skipped_frequency_cap, recipients_deferred_quiet_hours plus a per-rule breakdown. 5. The slideover Performance card renders two new chips below the stat tiles; clicking the cap chip opens a modal of rule-by-rule skip counts. 6. Audit log records one campaign.frequency_filtered event per send.",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/pages/SendingSettings.tsx",
+          "change": "After the existing Quiet hours section (~line 400), add a new <FrequencyCapsCard> section listing tenant rules. Card supports list view with edit/delete buttons (gated on useCanAdmin), an 'Add rule' button that opens a Modal with two number fields (max_sends, window_hours) + a free-text label, and POST/DELETE wired to frequencyCapsApi. Show empty state 'No frequency caps configured. Sends proceed without per-recipient throttling.' Below the existing Quiet hours fields, add a <ToggleSwitch> 'Apply in recipient's local timezone (uses subscriber.timezone, falls back to workspace TZ).' Toggle binds to row.quiet_hours_per_recipient (new column)."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "Add `frequencyCapsApi` namespace (after sendingSettingsApi ~line 8415) with .list()/.create({max_sends, window_hours, label})/.update(id, …)/.delete(id) → /api/v1/sending/frequency-caps. Add FrequencyCapRule, FrequencyFilterStats types. Extend CampaignReport (line 6209) with `recipients_skipped_frequency_cap?: number`, `recipients_deferred_quiet_hours?: number`, `frequency_skip_breakdown?: Array<{rule_id:string; rule_label:string; skipped:number}>`. Extend queueCampaign response type (search for /queue) with the same three counter fields. Add SendingSettings.quiet_hours_per_recipient: boolean (optional)."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/CampaignDetailSlideover.tsx",
+          "change": "In the Performance section (~line 722), below the existing 4 stat-cards and above the link-meta-row block, add a new <FilterImpactStrip report={report}/> sub-component that renders two pill chips when report.recipients_skipped_frequency_cap > 0 or report.recipients_deferred_quiet_hours > 0. Chips show count + label; clicking the frequency chip opens a Modal listing report.frequency_skip_breakdown rows. Hidden entirely when both counters are zero so old campaigns/empty cases stay quiet."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/pages/SendingSettings.tsx",
+          "change": "In QuietHoursIndicator (~line 630), append a small grey 'per-recipient TZ' badge when row.quiet_hours_per_recipient is true so operators see the mode at a glance from the SendingStatusCard."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/campaigns/handlers_queue.go",
+          "change": "Extend queueResponse (line 81) with RecipientsSkippedFrequencyCap int, RecipientsDeferredQuietHours int, FrequencySkipBreakdown []frequencycaps.SkipRow. Inside queueCampaignCore, after the suppression filter (~line 333) and BEFORE the empty-audience check, call (1) d.FrequencyCaps.Filter(ctx, tenantID, emails) returning (kept, skipped, breakdown) and (2) d.QuietHours.Filter(ctx, tenantID, kept) returning (kept2, deferred). Increment two new prom counters (postwave_recipients_skipped_frequency_cap_total{rule_id} and postwave_recipients_deferred_quiet_hours_total). Thread the counters into queueCampaignOutcome so they appear in both /queue HTTP and QueueScheduledCampaign/QueueApprovedCampaign callers. Persist breakdown into campaign_filter_summaries so /report can read it back."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/types.go",
+          "change": "Add FrequencyCapsFilter and QuietHoursFilter narrow interfaces (same pattern as SuppressionLookup at line 49 of handlers_queue.go). Add fields FrequencyCaps FrequencyCapsFilter and QuietHours QuietHoursFilter to Deps so main.go can inject the concrete impls; nil-safe inside queueCampaignCore (skip the filter step entirely when either dep is nil)."
+        },
+        {
+          "file": "<repo>/apps/api/internal/frequencycaps/frequencycaps.go",
+          "change": "NEW package. Repo wraps pgxpool.Pool, exposes List/Create/Update/Delete CRUD on frequency_cap_rules + Filter(ctx, tenantID, emails). Filter strategy: one tenant-tx query joining subscriber_send_log against each rule's window — SELECT subscriber_email, COUNT(*) FROM subscriber_send_log WHERE tenant_id=$1 AND subscriber_email = ANY($2) AND sent_at > now() - $3::interval GROUP BY subscriber_email HAVING COUNT(*) >= $4 — per rule; subscribers hitting ANY rule are dropped. Returns kept slice + per-rule skipped count. Emits prom counter and a campaign.frequency_filtered event via the existing eventbus. MountRoutes wires handlers under /api/v1/sending/frequency-caps with ScopeAdmin for writes, ScopeReadReports for list."
+        },
+        {
+          "file": "<repo>/apps/api/internal/quiethours/quiethours.go",
+          "change": "NEW package. Filter(ctx, tenantID, emails) loads tenant_sending_settings.quiet_hours_{start,end,tz} + quiet_hours_per_recipient, then loads subscribers.timezone for the email batch in ONE round-trip (SELECT email, timezone FROM subscribers WHERE tenant_id=$1 AND email = ANY($2)). For each row: resolve TZ (subscriber.timezone with fallback to tenant tz to UTC), call exported sendingsettings.IsInQuietWindow, drop the email when in-window. Returns kept + deferred count."
+        },
+        {
+          "file": "<repo>/apps/api/internal/sendingsettings/sendingsettings.go",
+          "change": "Export computeQuietHoursWindow as IsInQuietWindow(start, end, tz string, now time.Time) (bool, time.Time, bool) so the quiethours package can reuse it. Add quiet_hours_per_recipient column read/write in Settings struct + Read/Write SQL (lines ~50, ~77). Validate that quiet_hours_per_recipient=true requires quiet_hours_start/end/tz set (return 400 incomplete_quiet_hours)."
+        },
+        {
+          "file": "<repo>/apps/api/internal/analytics/analytics.go",
+          "change": "Extend CampaignReport struct (line 43) with RecipientsSkippedFrequencyCap int, RecipientsDeferredQuietHours int, FrequencySkipBreakdown []SkipRow. In the CampaignReport repo method (line 146) add one SELECT against campaign_filter_summaries to populate these fields. Backwards compat: missing row → zeros; old campaigns render identically."
+        },
+        {
+          "file": "<repo>/apps/api/internal/sending/sendloop.go",
+          "change": "On each successful send, INSERT into subscriber_send_log(tenant_id, subscriber_email, campaign_id, sent_at). The INSERT runs inside the same tx as the campaign_recipients status='sent' UPDATE so the counter never over- or under-counts."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "Around line 1890 (where sendingsettings is mounted), construct &frequencycaps.Repo{Pool:pool} + &quiethours.Repo{Pool:pool} and inject them into campaignDeps (campaignDeps.FrequencyCaps = …, campaignDeps.QuietHours = …) BEFORE the existing campaigns.MountQueue call at line 3095. Mount frequencycaps.MountRoutes(r) on the same /api/v1/sending sub-router."
+        },
+        {
+          "file": "<repo>/apps/api/internal/middleware/audit.go",
+          "change": "Add audit kind constant KindCampaignFrequencyFiltered. Emit from queueCampaignCore after the filter step with payload {campaign_id, skipped_cap, deferred_qh, breakdown} so the Audit page already shows the event (existing audit_log table carries arbitrary JSON metadata)."
+        }
+      ],
+      "db_changes": [
+        {
+          "migration": "0242_frequency_caps_and_send_log.sql",
+          "sql_sketch": "BEGIN;\n\n-- Per-tenant frequency cap rules. Empty table = no caps applied.\nCREATE TABLE frequency_cap_rules (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,\n  label text NOT NULL DEFAULT '',\n  max_sends int NOT NULL CHECK (max_sends > 0),\n  window_hours int NOT NULL CHECK (window_hours BETWEEN 1 AND 720),\n  active boolean NOT NULL DEFAULT true,\n  created_at timestamptz NOT NULL DEFAULT now(),\n  updated_at timestamptz NOT NULL DEFAULT now()\n);\nCREATE INDEX frequency_cap_rules_tenant_idx ON frequency_cap_rules(tenant_id) WHERE active;\nGRANT SELECT,INSERT,UPDATE,DELETE ON frequency_cap_rules TO postwave_app;\nALTER TABLE frequency_cap_rules ENABLE ROW LEVEL SECURITY;\nALTER TABLE frequency_cap_rules FORCE ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON frequency_cap_rules AS RESTRICTIVE FOR ALL\n  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)\n  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);\n\n-- Per-recipient send counter source-of-truth.\nCREATE TABLE subscriber_send_log (\n  id bigserial PRIMARY KEY,\n  tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,\n  subscriber_email citext NOT NULL,\n  campaign_id uuid NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,\n  sent_at timestamptz NOT NULL DEFAULT now()\n);\nCREATE INDEX subscriber_send_log_lookup_idx ON subscriber_send_log(tenant_id, subscriber_email, sent_at DESC);\nGRANT SELECT,INSERT,DELETE ON subscriber_send_log TO postwave_app;\nGRANT USAGE,SELECT ON SEQUENCE subscriber_send_log_id_seq TO postwave_app;\nALTER TABLE subscriber_send_log ENABLE ROW LEVEL SECURITY;\nALTER TABLE subscriber_send_log FORCE ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON subscriber_send_log AS RESTRICTIVE FOR ALL\n  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)\n  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);\n\n-- Per-campaign filter outcome summary so /report can read counters without re-scanning.\nCREATE TABLE campaign_filter_summaries (\n  campaign_id uuid PRIMARY KEY REFERENCES campaigns(id) ON DELETE CASCADE,\n  tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,\n  skipped_frequency_cap int NOT NULL DEFAULT 0,\n  deferred_quiet_hours int NOT NULL DEFAULT 0,\n  breakdown jsonb NOT NULL DEFAULT '[]'::jsonb,\n  created_at timestamptz NOT NULL DEFAULT now()\n);\nGRANT SELECT,INSERT,UPDATE,DELETE ON campaign_filter_summaries TO postwave_app;\nALTER TABLE campaign_filter_summaries ENABLE ROW LEVEL SECURITY;\nALTER TABLE campaign_filter_summaries FORCE ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON campaign_filter_summaries AS RESTRICTIVE FOR ALL\n  USING (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid)\n  WITH CHECK (tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid);\n\n-- Extend tenant_sending_settings with the per-recipient TZ switch.\nALTER TABLE tenant_sending_settings\n  ADD COLUMN IF NOT EXISTS quiet_hours_per_recipient boolean NOT NULL DEFAULT false;\n\nCOMMIT;"
+        }
+      ],
+      "api_contract": "GET /api/v1/sending/frequency-caps\n  scope: read_reports\n  200: { rules: [{ id, label, max_sends, window_hours, active, created_at }] }\n\nPOST /api/v1/sending/frequency-caps\n  scope: admin\n  body: { label?: string, max_sends: int (1..1000), window_hours: int (1..720), active?: bool }\n  201: { rule: { id, … } }\n  400: { error: { code: \"validation\", message } }\n\nPATCH /api/v1/sending/frequency-caps/{id}\n  scope: admin\n  body: { label?, max_sends?, window_hours?, active? }\n  200: { rule: { … } }\n  404: { error: { code: \"not_found\" } }\n\nDELETE /api/v1/sending/frequency-caps/{id}\n  scope: admin\n  204\n\nPUT /api/v1/sending-settings (existing — extended)\n  body adds: quiet_hours_per_recipient?: bool\n  400 incomplete_quiet_hours if true but start/end/tz missing\n\nPOST /api/v1/campaigns/{id}/queue (existing — response extended)\n  202: {\n    campaign_id, status, recipients_queued: int,\n    recipients_skipped_frequency_cap: int,\n    recipients_deferred_quiet_hours: int,\n    frequency_skip_breakdown: [{ rule_id, rule_label, skipped: int }],\n    approval_id?, approval_status?, sandbox?\n  }\n\nGET /api/v1/campaigns/{id}/report (existing — response extended)\n  200: { …existing fields…,\n    recipients_skipped_frequency_cap: int,\n    recipients_deferred_quiet_hours: int,\n    frequency_skip_breakdown: [{ rule_id, rule_label, skipped }]\n  }",
+      "rollout_plan": "Backwards-compatible: zero rules + quiet_hours_per_recipient=false (default) makes both filters short-circuit. New response fields default to 0; older desktops ignore them. Gate behind env POSTWAVE_FREQUENCY_FILTERS — when off, campaignDeps.FrequencyCaps/QuietHours stay nil and queueCampaignCore skips the steps. subscriber_send_log writes are unconditional so when flipped on later the historical window is already populated. No data backfill.",
+      "acceptance_criteria": [
+        "Creating a rule max_sends=2, window_hours=24 and queueing the same campaign to the same address 3x within 24h: 1st + 2nd are queued, 3rd is reported under recipients_skipped_frequency_cap with the rule's id+label in breakdown.",
+        "Setting quiet_hours_start=22:00, end=08:00, quiet_hours_per_recipient=true and queueing a campaign at 23:00 UTC: subscriber with timezone='America/Los_Angeles' (local 15:00) is queued; subscriber with timezone='Europe/Berlin' (local 00:00) is in recipients_deferred_quiet_hours; subscriber with NULL timezone falls back to tenant TZ.",
+        "RLS isolation: a tenant cannot list/CRUD another tenant's frequency_cap_rules even with a forged tenant_id in URL (test via WithTenant tx).",
+        "GET /api/v1/campaigns/{id}/report returns the same skipped/deferred counts that POST /queue returned, sourced from campaign_filter_summaries.",
+        "Disabling POSTWAVE_FREQUENCY_FILTERS makes /queue behave bit-identically to the pre-feature build: response omits new counter fields, no filter pass runs, no INSERT into campaign_filter_summaries.",
+        "Audit log shows one campaign.frequency_filtered row per /queue call (only when at least one of skipped/deferred > 0) with full breakdown JSON.",
+        "Frontend renders the two new chips in CampaignDetailSlideover only when counts > 0; clicking the cap chip opens a modal listing rules + skipped counts."
+      ],
+      "estimated_lines": 1100,
+      "open_questions": [
+        "V1 SKIP-only or SKIP+DEFER for quiet hours? Customer.io defers (auto-requeues when the window closes); this spec ships skip-only and notes defer-and-requeue as V2 — confirm acceptable for the launch claim.",
+        "Should frequency caps count `pending` recipient rows or only `sent` ones? Counting pending prevents double-queue races but causes same-hour resend bugs if the first campaign fails. Spec assumes count of `sent` rows only — confirm.",
+        "Per-channel caps (email vs SMS vs push) like Customer.io's matrix, or one global cap covering all channels? Spec assumes one cap; the sms package already has its own quiet_hours so the new table only governs email.",
+        "Hard floor for system/transactional mail (e.g. password resets must always go regardless of cap)? Likely yes — gate on campaigns.is_transactional if it exists, otherwise add a bypass_frequency_caps boolean to the campaigns row.",
+        "subscriber_send_log retention: indefinite, 90 days, or driven by retention_policies (migration 0238)? Spec leaves the table un-rotated; for tenants sending 1M+/day the row count explodes — recommend wiring into the existing retention sweep package."
+      ]
+    },
+    {
+      "id": "G11",
+      "title": "Subject Lab: confidence-scored variants with one-click bandit handoff",
+      "overview": "SubjectLineSuggestions streams 3 unscored variants. Subject Lab turns it into a generator+predictor: 5-8 variants conditioned on tenant past-CTR, voice profile, and an explicit axis (length/emoji/question/personalization), each scored with predicted_open_rate + 90% CI from the tenant's campaigns x subscriber_events corpus (Wilson, baseline fallback at n<5). A \"Run top 3 as bandit A/B\" button hands top-3 by lower-CI bound into the existing /campaigns/ab-test flow with delivery_settings.ab_test.bandit=true so G4's dispatcher picks them up. Reuses subject_analyzer.Extract + aicompose.Composer.",
+      "user_flow": "1. Operator opens Create Campaign in Campaigns.tsx and types a subject >=10 chars. 2. SubjectLineSuggestions renders with a new \"Open Subject Lab\" header button. 3. Operator clicks it; a Modal opens with axis chips (length/emoji/question/personalization), a count stepper 5-8, and Generate. 4. Picks emoji+6, clicks Generate; rows stream then settle into a table: rank, subject, axis, predicted open, CI bar, matched n, Use button. 5. Sorted by ci_low desc; rows below tenant baseline are muted. 6. Use replaces draft.subject. 7. Footer \"Run top 3 as bandit A/B\" opens ConfirmModal summarizing arms + bandit policy. 8. On confirm createABTestCampaign fires with bandit=true; toast confirms 3 arms. 9. Viewer role: Generate works, Use and Run are disabled with standard tooltip.",
+      "frontend_changes": [
+        {
+          "file": "<repo>/apps/desktop/src/components/SubjectLab.tsx",
+          "change": "NEW. <SubjectLab open onClose seedSubject voiceProfileId? bodyExcerpt? onPickVariant onRunBandit canMutate>. Renders Modal with axis chip group, count stepper (5-8 default 6), Generate. On Generate calls apiClient.generateSubjectLabVariants then scoreSubjectVariants and stores rows sorted by ci_low desc. Each row: rank, subject text, axis pill, predicted open %, ci_low--ci_high bar, matched_n, baseline badge if below_baseline, Use button (disabled when !canMutate). Footer button 'Run top 3 as bandit A/B' (disabled when rows.length<3 or !canMutate) wraps a ConfirmModal then invokes onRunBandit(top3)."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/components/SubjectLineSuggestions.tsx",
+          "change": "Add a header secondary button 'Open Subject Lab' at line ~169 next to ai-banner-icon. New optional prop onOpenLab?: ()=>void. Hidden when onOpenLab is undefined so existing call sites stay backwards-compatible. No other behavior change."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/pages/Campaigns.tsx",
+          "change": "At line ~713 where SubjectLineSuggestions mounts: import SubjectLab; add useState labOpen; pass onOpenLab={()=>setLabOpen(true)} to SubjectLineSuggestions; render <SubjectLab open={labOpen} onClose={()=>setLabOpen(false)} seedSubject={draft.subject} bodyExcerpt={draft.body.slice(0,800)} onPickVariant={(t)=>setDraft(d=>({...d,subject:t}))} onRunBandit={(top3)=>{ createABTestCampaign({ name:draft.name.trim(), subject_variants: top3.map(v=>v.text), body_html: draft.body, delivery_settings:{ ab_test:{ bandit:true, policy:'thompson_opens', explore_floor:0.1 } } }) ... }} canMutate={canMutate}/>. Fire telemetry subject_lab_opened, subject_lab_bandit_created."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/lib/api-client.ts",
+          "change": "Add ScoredVariant type {text, axis, predicted_open, ci_low, ci_high, matched_n, low_confidence, below_baseline}. Add generateSubjectLabVariants(input:{seed_subject,axis,count,voice_profile_id?,body_excerpt?}) -> POST /api/v1/subject-lab/variants returning {variants:string[], axis, generated_at}. Add scoreSubjectVariants(input:{subjects:string[]}) -> POST /api/v1/subject-lab/score returning {baseline_open, window_days, variants:ScoredVariant[]}. Extend ABTestCreateInput with optional delivery_settings?: Record<string, unknown>."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/styles.css",
+          "change": "Append a .subject-lab namespace: .subject-lab-table, .subject-lab-row, .subject-lab-ci-bar (range bar mapped over 0-60% open-rate scale with ci_low--ci_high inset), .subject-lab-axis-chip group, .subject-lab-baseline-badge (muted), .subject-lab-below-baseline tint. Reuse existing token vars."
+        },
+        {
+          "file": "<repo>/apps/desktop/src/__tests__/components/subject-lab.test.tsx",
+          "change": "NEW. Cases: (a) Generate disabled when seedSubject<10 chars; (b) rows sorted by ci_low desc on render; (c) below_baseline rows render muted; (d) Use disabled when canMutate=false; (e) Run-top-3 calls onRunBandit with the first 3 rows by ci_low desc."
+        }
+      ],
+      "backend_changes": [
+        {
+          "file": "<repo>/apps/api/internal/subject_lab/subject_lab.go",
+          "change": "NEW package. Deps{Pool *db.Pool; Composer *aicompose.Composer}. MountRoutes registers POST /api/v1/subject-lab/variants (ScopeWriteCampaigns) and POST /api/v1/subject-lab/score (ScopeReadReports). variants builds axis-specific prompt suffix (e.g. axis=emoji -> 'Use exactly one leading emoji per variant; vary intensity'), validates count in [5,8], delegates to d.Composer.ComposeVariants to reuse voice client + 503/502 mapping. score handler: tenant-scoped 180d query against campaigns + subscriber_events (mirror subject_analyzer.Buckets SQL), per-campaign open rates, attrs via subject_analyzer.Extract. Per candidate find matched samples on (length_bucket, has_question, all_caps, has_emoji, has_personalize); predicted_open=avg(matched.open); ci via Wilson narrowed to 90%; fallback to tenant baseline +/- 15% with low_confidence=true when n_matched<5. All db work through db.WithTenant; tenant via middleware.TenantFromContext."
+        },
+        {
+          "file": "<repo>/apps/api/internal/subject_lab/subject_lab_test.go",
+          "change": "NEW. Table tests for wilson() at known n+p; assert ci_high<=1 and ci_low>=0; assert fallback fires at n_matched<5 and below_baseline=true when ci_high<baseline; assert axis prompt suffix lookup table covers all four axes."
+        },
+        {
+          "file": "<repo>/apps/api/internal/campaigns/abtest.go",
+          "change": "Extend ABTestCreateInput intake to persist optional delivery_settings.ab_test.bandit (bool), .policy (string), .explore_floor (float64) onto the parent campaign's delivery_settings jsonb. No new column. Update godoc comment block at top to list bandit fields in the documented shape so dispatch + create stay in sync."
+        },
+        {
+          "file": "<repo>/apps/api/main.go",
+          "change": "At ~line 2619 (next to subject_analyzer.MountRoutes): add import for subject_lab, then subject_lab.MountRoutes(r, &subject_lab.Deps{Pool: pool, Composer: aiComposer}). When aiComposer is nil, /variants returns 503 (matching aicompose), /score continues to work."
+        },
+        {
+          "file": "<repo>/apps/api/internal/middleware/audit.go",
+          "change": "Add two event kind constants: subject_lab.variants_generated and subject_lab.bandit_created. Both handlers in subject_lab and the extended abtest path call middleware.Audit(...) with tenant_id, user_id, axis, variant_count (and parent_campaign_id for bandit) so the existing audit pipeline picks them up."
+        },
+        {
+          "file": "<repo>/packages/openapi/route-contracts.json",
+          "change": "Add two patterns: ^POST /api/v1/subject-lab/variants$ (scope write_campaigns) and ^POST /api/v1/subject-lab/score$ (scope read_reports). Required for pnpm audit:mailchimp parity."
+        }
+      ],
+      "db_changes": [],
+      "api_contract": "POST /api/v1/subject-lab/variants\n  Scope: write_campaigns\n  Body: { \"seed_subject\": \"string>=10\", \"axis\": \"length|emoji|question|personalization\", \"count\": 5..8 default 6, \"voice_profile_id\"?: uuid, \"body_excerpt\"?: \"string<=2000\" }\n  200: { \"variants\": [\"...\"], \"axis\": \"string\", \"generated_at\": \"RFC3339\" }\n  Errors: 400 bad_request, 401 no_tenant, 503 voice_unavailable, 502 compose_failed\n\nPOST /api/v1/subject-lab/score\n  Scope: read_reports\n  Body: { \"subjects\": [\"...\"] }   // 1..16 entries, each <=200 chars\n  200: { \"baseline_open\": 0.294, \"window_days\": 180, \"variants\": [ { \"text\", \"axis\", \"attributes\": Attrs, \"predicted_open\": 0.321, \"ci_low\": 0.274, \"ci_high\": 0.368, \"matched_n\": 42, \"low_confidence\": false, \"below_baseline\": false } ] }\n  Errors: 400 bad_request, 401 no_tenant\n\nExisting POST /api/v1/campaigns/ab-test gains optional fields inside delivery_settings:\n  delivery_settings.ab_test = { \"bandit\": true, \"policy\": \"thompson_opens\", \"explore_floor\": 0.1 }\n  Backwards-compatible: omitted keys preserve current uniform-split semantics.",
+      "rollout_plan": "No schema migration. Inline SubjectLineSuggestions unchanged; new Lab only appears when the new header button is clicked. Gate behind tenant setting features.subject_lab (default true on new tenants, opt-in for existing tenants for first 2 weeks) for dark-launch + rollback. Bandit field on /campaigns/ab-test is additive — G4 dispatcher tolerates absence. Telemetry: subject_lab_opened, subject_lab_generated, subject_lab_scored, subject_lab_bandit_created with axis + count props.",
+      "acceptance_criteria": [
+        "POST /api/v1/subject-lab/variants returns exactly `count` distinct strings for a valid seed; returns 400 when seed_subject<10 chars or axis is unknown; returns 503 with code voice_unavailable when GEMINI_API_KEY is unset upstream.",
+        "POST /api/v1/subject-lab/score returns baseline_open computed from the calling tenant's last 180d campaigns x subscriber_events; tenants with zero sent campaigns get baseline_open=0 and every variant flagged low_confidence=true.",
+        "For each scored variant where matched_n>=5, ci_high - ci_low is < 0.25 (Wilson-90% sanity bound); for matched_n<5 the row carries low_confidence=true and falls back to baseline +/- 15%.",
+        "Subject Lab modal opens from the SubjectLineSuggestions header button, sorts rows by ci_low descending, and Use on a row replaces draft.subject in the Create Campaign form.",
+        "Clicking Run-top-3-as-bandit creates one parent + 3 child campaigns via /campaigns/ab-test with delivery_settings.ab_test.bandit=true persisted on the parent; toast confirms creation; Campaigns list refreshes.",
+        "Viewer-role users (canMutate=false) can open the Lab and Generate, but Use and Run-top-3 are disabled with the standard 'Viewer role can’t...' tooltip.",
+        "Audit log records subject_lab.variants_generated and subject_lab.bandit_created events with tenant_id, user_id, axis, variant_count, and parent_campaign_id (for bandit)."
+      ],
+      "estimated_lines": 950,
+      "open_questions": [
+        "CI policy: Wilson 95% narrowed to 90% by halving z-half-width is approximate. Switch to direct Wilson 90% (z=1.645) or beta-binomial credible interval at small n? Credible interval is more honest but adds ~40 lines.",
+        "Matched-bucket tuple: should scoring match on all of (length_bucket, has_question, all_caps, has_emoji, has_personalize), or relax progressively when n drops below 5 to keep the predictor responsive for small tenants?",
+        "Bandit policy enum: spec hardcodes policy='thompson_opens' and explore_floor=0.1. Confirm G4's dispatcher accepts these literals before the desktop wires them.",
+        "Voice profile binding: /variants accepts voice_profile_id but the inline panel currently passes null. Should the Lab pre-fetch the tenant-active profile via apiClient.getVoiceProfile on open, or leave it as a future enhancement?",
+        "Feature flag default: gate behind features.subject_lab opt-in for first 2 weeks on existing tenants, or ship on for everyone day-one? Recommend opt-in to size LLM cost impact on the voice service."
+      ]
+    }
+  ]
+}

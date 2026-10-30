@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <seat-added-to-team.v1@example.com>
+Subject: A seat was added
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-seat-v1"
+
+--pw-seat-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Priya joined your team. https://app.example.com/team
+--pw-seat-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>A seat was added</h1><p>Priya joined your workspace as an editor.</p><p><a href="https://app.example.com/team">Manage your team</a></p></body></html>
+--pw-seat-v1--

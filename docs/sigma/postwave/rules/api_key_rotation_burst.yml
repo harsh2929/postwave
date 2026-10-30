@@ -1,0 +1,33 @@
+title: API Key Rotation Burst
+id: 6e9b2a01-7f6c-4910-9c1f-c91e0d3f4a02
+status: stable
+description: |
+  More than 5 API key rotations by the same actor within a 5-minute window.
+  Legitimate rotation is rare (quarterly cadence is typical); a burst
+  suggests an automated cleanup gone wrong OR an attacker creating /
+  rotating keys to maintain access while covering tracks.
+author: Moosewave Security
+date: 2026/05/01
+references:
+  - https://schema.ocsf.io/1.8.0/classes/account_change
+  - https://attack.mitre.org/techniques/T1098/
+  - docs/audit/ocsf-mapping.md
+tags:
+  - attack.persistence
+  - attack.t1098
+  - postwave.audit
+logsource:
+  product: postwave
+  service: audit_log
+  category: iam
+detection:
+  selection:
+    class_uid: 3001         # Account Change
+    postwave_action|startswith: "api_key."
+    activity_id: 7          # Change
+  timeframe: 5m
+  condition: selection | count() by actor.user.uid > 5
+falsepositives:
+  - "Scheduled credential-hygiene job — pin to a service account (user.type_id=4) and silence by actor."
+  - "Compromise-response workflow rotating all keys after a breach; tag the incident ticket and silence per-incident."
+level: medium

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <approval-pending-review.v1@example.com>
+Subject: Change pending review
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-approve-v1"
+
+--pw-approve-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Review and approve the pending change: https://app.example.com/changes/22
+--pw-approve-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Change pending review</h1><p>A change to your sending domain is waiting. Review and approve it, or reject it and the previous settings remain in place.</p><p><a href="https://app.example.com/changes/22">Review the change</a></p></body></html>
+--pw-approve-v1--

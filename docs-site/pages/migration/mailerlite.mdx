@@ -1,0 +1,60 @@
+---
+title: Migrate from MailerLite
+---
+
+import { Callout } from 'nextra/components';
+
+# Migrating from MailerLite
+
+MailerLite's v2 API is straightforward: API-key auth, cursor pagination, well-documented automations as "workflows".
+
+## Step 1 — Get an API key
+
+In MailerLite, go to **Integrations → MailerLite API → Generate new token**. Use the **classic** API token (not the OAuth app — Moosewave uses the classic key flow for migration).
+
+<Callout type="info">
+</Callout>
+
+## What we pull
+
+| MailerLite                | Moosewave                                                  |
+| ------------------------- | --------------------------------------------------------- |
+| Subscribers               | Subscribers                                               |
+| Subscriber status         | Mapped to canonical `status`                              |
+| Custom fields             | `attributes.*`                                            |
+| Groups                    | Tags (groups are MailerLite's tag-equivalent)             |
+| Segments                  | Moosewave segments (rule translation)                      |
+| Workflows (automations)   | Moosewave automations (node-by-node)                       |
+| Sent campaigns            | Campaign archive                                          |
+| Forms                     | Imported as inactive Moosewave forms                       |
+
+## Pagination notes
+
+MailerLite v2 uses cursor pagination at 100 records/page. Large accounts (&gt;200k subscribers) take 10–25 minutes to fully discover. Moosewave streams progress in real time so you can leave the tab open or close it and come back.
+
+## Workflow translation
+
+MailerLite workflow steps map as follows:
+
+| MailerLite step      | Moosewave node                                |
+| -------------------- | -------------------------------------------- |
+| **Email**            | `send_email`                                 |
+| **Delay**            | `wait`                                       |
+| **Condition**        | `branch`                                     |
+| **Action: tag/group** | `action` (`add_tag`, `remove_tag`, `move_to_list`) |
+| **Action: webhook**  | `action` (`webhook_dispatch`); secrets re-entered |
+| **A/B split**        | `branch` with random assignment              |
+
+<Callout type="warning">
+MailerLite's "smart sending" (recipient-level send-time optimization) is not preserved. Moosewave's send-time optimization is opt-in per campaign and not yet feature-equivalent.
+</Callout>
+
+## Troubleshooting
+
+- **401 invalid token**: classic API tokens are tied to the user that generated them; if that user is removed, regenerate.
+- **Workflow with "End" step in middle of branch**: end nodes are normalized to terminal `null` next-edges in Moosewave's AST.
+
+## Next steps
+
+- [Verification report](/migration/verification-report)
+- [Automation overview](/automation)

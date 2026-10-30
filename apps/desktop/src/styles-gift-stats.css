@@ -1,0 +1,42 @@
+/* ----------------------------------------------------------------------
+ * Gift Subscriptions — headline stat tiles + tone-coded cancel button
+ * --------------------------------------------------------------------
+ */
+
+.gift-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.gift-stat-tile {
+  padding: 10px 14px;
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  background: var(--pw-bg-elev);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gift-stat-tile.tone-success {
+  border-color: color-mix(in srgb, var(--pw-success) 30%, var(--pw-border));
+}
+.gift-stat-tile.tone-warning {
+  border-color: color-mix(in srgb, var(--pw-warning) 30%, var(--pw-border));
+}
+.gift-stat-tile.tone-neutral {
+  border-color: var(--pw-border);
+}
+.gift-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pw-fg-muted);
+}
+.gift-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--pw-fg);
+}

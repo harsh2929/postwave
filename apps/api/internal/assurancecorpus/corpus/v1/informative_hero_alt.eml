@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <informative-hero-alt.v1@example.com>
+Subject: New collection
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-hero-v1"
+
+--pw-hero-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The autumn collection is live: https://shop.example.com/autumn
+--pw-hero-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>New collection</h1><img src="https://cdn.example.com/hero.png" alt="Model wearing the autumn wool coat" width="600" height="300"><p>The autumn collection is live.</p><p><a href="https://shop.example.com/autumn">Shop the collection</a></p></body></html>
+--pw-hero-v1--

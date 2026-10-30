@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <meeting-invite-accept-decline.v1@example.com>
+Subject: Invitation: design review
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-invite-v1"
+
+--pw-invite-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Design review, Thursday 15:00. Accept or decline: https://cal.example.com/i/12
+--pw-invite-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Invitation: design review</h1><p>Thursday at 15:00, one hour.</p><p>Accept or decline below.</p><p><a href="https://cal.example.com/i/12">Respond to the invitation</a></p></body></html>
+--pw-invite-v1--

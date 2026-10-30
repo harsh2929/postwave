@@ -1,0 +1,69 @@
+---
+title: Submissions
+---
+
+# Submissions
+
+Every form submission is stored — even if the submitter never confirms — under **Forms → \<form\> → Submissions**.
+
+## Submission record
+
+Each submission has:
+
+- **Submitter email**.
+- **Field values** — every form field, with values.
+- **Status** — `pending` (awaiting double-opt-in confirm), `confirmed`, `rejected_spam`, `rejected_validation`.
+- **Submitted at** (timestamp).
+- **IP, user agent, referrer** (for spam-investigation).
+- **UTM parameters** (if captured via hidden fields).
+
+## Status transitions
+
+```
+[ submit attempt ]
+        |
+        v
+   honeypot fail / spam? -- yes --> [ rejected_spam ]
+        |
+       no
+        v
+   validation fail?      -- yes --> [ rejected_validation ]
+        |
+       no
+        v
+   double opt-in?        -- no  --> [ confirmed ]  (single opt-in mode)
+        |
+       yes
+        v
+     [ pending ] -- click confirm link --> [ confirmed ]
+                 -- 14 days no click --> ( token expires; record stays )
+                 -- 30 days no click --> ( purged )
+```
+
+## Filtering and search
+
+The submissions table supports:
+
+- Filter by status.
+- Filter by date range.
+- Search by email substring.
+- Sort by submitted-at.
+
+## CSV export
+
+**Export → CSV** downloads the current view. Columns include all field values, status, timestamps, and metadata. Useful for one-off batch operations or syncing to an external system.
+
+## Resending the confirmation
+
+For a `pending` submission whose token hasn't expired, click **Resend confirmation** in the row's action menu. The same token is re-emailed (no new token generated).
+
+For expired tokens, you can manually flip status to `confirmed` (you're vouching for the email) or delete the record.
+
+## Webhooks
+
+Every submission fires `form.submitted`. Confirmations fire `form.confirmed`. Use these to integrate with downstream systems (CRM, slack alerts). See [Webhook events](/webhooks/events).
+
+## Next steps
+
+- [Forms API](/api-reference/forms) — programmatic access to submissions.
+- [Webhooks](/webhooks) — react to submissions in real time.

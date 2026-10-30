@@ -1,0 +1,24 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <valid-multipart.v1@example.com>
+Subject: Synthetic event invitation
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-valid-v1"
+
+--pw-valid-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Synthetic launch briefing
+Join us on 2026-08-15 at 13:00 UTC.
+Register: https://events.example.com/register
+--pw-valid-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><h1>Synthetic launch briefing</h1>=
+<p>Join us on 2026-08-15 at 13:00 UTC.</p>=
+<p><a href=3D"https://events.example.com/register">Register</a></p>=
+</body></html>
+--pw-valid-v1--

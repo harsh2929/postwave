@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <em-dashes-and-quotes.v1@example.com>
+Subject: A note from the team
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-punct-v1"
+
+--pw-punct-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We have been quiet - here is why. Read: https://blog.example.com/note
+--pw-punct-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>A note from the team</h1><p>We&rsquo;ve been quiet&mdash;here&rsquo;s why&hellip;</p><p>&ldquo;Ship less, finish more,&rdquo; as one of us put it.</p><p><a href="https://blog.example.com/note">Read the note</a></p></body></html>
+--pw-punct-v1--

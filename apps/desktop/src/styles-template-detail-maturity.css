@@ -1,0 +1,133 @@
+/* Template detail owns a wider legacy slideover than most list details. Keep
+   the override locally scoped so it cannot change other drawer geometry. */
+.template-detail-layer .template-detail-panel.slideover:not(.slideover-v2) {
+  box-sizing: border-box;
+  inline-size: min(40rem, 100vw);
+  max-inline-size: 100vw;
+  /* Reserve a dedicated top action row. The legacy absolute close button
+     otherwise overlaps the heading's favorite target at narrow widths. */
+  padding-block-start: calc(var(--pw-titlebar-h) + 76px);
+  overflow-x: hidden;
+}
+
+.template-detail-panel .template-detail-heading,
+.template-detail-panel .template-detail-heading .input {
+  min-inline-size: 0;
+}
+
+.template-detail-panel .slideover-close,
+.template-detail-panel .tpl-fav {
+  inline-size: 44px;
+  min-inline-size: 44px;
+  block-size: 44px;
+  min-block-size: 44px;
+  border-radius: 8px;
+}
+
+.template-detail-panel .tpl-fav svg {
+  inline-size: 20px;
+  block-size: 20px;
+}
+
+/* The semantic hue remains on the dot and border; text uses the foreground
+   token so light goal colors retain WCAG contrast on the elevated drawer. */
+.template-detail-panel .goal-pill {
+  color: var(--pw-fg);
+  background: color-mix(
+    in srgb,
+    var(--gp, var(--pw-fg-muted)) 16%,
+    var(--pw-bg-elev)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--gp, var(--pw-border)) 48%,
+    var(--pw-border)
+  );
+}
+
+.template-detail-slug {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+.template-detail-load-boundary {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-block-size: 16rem;
+  padding-block: 48px 24px;
+}
+
+.template-detail-load-title {
+  margin: 0;
+  color: var(--pw-fg);
+  font-size: 18px;
+}
+
+.template-detail-load-boundary .notice {
+  display: grid;
+  gap: 4px;
+}
+
+.template-detail-truth {
+  padding: 9px 11px;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--pw-success) 8%, var(--pw-bg-elev));
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.template-detail-truth.is-dirty {
+  border-color: color-mix(in srgb, var(--pw-warning) 42%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-warning) 9%, var(--pw-bg-elev));
+  color: var(--pw-fg);
+}
+
+.template-detail-danger-zone {
+  margin-block-start: auto;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--pw-border-soft);
+}
+
+.template-detail-panel .tpl-tab {
+  min-block-size: 44px;
+}
+
+@media (max-width: 480px) {
+  .template-detail-layer .template-detail-panel.slideover:not(.slideover-v2) {
+    inline-size: 100vw;
+    padding-inline: 16px;
+  }
+
+  .template-detail-panel .tpl-vars-row {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .template-detail-panel .tpl-vars-row > .input {
+    inline-size: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .template-detail-panel .goal-pill,
+  .template-detail-truth {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    forced-color-adjust: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .template-detail-panel,
+  .template-detail-panel .tpl-fav,
+  .template-detail-panel .tpl-tab {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,152 @@
+---
+title: Campaign Reports API
+---
+
+import { Callout } from 'nextra/components';
+
+# Campaign Reports API
+
+Per-campaign engagement reports, breakdowns (links, devices, geography, revenue, bounces), hourly time-series, and the custom + scheduled reporting builder.
+
+<Callout type="info">
+All read routes on this page require the `read:reports` scope. The heavier breakdown queries run behind a per-key concurrency limiter, so paginate rather than hammering them in a tight loop.
+</Callout>
+
+## Per-campaign report
+
+`GET /api/v1/campaigns/{id}/report` returns the headline engagement rollup for one campaign.
+
+```bash
+curl https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../report \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+```json
+{
+  "campaign_id": "cmp_01HK...",
+  "sent": 4821,
+  "delivered": 4760,
+  "opens": 3102,
+  "unique_opens": 2410,
+  "clicks": 880,
+  "unique_clicks": 612,
+  "bounces": 61,
+  "complaints": 3,
+  "unsubscribes": 14,
+  "open_rate": 0.506,
+  "click_rate": 0.128,
+  "click_to_open_rate": 0.254,
+  "bounce_rate": 0.0126,
+  "unsub_rate": 0.0029,
+  "top_links": [{ "url": "https://...", "clicks": 220 }],
+
+  "human_opens": 2180,
+  "human_unique_opens": 1740,
+  "human_clicks": 790,
+  "human_open_rate": 0.365,
+  "human_top_links": [{ "url": "https://...", "clicks": 200 }],
+  "bot_signatures_applied": ["apple-mpp", "gmail-image-proxy"]
+}
+```
+
+The `human_*` fields strip machine opens/clicks (Apple Mail Privacy Protection, Gmail image proxy, link scanners) using the same classifier as the dashboard. They are zero until the human-engagement feature flag is enabled, so the wire shape stays stable across the flip.
+
+## Breakdowns
+
+Each breakdown is its own route under `/api/v1/campaigns/{id}`:
+
+| Method | Path                                       | Returns                                              |
+| ------ | ------------------------------------------ | ---------------------------------------------------- |
+| GET    | `/api/v1/campaigns/{id}/link-report`       | Per-link click counts.                               |
+| GET    | `/api/v1/campaigns/{id}/devices`           | Opens/clicks by device + email client.               |
+| GET    | `/api/v1/campaigns/{id}/geography`         | Engagement by country / region.                      |
+| GET    | `/api/v1/campaigns/{id}/revenue`           | Attributed revenue (when commerce events are wired). |
+| GET    | `/api/v1/campaigns/{id}/bounces`           | Bounce list with classification.                     |
+| GET    | `/api/v1/campaigns/{id}/engagement`        | Engagement panel rollup.                             |
+| GET    | `/api/v1/campaigns/{id}/timeseries`        | Hourly open/click time-series.                       |
+| GET    | `/api/v1/campaigns/{id}/anomalies`         | Per-campaign hourly anomaly detection.               |
+| GET    | `/api/v1/campaigns/{id}/report.csv`        | CSV export (paginate with `?limit=` & `?offset=`).   |
+
+```bash
+curl https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../timeseries \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+### Live metrics over SSE
+
+For a dashboard that updates as the send drains, `GET /api/v1/campaigns/{id}/events` streams the report object over Server-Sent Events. Requires `read:reports`.
+
+## Cross-campaign analytics
+
+| Method | Path                                            | Returns                                |
+| ------ | ----------------------------------------------- | -------------------------------------- |
+| GET    | `/api/v1/analytics/campaigns/compare?ids=a,b,c` | Side-by-side comparison of campaigns.  |
+| GET    | `/api/v1/analytics/cohorts`                     | Subscriber cohort engagement.          |
+| GET    | `/api/v1/analytics/subscribers/funnel`          | Subscriber lifecycle funnel.           |
+| GET    | `/api/v1/analytics/subscribers/timeseries`      | Subscriber growth/loss over time.      |
+| GET    | `/api/v1/analytics/timeseries`                  | Grouped metric time-series.            |
+| GET    | `/api/v1/analytics/fatigue`                     | Send-fatigue scoring.                  |
+| GET    | `/api/v1/analytics/template-leaderboard`        | Best-performing templates.            |
+
+See the [Analytics & Reporting](/analytics) section for how these power the dashboard and digests.
+
+## Custom reports
+
+The reporting builder lets you define, preview, and persist a report against a registry of metrics + dimensions. Definitions are tenant-scoped and produce runs you can poll and export.
+
+| Method | Path                                            | Scope             | Purpose                                  |
+| ------ | ----------------------------------------------- | ----------------- | ---------------------------------------- |
+| GET    | `/api/v1/reporting/metric-registry`             | `read:reports`    | Available metrics + dimensions.          |
+| GET    | `/api/v1/reporting/blocked-products`            | `read:reports`    | Metrics gated by your plan.              |
+| POST   | `/api/v1/reporting/preview`                     | `read:reports`    | Validate + run a report without saving.  |
+| GET    | `/api/v1/reporting/definitions`                 | `read:reports`    | List saved definitions (paginated).      |
+| POST   | `/api/v1/reporting/definitions`                 | `write:reports`   | Create / update a definition.            |
+| GET    | `/api/v1/reporting/definitions/{id}`            | `read:reports`    | Get one definition.                      |
+| POST   | `/api/v1/reporting/definitions/{id}/runs`       | `write:reports`   | Run a saved definition.                  |
+| GET    | `/api/v1/reporting/runs`                        | `read:reports`    | List runs.                               |
+| GET    | `/api/v1/reporting/runs/{id}`                    | `read:reports`    | Get one run.                             |
+| GET    | `/api/v1/reporting/runs/{id}/export.csv`        | `read:reports`    | Export a run as CSV.                     |
+
+### Preview a report
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/reporting/preview \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metrics": ["unique_opens", "unique_clicks"],
+    "dimensions": ["campaign"],
+    "range": { "from": "2026-04-01", "to": "2026-04-30" }
+  }'
+```
+
+An invalid request returns `422 invalid_report`; an otherwise valid-but-unsatisfiable request returns `422` with `"valid": false` and the offending fields, so the builder UI can highlight them inline. The metric registry response carries a `schema_version` (e.g. `klv12.reporting.v1`) so clients can detect registry changes.
+
+## Scheduled reports
+
+Persist a report definition on a cron and have Moosewave email the result to a recipient list. All routes require the `admin` scope.
+
+| Method | Path                                          | Purpose                          |
+| ------ | --------------------------------------------- | -------------------------------- |
+| GET    | `/api/v1/scheduled-reports`                   | List schedules.                  |
+| POST   | `/api/v1/scheduled-reports`                   | Create a schedule.               |
+| PATCH  | `/api/v1/scheduled-reports/{id}`              | Update a schedule.               |
+| DELETE | `/api/v1/scheduled-reports/{id}`              | Delete a schedule.               |
+| POST   | `/api/v1/scheduled-reports/{id}/send-now`     | Run + deliver immediately.       |
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/scheduled-reports \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{
+    "definition_id": "rpt_01HK...",
+    "cron": "0 8 * * 1",
+    "recipients": ["growth@yourdomain.com"]
+  }'
+```
+
+## See also
+
+- [Campaigns API](/api-reference/campaigns) — create, send, schedule, and control campaigns.
+- [Analytics & Reporting](/analytics) — the reporting model end to end.
+- [SMS API](/sms) — the SMS report route is
+  `sms_evidence_read_release_held`; its schema is not a usable live report.

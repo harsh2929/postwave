@@ -1,0 +1,624 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+//
+// GENERATOR SOURCE — this file is NOT part of apps/api.
+//
+// `scripts/regen-semantic-projection-fixtures.sh` copies it into
+// apps/api/internal/semanticemail/ as a `_test.go` file, runs it once, and
+// deletes it again. It lives here, with a `.txt` extension, so apps/web owns
+// the definition of the corpus while the numbers it produces come from the
+// real Go compiler rather than from a second implementation of the rules.
+//
+// Everything it emits is the authority for
+// apps/web/src/__tests__/fixtures/semantic-email-projection.json: normalized
+// documents, authoring diagnostics, compile diagnostics, HTML and plain text.
+// If the Go renderer or validator changes, re-running this script changes the
+// fixture, and apps/web's parity tests fail until the TypeScript mirror is
+// brought back in line. That is the whole point: a preview that silently
+// drifts from what the API will actually send is worse than no preview.
+
+package semanticemail
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"testing"
+)
+
+type fixtureCase struct {
+	Name               string            `json:"name"`
+	Note               string            `json:"note"`
+	Locale             string            `json:"locale"`
+	Slots              map[string]string `json:"slots"`
+	Input              json.RawMessage   `json:"input"`
+	Normalized         json.RawMessage   `json:"normalized"`
+	ValidateDiagnostic Diagnostics       `json:"validate_diagnostics"`
+	CompileDiagnostic  Diagnostics       `json:"compile_diagnostics"`
+	CompileFailed      bool              `json:"compile_failed"`
+	HTML               string            `json:"html"`
+	Text               string            `json:"text"`
+}
+
+type fixtureFile struct {
+	Generator       string        `json:"generator"`
+	CompilerVersion string        `json:"compiler_version"`
+	HTMLVersion     string        `json:"html_version"`
+	TextVersion     string        `json:"text_version"`
+	Cases           []fixtureCase `json:"cases"`
+}
+
+// TestExportWebProjectionFixtures is a generator, not an assertion. It only
+// runs when POSTWAVE_WEB_FIXTURE_OUT is set.
+func TestExportWebProjectionFixtures(t *testing.T) {
+	out := os.Getenv("POSTWAVE_WEB_FIXTURE_OUT")
+	if out == "" {
+		t.Skip("POSTWAVE_WEB_FIXTURE_OUT is unset")
+	}
+	file := fixtureFile{
+		Generator:       "apps/web/scripts/semantic-projection-fixtures.go.txt",
+		CompilerVersion: CompilerVersion,
+		HTMLVersion:     HTMLRendererVersion,
+		TextVersion:     TextRendererVersion,
+	}
+	for _, corpus := range fixtureCorpus() {
+		var input DocumentV2
+		if err := json.Unmarshal(corpus.Input, &input); err != nil {
+			t.Fatalf("%s: corpus JSON is not a semantic document: %v", corpus.Name, err)
+		}
+		normalized, diagnostics := NormalizeAndValidateV2(input)
+		normalizedJSON, err := json.Marshal(normalized)
+		if err != nil {
+			t.Fatalf("%s: normalized document does not marshal: %v", corpus.Name, err)
+		}
+		corpus.Normalized = normalizedJSON
+		corpus.ValidateDiagnostic = nonNilDiagnostics(diagnostics)
+
+		slots := map[SlotID]string{}
+		for key, value := range corpus.Slots {
+			slots[SlotID(key)] = value
+		}
+		// The zero StructuredPolicy is deliberate. A draft editor holds no
+		// sender-eligibility evidence, so provider markup is never emitted and
+		// the preview shows exactly the projection the reader would get.
+		result, compileDiagnostics := CompileV2(input, CompileOptions{Locale: corpus.Locale, Slots: slots})
+		corpus.CompileDiagnostic = nonNilDiagnostics(compileDiagnostics)
+		corpus.CompileFailed = compileDiagnostics.HasErrors()
+		corpus.HTML = result.HTML
+		corpus.Text = result.Text
+		file.Cases = append(file.Cases, corpus)
+	}
+	encoded, err := json.MarshalIndent(file, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal fixture file: %v", err)
+	}
+	encoded = append(encoded, '\n')
+	if err := os.WriteFile(out, encoded, 0o644); err != nil {
+		t.Fatalf("write fixture file: %v", err)
+	}
+	t.Logf("wrote %d cases to %s", len(file.Cases), out)
+}
+
+func nonNilDiagnostics(in Diagnostics) Diagnostics {
+	if in == nil {
+		return Diagnostics{}
+	}
+	return in
+}
+
+func fixtureCorpus() []fixtureCase {
+	cases := []fixtureCase{
+		{
+			Name: "every_node_type",
+			Note: "One valid document exercising every member of the closed node union.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"title","type":"heading","role":"heading","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"heading":{"level":1,"text":{"runs":[{"kind":"text","text":"Hello & welcome"}]}}}},
+{"id":"body","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"Meet "},{"kind":"strong","text":"Asha"},{"kind":"line_break"},{"kind":"link","text":"Agenda","url":"https://example.test/agenda?x=1&y=2","accessible_label":"Open the agenda"},{"kind":"emphasis","text":" today"}]}}}},
+{"id":"points","type":"list","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"list":{"ordered":true,"items":[{"runs":[{"kind":"text","text":"First <thing>"}]},{"runs":[{"kind":"text","text":"Second"}]}]}}},
+{"id":"faq","type":"answer","role":"answer","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"answer":{"question":{"runs":[{"kind":"text","text":"When?"}]},"answer":{"runs":[{"kind":"text","text":"Thursday"}]}}}},
+{"id":"cta","type":"action","role":"primary_action","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act_go","label":"Join now","canonical_url":"https://example.test/join","accessible_description":"Join the launch event"}}},
+{"id":"alt_cta","type":"action","role":"secondary_action","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act_more","label":"Read more","canonical_url":"https://example.test/more"}}},
+{"id":"hero","type":"image","role":"informative_image","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"image":{"url":"https://cdn.example.test/hero.png","alt":"Studio stage","width":1200,"height":600}}},
+{"id":"ornament","type":"image","role":"decorative_image","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"image":{"url":"https://cdn.example.test/rule.png","alt":""}}},
+{"id":"starts","type":"datetime","role":"event_datetime","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"datetime":{"display_value":"14 Aug 2026, 4:00 pm IST","rfc3339":"2026-08-14T16:00:00+05:30","timezone":"Asia/Kolkata"}}},
+{"id":"price","type":"money","role":"price","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"money":{"display_value":"₹1,499","amount":"1499","currency":"INR"}}},
+{"id":"cutoff","type":"deadline","role":"deadline","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"deadline":{"display_value":"13 Aug 2026, 11:59 pm IST","rfc3339":"2026-08-13T23:59:00+05:30","timezone":"Asia/Kolkata"}}},
+{"id":"deal","type":"offer","role":"offer","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"offer":{"description":{"runs":[{"kind":"text","text":"Save ₹200"}]},"code":"LIVE200","terms":{"runs":[{"kind":"text","text":"One per customer"}]},
+  "availability_starts":{"display_value":"9 Aug","rfc3339":"2026-08-09T09:00:00+05:30","timezone":"Asia/Kolkata"},
+  "availability_ends":{"display_value":"13 Aug","rfc3339":"2026-08-13T23:59:00+05:30","timezone":"Asia/Kolkata"}}}},
+{"id":"venue","type":"location","role":"location","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"location":{"name":"Moosewave Studio","address":{"street_address":"12 Residency Road","address_locality":"Bengaluru","address_region":"KA","postal_code":"560025","address_country":"IN"}}}},
+{"id":"item","type":"product","role":"product","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"product":{"name":"Workflow Workshop","sku":"WAW-2026","canonical_url":"https://example.test/products/workshop","image_url":"https://cdn.example.test/workshop.jpg"}}},
+{"id":"qty","type":"fact","role":"product_fact","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"fact":{"label":"Quantity","value":"1"}}},
+{"id":"greeting","type":"personalization","role":"personalization_slot","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"personalization":{"label":"Name","slot":{"id":"first_name","semantic_class":"name","required":false,"fallback":"there"}}}},
+{"id":"rule","type":"divider","role":"divider","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"divider":{}}},
+{"id":"vote","type":"poll","role":"poll","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"poll":{"poll_id":"launch_time","question":{"runs":[{"kind":"text","text":"Which slot suits you?"}]},
+  "options":[{"option_id":"morning","label":{"runs":[{"kind":"text","text":"Morning"}]}},{"option_id":"evening","label":{"runs":[{"kind":"text","text":"Evening"}]}}]}}},
+{"id":"legal","type":"legal","role":"footer","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"legal":{"text":{"runs":[{"kind":"text","text":"Terms apply."}]}}}}
+]}`),
+		},
+		{
+			Name:  "structured_data_renders_nothing_visible",
+			Note:  "A structured_data node contributes no HTML body and no plain text; with no sender-eligibility evidence no provider markup is emitted at all.",
+			Slots: map[string]string{},
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"deal","type":"offer","role":"offer","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"offer":{"description":{"runs":[{"kind":"text","text":"Save 200"}]},"code":"LIVE200","terms":{"runs":[]}}}},
+{"id":"markup","type":"structured_data","role":"structured_data","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"structured_data":{"enabled":true,"provider":"gmail","registry_version":"gmail.email-markup.2026-04-20","use_case":"gmail_promotion","kind":"discount_offer","declaration":{"discount_offer":{"offer_node_id":"deal"}}}}}
+]}`),
+		},
+		{
+			Name: "poll_duplicate_option_ids",
+			Note: "Two options with the same id merge two choices into one tally, so the tree must be rejected rather than silently counted.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"vote","type":"poll","role":"poll","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"poll":{"poll_id":"launch_time","question":{"runs":[{"kind":"text","text":"Which slot?"}]},
+  "options":[{"option_id":"same","label":{"runs":[{"kind":"text","text":"Morning"}]}},{"option_id":"same","label":{"runs":[{"kind":"text","text":"Evening"}]}}]}}}
+]}`),
+		},
+		{
+			Name: "poll_single_option",
+			Note: "A poll with one option is not a question.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"vote","type":"poll","role":"poll","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"poll":{"poll_id":"launch_time","question":{"runs":[{"kind":"text","text":"Which slot?"}]},
+  "options":[{"option_id":"morning","label":{"runs":[{"kind":"text","text":"Morning"}]}}]}}}
+]}`),
+		},
+		{
+			Name: "poll_blank_option_id_and_label",
+			Note: "Blank option identity and empty label are separate diagnostics on the same option.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"vote","type":"poll","role":"poll","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"poll":{"poll_id":"launch time","question":{"runs":[]},
+  "options":[{"option_id":"","label":{"runs":[]}},{"option_id":"evening","label":{"runs":[{"kind":"text","text":"Evening"}]}}]}}}
+]}`),
+		},
+		{
+			Name: "duplicate_poll_ids_across_nodes",
+			Note: "Two poll nodes cannot share a poll id; responses would collapse across questions.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"vote_a","type":"poll","role":"poll","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"poll":{"poll_id":"shared","question":{"runs":[{"kind":"text","text":"A?"}]},
+  "options":[{"option_id":"a1","label":{"runs":[{"kind":"text","text":"A1"}]}},{"option_id":"a2","label":{"runs":[{"kind":"text","text":"A2"}]}}]}}},
+{"id":"vote_b","type":"poll","role":"poll","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"poll":{"poll_id":"shared","question":{"runs":[{"kind":"text","text":"B?"}]},
+  "options":[{"option_id":"b1","label":{"runs":[{"kind":"text","text":"B1"}]}},{"option_id":"b2","label":{"runs":[{"kind":"text","text":"B2"}]}}]}}}
+]}`),
+		},
+		{
+			Name: "role_type_mismatch_and_content_mismatch",
+			Note: "A role outside the node type's allowed set, and content whose member does not match the declared type.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"title","type":"heading","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"heading":{"level":2,"text":{"runs":[{"kind":"text","text":"Hi"}]}}}},
+{"id":"wrong","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"legal":{"text":{"runs":[{"kind":"text","text":"Hi"}]}}}}
+]}`),
+		},
+		{
+			Name: "content_cardinality_zero_and_two",
+			Note: "Exactly one typed content member is required.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"empty","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},"content":{}},
+{"id":"both","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"a"}]}},"legal":{"text":{"runs":[{"kind":"text","text":"b"}]}}}}
+]}`),
+		},
+		{
+			Name: "two_primary_actions",
+			Note: "Unconditional primary actions must be unique in the source tree.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"cta_a","type":"action","role":"primary_action","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act_a","label":"A","canonical_url":"https://example.test/a"}}},
+{"id":"cta_b","type":"action","role":"primary_action","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act_b","label":"B","canonical_url":"https://example.test/b"}}}
+]}`),
+		},
+		{
+			Name: "duplicate_node_and_action_ids",
+			Note: "Stable identity is what edits and receipts hang on.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"cta","type":"action","role":"secondary_action","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act","label":"A","canonical_url":"https://example.test/a"}}},
+{"id":"cta","type":"action","role":"unsubscribe","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act","label":"B","canonical_url":"https://example.test/b"}}}
+]}`),
+		},
+		{
+			Name: "image_alt_rules",
+			Note: "Informative images require alt text; decorative images must have none; dimensions come in pairs.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"informative","type":"image","role":"informative_image","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"image":{"url":"https://cdn.example.test/a.png","alt":"","width":10,"height":0}}},
+{"id":"decorative","type":"image","role":"decorative_image","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"image":{"url":"http://cdn.example.test/b.png","alt":"not allowed"}}}
+]}`),
+		},
+		{
+			Name: "url_rules",
+			Note: "Fragments, embedded credentials, and non-absolute URLs are rejected on the action canonical URL.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"frag","type":"action","role":"secondary_action","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act_frag","label":"Frag","canonical_url":"https://example.test/a#top"}}},
+{"id":"creds","type":"action","role":"preferences","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act_creds","label":"Creds","canonical_url":"https://user:pass@example.test/a"}}},
+{"id":"relative","type":"action","role":"view_in_browser","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"act_rel","label":"Rel","canonical_url":"/relative"}}}
+]}`),
+		},
+		{
+			Name: "money_and_datetime_rules",
+			Note: "Canonical decimal, ISO 4217 currency, IANA zone, and an offset that matches the zone at that instant.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"bad_money","type":"money","role":"price","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"money":{"display_value":"1.5e3","amount":"1.5e3","currency":"XXX"}}},
+{"id":"bad_zone","type":"datetime","role":"event_datetime","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"datetime":{"display_value":"whenever","rfc3339":"2026-08-14T16:00:00+05:30","timezone":"Mars/Olympus"}}},
+{"id":"offset_mismatch","type":"deadline","role":"deadline","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"deadline":{"display_value":"soon","rfc3339":"2026-08-14T16:00:00+01:00","timezone":"Asia/Kolkata"}}}
+]}`),
+		},
+		{
+			Name: "location_country_rule",
+			Note: "address_country must be an uppercase ISO 3166-1 alpha-2 code.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"venue","type":"location","role":"location","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"location":{"name":"","address":{"street_address":"","address_locality":"Bengaluru","address_region":"","postal_code":"","address_country":"india"}}}}
+]}`),
+		},
+		{
+			Name: "inline_run_cardinality",
+			Note: "Each inline kind carries exactly its own payload.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"body","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"paragraph":{"text":{"runs":[
+  {"kind":"text","text":"ok","url":"https://example.test/x"},
+  {"kind":"link","text":"no url"},
+  {"kind":"line_break","text":"payload"},
+  {"kind":"slot","text":"both","slot":{"id":"first_name","semantic_class":"name","required":true}},
+  {"kind":"shout","text":"unknown kind"}
+ ]}}}}
+]}`),
+		},
+		{
+			Name: "whitespace_and_nfkc_normalization",
+			Note: "Natural text collapses runs of Unicode space and is NFKC-folded; inline text keeps leading/trailing space so adjacent spans do not join.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"body","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"  Ｈｅｌｌｏ   world  "},{"kind":"strong","text":"ﬁne"}]}}}},
+{"id":"fact","type":"fact","role":"product_fact","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"fact":{"label":"  Quantity   count ","value":"⁠1⁡"}}},
+{"id":"cta","type":"action","role":"PRIMARY_ACTION","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"action":{"action_id":"  act_go  ","label":"  Join   now  ","canonical_url":"HTTPS://EXAMPLE.TEST/Join"}}},
+{"id":"price","type":"money","role":"price","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"money":{"display_value":"1,499","amount":"01499.500","currency":"inr"}}}
+]}`),
+		},
+		{
+			Name:   "conditions_present_and_absent",
+			Note:   "Presence conditions resolve against the scenario slot map; an excluded node contributes nothing to either projection.",
+			Locale: "en-US",
+			Slots:  map[string]string{"segment": "pro"},
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"title","type":"heading","role":"heading","version":2,"localizations":{},"provenance":{"source":"user"},
+ "conditions":[{"id":"has_segment","slot_id":"segment","operator":"present"}],
+ "content":{"heading":{"level":1,"text":{"runs":[{"kind":"text","text":"Pro news"}]}}}},
+{"id":"fallback","type":"paragraph","role":"body","version":2,"localizations":{},"provenance":{"source":"user"},
+ "conditions":[{"id":"no_segment","slot_id":"segment","operator":"absent"}],
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"Generic news"}]}}}},
+{"id":"named","type":"personalization","role":"personalization_slot","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"personalization":{"label":"","slot":{"id":"first_name","semantic_class":"name","required":false,"fallback":"there"}}}},
+{"id":"inline","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"Hi "},{"kind":"slot","slot":{"id":"first_name","semantic_class":"name","required":false,"fallback":"friend"}},{"kind":"text","text":", welcome."}]}}}}
+]}`),
+		},
+		{
+			Name:   "condition_equality_without_fixture_fails_closed",
+			Note:   "An equality condition with no scenario value cannot be resolved, so compilation fails rather than guessing.",
+			Locale: "en-US",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"title","type":"heading","role":"heading","version":2,"localizations":{},"provenance":{"source":"user"},
+ "conditions":[{"id":"is_pro","slot_id":"segment","operator":"equals","value":"pro"}],
+ "content":{"heading":{"level":1,"text":{"runs":[{"kind":"text","text":"Pro news"}]}}}}
+]}`),
+		},
+		{
+			Name: "required_slot_without_fallback_fails_closed",
+			Note: "A required personalization slot with neither scenario value nor fallback is a send-time hole, caught at compile.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"named","type":"personalization","role":"personalization_slot","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"personalization":{"label":"Name","slot":{"id":"first_name","semantic_class":"name","required":true,"fallback":""}}}}
+]}`),
+		},
+		{
+			Name: "heading_structure_warnings",
+			Note: "A second level-one heading and a skipped level are warnings, not errors.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"h1a","type":"heading","role":"heading","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"heading":{"level":1,"text":{"runs":[{"kind":"text","text":"One"}]}}}},
+{"id":"h4","type":"heading","role":"heading","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"heading":{"level":4,"text":{"runs":[{"kind":"text","text":"Skipped"}]}}}},
+{"id":"h1b","type":"heading","role":"heading","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"heading":{"level":1,"text":{"runs":[{"kind":"text","text":"Two"}]}}}}
+]}`),
+		},
+		{
+			Name: "empty_document",
+			Note: "At least one node is required.",
+			Input: json.RawMessage(`{"schema_version":2,"language":"en-US","direction":"ltr","nodes":[]}`),
+		},
+		{
+			Name: "document_header_rules",
+			Note: "schema_version, language, and direction are validated at the document root.",
+			Input: json.RawMessage(`{
+"schema_version":1,"language":"english","direction":"sideways","nodes":[
+{"id":"body","type":"paragraph","role":"body","version":1,"conditions":[],"localizations":{},"provenance":{"source":"imported"},
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"Hi"}]}}}}
+]}`),
+		},
+		{
+			Name: "list_bounds",
+			Note: "A list needs at least one item and every item needs a run.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"empty_list","type":"list","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"list":{"ordered":false,"items":[]}}},
+{"id":"blank_item","type":"list","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"list":{"ordered":false,"items":[{"runs":[]}]}}}
+]}`),
+		},
+		{
+			Name: "condition_operator_values",
+			Note: "present/absent forbid a value; equals/not_equals require one; condition ids are unique document-wide.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"a","type":"paragraph","role":"body","version":2,"localizations":{},"provenance":{"source":"user"},
+ "conditions":[{"id":"dup","slot_id":"segment","operator":"present","value":"pro"}],
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"A"}]}}}},
+{"id":"b","type":"paragraph","role":"body","version":2,"localizations":{},"provenance":{"source":"user"},
+ "conditions":[{"id":"dup","slot_id":"segment","operator":"equals","value":""}],
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"B"}]}}}}
+]}`),
+		},
+		{
+			Name: "offer_availability_window",
+			Note: "Offer availability must end after it starts.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"deal","type":"offer","role":"offer","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"offer":{"description":{"runs":[{"kind":"text","text":"Save"}]},"code":"","terms":{"runs":[]},
+  "availability_starts":{"display_value":"13 Aug","rfc3339":"2026-08-13T23:59:00+05:30","timezone":"Asia/Kolkata"},
+  "availability_ends":{"display_value":"9 Aug","rfc3339":"2026-08-09T09:00:00+05:30","timezone":"Asia/Kolkata"}}}}
+]}`),
+		},
+		{
+			Name: "structured_data_reference_rules",
+			Note: "Structured declarations may only point at visible nodes of the permitted type.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"body","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"paragraph":{"text":{"runs":[{"kind":"text","text":"Hi"}]}}}},
+{"id":"markup","type":"structured_data","role":"structured_data","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"structured_data":{"enabled":true,"provider":"gmail","registry_version":"gmail.email-markup.2026-04-20","use_case":"gmail_transaction","kind":"discount_offer","declaration":{"discount_offer":{"offer_node_id":"body"}}}}}
+]}`),
+		},
+		{
+			Name: "divider_only_document",
+			Note: "A divider is decoration: it renders as an hr in HTML and contributes nothing to plain text, so a document of dividers has no semantic content at all.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"rule","type":"divider","role":"divider","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},"content":{"divider":{}}}
+]}`),
+		},
+		{
+			Name: "rtl_document_direction",
+			Note: "Document direction reaches the html element.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"ar-EG","direction":"rtl","nodes":[
+{"id":"title","type":"heading","role":"heading","version":2,"conditions":[],"localizations":{},"provenance":{"source":"template","source_id":"tpl_1"},
+ "content":{"heading":{"level":1,"text":{"runs":[{"kind":"text","text":"مرحبا"}]}}}}
+]}`),
+		},
+		{
+			Name: "link_text_equals_url",
+			Note: "A link whose text is already the URL is not repeated in parentheses in the plain-text projection.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"body","type":"paragraph","role":"body","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"paragraph":{"text":{"runs":[{"kind":"link","text":"https://example.test/a","url":"https://example.test/a"}]}}}}
+]}`),
+		},
+		{
+			Name: "offer_canonical_reference_rules",
+			Note: "canonical_offer_id is a canonical lowercase UUID naming the offer entity; normalization lowercases it and validation rejects anything else.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"good","type":"offer","role":"offer","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"offer":{"description":{"runs":[{"kind":"text","text":"Save"}]},"code":"","terms":{"runs":[]},"canonical_offer_id":"3F2504E0-4F89-11D3-9A0C-0305E82C3301"}}},
+{"id":"bad","type":"offer","role":"offer","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"offer":{"description":{"runs":[{"kind":"text","text":"Save"}]},"code":"","terms":{"runs":[]},"canonical_offer_id":"offer_42"}}}
+]}`),
+		},
+		{
+			Name: "localization_identity_rules",
+			Note: "A localization may translate words but never re-point identity: poll option ids and the canonical offer reference must survive translation.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"vote","type":"poll","role":"poll","version":2,"conditions":[],"provenance":{"source":"user"},
+ "content":{"poll":{"poll_id":"launch","question":{"runs":[{"kind":"text","text":"Which slot?"}]},
+  "options":[{"option_id":"morning","label":{"runs":[{"kind":"text","text":"Morning"}]}},{"option_id":"evening","label":{"runs":[{"kind":"text","text":"Evening"}]}}]}},
+ "localizations":{"fr-FR":{"poll":{"poll_id":"launch","question":{"runs":[{"kind":"text","text":"Quel créneau ?"}]},
+  "options":[{"option_id":"matin","label":{"runs":[{"kind":"text","text":"Matin"}]}},{"option_id":"evening","label":{"runs":[{"kind":"text","text":"Soir"}]}}]}}}},
+{"id":"deal","type":"offer","role":"offer","version":2,"conditions":[],"provenance":{"source":"user"},
+ "content":{"offer":{"description":{"runs":[{"kind":"text","text":"Save"}]},"code":"","terms":{"runs":[]},"canonical_offer_id":"3f2504e0-4f89-11d3-9a0c-0305e82c3301"}},
+ "localizations":{"fr-FR":{"offer":{"description":{"runs":[{"kind":"text","text":"Économisez"}]},"code":"","terms":{"runs":[]},"canonical_offer_id":"11111111-2222-3333-4444-555555555555"}}}}
+]}`),
+		},
+		{
+			Name: "product_and_location_text_shape",
+			Note: "Product SKU/URL lines and the comma-joined address, with empty parts dropped.",
+			Input: json.RawMessage(`{
+"schema_version":2,"language":"en-US","direction":"ltr","nodes":[
+{"id":"item","type":"product","role":"product","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"product":{"name":"Plain Product","sku":"","canonical_url":"","image_url":""}}},
+{"id":"venue","type":"location","role":"location","version":2,"conditions":[],"localizations":{},"provenance":{"source":"user"},
+ "content":{"location":{"name":"Studio","address":{"street_address":"12 Road","address_locality":"Bengaluru","address_region":"","postal_code":"","address_country":"IN"}}}}
+]}`),
+		},
+	}
+	cases = append(cases, roleMatrixCase())
+	return cases
+}
+
+// roleMatrixCase pins the ENTIRE role/type table rather than one example of a
+// mismatch.
+//
+// Role is not decoration: it is what lets action extraction tell a primary CTA
+// from an unsubscribe link, and what makes an image informative or decorative.
+// A mirror of the table that silently gained an extra pair would let the editor
+// author something the server rejects, and a single hand-picked mismatch case
+// would not notice. So every (type, role) pair in the closed sets gets a node,
+// and Go decides which of the 450 are wrong.
+func roleMatrixCase() fixtureCase {
+	types := []NodeType{
+		NodeHeading, NodeParagraph, NodeList, NodeAnswer, NodeLegal, NodeAction,
+		NodeImage, NodeDateTime, NodeMoney, NodeDeadline, NodeOffer, NodeLocation,
+		NodeProduct, NodeFact, NodePersonalization, NodeStructuredData,
+		NodeDivider, NodePoll,
+	}
+	roles := []NodeRole{
+		RoleHeading, RoleBody, RoleAnswer, RoleLegal, RoleFooter, RolePrimaryAction,
+		RoleSecondaryAction, RoleUnsubscribe, RolePreferences, RoleViewInBrowser,
+		RoleSocial, RoleContact, RoleInformativeImage, RoleDecorativeImage,
+		RoleEventDateTime, RolePrice, RoleDeadline, RoleOffer, RoleLocation,
+		RoleProduct, RoleProductFact, RolePersonalizationSlot, RoleStructuredData,
+		RoleDivider, RolePoll,
+	}
+	nodes := make([]Node, 0, len(types)*len(roles))
+	index := 0
+	for _, nodeType := range types {
+		for _, role := range roles {
+			id := NodeID(fmt.Sprintf("n%03d", index))
+			nodes = append(nodes, Node{
+				ID: id, Type: nodeType, Role: role, Version: NodeVersionV2,
+				Conditions: []Condition{}, Localizations: map[string]NodeContent{},
+				Provenance: Provenance{Source: SourceUser},
+				Content:    matrixContent(nodeType, index),
+			})
+			index++
+		}
+	}
+	encoded, err := json.Marshal(DocumentV2{
+		SchemaVersion: SchemaVersionV2, Language: "en-US", Direction: DirectionLTR,
+		Nodes: nodes,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return fixtureCase{
+		Name:  "role_matrix",
+		Note:  "Every (node type, role) pair in the closed sets. Go decides which pairs are valid; the mirror must agree on all of them.",
+		Input: encoded,
+	}
+}
+
+func matrixContent(nodeType NodeType, index int) NodeContent {
+	text := RichText{Runs: []InlineRun{{Kind: InlineText, Text: "x"}}}
+	when := &DateTimeContent{DisplayValue: "now", RFC3339: "2026-08-14T16:00:00+05:30", Timezone: "Asia/Kolkata"}
+	switch nodeType {
+	case NodeHeading:
+		return NodeContent{Heading: &HeadingContent{Level: 2, Text: text}}
+	case NodeParagraph:
+		return NodeContent{Paragraph: &ParagraphContent{Text: text}}
+	case NodeList:
+		return NodeContent{List: &ListContent{Items: []RichText{text}}}
+	case NodeAnswer:
+		return NodeContent{Answer: &AnswerContent{Question: text, Answer: text}}
+	case NodeLegal:
+		return NodeContent{Legal: &LegalContent{Text: text}}
+	case NodeAction:
+		return NodeContent{Action: &ActionContent{
+			ActionID: ActionID(fmt.Sprintf("act%03d", index)), Label: "x",
+			CanonicalURL: "https://example.test/a",
+		}}
+	case NodeImage:
+		return NodeContent{Image: &ImageContent{URL: "https://cdn.example.test/a.png", Alt: "x"}}
+	case NodeDateTime:
+		return NodeContent{DateTime: when}
+	case NodeMoney:
+		return NodeContent{Money: &MoneyContent{DisplayValue: "1", Amount: "1", Currency: "USD"}}
+	case NodeDeadline:
+		return NodeContent{Deadline: when}
+	case NodeOffer:
+		return NodeContent{Offer: &OfferContent{Description: text, Terms: RichText{Runs: []InlineRun{}}}}
+	case NodeLocation:
+		return NodeContent{Location: &LocationContent{Name: "x", Address: PostalAddress{
+			StreetAddress: "x", AddressLocality: "x", AddressCountry: "IN",
+		}}}
+	case NodeProduct:
+		return NodeContent{Product: &ProductContent{Name: "x"}}
+	case NodeFact:
+		return NodeContent{Fact: &FactContent{Label: "x", Value: "1"}}
+	case NodePersonalization:
+		return NodeContent{Personalization: &PersonalizationContent{
+			Slot: SlotReference{ID: "first_name", SemanticClass: SlotName, Fallback: "x"},
+		}}
+	case NodeStructuredData:
+		return NodeContent{StructuredData: &StructuredDataContent{
+			Enabled: false, Provider: ProviderGmail, RegistryVersion: GmailRegistryVersion,
+			UseCase: UseCaseGmailPromotion, Kind: StructuredDiscountOffer,
+			Declaration: StructuredDeclaration{DiscountOffer: &DiscountOfferDeclaration{OfferNodeID: "n055"}},
+		}}
+	case NodeDivider:
+		return NodeContent{Divider: &DividerContent{}}
+	case NodePoll:
+		return NodeContent{Poll: &PollContent{
+			PollID:   fmt.Sprintf("poll%03d", index),
+			Question: text,
+			Options: []PollOption{
+				{OptionID: "a", Label: text},
+				{OptionID: "b", Label: text},
+			},
+		}}
+	}
+	return NodeContent{}
+}

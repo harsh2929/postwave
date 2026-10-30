@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <zwj-emoji-sequence.v1@example.com>
+Subject: Family plan is here 👨‍👩‍👧
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-zwj-v1"
+
+--pw-zwj-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The family plan is here. Add up to five people. https://app.example.com/family
+--pw-zwj-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Family plan is here 👨‍👩‍👧</h1><p>Add up to five people to one subscription.</p><p>Our team 👩‍💻 built it for households.</p><p><a href="https://app.example.com/family">See the family plan</a></p></body></html>
+--pw-zwj-v1--

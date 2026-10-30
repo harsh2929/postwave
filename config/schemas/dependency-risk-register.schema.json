@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://moosewave.com/schemas/dependency-risk-register.schema.json",
+  "title": "Moosewave dependency risk register",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "policy", "acceptedRisks"],
+  "properties": {
+    "$schema": {
+      "const": "./schemas/dependency-risk-register.schema.json"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ecosystem",
+        "scope",
+        "minimumSeverity",
+        "maximumAcceptanceDays",
+        "maximumReviewAgeDays"
+      ],
+      "properties": {
+        "ecosystem": {
+          "const": "npm"
+        },
+        "scope": {
+          "const": "production"
+        },
+        "minimumSeverity": {
+          "const": "moderate"
+        },
+        "maximumAcceptanceDays": {
+          "const": 45
+        },
+        "maximumReviewAgeDays": {
+          "const": 30
+        }
+      }
+    },
+    "acceptedRisks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/risk"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "nonEmptyStringArray": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "evidenceFiles",
+        "verificationCommands"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 20
+        },
+        "evidenceFiles": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "verificationCommands": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^pnpm (?:run )?[a-z0-9][a-z0-9:._-]*$"
+          }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "registryAuditId",
+        "advisory",
+        "aliases",
+        "module",
+        "severity",
+        "expectedLatestStableVersion",
+        "expectedVulnerableVersions",
+        "expectedPatchedVersions",
+        "expectedFindingVersions",
+        "findingPaths",
+        "affectedImporters",
+        "ownerRole",
+        "acceptedOn",
+        "lastReviewedOn",
+        "expiresOn",
+        "rationale",
+        "upgradeTrigger",
+        "upstreamUrl",
+        "compensatingControls"
+      ],
+      "properties": {
+        "decision": {
+          "const": "temporarily_accepted_until_stable_fix"
+        },
+        "registryAuditId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "advisory": {
+          "type": "string",
+          "pattern": "^GHSA-[a-z0-9-]+$"
+        },
+        "aliases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$"
+          }
+        },
+        "module": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "severity": {
+          "enum": ["moderate", "high", "critical"]
+        },
+        "expectedLatestStableVersion": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expectedVulnerableVersions": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expectedPatchedVersions": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expectedFindingVersions": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "findingPaths": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "affectedImporters": {
+          "$ref": "#/$defs/nonEmptyStringArray"
+        },
+        "ownerRole": {
+          "const": "Security Engineering"
+        },
+        "acceptedOn": {
+          "$ref": "#/$defs/date"
+        },
+        "lastReviewedOn": {
+          "$ref": "#/$defs/date"
+        },
+        "expiresOn": {
+          "$ref": "#/$defs/date"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 40
+        },
+        "upgradeTrigger": {
+          "type": "string",
+          "minLength": 40
+        },
+        "upstreamUrl": {
+          "type": "string",
+          "pattern": "^https://github\\.com/advisories/GHSA-[a-z0-9-]+$"
+        },
+        "compensatingControls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/control"
+          }
+        }
+      }
+    }
+  }
+}

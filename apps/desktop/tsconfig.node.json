@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "composite": true,
+    "outDir": ".tsbuildinfo-node",
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "types": []
+  },
+  "include": ["vite.config.ts", "vite.commerce-evidence.config.ts"]
+}

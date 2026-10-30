@@ -1,0 +1,232 @@
+---
+title: Campaigns API
+---
+
+import { Callout } from 'nextra/components';
+
+# Campaigns API
+
+Create, edit, send, schedule, and control the lifecycle of email campaigns. Campaign send is the most central write action in Moosewave — everything below maps to a real route under `/api/v1/campaigns`.
+
+<Callout type="info">
+The send / queue / test-send routes additionally require the `send:transactional` scope on top of `write:campaigns`, so a write-only key cannot actually dispatch mail. See [Authentication](/api-reference/authentication) for the scope catalog.
+</Callout>
+
+## Endpoints
+
+| Method | Path                                            | Scope                                    | Purpose                                          |
+| ------ | ----------------------------------------------- | ---------------------------------------- | ------------------------------------------------ |
+| GET    | `/api/v1/campaigns`                             | `read:campaigns`                         | List (filterable via `?query=`, capped via `?limit=`). |
+| GET    | `/api/v1/campaigns/count`                       | `read:campaigns`                         | Per-status counts (cheap `GROUP BY`).            |
+| GET    | `/api/v1/campaigns/{id}`                        | `read:campaigns`                         | Get one.                                         |
+| POST   | `/api/v1/campaigns`                             | `write:campaigns`                        | Create (draft, or scheduled if `scheduled_at` set). |
+| PATCH  | `/api/v1/campaigns/{id}`                        | `write:campaigns`                        | Partial update.                                  |
+| DELETE | `/api/v1/campaigns/{id}`                        | `write:campaigns`                        | Delete.                                          |
+| POST   | `/api/v1/campaigns/test-send`                   | `write:campaigns` + `send:transactional` | Test-send an unsaved draft.                      |
+| POST   | `/api/v1/campaigns/{id}/test-send`              | `write:campaigns` + `send:transactional` | Test-send a saved campaign.                      |
+| POST   | `/api/v1/campaigns/{id}/send`                   | `write:campaigns` + `send:transactional` | Immediate dispatch (202).                        |
+| POST   | `/api/v1/campaigns/{id}/queue`                  | `write:campaigns` + `send:transactional` | Materialize recipients and start the send loop.  |
+| POST   | `/api/v1/campaigns/{id}/pause`                  | `write:campaigns`                        | Pause an in-flight or scheduled send.            |
+| POST   | `/api/v1/campaigns/{id}/resume`                 | `write:campaigns`                        | Resume a paused send.                            |
+| POST   | `/api/v1/campaigns/{id}/cancel`                 | `write:campaigns`                        | Cancel (terminal).                               |
+| GET    | `/api/v1/campaigns/{id}/checklist`              | `read:campaigns`                         | Pre-send readiness checklist.                    |
+| POST   | `/api/v1/campaigns/{id}/recurrence`             | `write:campaigns`                        | Set / clear a recurrence cron.                   |
+| POST   | `/api/v1/campaigns/{id}/resend-to-non-openers`  | `write:campaigns`                        | Clone + re-send to non-openers.                  |
+| POST   | `/api/v1/campaigns/ab-test`                     | `write:campaigns`                        | Create a multi-variant A/B test.                 |
+| POST   | `/api/v1/campaigns/{id}/variants`               | `write:campaigns`                        | Attach A/B variants to a campaign.               |
+| GET    | `/api/v1/campaigns/{id}/variants`               | `read:campaigns`                         | List variants.                                   |
+| GET    | `/api/v1/campaigns/{id}/ab`                     | `read:campaigns`                         | A/B test state.                                  |
+| POST   | `/api/v1/campaigns/{id}/ab/settings`            | `write:campaigns`                        | Set winner-selection settings.                   |
+| POST   | `/api/v1/campaigns/{id}/ab/evaluate`            | `write:campaigns`                        | Force a winner evaluation now.                   |
+| GET    | `/api/v1/campaigns/{id}/ab-results`             | `read:campaigns`                         | Per-variant results.                             |
+
+Report and analytics routes live in the [Campaign Reports API](/api-reference/reports).
+
+## Campaign object
+
+```json
+{
+  "id": "cmp_01HK...",
+  "name": "April product update",
+  "subject": "What shipped in April",
+  "status": "draft",
+  "body_html": "<h1>Hello</h1>",
+  "body_mjml": "",
+  "segment_id": "seg_01HK...",
+  "scheduled_at": null,
+  "sent_at": null,
+  "priority": 5,
+  "created_at": "2026-04-30T10:00:00Z",
+  "updated_at": "2026-04-30T10:00:00Z"
+}
+```
+
+### Status lifecycle
+
+Campaigns move through a small state machine. Each transition route only accepts a campaign in a valid `from` state:
+
+```
+draft ──► scheduled ──► sending ──► sent
+  │           │            │
+  └───────────┴──► cancelled (terminal)
+                    sending ⇄ paused
+```
+
+| Status      | Meaning                                                                 |
+| ----------- | ----------------------------------------------------------------------- |
+| `draft`     | Editable; not queued.                                                   |
+| `scheduled` | Has a future `scheduled_at`; the scheduler will dispatch it.            |
+| `sending`   | Recipients enumerated; the send loop is draining.                      |
+| `paused`    | Send loop frozen at the current recipient (resumable).                 |
+| `sent`      | Listmonk reported the run finished; fires `campaign.sent`.             |
+| `cancelled` | Stopped before completion (terminal).                                  |
+
+## Create
+
+A campaign with no `scheduled_at` is created as a `draft`. Supplying `scheduled_at` creates it directly as `scheduled`.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/campaigns \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "April product update",
+    "subject": "What shipped in April",
+    "body_html": "<h1>Hello</h1>",
+    "segment_id": "seg_01HK..."
+  }'
+```
+
+## Schedule
+
+There is no dedicated `/schedule` route — scheduling is a property of the row. PATCH a `scheduled_at` onto a draft and it flips to `scheduled`; a background scheduler polls `status='scheduled' AND scheduled_at <= now()` and dispatches via the same send code path.
+
+```bash
+curl -X PATCH https://api.moosewave.com/api/v1/campaigns/cmp_01HK... \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "scheduled_at": "2026-05-02T09:00:00Z" }'
+```
+
+To turn a one-off into a recurring send, set a cron expression:
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../recurrence \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "recurrence_cron": "0 9 * * 1", "recurrence_until": "2026-12-31T00:00:00Z" }'
+```
+
+An unparseable cron is rejected with `422 bad_cron` before anything is persisted.
+
+## Test-send
+
+Send the campaign to a handful of inbox addresses for a final eyeball without touching the real audience. Use the body-only variant (`/api/v1/campaigns/test-send`) for an unsaved draft, or the `{id}` variant for a saved one.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../test-send \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "recipients": ["you@yourdomain.com"] }'
+```
+
+## Send
+
+Immediate dispatch. The handler validates preconditions, then hands the body to the underlying send engine and returns `202 Accepted` without waiting for the run to finish — completion arrives asynchronously and flips the row to `sent`.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../send \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+Preconditions enforced before send (each returns `422` with a distinct code):
+
+| Code                        | When                                                            |
+| --------------------------- | --------------------------------------------------------------- |
+| `bad_status`                | Campaign is not in `draft` / `scheduled` / `paused`.            |
+| `incomplete`                | Missing subject, or both `body_html` and `body_mjml` are empty. |
+| `no_sender`                 | No `from_email` on the campaign and no tenant default.          |
+| `email_sending_paused`      | Tenant kill switch is on (`423 Locked`).                        |
+| `email_compliance_blocked`  | Sender compliance requirements not met.                         |
+
+## Queue
+
+`POST /{id}/queue` is the durable path for large sends: it enumerates the audience, applies suppression / frequency-cap / subscriber-preference / prioritization filters, INSERTs one recipient row per surviving address, then flips the campaign to `sending` so the drain loop picks it up.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../queue \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+Response surfaces how many recipients were skipped and by which rule:
+
+```json
+{
+  "campaign_id": "cmp_01HK...",
+  "recipients_queued": 4821,
+  "status": "sending",
+  "recipients_skipped_frequency_cap": 173,
+  "frequency_skip_breakdown": [
+    { "rule_id": "freq_01HK...", "rule_label": "Max 2/week", "skipped": 160 },
+    { "rule_id": "subscriber_preference", "rule_label": "Subscriber paused", "skipped": 13 }
+  ]
+}
+```
+
+If an approval workflow gates the campaign, the response carries `approval_id` + `approval_status` instead and no recipients are queued until the approval lands.
+
+## Pause / Resume / Cancel
+
+These three routes transition the campaign's status and only succeed from a valid prior state (otherwise `409 invalid_transition`):
+
+- **Pause** — `sending` or `scheduled` → `paused`. Freezes the drain loop at the current recipient.
+- **Resume** — `paused` → `sending`. Refuses if the tenant kill switch is on (`423 email_sending_paused`).
+- **Cancel** — `draft` / `scheduled` / `sending` / `paused` → `cancelled` (terminal).
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../pause \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+## A/B testing
+
+Create a test in one call — the variants and the parent campaign are minted together:
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/campaigns/ab-test \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{
+    "name": "Subject test — April",
+    "variants": [
+      { "subject": "What shipped in April" },
+      { "subject": "April: 7 new things" }
+    ],
+    "sample_pct": 20
+  }'
+```
+
+Moosewave sends each variant to its slice of the sample, then after the evaluation window picks a winner on the configured metric (`open_rate`, `click_rate`, …) and rolls it out to the held-back audience. You can also drive the pieces manually: attach variants with `POST /{id}/variants`, set the winner rule with `POST /{id}/ab/settings`, and force an evaluation with `POST /{id}/ab/evaluate`. Per-variant numbers are at `GET /{id}/ab-results`.
+
+## Pre-send checklist
+
+Before sending, fetch the readiness checklist. It runs the from-address, subject, body, list, recipient-count, and unsubscribe-footer gates and returns an overall `ready` flag — the same gates the dashboard's pre-send screen renders.
+
+```bash
+curl https://api.moosewave.com/api/v1/campaigns/cmp_01HK.../checklist \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+```json
+{
+  "campaign_id": "cmp_01HK...",
+  "ready": false,
+  "checks": [
+    { "id": "from_address", "status": "pass", "label": "Verified sender domain" },
+    { "id": "subject",      "status": "pass", "label": "Subject set" },
+    { "id": "recipients",   "status": "fail", "label": "Audience has 0 recipients" }
+  ]
+}
+```
+
+## See also
+
+- [Campaign Reports API](/api-reference/reports) — opens, clicks, links, devices, geography, revenue, bounces, time-series.
+- [A/B testing](/features/ab-testing) — how winner selection works.
+- [Authentication](/api-reference/authentication) — scopes required for send.

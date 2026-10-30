@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <postal-address-footer.v1@example.com>
+Subject: Newsletter 15
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-addr-v1"
+
+--pw-addr-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This week's issue: https://news.example.com/15
+Postwave Ltd, 4 Harbour Road, Dublin
+--pw-addr-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Newsletter 15</h1><p>Three stories this week.</p><p><a href="https://news.example.com/15">Read the issue</a></p><p style="font-size:12px;color:#777777">Postwave Ltd, 4 Harbour Road, Dublin, Ireland</p></body></html>
+--pw-addr-v1--

@@ -1,0 +1,66 @@
+---
+title: Rollback
+---
+
+import { Callout } from "nextra/components";
+
+# Rollback
+
+Eligible committed migrations expose a `rollback_until` timestamp. Failed or operator-cancelled commits can also be eligible when they have tracked partial destination writes and an active rollback window. The UI shows the action only while the job and deadline satisfy the backend gate.
+
+## What rollback uses
+
+Commit records destination writes in a tenant-scoped imported-resource ledger. Each entry distinguishes a record created by the job from a pre-existing record updated by the job. Updated records carry the before-image required for restoration.
+
+Before the first destructive action, rollback validates every tracked resource for the job against its exact recorded destination after-image and ownership. If a user or another job changed, replaced, or adopted any resource, the whole rollback stops with a conflict. It does not partially clean up the resources that happened to validate first.
+
+Rollback walks dependent resources before subscribers:
+
+1. campaign/source archive and templates created by the job;
+2. paused automations created by the job;
+3. segments and audience containers created by the job;
+4. subscribers and list memberships created by the job;
+5. pre-existing records updated by the job, restored from their recorded before-images.
+
+Exact counters are available from `GET /api/v1/migrations/{job_id}/rollback-status` while the operation runs.
+
+<Callout type="warning">
+  If a write lacks a safe ledger entry, exact after-image, ownership proof, or
+  required before-image, rollback fails visibly instead of guessing or deleting
+  a pre-existing destination record.
+</Callout>
+
+## What rollback does not do
+
+- It never changes the source ESP.
+- It cannot unsend broadcasts or automation messages sent after cutover.
+- It does not remove DNS records or external provider configuration.
+- It does not cancel Stripe subscriptions or other external billing objects.
+- It does not remove destination records created independently after the migration.
+- It does not erase append-only consent or audit history. Compensating rollback records preserve the compliance trail while operational destination rows are restored or removed.
+
+## Retry behavior
+
+Rollback is designed to be retry-safe. A repeated attempt uses the same ledger; already-removed created records are tolerated only when the ledger proves their expected terminal state, while restoration remains keyed to the recorded destination identity. Treat the job's `rolled_back` status and rollback-status response as authoritative—there is no separate public rollback identifier.
+
+## Start rollback
+
+From the UI, open **Migrations**, choose the job, and select **Roll back**.
+
+From the API:
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/migrations/$JOB_ID/rollback \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+
+curl https://api.moosewave.com/api/v1/migrations/$JOB_ID/rollback-status \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+```
+
+The start endpoint returns HTTP 202 when rollback is accepted. Poll status until `completed` or `failed`, then fetch the migration job again.
+
+## After the window
+
+Once `rollback_until` has passed, use normal subscriber, segment, automation, template, and archive management paths. Those operations are ordinary destination edits, not migration rollback, and do not change the source platform.
+
+See the [Migrations API](/api-reference/migrations) and [Verification report](/migration/verification-report).

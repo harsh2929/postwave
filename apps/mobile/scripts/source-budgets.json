@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "hardLimits": {
+    "fileLines": 450,
+    "functionLines": 300,
+    "cyclomaticComplexity": 25
+  },
+  "legacyFiles": {
+    "app/(auth)/totp.tsx": 509,
+    "app/(tabs)/archive.tsx": 480,
+    "app/(tabs)/migrations.tsx": 625,
+    "app/(tabs)/settings.tsx": 714,
+    "src/api/auth.ts": 610,
+    "src/components/onboarding/OnboardingChecklist.tsx": 571,
+    "src/components/tour/TourOverlay.tsx": 490
+  },
+  "legacyFunctions": {
+    "app/(auth)/magic-return.tsx": {
+      "longCount": 0,
+      "lineExcess": 0,
+      "maxLines": 0,
+      "complexCount": 1,
+      "complexityExcess": 2,
+      "maxComplexity": 27
+    },
+    "app/(auth)/sign-up.tsx": {
+      "longCount": 1,
+      "lineExcess": 54,
+      "maxLines": 354,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    },
+    "app/(auth)/totp.tsx": {
+      "longCount": 1,
+      "lineExcess": 153,
+      "maxLines": 453,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    },
+    "app/(tabs)/archive.tsx": {
+      "longCount": 1,
+      "lineExcess": 87,
+      "maxLines": 387,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    },
+    "app/(tabs)/custom-domains.tsx": {
+      "longCount": 1,
+      "lineExcess": 8,
+      "maxLines": 308,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    },
+    "app/(tabs)/sequences/[id].tsx": {
+      "longCount": 0,
+      "lineExcess": 0,
+      "maxLines": 0,
+      "complexCount": 1,
+      "complexityExcess": 5,
+      "maxComplexity": 30
+    },
+    "app/(tabs)/settings.tsx": {
+      "longCount": 1,
+      "lineExcess": 285,
+      "maxLines": 585,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    },
+    "src/api/aiGenerate.ts": {
+      "longCount": 0,
+      "lineExcess": 0,
+      "maxLines": 0,
+      "complexCount": 1,
+      "complexityExcess": 3,
+      "maxComplexity": 28
+    },
+    "src/components/InboxRealityBanner.tsx": {
+      "longCount": 1,
+      "lineExcess": 19,
+      "maxLines": 319,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    },
+    "src/components/settings/ApiConnectionSection.tsx": {
+      "longCount": 1,
+      "lineExcess": 58,
+      "maxLines": 358,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    },
+    "src/components/tour/TourOverlay.tsx": {
+      "longCount": 1,
+      "lineExcess": 6,
+      "maxLines": 306,
+      "complexCount": 0,
+      "complexityExcess": 0,
+      "maxComplexity": 0
+    }
+  }
+}

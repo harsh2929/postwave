@@ -1,0 +1,36 @@
+---
+title: Distribution availability
+---
+
+import { Callout } from "nextra/components";
+
+# Distribution availability
+
+<Callout type="error">
+  There is no approved Moosewave self-host installer or customer image bundle. Do
+  not run scripts from `download.moosewave.com`, request a `pwl_*` key, or rely
+  on undocumented registry images; those flows are not implemented or certified.
+</Callout>
+
+The repository can be used for source-level development according to its
+licenses and root development instructions. That is not the same as a
+production distribution. Docker Compose is limited to development and test
+workflows, uses development credentials, and selects upstream Listmonk by a
+version tag rather than a production-approved immutable digest.
+
+Before Moosewave can publish installation instructions, a release must provide
+all of the following evidence:
+
+1. an immutable source commit and signed application image digests;
+2. a reviewed upstream Listmonk digest and source/license provenance;
+3. a source export that excludes `proprietary/` and includes the applicable
+   AGPL, MIT, and third-party notices;
+4. an access-controlled artifact registry and verified extraction manifest;
+5. production secret, TLS, storage, migration, health, and observability
+   contracts; and
+6. installation, smoke, backup, restore, upgrade, rollback, and disaster
+   recovery rehearsals on the supported topology.
+
+Until those gates pass, any independent deployment is operator-built from
+source, unsupported by Moosewave, and governed only by the applicable licenses
+and any separately executed agreement.

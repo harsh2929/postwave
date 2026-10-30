@@ -1,0 +1,4 @@
+email_address,first_name,email_permission,email_optout_date,email_optin_date,sms_status
+ada@example.com,Ada,explicit,,2024-01-02T00:00:00Z,unsubscribed
+optout@example.com,Opt Out,implicit,2024-02-01,,subscribed
+unknown@example.com,Unknown,not_set,,,subscribed

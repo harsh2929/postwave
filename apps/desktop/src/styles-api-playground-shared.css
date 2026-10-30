@@ -1,0 +1,98 @@
+/* ----------------------------------------------------------------------
+ * API Playground
+ * --------------------------------------------------------------------
+ */
+.api-playground-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.api-playground-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.api-playground-row {
+  border: 1px solid var(--pw-border);
+  border-radius: 6px;
+  background: var(--pw-bg-elev);
+}
+.api-playground-row > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.api-playground-row > summary::-webkit-details-marker {
+  display: none;
+}
+.api-playground-row[open] > summary {
+  border-bottom: 1px solid var(--pw-border);
+}
+.api-playground-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.api-playground-summary {
+  font-size: 12px;
+  margin-left: auto;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 50%;
+}
+
+.api-playground-form {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.api-playground-form fieldset {
+  border: 1px solid var(--pw-border-soft);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 0;
+}
+.api-playground-form fieldset legend {
+  padding: 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pw-fg-muted);
+}
+.api-playground-param {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+.api-playground-param input {
+  padding: 4px 8px;
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border);
+  border-radius: 4px;
+  color: var(--pw-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.api-playground-body {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border);
+  border-radius: 4px;
+  color: var(--pw-fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+.api-playground-actions {
+  display: flex;
+  gap: 8px;
+}

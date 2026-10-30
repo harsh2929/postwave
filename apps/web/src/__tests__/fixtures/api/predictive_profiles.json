@@ -1,0 +1,424 @@
+{
+  "items": [
+    {
+      "prediction": {
+        "email": "ada.lovelace@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "ada.lovelace@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "margaret.hamilton@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "margaret.hamilton@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "grace.hopper@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "grace.hopper@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "alan.turing@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "alan.turing@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "katherine.johnson@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "katherine.johnson@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "donald.knuth@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "donald.knuth@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "edsger.dijkstra@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "edsger.dijkstra@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "leslie.lamport@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "leslie.lamport@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "ken.thompson@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "ken.thompson@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "dennis.ritchie@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "dennis.ritchie@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "radia.perlman@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "radia.perlman@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    },
+    {
+      "prediction": {
+        "email": "barbara.liskov@example.com",
+        "subscriber_id": "<uuid>",
+        "historic_clv_cents": 0,
+        "predicted_clv_cents": 0,
+        "total_clv_cents": 0,
+        "churn_risk": 0.5,
+        "predicted_order_count": 0,
+        "predicted_gender": "unknown",
+        "confidence": 0.1,
+        "data_sufficiency": "insufficient",
+        "explanation": {
+          "churn_score": 50,
+          "data_sufficiency": "insufficient",
+          "historic_clv_cents": 0,
+          "model": "heuristic-v1",
+          "order_count": 0
+        },
+        "churn_drivers": [],
+        "calculated_at": "<timestamp>"
+      },
+      "rfm": {
+        "email": "barbara.liskov@example.com",
+        "subscriber_id": "<uuid>",
+        "frequency": 0,
+        "monetary_cents": 0,
+        "recency_score": 1,
+        "frequency_score": 5,
+        "monetary_score": 5,
+        "rfm_score": "155",
+        "segment_key": "insufficient_data",
+        "calculated_at": "<timestamp>"
+      }
+    }
+  ]
+}

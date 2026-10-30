@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <picture-source-element.v1@example.com>
+Subject: Autumn lookbook
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-picture-v1"
+
+--pw-picture-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The autumn lookbook is out: https://shop.example.com/lookbook
+--pw-picture-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Autumn lookbook</h1><picture><source srcset="https://cdn.example.com/look-wide.jpg" media="(min-width:600px)"><img src="https://cdn.example.com/look.jpg" alt="A wool coat photographed on a stairwell" width="600" height="400"></picture><p><a href="https://shop.example.com/lookbook">View the lookbook</a></p></body></html>
+--pw-picture-v1--

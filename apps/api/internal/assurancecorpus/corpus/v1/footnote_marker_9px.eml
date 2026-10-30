@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <footnote-marker-9px.v1@example.com>
+Subject: Pricing update
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-footnote-v1"
+
+--pw-footnote-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Prices change on 1 October. Details: https://www.example.com/pricing
+--pw-footnote-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Pricing update</h1><p>Standard plan moves to 29.00 USD<sup style="font-size:9px">1</sup>.</p><p style="font-size:11px"><sup>1</sup> Existing customers keep current pricing until renewal.</p><p><a href="https://www.example.com/pricing">See full pricing</a></p></body></html>
+--pw-footnote-v1--

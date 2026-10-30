@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <screen-reader-only-label.v1@example.com>
+Subject: Order 5521 shipped
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-sronly-v1"
+
+--pw-sronly-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Order 5521 shipped. Track it: https://ship.example.com/5521
+--pw-sronly-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Order 5521 shipped</h1><p>Your order is on its way.</p><p><a href="https://ship.example.com/5521">Track<span style="position:absolute;left:-9999px"> order 5521</span></a></p></body></html>
+--pw-sronly-v1--

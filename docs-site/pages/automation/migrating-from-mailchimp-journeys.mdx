@@ -1,0 +1,49 @@
+---
+title: Rebuilding Mailchimp Customer Journeys
+---
+
+import { Callout } from "nextra/components";
+
+# Rebuilding Mailchimp Customer Journeys
+
+Mailchimp's public Marketing API does not provide a general export of Customer Journey / Automation Flow graphs. The migration therefore cannot prove triggers, branches, waits, goals, or message references well enough to create an executable Moosewave automation.
+
+Moosewave cannot detect whether an account has zero, one, or many Journeys from
+the supported API. Every Mailchimp migration therefore emits one generic,
+non-detected parity-gap warning. That warning is not an inventory or a rebuild
+checklist: inventory each Journey in the Mailchimp UI and attach the operator's
+own rebuild or waiver evidence.
+
+<Callout type="warning">
+  Do not activate an automation based only on a similarly named Mailchimp
+  Journey. Rebuild and test the behavior from the source account's visible
+  configuration.
+</Callout>
+
+## Manual rebuild checklist
+
+For each source Journey:
+
+1. Record its entry trigger and audience, form, tag, date, API, or commerce dependency.
+2. Inventory every message and recreate it from a verified imported template or a fresh Moosewave template.
+3. Record waits, time zones, quiet-hour behavior, and date boundaries.
+4. Rebuild each branch from fields that actually exist on imported Moosewave subscribers.
+5. Replace Mailchimp-only goals, ratings, engagement predicates, and ecommerce conditions with an explicit Moosewave event or reviewed segment.
+6. Confirm unsubscribe, suppression, and list-membership behavior at every exit.
+7. Test with internal subscribers, including both sides of every branch.
+8. Keep the Moosewave automation paused until the owner records test evidence and approves activation.
+
+## Classic Automations are different
+
+Mailchimp's `/automations` endpoints expose Classic Automations. Supported Classic Automation records can be imported as executable Moosewave runtime records, kept paused until destination template references and behavior are reviewed. The Customer Journey limitation above still applies; the two Mailchimp products must not be conflated.
+
+## Evidence to retain
+
+- Journey name and source identifier when available;
+- screenshots or exported operator notes for triggers and branches;
+- destination template IDs;
+- test subscribers and expected outcomes;
+- owner, approval date, and activation decision;
+- any intentional parity waiver.
+
+Return to the [Mailchimp migration guide](/migration/mailchimp) or read the [verification report reference](/migration/verification-report).

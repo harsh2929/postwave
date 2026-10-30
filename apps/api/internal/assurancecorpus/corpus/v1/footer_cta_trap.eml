@@ -1,0 +1,29 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <footer-cta-trap.v1@example.com>
+Subject: Reserve your synthetic seat
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-footer-v1"
+
+--pw-footer-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Reserve your seat: https://events.example.com/reserve
+
+Privacy: https://legal.example.com/privacy
+Unsubscribe: https://preferences.example.com/unsubscribe
+--pw-footer-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><h1>Reserve your synthetic seat</h1><p>=
+<a data-postwave-node=3D"primary-action"=
+ data-postwave-role=3D"primary_action"=
+ data-postwave-action-id=3D"reserve-seat"=
+ href=3D"https://events.example.com/reserve">Reserve your seat</a></p>=
+<footer><a href=3D"https://legal.example.com/privacy">Privacy</a> =
+<a href=3D"https://preferences.example.com/unsubscribe">Unsubscribe</a>=
+</footer></body></html>
+--pw-footer-v1--

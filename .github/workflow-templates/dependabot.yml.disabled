@@ -1,0 +1,466 @@
+# -----------------------------------------------------------------------------
+# Dependabot configuration for Moosewave.
+#
+# Six ecosystems are watched on a weekly cadence:
+#   1. npm (root + apps/* + packages/* workspaces) — runtime + dev deps.
+#   2. gomod (every tracked go.mod, including infra + e2e) — Go modules.
+#   3. github-actions — pinned action SHAs / version refs in .github/workflows.
+#   4. pip (packages/sdk-py) — Python SDK (Poetry/pyproject).
+#   5. composer (packages/sdk-php) — PHP SDK.
+#   6. cargo (apps/desktop/src-tauri) — Rust native shell deps.
+#
+# Why grouped PRs:
+#   Ungrouped Dependabot fans out into dozens of PRs per week against this
+#   monorepo, which thrashes CI and CODEOWNERS reviewers. Grouped mode bundles
+#   minor/patch bumps into one PR per ecosystem per directory, dramatically
+#   cutting noise while still surfacing major bumps individually so we can
+#   read their changelogs before merging.
+#
+# Manual fix recipe: when a Dependabot PR is failing,
+#   1. Pull the branch:  gh pr checkout <PR-number>
+#   2. For npm: rm -rf node_modules && pnpm install
+#   3. For Go: cd apps/api && go mod tidy && go build ./...
+#   4. Commit the lockfile changes back to the PR branch.
+#   5. If a peer dep collision blocks the bump, rebase the PR onto main
+#      after merging unrelated PRs first — Dependabot will re-resolve.
+# -----------------------------------------------------------------------------
+
+version: 2
+updates:
+  # ---------------------------------------------------------------------------
+  # npm / pnpm workspaces.
+  # The repo uses pnpm with a single root lockfile; Dependabot still discovers
+  # each workspace package because we list directories explicitly. Grouped
+  # mode rolls minor + patch into one PR per directory per week.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ecosystem:npm"
+    groups:
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      npm-security:
+        applies-to: security-updates
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/desktop"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ecosystem:npm"
+      - "scope:desktop"
+    groups:
+      desktop-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "cargo"
+    directory: "/apps/desktop/src-tauri"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ecosystem:cargo"
+      - "scope:desktop"
+    groups:
+      desktop-cargo-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ecosystem:npm"
+      - "scope:web"
+    groups:
+      web-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ecosystem:npm"
+      - "scope:mobile"
+    groups:
+      mobile-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/apps/audit-portal"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:npm"
+      - "scope:audit-portal"
+    groups:
+      audit-portal-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---------------------------------------------------------------------------
+  # Go modules. Each go.mod gets its own entry so Dependabot can resolve the
+  # local replace directives correctly.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "gomod"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:api"
+    groups:
+      api-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      api-security:
+        applies-to: security-updates
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"
+
+  - package-ecosystem: "gomod"
+    directory: "/packages/runtime"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:runtime"
+    groups:
+      runtime-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/infra/observability/image/collector"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:observability"
+    groups:
+      observability-collector-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/infra/observability/image/healthcheck"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:observability"
+    groups:
+      observability-healthcheck-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/packages/kms"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:kms"
+    groups:
+      kms-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/packages/migrate"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:migrate"
+    groups:
+      migrate-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/packages/sdk-go"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:sdk-go"
+    groups:
+      sdk-go-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/packages/secrets"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:secrets"
+    groups:
+      secrets-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/services/voice"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:voice"
+    groups:
+      voice-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/services/automation"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:automation"
+    groups:
+      automation-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/services/deliverability"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:deliverability"
+    groups:
+      deliverability-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/services/migration"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:migration"
+    groups:
+      migration-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "gomod"
+    directory: "/tests/e2e"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "ecosystem:gomod"
+      - "scope:e2e"
+    groups:
+      e2e-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions pinned in workflows/ — keep these current so we pick up
+  # security fixes in actions/checkout, docker/login-action, etc.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ecosystem:github-actions"
+    groups:
+      actions-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      actions-security:
+        applies-to: security-updates
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"
+
+  # ---------------------------------------------------------------------------
+  # Python SDK (packages/sdk-py) — Poetry/pyproject. Closes the prior coverage
+  # gap: this module had no committed lockfile and was unscanned. Dependabot
+  # resolves the dependency graph itself and raises security + version PRs even
+  # without a committed poetry.lock.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "pip"
+    directory: "/packages/sdk-py"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ecosystem:pip"
+      - "scope:sdk-py"
+    groups:
+      pip-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      pip-security:
+        applies-to: security-updates
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"
+
+  # ---------------------------------------------------------------------------
+  # PHP SDK (packages/sdk-php) — Composer. Closes the prior coverage gap. The
+  # SDK declares zero third-party runtime deps (only php / ext-curl / ext-json
+  # + phpunit dev), so the surface is small, but wiring Composer in means any
+  # future runtime dep — or a phpunit CVE — is caught automatically.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "composer"
+    directory: "/packages/sdk-php"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ecosystem:composer"
+      - "scope:sdk-php"
+    groups:
+      composer-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+      composer-security:
+        applies-to: security-updates
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"

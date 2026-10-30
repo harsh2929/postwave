@@ -1,0 +1,7 @@
+# Default owners for everything in this repo.
+# Replace with team handles once the org is set up.
+* @vijayts
+
+# Cross-tenant operator controls and their customer-visible audit boundary.
+/apps/ops/ @vijayts
+/apps/audit-portal/ @vijayts

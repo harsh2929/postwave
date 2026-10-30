@@ -1,0 +1,136 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Independent logical backup trail. This is deliberately separate from the
+# physical WAL/base-backup chain and uses the same signed manifest contract.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-logical-backup
+  namespace: postwave
+  labels:
+    app.kubernetes.io/name: postwave
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "0 */6 * * *"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 900
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 8
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: postwave
+            app.kubernetes.io/component: backup
+        spec:
+          serviceAccountName: postwave-backup-evidence-signer
+          automountServiceAccountToken: true
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: logical-backup
+              image: "__BACKUP_IMAGE__"
+              imagePullPolicy: IfNotPresent
+              command: ["/usr/local/bin/postwave-logical-backup"]
+              envFrom:
+                - configMapRef:
+                    name: postgres-walg-config
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: postwave-db
+                      key: dsn
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: "250m"
+                  memory: "512Mi"
+                limits:
+                  cpu: "2"
+                  memory: "2Gi"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: "32Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-base-backup-evidence-signer
+  namespace: postwave
+  labels:
+    app.kubernetes.io/name: postwave
+    app.kubernetes.io/component: backup-evidence-signer
+spec:
+  schedule: "23 * * * *"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 900
+  successfulJobsHistoryLimit: 4
+  failedJobsHistoryLimit: 8
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: postwave
+            app.kubernetes.io/component: backup-evidence-signer
+        spec:
+          serviceAccountName: postwave-backup-evidence-signer
+          automountServiceAccountToken: true
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: evidence-signer
+              image: "__BACKUP_IMAGE__"
+              imagePullPolicy: IfNotPresent
+              command: ["/usr/local/bin/postwave-sign-base-backup-evidence"]
+              envFrom:
+                - configMapRef:
+                    name: postgres-walg-config
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "1"
+                  memory: "512Mi"
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                sizeLimit: "256Mi"

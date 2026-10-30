@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <skip-link-offscreen.v1@example.com>
+Subject: Product digest
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-skiplink-v1"
+
+--pw-skiplink-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This month's product digest: https://news.example.com/digest
+--pw-skiplink-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><a href="https://news.example.com/digest#main" style="position:absolute;left:-10000px">Skip to content</a><h1>Product digest</h1><p>Four changes shipped this month.</p><p><a href="https://news.example.com/digest">Read the digest</a></p></body></html>
+--pw-skiplink-v1--

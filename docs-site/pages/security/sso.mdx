@@ -1,0 +1,90 @@
+---
+title: SSO (OIDC / OAuth)
+---
+
+import { Callout } from 'nextra/components';
+
+# SSO (OIDC / OAuth)
+
+Moosewave supports verified-email sign-in with **Google** over OIDC. Google is
+configured at the deployment level; when its client ID is not set, its button
+is hidden and both OAuth endpoints fail closed with `404 provider_disabled`.
+
+## The login round-trip
+
+| Method | Path                                          | Purpose                                  |
+| ------ | --------------------------------------------- | ---------------------------------------- |
+| GET    | `/api/v1/auth/oauth/{provider}/start`         | Begin the round-trip (PKCE + state).     |
+| GET    | `/api/v1/auth/oauth/{provider}/callback`      | Complete it; mint a Moosewave session.    |
+
+`{provider}` is `google` for this release.
+
+1. The browser hits `/start`. Moosewave mints a single-use state record and a
+   PKCE verifier, then redirects to Google with `code_challenge_method=S256`
+   and `prompt=select_account`.
+2. Google returns to `/callback?code=...&state=...`. Moosewave consumes and
+   validates the state, exchanges the code with the PKCE verifier, and reads
+   `sub`, `email`, and the boolean `email_verified` UserInfo claim.
+3. Moosewave rejects missing or false `email_verified` claims. A previously
+   linked subject may sign in. A matching email alone never creates a link.
+
+```
+GET /api/v1/auth/oauth/google/start?redirect_to=/app
+```
+
+<Callout type="info">
+An unconfigured or unsupported provider returns `404 provider_disabled` from
+both `/start` and `/callback` before OAuth state or an upstream network request
+is touched. IdP-returned errors surface as `400 oauth_error`.
+</Callout>
+
+## Explicit account linking
+
+If Google returns a verified email matching an existing local account but its
+subject is not linked, normal sign-in returns `409 identity_link_required`.
+The user must sign in locally and choose **Connect Google** under Settings →
+Security. That action starts `/start?link=true`; Moosewave binds the initiating
+session, user, and tenant into single-use server state, revalidates that the
+session is still active at callback time, and requires the verified Google
+email to match the local account before persisting the link.
+
+If no local account has that email, the callback redirects to normal workspace
+signup with the email prefilled. Signup creates a local credential; the user
+can explicitly connect Google afterward.
+
+## Configuration
+
+Configured via environment (in production, sourced from Secrets Manager):
+
+```
+POSTWAVE_OAUTH_REDIRECT_BASE=https://api.moosewave.com
+
+POSTWAVE_OAUTH_GOOGLE_CLIENT_ID=...
+POSTWAVE_OAUTH_GOOGLE_CLIENT_SECRET=...
+```
+
+Register
+`<POSTWAVE_OAUTH_REDIRECT_BASE>/api/v1/auth/oauth/google/callback` in the
+Google OAuth client. Client ID and secret are read together; leave the client
+ID unset to disable Google sign-in.
+
+Moosewave uses Google's authorize, token, and UserInfo endpoints:
+
+`accounts.google.com/o/oauth2/v2/auth` · `oauth2.googleapis.com/token` ·
+`openidconnect.googleapis.com/v1/userinfo`
+
+The requested scopes are `openid email profile`.
+
+## Microsoft status
+
+Microsoft Entra native sign-in is intentionally disabled in this release. Do
+not configure or advertise Microsoft auth credentials. A future implementation
+must validate the Microsoft ID token's signature, issuer, audience, and nonce
+and retain the explicit session-bound linking and reauthentication contract
+before `/start` or `/callback` may be enabled.
+
+## See also
+
+- [SCIM v2](/security/scim) — automated enterprise provisioning.
+- [MFA / TOTP](/security/mfa) — layering a second factor on top of OAuth.
+- [Team & roles](/team) — what the resulting role can do.

@@ -1,0 +1,919 @@
+{
+  "schemaVersion": 1,
+  "currentAudit": "docs/audits/2026-07-15-production-readiness-remediation-and-evidence.md",
+  "archiveRoot": "docs/audits/archive",
+  "documents": [
+    {
+      "path": "README.md",
+      "owner": "engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/ecosystem/architecture.md",
+      "owner": "architecture",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/production-supported-feature-matrix-2026-07-14.md",
+      "owner": "product-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/security/dependency-risk-governance.md",
+      "owner": "security",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/security/distribution-hygiene.md",
+      "owner": "security-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/audits/README.md",
+      "owner": "security-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-23",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/audits/2026-07-15-production-readiness-remediation-and-evidence.md",
+      "owner": "security-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md",
+      "owner": "security-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-15-mailchimp-import-integration-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-18-customerio-import-integration-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-18",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-16-beehiiv-import-integration-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-16",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-19-audit-log-99p9-audit.md",
+      "owner": "security-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-19-privacy-incidents-99p9-audit.md",
+      "owner": "privacy",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-20-consent-receipts-99p9-audit.md",
+      "owner": "privacy",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-20-mcp-99p9-audit.md",
+      "owner": "developer-platform",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-21",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-23-sms-inbox-99p9-audit.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-23",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-28-sms-suppressions-99p9-audit.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-28",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-30-campaign-assurance-comprehensive-audit.md",
+      "owner": "campaign-assurance",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-30-campaign-assurance-platform-ui-parity.md",
+      "owner": "campaign-assurance",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-30-web-desktop-parity-closure.md",
+      "owner": "security-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-09-03",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "apps/web/src/app/(docs)/README.md",
+      "owner": "product-documentation",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs-site/README.md",
+      "owner": "product-documentation",
+      "status": "reference",
+      "version": 2,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/README.md",
+      "owner": "site-reliability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/account-ban.md",
+      "owner": "trust-and-safety",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/auth-aws.md",
+      "owner": "platform-security",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/automation-runtime-stuck.md",
+      "owner": "automation",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/backup-quarterly-test.md",
+      "owner": "site-reliability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/common-failures.md",
+      "owner": "site-reliability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/campaign-assurance-modeled-runtime.md",
+      "owner": "campaign-assurance",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/campaign-assurance-operations.md",
+      "owner": "campaign-assurance",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/campaign-assurance-send-gate.md",
+      "owner": "campaign-assurance",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/campaign-assurance-slo.md",
+      "owner": "campaign-assurance",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/campaign-image-broker-runtime.md",
+      "owner": "campaign-assurance",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/campaign-sending-domain-and-capture-mailboxes.md",
+      "owner": "campaign-assurance",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/customer-data-export.md",
+      "owner": "privacy",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/dashboards.md",
+      "owner": "observability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/data-safety-update-readiness.md",
+      "owner": "database",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/database-incident.md",
+      "owner": "database",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/deliverability-incident.md",
+      "owner": "deliverability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/deploy-procedure.md",
+      "owner": "release-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/desktop-build-and-sign.md",
+      "owner": "desktop-release",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/desktop-distribution.md",
+      "owner": "desktop-release",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/engagement-classifier-v2-shadow.md",
+      "owner": "campaign-assurance",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-08-31",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/disaster-recovery.md",
+      "owner": "site-reliability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/incident-response.md",
+      "owner": "security-incident-response",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/ip-delisting.md",
+      "owner": "deliverability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/migration-failure.md",
+      "owner": "database",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/mobile-performance-certification.md",
+      "owner": "mobile-release",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/newsletter-template-catalog.md",
+      "owner": "product-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-19",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/oncall-rotation.md",
+      "owner": "site-reliability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "docs/runbooks/pre-production-launch-readiness.md",
+      "owner": "release-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/provider-rehearsal.md",
+      "owner": "integrations",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/rds-cross-region-backup.md",
+      "owner": "database",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/runbooks/seedlist-provisioning.md",
+      "owner": "deliverability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-07-15",
+      "reviewIntervalDays": 90
+    },
+    {
+      "path": "infra/aws/PRODUCTION_DEPLOY_RUNBOOK.md",
+      "owner": "release-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "infra/aws/WEB_DEPLOY_RUNBOOK.md",
+      "owner": "release-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/audits/2026-08-30-sending-settings-99p9-audit.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-30-webhook-simulator-99p9-audit.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/migrations-integrations-2026-09-06.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-16-desktop-ui-ux-component-coverage-ledger.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-16",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-16-desktop-ui-ux-five-year-implementation-ledger.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-16",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-16-desktop-ui-ux-five-year-maturity-audit.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-16",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-16-desktop-ui-ux-surface-and-interaction-inventory.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-16",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-18-desktop-99p9-design-program-ledger.md",
+      "owner": "desktop-release",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-18",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-18-klaviyo-import-integration-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-18",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-18-subscribers-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-18",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-18-tags-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-18",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-19-audience-syncs-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-19-lifecycle-automation-durable-delivery.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-19-lists-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-19-segments-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-19-subscriber-email-consent-terminal-hardening.md",
+      "owner": "privacy",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-19-suppressions-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-19",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-20-campaigns-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-20",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-21-automations-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-21",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-21-forms-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-21",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-21-sequences-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-21",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-22-assets-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-22",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-22-collections-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-22",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-22-templates-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-22",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-23-webhooks-route-99p9-audit.md",
+      "owner": "developer-platform",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-23",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-24-product-events-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-24",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-26-affiliates-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-26",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-26-analytics-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-26",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-26-archive-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-26",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-26-referrals-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-26",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-26-send-time-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-26",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-27-discounts-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-27",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-28-gift-history-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-28",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-28-hubspot-import-integration-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-28",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-29-commerce-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-29",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-29-reviews-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-29",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-30-mailerlite-import-integration-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-30",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-07-30-retention-history-route-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-07-30",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-02-deliverability-hub-99p9-audit.md",
+      "owner": "deliverability",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-02",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-03-custom-domains-99p9-audit.md",
+      "owner": "deliverability",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-03",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-08-dmarc-reports-99p9-audit.md",
+      "owner": "deliverability",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-08",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-08-postwave-ai-99p9-audit.md",
+      "owner": "developer-platform",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-08",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-09-ai-changelog-99p9-audit.md",
+      "owner": "developer-platform",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-09",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-09-integrations-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-09",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-09-migrations-99p9-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-09",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-10-data-platform-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-10",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-12-approvals-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-12",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-13-substack-migration-integration-audit.md",
+      "owner": "integrations",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-13",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-25-helpdesk-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-25",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-29-api-playground-99p9-audit.md",
+      "owner": "developer-platform",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-29",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/audits/2026-08-29-push-suppressions-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-08-29",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/runbooks/email-verification-health.md",
+      "owner": "deliverability",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    },
+    {
+      "path": "docs/audits/2026-09-12-agency-99p9-audit.md",
+      "owner": "product-engineering",
+      "status": "reference",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 365
+    },
+    {
+      "path": "docs/web-production-readiness-2026-09-12.md",
+      "owner": "release-engineering",
+      "status": "active",
+      "version": 1,
+      "lastReviewed": "2026-09-12",
+      "reviewIntervalDays": 45
+    }
+  ],
+  "executableContracts": [
+    {
+      "documents": [
+        "docs/runbooks/deploy-procedure.md",
+        "infra/aws/PRODUCTION_DEPLOY_RUNBOOK.md"
+      ],
+      "command": "node scripts/release/verify-aws-deployment-contracts.mjs"
+    },
+    {
+      "documents": [
+        "docs/runbooks/deploy-procedure.md",
+        "infra/aws/WEB_DEPLOY_RUNBOOK.md"
+      ],
+      "command": "node scripts/check-production-platform.mjs"
+    },
+    {
+      "documents": [
+        "docs/runbooks/backup-quarterly-test.md",
+        "docs/runbooks/disaster-recovery.md",
+        "docs/runbooks/rds-cross-region-backup.md"
+      ],
+      "command": "bash scripts/check-backup-dr.sh"
+    },
+    {
+      "documents": ["docs/runbooks/provider-rehearsal.md"],
+      "command": "node scripts/providers/rehearsal-preflight.mjs"
+    },
+    {
+      "documents": ["docs/runbooks/pre-production-launch-readiness.md"],
+      "command": "node scripts/audit-production-readiness.mjs"
+    }
+  ]
+}

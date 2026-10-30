@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "metrics": {
+    "pw_http_requests_total": "apps/api/internal/observability/http_metrics.go",
+    "pw_http_duration_seconds_bucket": "apps/api/internal/observability/http_metrics.go",
+    "rate_limit_lru_evictions_total": "apps/api/internal/middleware/lru_bucket.go",
+    "postwave_auditsink_consecutive_failures": "apps/api/internal/observability/tier1_metrics.go",
+    "postwave_privacy_overdue_requests": "apps/api/internal/privacy/overdue_metric.go",
+    "pw_apikey_cache_hits_total": "apps/api/internal/apikeys/auth_cache.go",
+    "pw_apikey_cache_misses_total": "apps/api/internal/apikeys/auth_cache.go",
+    "postwave_tier1_requests_total": "apps/api/internal/observability/tier1_metrics.go",
+    "postwave_sendloop_recipient_health_gate_total": "apps/api/internal/sending/metrics.go",
+    "postwave_forms_signup_verification_total": "apps/api/internal/forms/metrics.go",
+    "postwave_email_verification_jobs_terminal_total": "apps/api/internal/verification/metrics.go",
+    "postwave_email_verification_provider_batches_total": "apps/api/internal/verification/metrics.go",
+    "postwave_email_verification_usage_persistence_failures_total": "apps/api/internal/verification/metrics.go",
+    "postwave_email_health_evidence_unavailable_total": "apps/api/internal/verification/metrics.go",
+    "postwave_recurrence_scanner_last_run_timestamp": "services/automation/internal/worker/metrics.go",
+    "postwave_automation_queue_depth": "services/automation/internal/worker/metrics.go",
+    "postwave_automation_queue_observation_failures_total": "services/automation/internal/worker/metrics.go",
+    "reputation_source_failures_total": "services/deliverability/internal/reputation/aggregator.go"
+  },
+  "prometheusFiles": [
+    "infra/grafana/dashboards/postwave-release-overview.json",
+    "infra/grafana/alerts/release_core.yml",
+    "infra/aws/observability-stack.yaml"
+  ],
+  "scrapeTargets": [
+    { "job": "postwave-api", "target": "api.postwave.internal:8080" },
+    {
+      "job": "postwave-migration",
+      "target": "migration.postwave.internal:8081"
+    },
+    {
+      "job": "postwave-deliverability",
+      "target": "deliverability.postwave.internal:8082"
+    },
+    { "job": "postwave-voice", "target": "voice.postwave.internal:8083" },
+    {
+      "job": "postwave-automation",
+      "target": "automation.postwave.internal:8084"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "actions": [
+    {
+      "action": "review",
+      "module": "mjml",
+      "resolves": [
+        {
+          "id": 1121799,
+          "path": "apps__web>mjml",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    }
+  ],
+  "advisories": {
+    "1121799": {
+      "id": 1121799,
+      "title": "MJML allows mj-include directory traversal",
+      "module_name": "mjml",
+      "severity": "moderate",
+      "github_advisory_id": "GHSA-45h5-66jx-r2wf",
+      "cves": ["CVE-2025-67898"],
+      "vulnerable_versions": "<5.0.0-alpha.9",
+      "patched_versions": ">=5.0.0-alpha.9",
+      "url": "https://github.com/advisories/GHSA-45h5-66jx-r2wf",
+      "findings": [
+        {
+          "version": "4.18.0",
+          "paths": [
+            "apps/web > mjml@4.18.0",
+            "packages/claude-code-plugin > @postwave/cli@link:../cli > @postwave/email-react@link:../email-react > mjml@4.18.0",
+            "packages/cli > @postwave/email-react@link:../email-react > mjml@4.18.0",
+            "packages/email-react > mjml@4.18.0"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "https://github.com/advisories/GHSA-45h5-66jx-r2wf",
+      "created": "2025-12-01T00:00:00.000Z",
+      "metadata": null,
+      "npm_advisory_id": null,
+      "reported_by": null
+    }
+  },
+  "muted": [],
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 0
+    },
+    "dependencies": 100,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 100
+  }
+}

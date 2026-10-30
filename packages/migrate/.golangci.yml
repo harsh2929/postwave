@@ -1,0 +1,37 @@
+# golangci-lint config for github.com/postwave/migrate
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - misspell
+    - gosec
+    - unused
+    - revive
+
+linters-settings:
+  gosec:
+    excludes:
+      - G104 # we accept defer-error patterns in tests
+  revive:
+    rules:
+      - name: var-naming
+      - name: package-comments
+      - name: exported
+
+issues:
+  exclude-dirs:
+    - examples
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec

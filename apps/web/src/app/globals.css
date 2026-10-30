@@ -1,0 +1,680 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Moosewave Sans";
+  src: url("/fonts/moosewave-sans.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: "Moosewave Display";
+  src: url("/fonts/moosewave-display.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Moosewave Hand";
+  src: url("/fonts/moosewave-hand.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400 700;
+}
+
+@layer base {
+  /* The shared product primitives retain Moosewave's canonical semantic
+     palette. The expressive public language layers cobalt, highlighter yellow,
+     soft pink, carbon ink, and collage paper through the --mw-* tokens below,
+     matching the architecture used by design.moosewave.com. */
+  :root {
+    --font-inter: "Moosewave Sans";
+    --font-display: "Moosewave Display";
+    --font-hand: "Moosewave Hand";
+
+    --background: 48 56% 98%; /* #FDFCF8 canonical warm paper */
+    --foreground: 0 0% 6%; /* #0F0F0F canonical ink */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 350 85% 42%;
+    --primary-foreground: 48 56% 98%;
+
+    --secondary: 44 35% 93%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 44 35% 93%;
+    --muted-foreground: 0 0% 36%;
+
+    --accent: 351 76% 95%;
+    --accent-foreground: 350 86% 32%;
+
+    --destructive: 10 74% 48%;
+    --destructive-foreground: 48 56% 98%;
+    --destructive-emphasis: 10 74% 40%;
+    --destructive-emphasis-foreground: 48 56% 98%;
+
+    --border: 46 17% 85%;
+    --input: 41 23% 85%;
+    --ring: 350 85% 42%;
+
+    --radius: 0.625rem;
+
+    --mw-paper: #fffbee;
+    --mw-ink: #20201e;
+    --mw-yellow: #ffdf38;
+    --mw-pink: #f2a8cc;
+    --mw-pink-soft: #f9dfeb;
+    --mw-blue: #244cad;
+    --mw-red: #d20a3a;
+    --mw-paper-grid: rgb(36 76 173 / 0.1);
+    --mw-logo-cutout: #fffbee;
+
+    /* Semantic status — defined once, theme-aware, never ad-hoc Tailwind again.
+       warning == brand gold. Each has -foreground (text on solid) and -subtle (wash). */
+    --success: 156 61% 30%; /* #1E7A55 darkened so white-on-fill clears AA (canonical) */
+    --success-foreground: 0 0% 100%;
+    --success-emphasis: 156 61% 25%; /* #196748; AA-safe through 5–15% success washes on every canonical light surface */
+    --success-subtle: 152 52% 95%; /* #ECF9F3 (canonical) */
+    --warning: 41 88% 57%; /* brand gold #F2B233 — fill-behind-dark-text only (gold fails as fg/border on white) */
+    --warning-foreground: 0 0% 10%;
+    --warning-subtle: 41 80% 95%;
+    --warning-emphasis: 38 90% 28%; /* contrast-safe amber: ~6:1 on white, ~5.7:1 on warning-subtle — clears AA for sm text/icons/borders */
+    --info: 215 80% 40%; /* darkened from 50% so text-info clears AA on info-subtle (~6:1) and white-on-info-solid improves */
+    --info-foreground: 0 0% 100%;
+    --info-subtle: 215 70% 96%;
+
+    --gold: 40 88% 57%; /* #F2B233 — the single spark: celebration / positive emphasis only (canonical) */
+
+    /* Data-viz ramp, anchored on the brand but decoupled from the accent so
+       multi-series charts never collide into one ember blur. */
+    --chart-1: 350 86% 42%; /* ember */
+    --chart-2: 41 88% 57%; /* gold */
+    --chart-3: 199 70% 45%; /* teal */
+    --chart-4: 270 50% 55%; /* plum */
+    --chart-5: 152 45% 42%; /* sage */
+    --chart-6: 24 80% 55%; /* warm orange */
+
+    /* Motion tokens — one movement personality, shared everywhere. */
+    --dur-fast: 140ms; /* presses, hovers, toggles */
+    --dur-base: 260ms; /* dialogs, route content, menus */
+    --dur-slow: 540ms; /* page stagger, count-ups */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* house exit/settle curve */
+    --ease-spring: cubic-bezier(
+      0.22,
+      1.28,
+      0.36,
+      1
+    ); /* hand-settle overshoot */
+  }
+
+  /* Dark = ink-warm, NOT slate. Re-authored on the brand ink; ember lifts to
+     stay vivid on dark. (A theme switcher — next-themes — is still pending, so
+     this block is branded-and-ready rather than reachable today.) */
+  .dark {
+    --background: 0 0% 6%;
+    --foreground: 47 33% 95%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 40 20% 96%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 40 20% 96%;
+
+    --primary: 353 74% 61%;
+    --primary-foreground: 0 0% 6%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 40 20% 96%;
+
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 72%;
+
+    --accent: 349 38% 16%;
+    --accent-foreground: 350 80% 90%;
+
+    --destructive: 12 86% 59%; /* #F0623D (canonical) */
+    --destructive-foreground: 40 20% 96%;
+    --destructive-emphasis: 12 87% 68%;
+    --destructive-emphasis-foreground: 0 0% 8%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 353 74% 61%;
+
+    --mw-logo-cutout: #20201e;
+
+    --success: 158 64% 52%; /* #34D399 (canonical) */
+    --success-foreground: 0 0% 8%;
+    --success-emphasis: 158 64% 52%;
+    --success-subtle: 153 41% 14%; /* #153225 (canonical) */
+    --warning: 41 85% 62%;
+    --warning-foreground: 0 0% 8%;
+    --warning-subtle: 41 50% 14%;
+    --warning-emphasis: 41 85% 62%; /* gold is already high-contrast on ink, so emphasis == warning on dark */
+    --info: 215 75% 62%;
+    --info-foreground: 0 0% 8%;
+    --info-subtle: 215 50% 16%;
+
+    --gold: 42 85% 62%; /* #F1C04C (canonical) */
+
+    --chart-1: 350 80% 62%;
+    --chart-2: 41 85% 62%;
+    --chart-3: 199 70% 57%;
+    --chart-4: 270 55% 68%;
+    --chart-5: 152 45% 54%;
+    --chart-6: 24 80% 64%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    color-scheme: light;
+    text-size-adjust: 100%;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--mw-pink);
+    color: var(--mw-ink);
+  }
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Tabular, slashed-zero figures so KPIs / counts / money never wobble or
+     reflow mid-count. Apply to stat numbers, table number cells, pricing. */
+  .num {
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-feature-settings:
+      "tnum" 1,
+      "zero" 1;
+  }
+}
+
+@layer components {
+  /* Shared graphic grammar from design.moosewave.com. These classes are kept
+     small and composable so marketing, auth, docs and the app shell can share
+     a language without sharing page-specific layouts. */
+  .mw-cut-paper {
+    border-radius: 28px 44px / 36px 28px;
+  }
+
+  .mw-display,
+  .mw-marketing-shell main h1 {
+    font-family: var(--font-display), "Arial Narrow", Impact, sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+    line-height: 0.95;
+    text-transform: uppercase;
+  }
+
+  .mw-tactile {
+    border: 1.5px solid var(--mw-ink);
+    box-shadow: 3px 4px 0 var(--mw-ink);
+  }
+
+  .mw-tactile:hover {
+    box-shadow: 1px 2px 0 var(--mw-ink);
+    transform: translate(2px, 2px) rotate(-0.4deg);
+  }
+
+  .mw-scribble-link {
+    color: var(--mw-blue);
+    text-decoration: underline wavy 1.5px;
+    text-underline-offset: 0.28rem;
+  }
+}
+
+/* Accessibility is the craft: one global guard so every transition, animation,
+   stagger, count-up and confetti burst self-disables for users who ask for it.
+   Sits outside @layer so the !important wins against utility animations. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Feature 12 — UI-from-variables pending/failed row markers. Mirrors
+   the desktop classes (apps/desktop/src/styles.css) so future shared
+   components can drop the same className on both surfaces. */
+@keyframes pw-pending-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Dashboard route arrival without loading the 100+ KiB motion runtime into
+   every authenticated route. The keyed wrapper in PageTransition replays this
+   compositor-only animation after navigation; reduced-motion users get the
+   final, position-stable frame immediately. */
+@keyframes pw-page-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pw-page-transition {
+  animation: pw-page-arrive 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-page-transition {
+    animation: none;
+  }
+}
+.pw-pending-row {
+  position: relative;
+  border-left: 3px solid rgb(115 115 115 / 0.6);
+  background: rgb(115 115 115 / 0.05);
+}
+.pw-pending-row::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgb(115 115 115);
+  animation: pw-pending-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.pw-failed-row {
+  border-left: 3px solid rgb(234 179 8);
+  background: rgb(234 179 8 / 0.08);
+}
+.pw-retry-link {
+  background: transparent;
+  border: 0;
+  padding: 0 0 0 6px;
+  margin: 0;
+  font: inherit;
+  color: rgb(234 179 8);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pw-retry-link:hover {
+  color: rgb(202 138 4);
+}
+
+/* Per-contact avatar tint (subscriber drill-down). Hue comes from the email
+   via a --pw-avatar-hue custom property; lightness/saturation are theme-aware
+   so the chip reads on both light and dark cards (SUB-023). */
+.pw-avatar {
+  background: hsl(var(--pw-avatar-hue) 55% 90%);
+  color: hsl(var(--pw-avatar-hue) 55% 30%);
+}
+.dark .pw-avatar {
+  background: hsl(var(--pw-avatar-hue) 40% 22%);
+  color: hsl(var(--pw-avatar-hue) 70% 78%);
+}
+
+/* Shell-level composition. Kept outside Tailwind layers so these rules can
+   normalize older route-specific utility strings while the route catalogue is
+   migrated incrementally to the new `mw-*` names. */
+.mw-focus-blue:focus-visible {
+  --tw-ring-color: var(--mw-blue);
+}
+
+/* Small, state-aware motion primitives. These replace the generic animation
+   plugin so dialogs, drawers, tooltips and inserted rows retain their motion
+   without shipping the plugin's unused selector catalogue on every route. */
+@keyframes mw-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes mw-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes mw-dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes mw-dialog-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.95);
+  }
+}
+@keyframes mw-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes mw-drawer-out {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes mw-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes mw-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes mw-tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mw-dialog-overlay[data-state="open"],
+.mw-docs-drawer-overlay[data-state="open"] {
+  animation: mw-fade-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mw-dialog-overlay[data-state="closed"],
+.mw-docs-drawer-overlay[data-state="closed"] {
+  animation: mw-fade-out 200ms ease-in both;
+}
+.mw-dialog-content[data-state="open"] {
+  animation: mw-dialog-in 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mw-dialog-content[data-state="closed"] {
+  animation: mw-dialog-out 200ms ease-in both;
+}
+.mw-docs-drawer-panel[data-state="open"] {
+  animation: mw-drawer-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mw-docs-drawer-panel[data-state="closed"] {
+  animation: mw-drawer-out 300ms ease-in both;
+}
+.mw-row-enter {
+  animation: mw-row-in 200ms ease-out both;
+}
+.mw-tooltip-enter {
+  animation: mw-pop-in 150ms ease-out both;
+}
+.mw-tour-enter {
+  animation: mw-tour-in 200ms ease-out both;
+}
+
+/* Dense operations and integration screens share one descendant contract.
+   Keeping it as authored CSS avoids shipping dozens of long, one-off
+   arbitrary-variant selectors in the render-blocking Tailwind bundle. */
+.pw-interaction-surface a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  align-items: center;
+  border-radius: calc(var(--radius) - 4px);
+}
+
+.pw-interaction-surface button,
+.pw-interaction-surface input:not([type="checkbox"]):not([type="radio"]),
+.pw-interaction-surface select {
+  min-height: 2.75rem;
+}
+
+.pw-interaction-surface button {
+  min-width: 2.75rem;
+}
+
+.pw-interaction-surface input:not([type="checkbox"]):not([type="radio"]),
+.pw-interaction-surface select,
+.pw-interaction-surface textarea {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.pw-interaction-surface :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 2px hsl(var(--background)),
+    0 0 0 4px hsl(var(--ring));
+}
+
+@media (min-width: 640px) {
+  .pw-interaction-surface a {
+    min-height: 2rem;
+    min-width: 0;
+  }
+
+  .pw-interaction-surface button,
+  .pw-interaction-surface input:not([type="checkbox"]):not([type="radio"]),
+  .pw-interaction-surface select {
+    min-height: 2.25rem;
+  }
+
+  .pw-interaction-surface button {
+    min-width: 0;
+  }
+
+  .pw-interaction-surface input:not([type="checkbox"]):not([type="radio"]),
+  .pw-interaction-surface select,
+  .pw-interaction-surface textarea {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+
+.mw-site-footer a:hover {
+  color: var(--mw-yellow) !important;
+}
+
+.mw-site-footer a:focus-visible {
+  outline: 2px solid var(--mw-yellow);
+  outline-offset: 4px;
+}
+
+/* Expressive color utilities are deliberately handwritten: these compact
+   single-declaration rules are materially smaller than Tailwind's opacity-
+   variable expansion and keep the render-blocking stylesheet under budget. */
+.border-mw-blue {
+  border-color: var(--mw-blue);
+}
+.border-mw-ink\/20 {
+  border-color: #20201e33;
+}
+.bg-mw-blue {
+  background-color: var(--mw-blue);
+}
+.bg-mw-ink {
+  background-color: var(--mw-ink);
+}
+.bg-mw-paper {
+  background-color: var(--mw-paper);
+}
+.bg-mw-pink {
+  background-color: var(--mw-pink);
+}
+.bg-mw-pink-soft {
+  background-color: var(--mw-pink-soft);
+}
+.bg-mw-yellow {
+  background-color: var(--mw-yellow);
+}
+.bg-mw-yellow\/45 {
+  background-color: #ffdf3873;
+}
+.text-mw-blue {
+  color: var(--mw-blue);
+}
+.text-mw-ink {
+  color: var(--mw-ink);
+}
+.text-mw-yellow {
+  color: var(--mw-yellow);
+}
+.hover\:border-mw-blue:hover {
+  border-color: var(--mw-blue);
+}
+.hover\:text-mw-blue:hover,
+.group:hover .group-hover\:text-mw-blue {
+  color: var(--mw-blue);
+}
+
+/* Compact data-slot overrides keep the component library in the new visual
+   language without asking Tailwind to emit dozens of one-use arbitrary-value
+   selectors into every route. */
+[data-slot="input"]:focus-visible,
+[data-slot="select"]:focus-visible,
+[data-slot="textarea"]:focus-visible {
+  border-color: var(--mw-blue);
+  --tw-ring-color: rgb(36 76 173 / 0.2);
+}
+
+[data-slot="input"][aria-invalid="true"],
+[data-slot="select"][aria-invalid="true"],
+[data-slot="textarea"][aria-invalid="true"] {
+  border-color: hsl(var(--destructive));
+  box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.25);
+}
+
+[data-slot="input"][aria-invalid="true"]:focus-visible,
+[data-slot="select"][aria-invalid="true"]:focus-visible,
+[data-slot="textarea"][aria-invalid="true"]:focus-visible {
+  border-color: hsl(var(--destructive));
+  box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.4);
+}
+
+[data-slot="tabs-trigger"][data-state="active"] {
+  background: var(--mw-pink-soft);
+  color: var(--mw-blue);
+  box-shadow: 0 2px 0 rgb(32 32 30 / 0.18);
+}
+
+/* Authenticated product language ------------------------------------------------
+   Every dashboard route is mounted below this one main landmark, including
+   older feature pages that predate PageShell. Keeping the inheritance here
+   gives all tabs and nested tabs the same paper, typography and interaction
+   grammar while shared primitives above cover their working controls. */
+.mw-dashboard-main {
+  position: relative;
+  background-color: var(--mw-paper);
+  background-image: radial-gradient(
+    circle,
+    var(--mw-paper-grid) 0.7px,
+    transparent 0.85px
+  );
+  background-size: 22px 22px;
+  background-position: -2px -2px;
+}
+
+/* A large part of the route catalogue has its own title markup. This narrow
+   selector corrects those legacy headers without touching user-authored email,
+   landing-page, or template preview content. */
+[data-slot="dashboard-main"] h1.font-display {
+  font-weight: 400 !important;
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+[data-slot="table-cell"] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 639px) {
+  .mw-dashboard-main {
+    background-size: 20px 20px;
+  }
+
+  [data-slot="dashboard-page-header"] {
+    border-radius: 1rem 1.3rem 1rem 1.3rem;
+  }
+
+  [data-slot="dashboard-page-header-actions"] > * {
+    width: 100%;
+  }
+
+  [data-slot="dashboard-overview-tools"] {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-slot="dashboard-overview-tools"] > * {
+    width: 100%;
+  }
+
+  [data-slot="dashboard-overview-tools"] > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  [data-slot="dashboard-overview-tools"] [data-slot="button"] {
+    width: 100%;
+  }
+}

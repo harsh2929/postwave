@@ -1,0 +1,34 @@
+title: Large Audience Export
+id: 9a5c1d40-4f2e-4a1f-bb2a-2cd8e8e8df01
+status: stable
+description: |
+  Subscriber export operation with audience size greater than 100,000 rows.
+  Common precursor to data exfiltration when paired with an unfamiliar IP
+  or off-hours timing. Investigate the actor's recent activity and the
+  destination (S3 presigned URL vs. direct download).
+author: Moosewave Security
+date: 2026/05/01
+references:
+  - https://schema.ocsf.io/1.8.0/classes/entity_management
+  - https://attack.mitre.org/techniques/T1567/
+  - docs/audit/ocsf-mapping.md
+tags:
+  - attack.exfiltration
+  - attack.t1567
+  - postwave.audit
+logsource:
+  product: postwave
+  service: audit_log
+  category: iam
+detection:
+  selection:
+    class_uid: 3004      # Entity Management
+    operation_id: 5      # Export
+    entity_type: "subscriber"
+  large_audience:
+    attributes.row_count|gte: 100000
+  condition: selection and large_audience
+falsepositives:
+  - "Migrating away from Moosewave — coordinate with the customer's success manager and silence per-tenant for the migration window."
+  - "Quarterly GDPR data-subject report generation by the DPO; allowlist their user UID."
+level: high

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <table-footnote-row.v1@example.com>
+Subject: Plan comparison
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-tfoot-v1"
+
+--pw-tfoot-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Compare plans: https://www.example.com/plans
+--pw-tfoot-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Plan comparison</h1><table><tr><th>Plan</th><th>Monthly</th></tr><tr><td>Starter</td><td>12.00 USD</td></tr><tr><td colspan="2" style="font-size:11px;color:#777777">Prices exclude VAT.</td></tr></table><p><a href="https://www.example.com/plans">Compare plans</a></p></body></html>
+--pw-tfoot-v1--

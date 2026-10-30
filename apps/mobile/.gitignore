@@ -1,0 +1,26 @@
+# Expo / RN build outputs
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native build artefacts (we use prebuild on demand; no committed ios/android)
+ios/
+android/
+
+# EAS local credentials
+.easignore
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+pc-api-key.json
+
+# Metro / TS caches
+.metro-cache/
+*.tsbuildinfo
+
+# OS
+.DS_Store

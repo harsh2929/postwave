@@ -1,0 +1,204 @@
+.shortcut-chord-hud {
+  position: fixed;
+  z-index: 2100;
+  inset-inline-start: 50%;
+  inset-block-end: max(28px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(680px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pw-bg-elev) 96%, transparent);
+  box-shadow: var(--pw-elev-3);
+  color: var(--pw-fg);
+  backdrop-filter: blur(14px);
+}
+
+.shortcut-chord-hud__prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block-end: 10px;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+.shortcut-chord-hud kbd,
+.shortcut-table kbd {
+  display: inline-flex;
+  min-width: 28px;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 7px;
+  border: 1px solid var(--pw-border);
+  border-block-end-width: 2px;
+  border-radius: 6px;
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+  font: 600 11px/1 var(--pw-font-mono, ui-monospace, monospace);
+  white-space: nowrap;
+}
+
+.shortcut-chord-hud__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcut-chord-hud__options li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+.shortcut-chord-hud__options li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyboard-shortcuts-body {
+  display: grid;
+  gap: 16px;
+}
+
+.shortcut-layout-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+}
+
+.shortcut-layout-choice legend {
+  padding-inline: 4px;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shortcut-layout-choice .radio-row {
+  align-items: baseline;
+}
+
+.shortcut-layout-choice .muted {
+  font-size: 11px;
+}
+
+.shortcut-search-field {
+  max-width: 420px;
+}
+
+.shortcut-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+}
+
+.shortcut-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.shortcut-table th,
+.shortcut-table td {
+  padding: 10px 12px;
+  border-block-end: 1px solid var(--pw-border);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.shortcut-table thead th {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.shortcut-table tbody tr:last-child > * {
+  border-block-end: 0;
+}
+
+.shortcut-table tbody th {
+  width: 42%;
+  font-weight: 400;
+}
+
+.shortcut-table td .badge {
+  margin-inline-start: 8px;
+}
+
+.shortcut-action-label,
+.shortcut-action-description {
+  display: block;
+}
+
+.shortcut-action-label {
+  color: var(--pw-fg);
+  font-weight: 600;
+}
+
+.shortcut-action-description {
+  margin-block-start: 3px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+
+.shortcut-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.shortcut-recording-status {
+  min-height: 20px;
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 720px) {
+  .shortcut-chord-hud {
+    inset-block-end: 16px;
+  }
+
+  .shortcut-chord-hud__options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .keyboard-shortcuts-section .settings-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-chord-hud {
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .shortcut-chord-hud,
+  .shortcut-table-scroll,
+  .shortcut-layout-choice,
+  .shortcut-chord-hud kbd,
+  .shortcut-table kbd {
+    border-color: CanvasText;
+  }
+}

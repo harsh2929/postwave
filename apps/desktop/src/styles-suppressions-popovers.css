@@ -1,0 +1,64 @@
+.suppression-date-popover {
+  z-index: var(--pw-layer-popover, 700);
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  background: var(--pw-bg-elev);
+  box-shadow: 0 8px 24px
+    color-mix(in srgb, var(--pw-shadow-color) 12%, transparent);
+}
+
+.suppression-date-popover-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.suppression-date-popover-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.suppression-date-popover-label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.suppression-date-popover-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-block-start: 12px;
+}
+
+.suppression-date-popover-actions .suppression-date-clear {
+  margin-inline-end: auto;
+}
+
+/* The slideover uses the secondary elevated surface. The base light-theme
+ * warning token misses AA by a fraction after its translucent badge fill is
+ * composited over that surface, so pull the text toward the foreground while
+ * retaining the semantic amber hue. Dark mode becomes lighter by the same
+ * rule and remains comfortably above the small-text threshold. */
+.suppression-reason-badge.warning {
+  color: color-mix(in srgb, var(--pw-warning) 82%, var(--pw-fg));
+}
+
+@media (max-width: 440px) {
+  .suppression-date-popover {
+    width: calc(100vw - 16px) !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .suppression-date-popover {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .suppression-reason-badge {
+    color: CanvasText;
+  }
+}

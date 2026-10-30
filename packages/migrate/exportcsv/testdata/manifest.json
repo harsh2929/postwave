@@ -1,0 +1,105 @@
+{
+  "provenance": "Synthetic fixtures written for local regression testing; no customer data. Provider guides document export scope and semantics, not a guarantee of these exact headers. AWeber Stop Status and normalized Bento/CSV variations are defensive cases; unknown forms remain unsendable. Real-account export qualification remains required.",
+  "profiles": [
+    {
+      "source": "aweber",
+      "file": "aweber.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "unconfirmed"
+      ],
+      "documentation": "https://docs.aweber.com/subscriber-management/subscribers/how-do-i-export-my-subscribers"
+    },
+    {
+      "source": "bento",
+      "file": "bento.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "unconfirmed"
+      ],
+      "documentation": "https://bentonow.com/docs/operations/contacts-consent"
+    },
+    {
+      "source": "campaign-monitor",
+      "file": "campaign-monitor.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "blocklisted"
+      ],
+      "documentation": "https://help.campaignmonitor.com/articles/Knowledge/suppression-list"
+    },
+    {
+      "source": "constant-contact",
+      "file": "constant-contact.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "unconfirmed"
+      ],
+      "documentation": "https://developer.constantcontact.com/api_guide/export_contacts.html"
+    },
+    {
+      "source": "drip",
+      "file": "drip.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "unconfirmed"
+      ],
+      "documentation": "https://help.drip.com/hc/en-us/articles/4424710429453-Export-Data-from-Drip"
+    },
+    {
+      "source": "flodesk",
+      "file": "flodesk.csv",
+      "statuses": [
+        "enabled",
+        "blocklisted",
+        "disabled"
+      ],
+      "documentation": "https://help.flodesk.com/en/articles/4794881"
+    },
+    {
+      "source": "loops",
+      "file": "loops.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "unconfirmed"
+      ],
+      "documentation": "https://app.loops.so/docs/contacts/properties"
+    },
+    {
+      "source": "omnisend",
+      "file": "omnisend.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "disabled"
+      ],
+      "documentation": "https://support.omnisend.com/en/articles/2847117-export-contacts-to-a-file"
+    },
+    {
+      "source": "sendy",
+      "file": "sendy.csv",
+      "statuses": [
+        "enabled",
+        "blocklisted",
+        "unconfirmed"
+      ],
+      "documentation": "https://sendy.co/download/"
+    },
+    {
+      "source": "csv",
+      "file": "csv.csv",
+      "statuses": [
+        "enabled",
+        "disabled",
+        "blocklisted"
+      ],
+      "documentation": null
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "name": "postwave-vscode",
+  "displayName": "Moosewave",
+  "description": "Live email preview, deliverability lint, and snippets for Moosewave email projects.",
+  "publisher": "postwave",
+  "version": "0.1.0",
+  "license": "MIT",
+  "homepage": "https://moosewave.com/forge",
+  "author": "Moosewave",
+  "icon": "media/postwave.png",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/harsh2929/postwave/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=18"
+  },
+  "categories": [
+    "Other",
+    "Linters"
+  ],
+  "keywords": [
+    "postwave",
+    "email",
+    "mjml",
+    "react-email",
+    "deliverability"
+  ],
+  "files": [
+    "media/postwave.png",
+    "media/postwave.svg",
+    "out/extension.js",
+    "src/snippets/postwave-snippets.code-snippets",
+    "language-configuration.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:typescriptreact",
+    "onLanguage:javascriptreact",
+    "workspaceContains:**/*.email.tsx",
+    "workspaceContains:**/*.mjml"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mjml",
+        "aliases": [
+          "MJML",
+          "mjml"
+        ],
+        "extensions": [
+          ".mjml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "postwave",
+          "title": "Moosewave",
+          "icon": "./media/postwave.svg"
+        }
+      ]
+    },
+    "views": {
+      "postwave": [
+        {
+          "type": "webview",
+          "id": "postwave.preview",
+          "name": "Email Preview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "postwave.preview.open",
+        "title": "Moosewave: Open Email Preview"
+      },
+      {
+        "command": "postwave.email.sendTest",
+        "title": "Moosewave: Send Test Email"
+      },
+      {
+        "command": "postwave.devServer.start",
+        "title": "Moosewave: Start Dev Server"
+      },
+      {
+        "command": "postwave.login",
+        "title": "Moosewave: Sign In"
+      },
+      {
+        "command": "postwave.logout",
+        "title": "Moosewave: Sign Out (Clear Local Credential)"
+      }
+    ],
+    "configuration": {
+      "title": "Moosewave",
+      "properties": {
+        "postwave.devServerUrl": {
+          "type": "string",
+          "default": "http://localhost:4321",
+          "description": "URL of the local Moosewave dev server (run `postwave dev`)."
+        },
+        "postwave.previewWidth": {
+          "type": "string",
+          "enum": [
+            "mobile",
+            "desktop"
+          ],
+          "default": "desktop",
+          "description": "Default preview viewport width."
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "typescriptreact",
+        "path": "./src/snippets/postwave-snippets.code-snippets"
+      },
+      {
+        "language": "javascriptreact",
+        "path": "./src/snippets/postwave-snippets.code-snippets"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch --sourcemap",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "3.9.1",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

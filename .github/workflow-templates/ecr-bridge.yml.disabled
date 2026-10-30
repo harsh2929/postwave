@@ -1,0 +1,370 @@
+name: ECR Bridge
+
+# -----------------------------------------------------------------------------
+# Mirrors the five Moosewave service images, two role-separated Campaign
+# Assurance images, standalone web image, one-shot DB migrator, and minimal
+# observability collector from GHCR (where
+# docker-push.yml signs and attests provenance) to AWS ECR (where
+# CloudFormation / ECS Fargate task definitions in
+# infra/aws/cloudformation/postwave-{stack,sidecars}.yaml pull from).
+#
+# Why a separate workflow (not a step in docker-push.yml):
+#   - docker-push.yml is the source-of-truth supply-chain workflow: it signs,
+#     attests, and is reviewed by security as the canonical publish path. The
+#     AWS-specific bridge step is operator concern (which account, which
+#     region, which OIDC role) and changing it shouldn't force a security
+#     re-review of the signing logic.
+#   - Promotion is fail-closed: missing AWS configuration fails the workflow
+#     instead of reporting success without an ECR artifact.
+#
+# Trigger order:
+#   1. Push to main -> docker-push.yml builds + signs + publishes to GHCR.
+#   2. docker-push.yml completion -> this workflow fires
+#      (`workflow_run` trigger), verifies each GHCR digest/evidence, copies
+#      the complete index to ECR, then signs and verifies the destination.
+#   3. Operator resolves each verified SHA tag once, records its immutable
+#      digest, and supplies only those digests to CloudFormation/ECS.
+#
+# Required repo configuration (set in Settings -> Variables, or Secrets):
+#   - vars.AWS_REGION              must be us-west-2 for canonical production.
+#   - vars.AWS_ECR_PUSH_ROLE_ARN   ARN of an OIDC-trusted IAM role with
+#                                  ecr:GetAuthorizationToken,
+#                                  ecr:BatchCheckLayerAvailability,
+#                                  ecr:InitiateLayerUpload, ecr:UploadLayerPart,
+#                                  ecr:CompleteLayerUpload, ecr:PutImage,
+#                                  ecr:DescribeRepositories, ecr:DescribeImages on
+#                                  the ten postwave-* repos. Trust policy MUST
+#                                  pin the federated principal to
+#                                  repo:<owner>/<repo>:ref:refs/heads/main so a
+#                                  PR cannot assume the role.
+#
+# Hard rules honored:
+#   - No untrusted github.event.* values are interpolated into run: blocks.
+#     The only dynamic inputs are vars.*, github.sha, github.repository_owner,
+#     and matrix.service -- all repo/workflow-controlled.
+#   - The bridge is idempotent and asserts the ECR digest is byte-for-byte
+#     identical to the verified GHCR multi-platform index.
+# -----------------------------------------------------------------------------
+
+on:
+  workflow_run:
+    workflows: ["Docker Push"]
+    types:
+      - completed
+  # Allow operators to manually re-run the bridge (e.g. after rotating the
+  # OIDC role) without forcing a no-op commit to main.
+  workflow_dispatch:
+    inputs:
+      git_sha:
+        description: "Full git SHA whose images to bridge (defaults to the latest main)."
+        required: false
+        type: string
+      service:
+        description: "Promote every release workload or one reviewed workload."
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - api
+          - voice
+          - automation
+          - deliverability
+          - migration
+          - db-migrator
+          - campaign-assurance
+          - campaign-assurance-image-services
+          - web
+          - observability-collector
+
+permissions:
+  contents: read
+  # Required for aws-actions/configure-aws-credentials OIDC role-assumption.
+  id-token: write
+  # Required for reading from ghcr.io.
+  packages: read
+
+concurrency:
+  # Bridge per-sha so two main pushes don't race the same ECR repo.
+  group: ecr-bridge-${{ github.event.workflow_run.head_sha || inputs.git_sha || github.sha }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  bridge:
+    name: GHCR to ECR (${{ matrix.service }})
+    # Skip when the upstream docker-push.yml didn't succeed -- mirroring a
+    # failed build would publish broken images to ECR.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # service = image name suffix (postwave-<service>); MUST stay in sync
+        # with the matrix in docker-push.yml and with the ECR repo names
+        # referenced by the canonical CloudFormation application modules.
+        service: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.service != 'all' && format('["{0}"]', inputs.service) || '["api","voice","automation","deliverability","migration","db-migrator","campaign-assurance","campaign-assurance-image-services","web","observability-collector"]') }}
+
+    steps:
+      - name: Compute target sha
+        # Prefer workflow_run head_sha (the sha that triggered docker-push)
+        # over a manual workflow_dispatch input, and fall back to github.sha
+        # for direct branch runs. All three are repo-controlled values --
+        # safe to interpolate into run: blocks.
+        id: sha
+        env:
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          INPUT_SHA: ${{ inputs.git_sha }}
+          FALLBACK_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${WORKFLOW_REF}" != "refs/heads/main" ]; then
+            echo "::error::manual image promotion is allowed only from refs/heads/main"
+            exit 1
+          fi
+          if [ -n "${WORKFLOW_RUN_SHA}" ]; then
+            target="${WORKFLOW_RUN_SHA}"
+          elif [ -n "${INPUT_SHA}" ]; then
+            target="${INPUT_SHA}"
+          else
+            target="${FALLBACK_SHA}"
+          fi
+          # Sanity-check: refuse to operate on anything that doesn't look
+          # like a 40-char hex sha. Defeats any future trigger path that
+          # might smuggle in untrusted data.
+          if ! printf '%s' "${target}" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::target sha '${target}' is not a 40-char hex string -- refusing to bridge."
+            exit 1
+          fi
+          echo "value=${target}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate AWS promotion configuration
+        # Promotion is fail-closed. A missing role/region must not turn a
+        # release workflow green while no signed artifact reached ECR.
+        id: gate
+        env:
+          ROLE_ARN: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          REGION: ${{ vars.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ROLE_ARN}" ] || [ -z "${REGION}" ]; then
+            echo "::error::AWS_ECR_PUSH_ROLE_ARN and AWS_REGION are required for image promotion"
+            exit 1
+          fi
+          if [ "${REGION}" != "us-west-2" ]; then
+            echo "::error::canonical production promotion requires AWS_REGION=us-west-2"
+            exit 1
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Lowercase repository owner
+        # ghcr.io paths are case-sensitive and must be lowercase.
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        id: repo
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          OWNER_LC="$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "owner_lc=$OWNER_LC" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR (read)
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cosign
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+        with:
+          cosign-release: v2.4.1
+
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        id: aws_creds
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-duration-seconds: 1800
+          role-session-name: gha-ecr-bridge-${{ matrix.service }}
+
+      - name: Log in to ECR
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        id: ecr_login
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076
+
+      - name: Verify immutable release-tag policy
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          repository="postwave-${SERVICE}"
+          config="$(aws ecr describe-repositories \
+            --repository-names "${repository}" \
+            --query 'repositories[0].{mutability:imageTagMutability,filters:imageTagMutabilityExclusionFilters}' \
+            --output json)"
+          if [ "${SERVICE}" = "observability-collector" ]; then
+            printf '%s' "${config}" | jq -e '
+              .mutability == "IMMUTABLE" and ((.filters // []) | length == 0)
+            ' >/dev/null || {
+              echo "::error::${repository} must make every tag immutable"
+              exit 1
+            }
+          else
+            printf '%s' "${config}" | jq -e '
+              .mutability == "IMMUTABLE_WITH_EXCLUSION" and
+              ((.filters // []) | map({filterType, filter}) | sort_by(.filter)) ==
+                ([
+                  {filterType: "WILDCARD", filter: "latest"},
+                  {filterType: "WILDCARD", filter: "main"}
+                ] | sort_by(.filter))
+            ' >/dev/null || {
+              echo "::error::${repository} must make every tag immutable except the exact mutable aliases latest and main"
+              exit 1
+            }
+          fi
+
+      - name: Resolve GHCR digest
+        # Resolve the sha-<sha> manifest from GHCR, then operate only on its
+        # immutable digest for verification and cross-registry copy.
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        id: digest
+        env:
+          OWNER_LC: ${{ steps.repo.outputs.owner_lc }}
+          SERVICE: ${{ matrix.service }}
+          TARGET_SHA: ${{ steps.sha.outputs.value }}
+        run: |
+          set -euo pipefail
+          GHCR_TAG="${REGISTRY}/${OWNER_LC}/postwave-${SERVICE}:sha-${TARGET_SHA}"
+          # `docker buildx imagetools inspect --raw` returns the manifest;
+          # combined with `--format` we can pull just the digest.
+          digest="$(docker buildx imagetools inspect "${GHCR_TAG}" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          if ! printf '%s' "${digest}" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "::error::could not resolve a valid immutable digest for ${GHCR_TAG}"
+            exit 1
+          fi
+          echo "value=${digest}" >> "$GITHUB_OUTPUT"
+          echo "::notice::GHCR digest for ${SERVICE}: ${digest}"
+
+      - name: Verify GHCR signature and attestations
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        env:
+          OWNER_LC: ${{ steps.repo.outputs.owner_lc }}
+          SERVICE: ${{ matrix.service }}
+          GHCR_DIGEST: ${{ steps.digest.outputs.value }}
+          TARGET_SHA: ${{ steps.sha.outputs.value }}
+          SOURCE_URL: https://github.com/${{ github.repository }}
+          CERTIFICATE_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/docker-push.yml@refs/heads/main
+          OIDC_ISSUER: https://token.actions.githubusercontent.com
+        run: |
+          set -euo pipefail
+          GHCR_REF="${REGISTRY}/${OWNER_LC}/postwave-${SERVICE}@${GHCR_DIGEST}"
+          cosign verify \
+            --certificate-identity "$CERTIFICATE_IDENTITY" \
+            --certificate-oidc-issuer "$OIDC_ISSUER" \
+            "$GHCR_REF" >/dev/null
+
+          images="$(docker buildx imagetools inspect "$GHCR_REF" --format '{{ json .Image }}')"
+          printf '%s' "$images" | jq -e \
+            --arg revision "$TARGET_SHA" \
+            --arg source "$SOURCE_URL" '
+              (keys | sort) == ["linux/amd64", "linux/arm64"] and
+              all(.[];
+                .config.Labels["org.opencontainers.image.revision"] == $revision and
+                .config.Labels["org.opencontainers.image.source"] == $source)
+            ' >/dev/null
+
+          provenance="$(docker buildx imagetools inspect "$GHCR_REF" --format '{{ json .Provenance }}')"
+          sbom="$(docker buildx imagetools inspect "$GHCR_REF" --format '{{ json .SBOM }}')"
+          printf '%s' "$provenance" \
+            | jq -e '.. | objects | select(has("SLSA")) | .SLSA | select(type == "object" and length > 0)' >/dev/null
+          printf '%s' "$sbom" \
+            | jq -e '.. | objects | select(has("SPDX")) | .SPDX | select(.SPDXID == "SPDXRef-DOCUMENT")' >/dev/null
+
+      - name: Bridge to ECR
+        if: ${{ steps.gate.outputs.skip == 'false' }}
+        env:
+          ECR_REGISTRY: ${{ steps.ecr_login.outputs.registry }}
+          OWNER_LC: ${{ steps.repo.outputs.owner_lc }}
+          SERVICE: ${{ matrix.service }}
+          TARGET_SHA: ${{ steps.sha.outputs.value }}
+          GHCR_DIGEST: ${{ steps.digest.outputs.value }}
+          DESTINATION_CERTIFICATE_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/ecr-bridge.yml@refs/heads/main
+          OIDC_ISSUER: https://token.actions.githubusercontent.com
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          GHCR_REF="${REGISTRY}/${OWNER_LC}/postwave-${SERVICE}@${GHCR_DIGEST}"
+          ECR_REPO="${ECR_REGISTRY}/postwave-${SERVICE}"
+
+          # Copy the complete multi-platform index. docker pull/tag/push would
+          # select one host platform and discard the BuildKit provenance/SBOM
+          # manifests, producing different bytes from the signed source.
+          immutable_tag="sha-${TARGET_SHA}"
+          existing_digest="$(aws ecr describe-images \
+            --repository-name "postwave-${SERVICE}" \
+            --image-ids imageTag="${immutable_tag}" \
+            --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)"
+          if [ -n "${existing_digest}" ] && [ "${existing_digest}" != "None" ]; then
+            if [ "${existing_digest}" != "${GHCR_DIGEST}" ]; then
+              echo "::error::immutable ${immutable_tag} already points to ${existing_digest}, expected ${GHCR_DIGEST}"
+              exit 1
+            fi
+          else
+            docker buildx imagetools create --tag "${ECR_REPO}:${immutable_tag}" "${GHCR_REF}"
+          fi
+
+          if [ "${SERVICE}" != "observability-collector" ]; then
+            for tag in latest main; do
+              ECR_TAG="${ECR_REPO}:${tag}"
+              docker buildx imagetools create --tag "${ECR_TAG}" "${GHCR_REF}"
+              copied_digest="$(docker buildx imagetools inspect "${ECR_TAG}" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+              if [ "${copied_digest}" != "${GHCR_DIGEST}" ]; then
+                echo "::error::digest changed while promoting ${SERVICE}: source=${GHCR_DIGEST} destination=${copied_digest}"
+                exit 1
+              fi
+            done
+          fi
+
+          immutable_digest="$(docker buildx imagetools inspect "${ECR_REPO}:${immutable_tag}" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          if [ "${immutable_digest}" != "${GHCR_DIGEST}" ]; then
+            echo "::error::immutable promotion digest mismatch for ${SERVICE}: source=${GHCR_DIGEST} destination=${immutable_digest}"
+            exit 1
+          fi
+
+          ECR_REF="${ECR_REPO}@${GHCR_DIGEST}"
+          if ! cosign verify \
+              --certificate-identity "$DESTINATION_CERTIFICATE_IDENTITY" \
+              --certificate-oidc-issuer "$OIDC_ISSUER" \
+              "${ECR_REF}" >/dev/null 2>&1; then
+            cosign sign --yes "${ECR_REF}"
+          fi
+          cosign verify \
+            --certificate-identity "$DESTINATION_CERTIFICATE_IDENTITY" \
+            --certificate-oidc-issuer "$OIDC_ISSUER" \
+            "${ECR_REF}" >/dev/null
+
+          provenance="$(docker buildx imagetools inspect "$ECR_REF" --format '{{ json .Provenance }}')"
+          sbom="$(docker buildx imagetools inspect "$ECR_REF" --format '{{ json .SBOM }}')"
+          printf '%s' "$provenance" \
+            | jq -e '.. | objects | select(has("SLSA")) | .SLSA | select(type == "object" and length > 0)' >/dev/null
+          printf '%s' "$sbom" \
+            | jq -e '.. | objects | select(has("SPDX")) | .SPDX | select(.SPDXID == "SPDXRef-DOCUMENT")' >/dev/null
+
+          echo "::notice::Verified, bridged, and destination-signed postwave-${SERVICE}@${GHCR_DIGEST}"

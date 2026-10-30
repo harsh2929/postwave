@@ -1,0 +1,33 @@
+title: Failed Authentication Burst
+id: 1f8e3b22-5d3a-4a93-9876-7a2e2c1b9f00
+status: stable
+description: |
+  More than 10 failed authentication events from the same source IP or
+  actor in a 5-minute window. Indicates credential stuffing, brute force,
+  or a misconfigured API client cycling expired keys. Moosewave per-tenant
+  rate-limiter cuts at 100/min — this rule is intentionally below that
+  ceiling so SOC notification fires BEFORE the platform's own throttle.
+author: Moosewave Security
+date: 2026/05/01
+references:
+  - https://schema.ocsf.io/1.8.0/classes/authentication
+  - https://attack.mitre.org/techniques/T1110/
+  - docs/audit/ocsf-mapping.md
+tags:
+  - attack.credential_access
+  - attack.t1110
+  - postwave.audit
+logsource:
+  product: postwave
+  service: audit_log
+  category: iam
+detection:
+  failed_auth:
+    class_uid: 3002       # Authentication
+    status_id: 2          # Failure
+  timeframe: 5m
+  condition: failed_auth | count() by src_endpoint.ip > 10 or failed_auth | count() by actor.user.uid > 10
+falsepositives:
+  - "Legit user with autofill / password manager racing on expired session — confirm by manual review."
+  - "CI runner with stale token; rotate the api-key and update the runner."
+level: high

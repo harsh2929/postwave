@@ -1,0 +1,33 @@
+title: Mass Subscriber Delete
+id: 8b9d6df1-8a2f-4a01-b34d-9b1c0f2e3a1a
+status: stable
+description: |
+  Detects a single actor deleting more than 5,000 subscribers in a 5-minute
+  window. Either a bulk-delete operation or a runaway script — both warrant
+  inspection. Moosewave's UI rate-limits the bulk-delete flow to 5k rows per
+  batch by default; sustained over multiple batches this rule will fire.
+author: Moosewave Security
+date: 2026/05/01
+modified: 2026/05/01
+references:
+  - https://schema.ocsf.io/1.8.0/classes/entity_management
+  - docs/audit/ocsf-mapping.md
+tags:
+  - attack.impact
+  - attack.t1485
+  - postwave.audit
+logsource:
+  product: postwave
+  service: audit_log
+  category: iam
+detection:
+  selection:
+    class_uid: 3004           # Entity Management
+    operation_id: 4           # Delete
+    entity_type: "subscriber"
+  timeframe: 5m
+  condition: selection | count() by actor.user.uid > 5000
+falsepositives:
+  - "Planned tenant data retention purge — schedule a maintenance window and silence the rule via Sigma backend filter."
+  - "Migration from another ESP can trigger this on initial sync; whitelist the migration service account by user.type_id=4 (Service)."
+level: high

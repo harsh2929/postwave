@@ -1,0 +1,8 @@
+# Local restore + dump artefacts. These should never be committed —
+# they may contain real tenant data even from a "test" restore.
+*.dump
+*.tar
+*.tar.gz
+*.sql.gz
+restored-*/
+.restore-workdir/

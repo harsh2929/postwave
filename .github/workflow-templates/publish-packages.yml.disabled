@@ -1,0 +1,360 @@
+# Publish Moosewave packages to npm.
+#
+# Triggers:
+#   - Tag push matching `packages-v*` (publishes ALL public npm packages bumped to
+#     that version. Workflow expects every package.json `version` field
+#     to match the tag — e.g. tag `packages-v0.2.0` requires every
+#     package under packages/ to be at 0.2.0).
+#   - Manual workflow_dispatch with a `package` input — publish a single
+#     package by directory name (e.g. `sdk-ts`).
+#
+# Required secrets:
+#   - NPM_TOKEN — short-lived granular token restricted to publishing the
+#     public `@postwave` package set. Add it to the protected `npm-publish`
+#     environment and rotate it before expiry; never use a personal classic
+#     token.
+#
+# Skipped packages:
+#   - mcp-server/ and claude-code-plugin/ (private, release-held under
+#     mcp_distribution_release_held; the release plan rejects manual selection)
+#   - migrate/ (Go module — consumed via `go get`, no npm publish)
+#   - sdk-py/ (Python — see publish-pypi.yml for that)
+#   - vscode-extension/ (VS Code Marketplace artifact, not an npm package)
+#
+# Local dry run:
+#   pnpm --filter "@postwave/sdk" publish --dry-run --access public
+
+name: publish-packages
+
+on:
+  push:
+    tags:
+      - "packages-v*"
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Single package directory under packages/ (e.g. "sdk-ts"). Leave empty to publish all.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# npm versions are immutable and the registry's `latest` selection is order
+# sensitive. Serialize every full and single-package publication.
+concurrency:
+  group: postwave-npm-publish
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate release plan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require canonical main release source
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REPOSITORY" != "harsh2929/postwave" ]]; then
+            echo "::error::only harsh2929/postwave may publish npm releases"
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "::error::release tag commit is not reachable from origin/main"
+              exit 1
+            fi
+          elif [[ "$GITHUB_REF" != "refs/heads/main" || "$(git rev-parse origin/main)" != "$GITHUB_SHA" ]]; then
+            echo "::error::manual package publishes must run from the current main commit"
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20.19.5"
+
+      - name: Resolve and validate package matrix
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          DISPATCH_PACKAGE: ${{ inputs.package }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "push" ]; then
+            event_kind=tag
+          else
+            event_kind=dispatch
+          fi
+          matrix="$(node scripts/release/npm-release-plan.mjs \
+            --event "$event_kind" \
+            --tag "$RELEASE_TAG" \
+            --package "$DISPATCH_PACKAGE" \
+            --repository "$GITHUB_REPOSITORY")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  stage:
+    name: Stage ${{ matrix.name }}@${{ matrix.version }}
+    needs: prepare
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    env:
+      MATRIX_PACKAGE: ${{ matrix.directory }}
+      MATRIX_NAME: ${{ matrix.name }}
+      MATRIX_VERSION: ${{ matrix.version }}
+      BUILD_MODE: ${{ matrix.build_mode }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: 9.12.0
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20.19.5"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build or validate generated package
+        run: |
+          set -euo pipefail
+          # Build all workspace dependencies first. On a clean checkout their
+          # dist/ directories do not exist yet, so publishable workspace
+          # dependencies must be built before the selected package.
+          pnpm --filter "$MATRIX_NAME^..." --if-present run build
+          case "$BUILD_MODE" in
+            build)
+              pnpm --filter "./packages/$MATRIX_PACKAGE" run build
+              ;;
+            openapi-check)
+              pnpm --filter "./packages/$MATRIX_PACKAGE" run sync-json:check
+              pnpm --filter "./packages/$MATRIX_PACKAGE" run codegen:check
+              node scripts/check-openapi-contract-quality.mjs
+              ;;
+            typecheck)
+              pnpm --filter "./packages/$MATRIX_PACKAGE" run typecheck
+              ;;
+            *)
+              echo "::error::unknown build mode $BUILD_MODE"
+              exit 1
+              ;;
+          esac
+
+      - name: Package checks
+        run: |
+          set -euo pipefail
+          pnpm --filter "./packages/$MATRIX_PACKAGE" --if-present run typecheck
+          pnpm --filter "./packages/$MATRIX_PACKAGE" --if-present run test
+
+      - name: Pack exact publication artifact
+        id: pack
+        run: |
+          set -euo pipefail
+          pack_dir="$RUNNER_TEMP/npm-pack"
+          mkdir -p "$pack_dir"
+          # pnpm pack performs the same workspace-protocol rewrite as pnpm
+          # publish. npm pack would leak `workspace:*` into the tarball.
+          (cd "packages/$MATRIX_PACKAGE" && pnpm pack --pack-destination "$pack_dir" >/dev/null)
+          mapfile -t tarballs < <(find "$pack_dir" -maxdepth 1 -type f -name '*.tgz' -print | sort)
+          if [ "${#tarballs[@]}" -ne 1 ]; then
+            echo "::error::expected one packed tarball, found ${#tarballs[@]}"
+            exit 1
+          fi
+          filename="$(basename "${tarballs[0]}")"
+          tarball="$pack_dir/$filename"
+          test -f "$tarball"
+          (cd "$pack_dir" && sha256sum "$filename" >"$filename.sha256")
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+          echo "filename=$filename" >> "$GITHUB_OUTPUT"
+
+      - name: Verify packed artifact structure
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          set -euo pipefail
+          unpack_dir="$RUNNER_TEMP/npm-unpack"
+          mkdir -p "$unpack_dir"
+          tar -xzf "$TARBALL" -C "$unpack_dir"
+          node scripts/release/verify-packed-npm-package.mjs \
+            --package-dir "$unpack_dir/package" \
+            --name "$MATRIX_NAME" \
+            --version "$MATRIX_VERSION" \
+            --repository "$GITHUB_REPOSITORY" \
+            --directory "packages/$MATRIX_PACKAGE"
+
+      - name: Registry dry run
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: npm publish "$TARBALL" --access public --dry-run
+
+      - name: Upload staged package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: npm-package-${{ matrix.directory }}-${{ matrix.version }}
+          path: |
+            ${{ runner.temp }}/npm-pack/${{ steps.pack.outputs.filename }}
+            ${{ runner.temp }}/npm-pack/${{ steps.pack.outputs.filename }}.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  verify-release-set:
+    name: Verify clean consumer release set
+    needs: [prepare, stage]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      RELEASE_MATRIX: ${{ needs.prepare.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20.19.5"
+
+      - name: Download every staged artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: npm-package-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/npm-pack
+
+      - name: Verify checksums and clean install together
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          cd "$RUNNER_TEMP/npm-pack"
+          tarballs=(*.tgz)
+          checksums=(*.tgz.sha256)
+          expected_count="$(printf '%s' "$RELEASE_MATRIX" | jq -r '.include | length')"
+          if [ "${#tarballs[@]}" -ne "$expected_count" ] || [ "${#checksums[@]}" -ne "$expected_count" ]; then
+            echo "::error::expected $expected_count tarballs/checksums; got ${#tarballs[@]}/${#checksums[@]}"
+            exit 1
+          fi
+          sha256sum --check "${checksums[@]}"
+
+          consumer_dir="$RUNNER_TEMP/npm-consumer"
+          mkdir -p "$consumer_dir"
+          cd "$consumer_dir"
+          npm init --yes >/dev/null
+          # Installing the full local set at once proves internal @postwave
+          # dependencies resolve on a first release without reaching npm.
+          npm install --ignore-scripts --no-audit --no-fund --no-package-lock \
+            "$RUNNER_TEMP/npm-pack"/*.tgz \
+            typescript@5.9.3
+
+          cd "$GITHUB_WORKSPACE"
+          while IFS=$'\t' read -r directory name version; do
+            node scripts/release/verify-packed-npm-package.mjs \
+              --package-dir "$consumer_dir/node_modules/$name" \
+              --name "$name" \
+              --version "$version" \
+              --repository "$GITHUB_REPOSITORY" \
+              --directory "packages/$directory"
+          done < <(printf '%s' "$RELEASE_MATRIX" | jq -r '.include[] | [.directory, .name, .version] | @tsv')
+
+          node scripts/release/verify-public-package-consumers.mjs \
+            --consumer-dir "$consumer_dir"
+
+  publish:
+    name: Publish verified npm release set
+    needs: [prepare, stage, verify-release-set]
+    runs-on: ubuntu-24.04
+    environment:
+      name: npm-publish
+      url: https://www.npmjs.com/org/postwave
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      RELEASE_MATRIX: ${{ needs.prepare.outputs.matrix }}
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20.19.5"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Download all staged artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: npm-package-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/npm-pack
+
+      - name: Verify complete set and publish in dependency order
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${NODE_AUTH_TOKEN:?NPM_TOKEN secret is required}"
+          cd "$RUNNER_TEMP/npm-pack"
+          shopt -s nullglob
+          tarballs=(*.tgz)
+          checksums=(*.tgz.sha256)
+          expected_count="$(printf '%s' "$RELEASE_MATRIX" | jq -r '.include | length')"
+          if [ "${#tarballs[@]}" -ne "$expected_count" ] || [ "${#checksums[@]}" -ne "$expected_count" ]; then
+            echo "::error::incomplete release artifact set"
+            exit 1
+          fi
+          sha256sum --check "${checksums[@]}"
+
+          # Build an identity-to-file map from the immutable tarballs, then
+          # prove every planned identity exists before the first publication.
+          declare -A artifact_by_identity=()
+          for tarball in "${tarballs[@]}"; do
+            # The single-quoted argument is JavaScript for node, not shell.
+            # shellcheck disable=SC2016
+            identity="$(tar -xOf "$tarball" package/package.json | node -e '
+              const fs = require("fs");
+              const pkg = JSON.parse(fs.readFileSync(0, "utf8"));
+              process.stdout.write(`${pkg.name}\t${pkg.version}`);
+            ')"
+            IFS=$'\t' read -r name version <<<"$identity"
+            key="$name@$version"
+            if [ -n "${artifact_by_identity[$key]+present}" ]; then
+              echo "::error::duplicate staged identity $key"
+              exit 1
+            fi
+            artifact_by_identity[$key]="$tarball"
+          done
+
+          while IFS=$'\t' read -r name version; do
+            key="$name@$version"
+            if [ -z "${artifact_by_identity[$key]+present}" ]; then
+              echo "::error::missing staged artifact $key"
+              exit 1
+            fi
+          done < <(printf '%s' "$RELEASE_MATRIX" | jq -r '.include[] | [.name, .version] | @tsv')
+
+          # The release plan is topologically ordered; publishing in this
+          # single job preserves that order (matrix scheduling does not).
+          while IFS=$'\t' read -r name version; do
+            key="$name@$version"
+            npm publish "${artifact_by_identity[$key]}" --access public --provenance
+          done < <(printf '%s' "$RELEASE_MATRIX" | jq -r '.include[] | [.name, .version] | @tsv')

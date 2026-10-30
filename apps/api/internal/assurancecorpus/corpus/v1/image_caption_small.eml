@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <image-caption-small.v1@example.com>
+Subject: Field notes
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-caption-v1"
+
+--pw-caption-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Photos from the site visit: https://www.example.com/field
+--pw-caption-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Field notes</h1><img src="https://cdn.example.com/site.jpg" alt="The harbour site at low tide" width="600" height="400"><p style="font-size:12px;color:#666666">The harbour site at low tide, June 2026.</p><p><a href="https://www.example.com/field">See all photos</a></p></body></html>
+--pw-caption-v1--

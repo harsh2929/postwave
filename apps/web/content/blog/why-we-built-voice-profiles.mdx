@@ -1,0 +1,197 @@
+---
+title: "Why we built Voice Profiles"
+description: "AI-drafted newsletter copy is only useful if it sounds like the writer, not like a chatbot. Voice Profiles are how Moosewave keeps the writer's voice intact — with a fidelity score per email and an auto-regenerate threshold."
+date: "2026-04-15"
+author: "The Moosewave team"
+tags: ["voice-ai", "product", "design"]
+readingTime: "6 min read"
+---
+
+When we started talking to writers about adding AI to a newsletter tool,
+the same sentence kept coming up: **"I don't want it to sound like AI."**
+
+Not "I don't want AI to do the writing" — most writers we talked to were
+fine with AI handling the boring 60% of a sequence (the welcome flow, the
+re-engagement, the "here's what we shipped this month" recap). The
+concern was specifically about the output being recognizably,
+embarrassingly AI-flavored. The em-dashes. The "In today's fast-paced
+world." The earnest summary paragraph at the end.
+
+It turns out that when you read a writer's actual past newsletter and
+compare it to what a base GPT-class model produces from a one-line brief,
+the gap isn't subtle. Voice — vocabulary, rhythm, structure, the things
+the writer never repeats and the things they always repeat — is doing a
+lot of the work we don't usually credit it for. Strip it out and the
+content is generic; strip it out at the start of a six-email sequence and
+your readers can tell by email two.
+
+## The before-and-after that convinced us
+
+Here's a real example from a beta. The writer is a software founder
+running a weekly engineering newsletter. We asked for a re-engagement
+email to subscribers who hadn't opened in 60 days.
+
+**Base model, no voice profile:**
+
+> Subject: We miss you!
+>
+> Hi [First Name],
+>
+> We've noticed you haven't been opening our emails lately, and we wanted
+> to check in. Our newsletter is full of valuable insights about
+> engineering and we'd hate for you to miss out.
+>
+> If you're still interested, just click the button below to stay
+> subscribed. If not, no hard feelings — we'll remove you from the list.
+>
+> [Stay subscribed]
+>
+> Looking forward to hearing from you!
+
+That's not bad in any single line. It's bad as a whole because it
+sounds like nobody you know. The CTA is a generic button. The
+subject line is a cliché. There's no specificity, no in-jokes, nothing
+that even hints at what the newsletter is actually about.
+
+**Same brief, with the writer's voice profile applied:**
+
+> Subject: are you still in?
+>
+> Hey, I noticed you haven't opened the last few. That's fine — inboxes
+> are landfills and most newsletters don't earn the click. I'm not going
+> to pretend mine does either, but I'd rather know than keep showing up
+> in your spam folder pretending we're still on speaking terms.
+>
+> So: one button to stay, one to leave. No guilt either way. If you stay,
+> next week's is the long-overdue write-up of the time we accidentally
+> mailed 200K customers from a staging environment, which is a story
+> that's been waiting for its moment.
+>
+> — Sam
+
+The second one isn't better because it's longer or shorter. It's better
+because it sounds like Sam. The cadence ("inboxes are landfills",
+"earn the click", "speaking terms"), the specific story tease, the
+sign-off as a single em-dash and a name — those are stylistic features
+the voice profile picked up from 18 months of his back catalog.
+
+The model didn't write that. The model rewrote a base draft to match the
+profile, and a fidelity scorer then approved it.
+
+## What's in a voice profile
+
+A Moosewave voice profile is built from up to five sources:
+
+- **Imported newsletter archive.** Pulled from the migration, every past
+  campaign with body text.
+- **Twitter / X.** Up to 1,000 most recent posts, threads expanded.
+- **Blog RSS.** The writer's primary blog if they have one.
+- **Podcast transcripts.** If they upload them — many founders do.
+- **Pasted samples.** A "voice samples" textarea for anyone who has
+  good writing somewhere we can't crawl.
+
+From those, we extract four orthogonal feature sets:
+
+1. **Stylistic features.** Average sentence length, em-dash frequency,
+   parenthetical density, exclamation rate, contraction rate, second
+   vs. first person ratio, presence of hedging phrases, sign-off style.
+2. **Vocabulary fingerprint.** A TF-IDF distribution over the writer's
+   vocabulary normalized against a general-English baseline. Captures
+   words used disproportionately *and* common words deliberately
+   avoided.
+3. **Structural patterns.** Opening conventions, list usage, quote
+   blocks, image cadence, section break style. How they get from "hello"
+   to "here's the thing" to "here's the ask".
+4. **Tonal vector.** A 768-dim embedding of voice samples, used as the
+   target for cosine-similarity matching.
+
+These aren't all weighted equally. The tonal vector dominates the
+fidelity score, but stylistic features catch the cases where the model
+produces semantically-similar prose in the wrong register — formally
+correct but missing the contractions and the sign-off.
+
+## The fidelity score
+
+Every email Voice AI generates gets scored from 0 to 100. The score is
+a weighted combination:
+
+```
+fidelity = 0.45 * cosine(generated_embedding, profile_tonal_vector)
+         + 0.20 * stylistic_feature_match
+         + 0.20 * vocabulary_alignment
+         + 0.15 * structural_fit
+```
+
+(Weights are tuned per-profile from a small calibration set the writer
+approves at onboarding. We default to those numbers.)
+
+Below 60 we **auto-regenerate**. The writer never sees the bad draft —
+they see the email at the moment it crosses 60. Above 80 we mark it
+high-fidelity in the editor; the writer can ship as-is or tweak. Between
+60 and 80 we show the score next to the draft so the writer can decide
+whether it's worth a manual pass.
+
+This is the part that took the longest to get right. We tried hard
+thresholds (≥80 or it doesn't ship), and we tried no thresholds (always
+show, always editable). Hard thresholds frustrate writers because some
+emails legitimately need to sound less like them — a formal corporate
+update from an otherwise casual writer, for instance. No threshold
+defeats the point. The auto-regenerate-below-60 setting plus the
+visible-score-above-60 setting was where the beta cohort consistently
+landed.
+
+## Why we built this instead of "AI subject line generator"
+
+There's a cheaper version of "AI for newsletters" that gives you a
+subject-line generator and a "rewrite this paragraph" button. We
+shipped neither in V1, deliberately.
+
+The reason: those features are commodity. Every editor has them now.
+They're not why anyone would switch newsletter platforms. The reason a
+writer might switch platforms specifically because of AI is if the AI
+saves them from writing 80% of a sequence they don't want to write — a
+welcome series, a course launch, a book pre-order — *and* the saved
+draft is good enough to send without an embarrassed apology to long-time
+readers.
+
+That's a much higher bar. It's also where the leverage is. A subject-line
+generator saves a writer 30 seconds. A welcome sequence in their actual
+voice saves them six hours and a weekend they'd been putting off for
+four months. We'd rather build the second thing properly than a dozen of
+the first thing badly.
+
+## What the writer sees
+
+In the sequence editor, every email in a Voice AI-generated sequence has
+a small fidelity badge in the top-right corner. Click it and you get the
+breakdown:
+
+- The four sub-scores (tonal, stylistic, vocabulary, structural).
+- The two stylistic features that scored worst on this draft.
+- A "regenerate with hint" button if you want to push toward a specific
+  feeling without rewriting the whole thing.
+
+We resisted the temptation to hide the score. Visible scoring makes the
+writer the judge — which is the right relationship. The model is a
+collaborator, not an oracle.
+
+## What's next
+
+The piece we haven't shipped yet is **profile drift detection.** A
+writer's voice changes over months and years. A profile trained on
+their 2024 archive will gradually drift from their 2026 voice as they
+grow. We're working on a continuous re-training that takes their actual
+sent campaigns (the ones they shipped, not the ones they regenerated)
+and uses them to nudge the profile forward over time.
+
+That's the thing nobody else is going to build for you, because it's
+specific to a writing tool and it's not where the easy demo lives.
+
+If you want to see Voice AI on your own archive, the
+[features page](/features#voice-ai) walks through the sequence editor
+and the scoring panel. Or the [migrations page](/migrations) if you'd
+like to bring your back catalog over and let the profile train on
+something real.
+
+Next post: GDPR data residency, the per-tenant `data_region` enforcement,
+and why Article 44 is the line in the sand we drew earlier than most.

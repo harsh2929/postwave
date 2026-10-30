@@ -1,0 +1,88 @@
+---
+title: Embedding
+---
+
+# Embedding forms
+
+Three modes — pick the one that matches the experience you want.
+
+## Mode 1 — iframe (simplest)
+
+Drop an iframe pointing at the hosted form URL.
+
+```html
+<iframe
+  src="https://forms.moosewave.com/<your-form-id>"
+  width="100%"
+  height="480"
+  frameborder="0"
+  loading="lazy"
+></iframe>
+```
+
+**Pros**: zero JS on your site, no styling conflicts.
+**Cons**: fixed height, no popup/inline transitions, slightly worse Core Web Vitals.
+
+## Mode 2 — JS popup (modal / floating)
+
+Drop a single script tag in your `<head>`:
+
+```html
+<script
+  src="https://embed.moosewave.com/v1/embed.js"
+  data-form-id="<your-form-id>"
+  data-mode="popup"
+  data-trigger="exit-intent"
+  defer
+></script>
+```
+
+The script lazy-loads the form into a modal that opens based on the configured trigger.
+
+**Triggers** (`data-trigger`):
+
+- `page-load` — opens immediately on page load.
+- `time-delay` — opens after `data-trigger-delay-ms` (default 5000).
+- `scroll-50` — opens when the user scrolls past 50% of page height. Configurable via `data-trigger-scroll-pct`.
+- `exit-intent` — opens when the cursor moves toward the browser chrome (desktop only).
+- `manual` — only opens when you call `window.Moosewave.open('<form-id>')` from your own code.
+
+Pop-up styling can be customised in the [builder](/forms/builder); the script honours your settings.
+
+## Mode 3 — JS inline
+
+Same script, `data-mode="inline"`. Renders the form inline at the location of a marker div:
+
+```html
+<div data-postwave-form="<your-form-id>"></div>
+<script src="https://embed.moosewave.com/v1/embed.js" defer></script>
+```
+
+The script finds every `[data-postwave-form]` div on the page and renders the matching form into it. Multiple forms per page are supported.
+
+## `embed.js` reference
+
+The embed script:
+
+- Is **&lt;6 KB gzipped**.
+- Defers all work behind `requestIdleCallback`; never blocks initial render.
+- Sandboxes form rendering inside a Shadow DOM so your site's CSS can't leak in (and the form's styles can't leak out).
+- Exposes a tiny global API:
+  - `window.Moosewave.open(formId)` — open a popup form.
+  - `window.Moosewave.close(formId)` — close a popup form.
+  - `window.Moosewave.on(event, handler)` — listen to events: `'submit'`, `'submit_success'`, `'submit_error'`.
+
+## Tracking submissions
+
+Every submit fires a `form.submitted` event in your dashboard's submissions view, plus the `form.submitted` [webhook](/webhooks/events). If you use Google Analytics, Plausible, etc., subscribe to the JS `'submit_success'` event:
+
+```js
+window.Moosewave.on('submit_success', (e) => {
+  gtag('event', 'newsletter_signup', { form_id: e.form_id });
+});
+```
+
+## Next steps
+
+- [Spam protection](/forms/spam-protection) — what protections kick in for embedded forms.
+- [Submissions](/forms/submissions) — managing what comes in.

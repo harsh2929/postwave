@@ -1,0 +1,93 @@
+---
+title: Migrate from Customer.io
+---
+
+import { Callout } from "nextra/components";
+
+# Migrate from Customer.io
+
+The Customer.io migration adapter imports email-addressable Profiles under immutable `cio_id`, exact frozen segment and subscription-topic membership, reusable Design Studio email templates with non-empty exact source HTML, and eligible sent email One-time sends as immutable campaign history. Subscription-center topic/channel preferences and ESP suppressions are projected conservatively; sender-specific SMS/WhatsApp opt-outs, workflow definitions, transactional/non-email content, object-type metadata, and ecosystem gaps remain non-executable source evidence.
+
+<Callout type="warning">
+  A completed initial import is not cutover certification. Customer.io exposes
+  no complete incremental profile change feed for this contract, so every delta
+  is a full snapshot and the final frozen snapshot is mandatory. Campaigns
+  (Automations), API Broadcasts, and transactional definitions are never
+  activated automatically.
+</Callout>
+
+Customer.io renamed parts of its UI in 2026: People are Profiles, Campaigns are Automations, and Newsletters are One-time sends. The App API still uses `/customers`, `/campaigns`, and `/newsletters`.
+
+## Connect with an App API key
+
+Create a dedicated Customer.io **App API key** with read access to every surface in scope. A Track API site ID/key is a write-side ingestion credential and will not authenticate the import.
+
+Select the App API region explicitly:
+
+- `us` uses `https://api.customer.io`;
+- `eu` uses `https://api-eu.customer.io`.
+
+Moosewave validates `/v1/workspaces` and binds the migration to one exact numeric workspace. If the credential exposes multiple workspaces, provide the intended workspace ID. Reconnect cannot switch region/workspace, and one tenant cannot create a second unrolled-back lineage for the same workspace.
+
+Customer.io's general App API limit is 10 requests per second. Moosewave throttles reads to nine requests per second and honors provider rate-limit responses.
+
+## Profiles and consent
+
+Moosewave uses cursor-paginated `POST /v1/customers` searches for profiles with and without email, then hydrates attributes and subscription preferences by `cio_id`. The preference response contains both subscription topics and channel types such as `email`. `GET /v1/customers` is an email lookup, not an account-wide list.
+
+`cio_id` is the durable source identity. Publisher IDs and email can change, and multiple profiles can share an email. Profiles without email are counted and excluded from the email-keyed destination; duplicate-email profiles remain separate source identities even when they converge on one destination subscriber.
+
+Profile creation and email-added timestamps are provenance, not opt-in proof. Consent time remains unknown unless an operator attaches separate evidence. Status mapping is conservative:
+
+- ESP blocks, bounces, spam reports, and invalid-email suppressions become blocklisted;
+- global unsubscribe becomes disabled;
+- email can become enabled only when global state is subscribed, the email channel is subscribed (explicitly or by its configured default), and the applicable topic is subscribed (explicitly or by its configured default); and
+- incomplete global/email-channel/topic evidence becomes unconfirmed, never implicitly enabled.
+
+Subscription topics become exact opted-in tag-backed snapshots. Topic and channel definitions/defaults are retained, and discovery exposes the exact channel-definition count as `subscription_channels_count`. Subscription-center channel preferences apply to the whole channel type. The separate `/v1/optouts` endpoint contains only sender-specific SMS/WhatsApp opt-outs; those records do not affect email eligibility and are preserved for review without importing phone identity or channel runtime. Workspace-level GDPR suppression is separate from ESP suppression and can require a provider/support export.
+
+## What moves
+
+| Resource                   | Migration behavior                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email-addressable Profiles | Current email, non-system attributes, conservative global/email-channel/topic status, exact segment/topic tags, ESP suppressions, and immutable `cio_id` ownership.                                                                                                                                                                                                                         |
+| Profiles without email     | Counted but not fabricated into email subscribers. Phone/device/push identity requires a separate decision.                                                                                                                                                                                                                                                                                 |
+| Segments                   | Exact membership is frozen into source-qualified tag-backed destination segments. Dynamic rules are not exposed and must be rebuilt or retired.                                                                                                                                                                                                                                             |
+| Subscription topics        | Definition plus exact opted-in membership is preserved. Destination preference-center and send-scope semantics need review.                                                                                                                                                                                                                                                                 |
+| Subscription channels      | Definition/default metadata is preserved and counted in `subscription_channels_count`; resolved profile state contributes to conservative email status. This is distinct from sender-specific `/v1/optouts`.                                                                                                                                                                                |
+| Design Studio templates    | Non-empty default `content.html` imports as exact source HTML, not provider-rendered output. Localized variants and source definitions are retained; components, Liquid, global styles/assets, and transformers require validation. No-HTML definitions become rebuild records.                                                                                                             |
+| Sent email One-time sends  | Campaign history requires a sent email with at least one explicit `language=""` default and provably composable source HTML. The lowest stable content ID represents a multi-default/A-B set; all variants remain evidence and the choice emits a warning. Missing explicit defaults or invalid language metadata fail closed, and translations are never silently selected.                |
+| Source archive             | Campaign/Automation actions; API-broadcast actions plus trigger IDs and created/processed timestamps; every newsletter definition; transactional content; topic/channel definitions; ESP suppressions; sender-specific SMS/WhatsApp opt-outs; object types; template rebuilds; and gap checklists. Original trigger payloads, audiences, and per-user data require separate reconciliation. |
+
+## What does not move automatically
+
+- Customer.io Campaigns/Automations, API Broadcasts, or transactional runtime. Their definitions/actions are rebuild-only evidence, not a portable execution graph.
+- Draft/unsent One-time sends, sent SMS/push/in-app/other-channel messages, phone/device identities, non-email consent, sender registrations, quiet hours, or routing.
+- Complete custom object profiles/relationships, Connected Forms, commerce data, collections, snippets, assets, sender/domain/IP configuration, or external integrations.
+- Complete historical activities, per-recipient deliveries, opens/clicks/conversions, or original API-broadcast trigger payloads, audiences, and per-user data. Trigger IDs plus created/processed timestamps are preserved, but the App API rows do not reconstruct the original send context. Time-windowed report endpoints are not lifetime exports.
+- Track/Pipelines writes, source cleanup, key revocation, workflow retirement, DNS, billing, or channel configuration.
+
+Eight static source-archive checklist rows cover historical events, delivery history, original API-broadcast trigger payload/audience/per-user context, custom objects/relationships, forms, commerce, content libraries, and sender/channel configuration. A checklist row is a review task—not evidence that the workspace uses that product or that data moved.
+
+Newsletter HTML is source composition, not Customer.io rendering. With no layout or an empty layout, Moosewave uses the exact non-empty source body and emits a fidelity warning. A non-empty layout is composed only when it contains exactly one documented `{{content}}` slot (whitespace inside the braces is accepted). Missing bodies, non-string layouts, and layouts with zero or multiple slots remain source-archive-only. Liquid, CSS preprocessing, assets, and per-recipient rendering are not executed.
+
+## Cutover sequence
+
+1. Discover the exact workspace, run a dry-run, and resolve all warnings, duplicate-email conflicts, profiles without email, rebuild records, and static checklists.
+2. Commit the reviewed job. Keep using that job for every later snapshot; do not create a parallel workspace lineage.
+3. Rebuild and test required automations, API broadcasts, transactional triggers, topics, templates, objects, forms, and non-email dependencies without activating duplicate sends.
+4. Freeze relevant Customer.io changes and run the final delta as a complete source snapshot.
+5. Reconcile every `cio_id`, duplicate email, email move, deletion/lost email, segment/topic membership, global unsubscribe, resolved email-channel preference/default, applicable topic preference/default, ESP suppression, and sender-specific SMS/WhatsApp opt-out.
+6. Run a fresh credentialed shadow traversal. Its six-component fingerprint covers email-addressable profile/audience state, a non-reversible digest of every excluded non-email `cio_id`, segment/topic definitions, editable templates, sent email history, and the complete source archive; same-count edits and non-email identity replacements still block cutover.
+7. Rehearse conflict-aware rollback, then record all six post-final-delta reviews: consent/subscriptions, identity/audiences, automation/transactional rebuild, non-email channels, deliverability, and ecosystem dependencies.
+8. Pass pilot acceptance before moving traffic; rotate/revoke the migration credential only when the rollback plan permits it.
+
+During the rollback window, Moosewave removes job-created resources and restores tracked before-images only when current destination state still matches the ledger. Rollback never mutates Customer.io, undoes a send, or restores provider runtime.
+
+## Certification status
+
+The repository adapter and lifecycle exist, but no real Customer.io workspace and isolated live destination have completed the strict certification matrix. Do not describe the integration as live-certified until a frozen candidate proves region/workspace binding, real pagination and 10-request/second behavior, the global + resolved email-channel + applicable-topic eligibility rule (including defaults), the separate sender-specific SMS/WhatsApp `/v1/optouts` contract, per-domain ESP/GDPR suppression semantics, duplicate-email/deletion/non-email-identity reconciliation, final fingerprint/shadow binding, rebuild fidelity, destination-state rollback rehearsal and rollback, and credential cleanup.
+
+See the full operator guide: [`docs/integrations/customerio-migration.md`](https://github.com/harsh2929/postwave/blob/main/docs/integrations/customerio-migration.md).
+
+Official references: [App API](https://docs.customer.io/integrations/api/app/), [API and credential types](https://docs.customer.io/integrations/api/customerio-apis/), and [profile exports](https://docs.customer.io/messaging/profiles/manage/exporting-users/).

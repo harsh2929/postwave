@@ -1,0 +1,31 @@
+{
+  "name": "@postwave/query-contract",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Canonical TanStack Query key factory + staleness table shared by Moosewave web/desktop/mobile so cache key shape cannot drift between clients.",
+  "keywords": ["postwave", "tanstack-query", "cache-keys"],
+  "author": "Moosewave",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/query-contract"
+  },
+  "bugs": { "url": "https://github.com/harsh2929/postwave/issues" },
+  "publishConfig": { "access": "public" }
+}

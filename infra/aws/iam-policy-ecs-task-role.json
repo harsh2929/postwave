@@ -1,0 +1,136 @@
+{
+  "_comment": "iam-policy-ecs-task-role.json -- IAM policy attached to the ECS *task role* (the role AWS hands to the running container, distinct from the execution role that pulls images and injects secrets at task start). Scope every statement to the smallest viable resource ARN; this policy is what an attacker inside the container inherits if they pop the API process. Region/account placeholders read <region>/<account>; substitute before applying. The matching trust policy (ecs-tasks.amazonaws.com) lives in the CloudFormation template, not here.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SESSendOnPostwaveIdentity",
+      "Effect": "Allow",
+      "Action": ["ses:SendEmail", "ses:SendRawEmail"],
+      "Resource": [
+        "arn:aws:ses:us-west-2:<account>:identity/moosewave.com",
+        "arn:aws:ses:us-west-2:<account>:configuration-set/postwave-prod"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "ses:FromAddress": [
+            "noreply@moosewave.com",
+            "support@moosewave.com",
+            "billing@moosewave.com",
+            "approvals@moosewave.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "SESReadQuotaForStatusPages",
+      "Effect": "Allow",
+      "Action": ["ses:GetSendQuota", "ses:GetSendStatistics", "ses:GetAccount"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "S3UploadsBucketObjectAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:GetObjectVersion",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": "arn:aws:s3:::postwave-uploads/*"
+    },
+    {
+      "Sid": "S3UploadsBucketList",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::postwave-uploads"
+    },
+    {
+      "Sid": "S3PrivateExportsObjectAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": "arn:aws:s3:::postwave-exports/*"
+    },
+    {
+      "Sid": "S3PrivateExportsBucketList",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::postwave-exports"
+    },
+    {
+      "Sid": "SecretsManagerReadProdSecrets",
+      "_comment": "Task role can re-read secrets at runtime (e.g., rotating HMAC peppers without a task restart). The execution role gets a separate identical statement to inject env vars at task start.",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ],
+      "Resource": [
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/db-dsn-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/auth-hmac-pepper-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/auth-kek-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/oauth/google-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/listmonk-webhook-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/postmark-hmac-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sendgrid-hmac-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/api-key-pepper-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/consent-cursor-signing-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sms-inbox-cursor-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sending-kek-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-session-kek-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/internal-api-token-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/redis-url-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/portal-jwt-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/anthropic-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/arf-hmac-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/cookie-signing-*"
+      ]
+    },
+    {
+      "Sid": "KMSDecryptRuntimeSecrets",
+      "_comment": "Runtime secret refreshes may decrypt only through Secrets Manager and only with its dedicated CMK.",
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt", "kms:DescribeKey"],
+      "Resource": "arn:aws:kms:us-west-2:<account>:key/<secrets-manager-cmk-uuid>",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.us-west-2.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "KMSEncryptUploadsAndAssets",
+      "_comment": "S3 uploads, assets, and tenant-export object encryption is isolated from both Secrets Manager and the direct application envelope key.",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:DescribeKey",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:us-west-2:<account>:key/<s3-uploads-cmk-uuid>",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "s3.us-west-2.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "KMSApplicationEnvelopeCipher",
+      "_comment": "The API calls KMS directly for envelope encryption readiness and per-record data keys. Keep this CMK separate from Secrets Manager, S3, and RDS keys.",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:DescribeKey",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "arn:aws:kms:us-west-2:<account>:key/<app-data-cmk-uuid>"
+    }
+  ]
+}

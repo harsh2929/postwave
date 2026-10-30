@@ -1,0 +1,120 @@
+/* Static release-hold surfaces for approval delegation, escalation, and chains. */
+
+.approval-settings-release-hold {
+  position: relative;
+  display: grid;
+  max-width: 980px;
+  padding: clamp(var(--pw-sp-4), 4vw, var(--pw-sp-6));
+  margin: var(--pw-sp-4) 0;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  gap: var(--pw-sp-4);
+  overflow: clip;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--pw-warning) 10%, transparent),
+      transparent 42%
+    ),
+    var(--pw-bg-elev);
+}
+
+.approval-settings-release-hold::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--pw-warning);
+}
+
+.approval-settings-release-hold-header {
+  display: grid;
+  max-width: 70ch;
+  gap: var(--pw-sp-2);
+}
+
+.approval-settings-release-hold-eyebrow {
+  color: var(--pw-warning);
+  font-size: var(--pw-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--pw-tracking-caps);
+  text-transform: uppercase;
+}
+
+.approval-settings-release-hold-header h3,
+.approval-settings-release-hold-header p,
+.approval-settings-release-hold-notice p {
+  margin: 0;
+}
+
+.approval-settings-release-hold-header h3 {
+  color: var(--pw-fg);
+  font-size: clamp(var(--pw-text-lg), 2.2vw, 1.35rem);
+  line-height: 1.18;
+}
+
+.approval-settings-release-hold-header p,
+.approval-settings-release-hold-notice p,
+.approval-settings-release-hold-list span {
+  color: var(--pw-fg-muted);
+  line-height: 1.55;
+}
+
+.approval-settings-release-hold-notice {
+  max-width: none;
+}
+
+.approval-settings-release-hold-list {
+  display: grid;
+  padding: 0;
+  margin: var(--pw-sp-3) 0;
+  gap: var(--pw-sp-2);
+  list-style: none;
+}
+
+.approval-settings-release-hold-list li {
+  display: grid;
+  padding: var(--pw-sp-3);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  gap: var(--pw-sp-1);
+  background: color-mix(in srgb, var(--pw-bg-elev) 76%, transparent);
+}
+
+.approval-settings-release-hold-list strong {
+  color: var(--pw-fg);
+  font-size: var(--pw-text-sm);
+}
+
+.approval-settings-release-hold-list span {
+  font-size: var(--pw-text-sm);
+}
+
+.approval-chain-release-hold p {
+  margin: 0;
+}
+
+.approval-chain-release-hold ul {
+  margin: var(--pw-sp-2) 0;
+  padding-inline-start: 20px;
+}
+
+@media (max-width: 560px) {
+  .approval-settings-release-hold {
+    padding: var(--pw-sp-4);
+  }
+
+  .approval-settings-release-hold-list li {
+    padding: var(--pw-sp-2) var(--pw-sp-3);
+  }
+}
+
+@media (forced-colors: active) {
+  .approval-settings-release-hold::before {
+    background: CanvasText;
+  }
+
+  .approval-settings-release-hold-list li {
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,4 @@
+Email,First name,Last name,Status,Segments
+ada@example.com,Ada,Lovelace,Active,"VIP,Newsletter"
+spam@example.com,Spam,,Marked as spam,Newsletter
+archived@example.com,Archived,,Archived,Newsletter

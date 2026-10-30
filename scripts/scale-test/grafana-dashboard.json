@@ -1,0 +1,101 @@
+{
+  "title": "Moosewave — Scale Tests",
+  "uid": "postwave-scale",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["postwave", "scale", "load-test"],
+  "time": { "from": "now-30m", "to": "now" },
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(up, job)",
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Listmonk /api/tx — RPS by status",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (code) (rate(http_requests_total{job=~\"$service\", path=~\"/api/tx.*\"}[1m]))",
+          "legendFormat": "{{code}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Listmonk /api/tx — Latency P50/P95/P99 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_ms_bucket{path=~\"/api/tx.*\"}[1m])))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_ms_bucket{path=~\"/api/tx.*\"}[1m])))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_ms_bucket{path=~\"/api/tx.*\"}[1m])))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Migration discover — Latency P99 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_ms_bucket{path=~\"/v1/migrations/.*/discover\"}[1m])))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Automation runtime — step latency P99 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le, step_kind) (rate(automation_step_duration_ms_bucket[1m])))", "legendFormat": "{{step_kind}}" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Asynq queue depth (per queue)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "asynq_queue_size", "legendFormat": "{{queue}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Postgres — active connections",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "pg_stat_activity_count{state=\"active\"}", "legendFormat": "active" },
+        { "expr": "pg_stat_activity_count{state=\"idle in transaction\"}", "legendFormat": "idle in tx" }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Goroutines (per service)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        { "expr": "go_goroutines{job=~\"$service\"}", "legendFormat": "{{job}}" }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Process RSS memory (per service)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=~\"$service\"}", "legendFormat": "{{job}}" }
+      ]
+    }
+  ]
+}

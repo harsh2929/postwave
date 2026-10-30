@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <webinar-reminder-one-hour.v1@example.com>
+Subject: Starting in an hour
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-webinar-v1"
+
+--pw-webinar-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The session starts at 15:00 UTC: https://events.example.com/live/3
+--pw-webinar-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Starting in an hour</h1><p>The automation session begins at 15:00 UTC.</p><p><a href="https://events.example.com/live/3">Join the session</a></p></body></html>
+--pw-webinar-v1--

@@ -1,0 +1,6 @@
+email,status,first_name,last_name,groups,segments,source,custom_city,custom_interest,custom_plan,created_at
+lin@example.com,active,Lin,Manuel,"weekly|events",broadway,form,New York,theater,growth,2026-01-08T10:10:00Z
+rita@example.org,unsubscribed,Rita,Moreno,"legacy|weekly",alumni,import,San Juan,film,starter,2025-10-25T08:20:00Z
+gloria@example.net,bounced,Gloria,Estefan,"events|music",performers,api,Miami,music,growth,2025-12-30T19:00:00Z
+sonia@example.com,active,Sonia,Sotomayor,"vip|weekly",leaders,form,Bronx,law,plus,2026-02-12T11:50:00Z
+sandra@example.org,active,Sandra,Cisneros,"weekly|books",writers,manual,Chicago,literature,starter,2026-03-09T14:35:00Z

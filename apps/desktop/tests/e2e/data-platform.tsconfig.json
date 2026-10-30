@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test", "vite/client"]
+  },
+  "include": [
+    "data-platform-evidence-harness.ts",
+    "data-platform-maturity.spec.ts",
+    "data-platform.playwright.config.ts"
+  ],
+  "exclude": ["../../node_modules", "../../dist", "../../src-tauri"],
+  "references": []
+}

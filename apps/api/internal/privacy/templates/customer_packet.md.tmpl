@@ -1,0 +1,55 @@
+# Security Incident Notification — Customer (Tenant Admin)
+
+**Notification Template Version:** {{.TemplateVersion}}
+**Generated At:** {{.GeneratedAt}}
+**Incident Identifier:** {{.IncidentID}}
+
+Dear {{.ControllerName}},
+
+This notice fulfils Moosewave's obligation under Section 6 of the Data
+Processing Agreement to inform you of a Personal Data Breach affecting
+your tenant data without undue delay and in any case within 72 hours
+of our awareness.
+
+## What happened
+
+{{.Summary}}
+
+- **Detected at:** {{.DetectedAt}}
+- **Containment achieved:** {{.ContainmentAt}}
+- **Statutory deadline (earliest):** {{.DeadlineAt}}
+
+## What information was involved
+
+- Categories of data: {{.AffectedCategories}}
+- Approximate number of affected subjects in your tenant: {{.AffectedSubjectCount}}
+- Affected regions: {{.AffectedRegions}}
+
+## What we are doing
+
+1. Moosewave engineering contained the issue and rotated affected
+   credentials and access tokens.
+2. A forensic review is in progress; the result will be appended to
+   the incident audit log accessible via your Compliance dashboard.
+3. Moosewave counsel is coordinating with your team on regulator
+   notifications where required.
+4. Where Article 34 GDPR or US state law requires direct notice to
+   affected individuals, Moosewave can supply a data_subject packet
+   suitable for your branding.
+
+## What you should consider doing
+
+- Confirm receipt by replying to this notice.
+- Coordinate with your Data Protection Officer / privacy counsel on
+  any controller-side notification obligations.
+- Notify your own customers if required by your privacy policy.
+- Use the Moosewave Compliance dashboard to download the data_subject
+  packet template for direct distribution.
+
+## Contact
+
+- **Moosewave incident commander:** {{.DPOName}} ({{.DPOEmail}})
+- **Counsel sign-off on this packet:** {{.SignoffBy}} at {{.SignoffAt}}
+
+This packet's body SHA-256 is recorded in the incident_notifications
+table as evidence of exactly which version of the notice you received.

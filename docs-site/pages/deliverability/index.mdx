@@ -1,0 +1,39 @@
+---
+title: Inbox Reality
+---
+
+# Deliverability — Inbox Reality
+
+Inbox Reality is Moosewave's deliverability stack. It exists because most ESPs treat deliverability as a black box: you pay them, they "handle it", and when your open rates crater they have nothing to show you. Inbox Reality flips that — every signal that affects whether your email lands in the inbox is exposed, monitored, and explained.
+
+## The 5 layers
+
+| Layer                 | What it answers                                              | Where in docs                              |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------------ |
+| 1. **Authentication** | Are you cryptographically allowed to send as your domain?    | [SPF](/deliverability/spf), [DKIM](/deliverability/dkim), [DMARC](/deliverability/dmarc), [BIMI](/deliverability/bimi) |
+| 2. **Reputation**     | Do mailbox providers and DNSBLs trust your IP and domain?    | [Blacklists](/deliverability/blacklists)   |
+| 3. **Placement**      | Where does mail actually land — Inbox, Promotions, Spam?     | [Seedlist](/deliverability/seedlist)       |
+| 4. **Content**        | Does your HTML/copy trip spam heuristics or render badly?    | [Pre-Send Predictor](/deliverability/predictor) |
+| 5. **Diagnosis**      | When something's wrong, *what specifically* should you fix?  | [AI Diagnostician](/deliverability/diagnostician) |
+
+## What the dashboard shows
+
+The Inbox Reality dashboard, opened from **Deliverability** in the workspace nav, gives you:
+
+- **Health pill** for each of SPF / DKIM / DMARC / BIMI — green/yellow/red with a one-line reason.
+- **DNSBL monitor** — current listings on the major blocklists (Spamhaus ZEN, SORBS, Barracuda, Invaluement, etc.).
+- **Seedlist last run** — Inbox %, Promotions %, Spam %, and Missing % across the active controlled profiles that actually returned observations, with unavailable providers kept explicit.
+- **Diagnostician card** — when health is anything less than green, the top-ranked fix appears here with a *Do it* button.
+- **Predictor** — a button on every Campaign composer that runs the Pre-Send Predictor before you send.
+
+## Why we built it this way
+
+Three principles:
+
+1. **Expose the signals.** You can't fix what you can't see.
+2. **Diagnosis ≠ guessing.** The Diagnostician operates under hard constraints — no inventing stats, capped per-fix impact estimates, ranked by evidence. See [its page](/deliverability/diagnostician) for the full constraint list.
+3. **Predict before you send.** Most deliverability post-mortems are too late. The [Predictor](/deliverability/predictor) catches obvious problems before you spend reputation on them.
+
+## Next steps
+
+If you're brand new, work through the auth layer first — [SPF](/deliverability/spf), [DKIM](/deliverability/dkim), [DMARC](/deliverability/dmarc) — then read [Improving placement](/deliverability/improving-placement) for the full operational playbook.

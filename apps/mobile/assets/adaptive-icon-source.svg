@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Moosewave adaptive icon foreground">
+  <rect x="220" y="238" width="584" height="548" rx="112" fill="#C8102E"/>
+  <path d="M280 330 512 504 744 330v90L512 584 280 420Z" fill="#FDFCF8"/>
+  <path d="M304 660c70-64 138 64 208 0s138-64 208 0" fill="none" stroke="#F1C04C" stroke-width="44" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,42 @@
+{
+  "advisories": {
+    "1121799": {
+      "findings": [
+        {
+          "version": "4.18.0",
+          "paths": [
+            "apps__web>mjml",
+            "packages__claude-code-plugin>@postwave__cli>@postwave__email-react>mjml",
+            "packages__cli>@postwave__email-react>mjml",
+            "packages__email-react>mjml"
+          ],
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "id": 1121799,
+      "title": "MJML allows mj-include directory traversal",
+      "module_name": "mjml",
+      "vulnerable_versions": "<5.0.0-alpha.9",
+      "patched_versions": ">=5.0.0-alpha.9",
+      "severity": "moderate",
+      "cwe": "CWE-22",
+      "github_advisory_id": "GHSA-45h5-66jx-r2wf",
+      "url": "https://github.com/advisories/GHSA-45h5-66jx-r2wf"
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 0
+    },
+    "dependencies": 100,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 100
+  }
+}

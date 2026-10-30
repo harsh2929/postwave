@@ -1,0 +1,143 @@
+---
+title: SMS compliance
+---
+
+import { Callout } from "nextra/components";
+
+# SMS compliance
+
+SMS consent and suppression records are regulated evidence. Moosewave can retain
+and present scoped records, but no badge or configuration is legal advice,
+complete consent authority, or permission to use a held dispatch path.
+
+<Callout type="warning">
+  **HOLD / NO-GO.** Hosted SMS dispatch and callbacks are structurally held. The
+  operator remains responsible for provable purpose-specific consent, identity
+  resolution, current law/carrier rules, reasonable free-form revocation,
+  recipient-local quiet hours, and external provider suppression state.
+</Callout>
+
+## Consent
+
+Consent evidence is keyed to the exact tenant, canonical US/Canada phone,
+audience list/purpose, source, and timestamp. Multiple linked identities,
+missing or unknown evidence, no eligible list, opt-out, potential revocation,
+and any suppression all fail closed.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/sms/consent \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{
+    "list_id": "11111111-1111-4111-8111-111111111111",
+    "phone_e164": "+12025550142",
+    "action": "revoked",
+    "source": "manual",
+    "proof_text": "Operator received and reviewed an explicit revocation request"
+  }'
+```
+
+This exact-admin operator endpoint records only conservative revocations. It
+accepts `action=revoked`, `source=manual`, required canonical `phone_e164`,
+bounded `proof_text`, and an optional canonical `list_id`. It cannot record an
+opt-in, import provider or subscriber evidence, or override carrier resubscribe
+authority.
+
+`proof_text` is sensitive evidence, not suitable for logs or accessible control
+names. A compliance/setup projection is bounded source evidence and cannot
+override `sms_reply_dispatch_release_held`,
+`sms_campaign_dispatch_release_held`, or
+`sms_broadcast_dispatch_release_held`.
+
+## Quiet hours
+
+Quiet-hour rows are exact-admin policy input. A valid enabled tenant-wide row
+is enforced when the internal eligibility gate is invoked. Hosted scheduling
+and dispatch remain release-held, and current source cannot claim
+jurisdiction-complete recipient-local enforcement across every provider path.
+Configuration is therefore not proof that an external message was evaluated or
+delayed. Country-scoped rows are unsupported because a `+1` identity does not
+prove US versus Canada; new scoped writes are rejected and enabled historical
+scoped rows fail closed until they are atomically disabled and cleared.
+
+| Method | Path                           | Scope         | Purpose                                     |
+| ------ | ------------------------------ | ------------- | ------------------------------------------- |
+| GET    | `/api/v1/sms/quiet-hours`      | exact `admin` | List the complete bounded tenant inventory. |
+| POST   | `/api/v1/sms/quiet-hours`      | exact `admin` | Create a tenant-wide window.                |
+| PATCH  | `/api/v1/sms/quiet-hours/{id}` | exact `admin` | Update with exact `expected_updated_at`.    |
+| DELETE | `/api/v1/sms/quiet-hours/{id}` | exact `admin` | Delete with exact `expected_updated_at`.    |
+
+## STOP / HELP keywords
+
+STOP, carrier, and complaint suppressions are authoritative and cannot be
+removed by an operator. Only exact manual/manual reversible rows may be removed;
+a verified same-provider START transition is a separate provider-authoritative
+path. Expired or foreign suppression state must not be guessed.
+
+An enabled custom `opt_out` rule is evaluated only on the verified inbound
+processing path. Hosted provider callbacks currently return
+`sms_provider_callback_release_held`, and HELP/custom outbound effects return
+`sms_auto_reply_dispatch_release_held`. A stored rule therefore does not
+establish that a carrier message reached Moosewave or that a HELP/custom reply
+was delivered. Potential reasonable free-form revocations require an audited
+review hold rather than an automatic send.
+
+## Suppression roster
+
+All roster reads and writes require the exact effective owner/admin boundary or
+an exact tenant-bound admin-scoped API key. `GET /api/v1/sms/suppressions`
+accepts only `reason`, opaque `cursor`, and `limit` in the URL. Exact recipient
+filtering uses read-only `POST /api/v1/sms/suppressions/query`; its JSON body
+contains `phone` and may include only an optional exact `reason`. It returns
+zero or one row and accepts neither `cursor` nor `limit`.
+
+Privacy rule: never place the phone or cursor in logs or telemetry. The phone
+must additionally never enter durable URL/router/history state or any URL. Browse continuation
+uses the opaque cursor only in the canonical GET query; clients must not decode
+it. Deployed edge raw-query
+logging and request-body capture/logging remain release blockers to qualify
+independently.
+
+The read-only query ignores `Idempotency-Key` before generic replay storage and
+runs a fresh minimized read audit for every valid request. First-party clients
+omit the header and do not admit this query to an offline mutation queue.
+
+Each response is one strict page:
+
+```json
+{
+  "tenantId": "00000000-0000-0000-0000-000000000001",
+  "items": [],
+  "total": 0,
+  "snapshotAt": "2026-08-28T10:00:00Z"
+}
+```
+
+`total` describes matching rows at that response cutoff, not newer state. A
+non-terminal full page may include an opaque `nextCursor`; continuation is
+manual and no client helper silently claims complete/current history.
+
+`POST /api/v1/sms/suppressions` returns `201` and accepts only an exact
+US/Canada `phone` with `reason=manual`. `DELETE
+/api/v1/sms/suppressions/{id}` removes only an exact reversible
+`manual/manual` row. Neither action grants or restores consent or makes texting
+lawful. Provider, carrier, complaint, API, import, and system rows are locked
+with `locked_reason=carrier_or_system_authority`.
+
+The strict deletion receipt is `{ok:true, tenantId, id}`. Clients bind both
+identities to the authenticated workspace and requested row before reporting
+success; a bare `{ok:true}` or extra/mismatched field is rejected.
+
+Provider STOP over an existing manual hold preserves that manual hold behind
+the authoritative row; a verified same-provider START restores the manual hold
+instead of deleting it. Fresh post-migration provider STOP state may be
+cleared by verified resubscribe evidence. Ambiguous legacy/pre-migration or
+mixed-version STOP state remains fail-closed pending reconciliation.
+
+## See also
+
+- [A2P / 10DLC registration](/sms/a2p-10dlc) — draft/provider boundary;
+  submit and poll remain `sms_a2p_registration_release_held`.
+- [Two-way inbox](/sms/inbox) — retained keyword policy records; outbound
+  auto-responses are `sms_auto_reply_dispatch_release_held`.
+- [Privacy](/) — broader data-handling posture.

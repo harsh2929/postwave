@@ -1,0 +1,26 @@
+{
+  "name": "@postwave/offline-outbox",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "The shared, non-drifting core of the offline-mutation outbox \u2014 the reconciled replay-status union, the attempt budget, the byte-identical terminal-state predicate, and the common OfflineMutation field set that web + desktop both extend. The storage engine + replay loop stay per-surface (they legitimately differ); this is the contract they cannot afford to drift on.",
+  "author": "Moosewave",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist"
+  ]
+}

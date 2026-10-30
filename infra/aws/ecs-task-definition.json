@@ -1,0 +1,438 @@
+{
+  "_comment": "ecs-task-definition.json -- canonical ECS Fargate task definition for postwave-api. Register only after replacing <image-digest> with a verified sha256 digest plus every account/region/secret/config placeholder. Moving image tags are forbidden. The two role ARNs reference the IAM roles whose policies live alongside this file. Memory/CPU sizing matches the auth.go hint about argon2id memory cost: argon2id with the recommended params (m=64MiB, t=3, p=4) plus normal request memory needs comfortable headroom -- 1 vCPU / 2 GiB is the floor, not the ceiling. If p99 login latency degrades under load, raise CPU first, not memory.",
+  "family": "postwave-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::<account>:role/postwave-ecs-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::<account>:role/postwave-ecs-task-role",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "volumes": [
+    {
+      "name": "postwave-api-tmp"
+    }
+  ],
+  "containerDefinitions": [
+    {
+      "name": "postwave-api",
+      "image": "<account>.dkr.ecr.<region>.amazonaws.com/postwave-api@<image-digest>",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp",
+          "name": "http"
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "postwave-api-tmp",
+          "containerPath": "/tmp",
+          "readOnly": false
+        }
+      ],
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "us-west-2"
+        },
+        {
+          "name": "POSTWAVE_DEPLOYMENT_REGION",
+          "value": "us-west-2"
+        },
+        {
+          "name": "POSTWAVE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "POSTWAVE_PII_FINGERPRINT_KEY_VERSION",
+          "value": "v1"
+        },
+        {
+          "name": "POSTWAVE_SUBSCRIBER_IMPORT_FINGERPRINT_KEY_VERSION",
+          "value": "v1"
+        },
+        {
+          "name": "PORT",
+          "value": "8080"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "info"
+        },
+        {
+          "name": "PUBLIC_BASE_URL",
+          "value": "https://app.moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_PUBLIC_BASE_URL",
+          "value": "https://app.moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_SMS_PROVIDER_CALLBACK_BASE_URL",
+          "value": "https://api.moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_OAUTH_REDIRECT_BASE",
+          "value": "https://api.moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_PORTAL_ORIGIN",
+          "value": "https://api.moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_COOKIE_DOMAIN",
+          "value": ".moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_AUTH_FROM_ADDRESS",
+          "value": "Moosewave <noreply@moosewave.com>"
+        },
+        {
+          "name": "POSTWAVE_DEFAULT_FROM_EMAIL",
+          "value": "Moosewave <noreply@moosewave.com>"
+        },
+        {
+          "name": "POSTWAVE_REPORT_FROM_EMAIL",
+          "value": "Moosewave <noreply@moosewave.com>"
+        },
+        {
+          "name": "POSTWAVE_SEND_COMPLETE_FROM",
+          "value": "Moosewave <noreply@moosewave.com>"
+        },
+        {
+          "name": "APPROVAL_FROM_EMAIL",
+          "value": "approvals@moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_MAILER",
+          "value": "ses"
+        },
+        {
+          "name": "POSTWAVE_SES_CONFIGURATION_SET",
+          "value": "postwave-prod"
+        },
+        {
+          "name": "POSTWAVE_SES_TOPIC_ARNS",
+          "value": "<ses-topic-arns>"
+        },
+        {
+          "name": "AWS_SES_REGION",
+          "value": "<ses-production-access-region>"
+        },
+        {
+          "name": "POSTWAVE_ENABLE_CAMPAIGN_ASSURANCE_RUNTIME",
+          "value": "false"
+        },
+        {
+          "name": "POSTWAVE_ENABLE_CAMPAIGN_ASSURANCE_MODELED",
+          "value": "false"
+        },
+        {
+          "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_MODEL_ID",
+          "value": "<reviewed-gemini-model-id>"
+        },
+        {
+          "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_MODEL_VERSION",
+          "value": "<reviewed-gemini-model-version>"
+        },
+        {
+          "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_PRICING_VERSION",
+          "value": "<reviewed-gemini-pricing-version>"
+        },
+        {
+          "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_INPUT_MICROUSD_PER_MILLION_TOKENS",
+          "value": "<positive-integer>"
+        },
+        {
+          "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_OUTPUT_MICROUSD_PER_MILLION_TOKENS",
+          "value": "<positive-integer>"
+        },
+        {
+          "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GATE_ROLLOUT",
+          "value": "off"
+        },
+        {
+          "name": "POSTWAVE_UPLOADS_BUCKET",
+          "value": "postwave-uploads-prod"
+        },
+        {
+          "name": "POSTWAVE_ASSETS_BUCKET",
+          "value": "postwave-uploads-prod"
+        },
+        {
+          "name": "POSTWAVE_EXPORTS_BUCKET",
+          "value": "postwave-exports-prod"
+        },
+        {
+          "name": "POSTWAVE_ASSETS_PUBLIC_BASE_URL",
+          "value": "<qualified-assets-cdn-base-url>"
+        },
+        {
+          "name": "POSTWAVE_S3_KMS_KEY_ID",
+          "value": "<s3-kms-key-arn>"
+        },
+        {
+          "name": "POSTWAVE_FORM_UPLOAD_CLAMAV_ADDR",
+          "value": "clamav.postwave.internal:3310"
+        },
+        {
+          "name": "POSTWAVE_FORM_UPLOAD_TENANT_QUOTA_BYTES",
+          "value": "1073741824"
+        },
+        {
+          "name": "POSTWAVE_FORM_UPLOAD_PENDING_LIMIT",
+          "value": "100"
+        },
+        {
+          "name": "POSTWAVE_KMS_KEY_ID",
+          "value": "<app-data-kms-key-arn>"
+        },
+        {
+          "name": "DKIM_ROOT_DOMAIN",
+          "value": "mail.moosewave.com"
+        },
+        {
+          "name": "LISTMONK_URL",
+          "value": "http://listmonk.postwave.internal:9000"
+        },
+        {
+          "name": "LISTMONK_USER",
+          "value": "<listmonk-api-user>"
+        },
+        {
+          "name": "MIGRATION_SERVICE_URL",
+          "value": "http://migration.postwave.internal:8081"
+        },
+        {
+          "name": "DELIVERABILITY_SERVICE_URL",
+          "value": "http://deliverability.postwave.internal:8082"
+        },
+        {
+          "name": "VOICE_SERVICE_URL",
+          "value": "http://voice.postwave.internal:8083"
+        },
+        {
+          "name": "AUTOMATION_SERVICE_URL",
+          "value": "http://automation.postwave.internal:8084"
+        },
+        {
+          "name": "POSTWAVE_OAUTH_GOOGLE_CLIENT_ID",
+          "value": "<set-google-oauth-client-id>"
+        },
+        {
+          "name": "FORMS_PUBLIC_HOST",
+          "value": "https://forms.moosewave.com"
+        },
+        {
+          "name": "CORS_ALLOWED_ORIGINS",
+          "value": "https://app.moosewave.com,https://moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_WEB_VITALS_ALLOWED_ORIGINS",
+          "value": "https://app.moosewave.com,https://moosewave.com"
+        },
+        {
+          "name": "POSTWAVE_TRUST_FORWARDED_IP_HEADERS",
+          "value": "1"
+        },
+        {
+          "name": "POSTWAVE_TRUSTED_PROXY_CIDRS",
+          "value": "<trusted-proxy-cidrs>"
+        },
+        {
+          "name": "ARCHIVE_PUBLIC_BASE_URL",
+          "value": "https://archive.moosewave.com"
+        },
+        {
+          "name": "REFERRAL_SHARE_BASE_URL",
+          "value": "https://api.moosewave.com/api/public"
+        },
+        {
+          "name": "STRIPE_DLQ_ALERT_EMAIL",
+          "value": "<ops-alert-email>"
+        },
+        {
+          "name": "BILLING_PROVIDER",
+          "value": "dodo"
+        },
+        {
+          "name": "DODO_PAYMENTS_ENVIRONMENT",
+          "value": "live_mode"
+        },
+        {
+          "name": "MOOSEWAVE_BILLING_LAUNCH_APPROVAL",
+          "value": "<approved-release-record>"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/db-dsn-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_AUTH_HMAC_PEPPER",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/auth-hmac-pepper-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_AUTH_KEK",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/auth-kek-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_OAUTH_GOOGLE_CLIENT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/oauth/google-XXXXXX"
+        },
+        {
+          "name": "LISTMONK_WEBHOOK_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/listmonk-webhook-XXXXXX"
+        },
+        {
+          "name": "LISTMONK_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/listmonk-admin-password-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_POSTMARK_HMAC_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/postmark-hmac-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_SENDGRID_HMAC_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sendgrid-hmac-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_ARF_HMAC_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/arf-hmac-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_API_KEY_PEPPER",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/api-key-pepper-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_CONSENT_CURSOR_SIGNING_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/consent-cursor-signing-key-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_SMS_INBOX_CURSOR_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sms-inbox-cursor-key-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_HELPDESK_CURSOR_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/helpdesk-cursor-key-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_PII_FINGERPRINT_PEPPER",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/pii-fingerprint-pepper-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_SUBSCRIBER_IMPORT_FINGERPRINT_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/subscriber-import-fingerprint-key-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_SENDING_KEK",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sending-kek-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_INTERNAL_API_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/internal-api-token-XXXXXX"
+        },
+        {
+          "name": "METRICS_TOKEN",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/metrics-token-XXXXXX"
+        },
+        {
+          "name": "REDIS_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/redis-url-XXXXXX"
+        },
+        {
+          "name": "POSTWAVE_PORTAL_JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/portal-jwt-XXXXXX"
+        },
+        {
+          "name": "DODO_PAYMENTS_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/dodo-payments-api-key-XXXXXX"
+        },
+        {
+          "name": "DODO_PAYMENTS_WEBHOOK_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/dodo-payments-webhook-key-XXXXXX"
+        },
+        {
+          "name": "DODO_PAYMENTS_PRODUCT_ID_LAUNCH_MONTHLY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:moosewave/prod/dodo-payments-product-launch-monthly-XXXXXX"
+        },
+        {
+          "name": "DODO_PAYMENTS_PRODUCT_ID_GROWTH_MONTHLY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:moosewave/prod/dodo-payments-product-growth-monthly-XXXXXX"
+        },
+        {
+          "name": "DODO_PAYMENTS_PRODUCT_ID_SCALE_MONTHLY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:moosewave/prod/dodo-payments-product-scale-monthly-XXXXXX"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/anthropic-api-key-XXXXXX"
+        },
+        {
+          "name": "OPS_DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/ops-db-dsn-XXXXXX"
+        },
+        {
+          "name": "OPS_SLACK_WEBHOOK_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/ops-slack-webhook-url-XXXXXX"
+        },
+        {
+          "name": "LISTMONK_TENANT_ROUTES",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/tenant-email-routes-XXXXXX"
+        }
+      ],
+      "_secrets_comment": "Each ARN ends in -XXXXXX -- the 6-char Secrets-Manager-assigned suffix. Pull real ARNs with `aws secretsmanager describe-secret --secret-id postwave/prod/<name>` after running the bootstrap. The wildcard form (-*) is fine in IAM but not in valueFrom; ECS demands a fully-qualified ARN.",
+      "healthCheck": {
+        "_comment": "Container-level health check, evaluated by ECS independently of the ALB target group health check (alb-listener-rules.md). Both must pass for traffic to flow. interval/timeout deliberately conservative: a transient blip should not flap the task.",
+        "command": [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/api/ready || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-api",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "api"
+        }
+      },
+      "stopTimeout": 30,
+      "ulimits": [
+        {
+          "name": "nofile",
+          "softLimit": 65536,
+          "hardLimit": 65536
+        }
+      ],
+      "readonlyRootFilesystem": true,
+      "_readonly_comment": "The image root is immutable. A task-scoped ephemeral volume is mounted only at /tmp for bounded temporary workflows such as audit export staging; no temp volume is shared with another container."
+    }
+  ],
+  "tags": [
+    {
+      "key": "Service",
+      "value": "postwave-api"
+    },
+    {
+      "key": "Environment",
+      "value": "prod"
+    },
+    {
+      "key": "ManagedBy",
+      "value": "ecs-task-definition.json"
+    }
+  ]
+}

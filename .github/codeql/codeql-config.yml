@@ -1,0 +1,40 @@
+name: "Moosewave CodeQL Config"
+
+# -----------------------------------------------------------------------------
+# Scope and tuning for CodeQL scans.
+#
+# We exclude generated code (OpenAPI clients, protobuf, etc.) because CodeQL
+# floods otherwise-quiet PRs with low-signal alerts on machine-emitted files
+# we cannot rewrite.
+# -----------------------------------------------------------------------------
+
+paths:
+  - apps/api
+  - apps/desktop/src
+  - apps/web
+  - apps/mobile/src
+  - apps/audit-portal
+  - infra/observability/image
+  - packages
+  - services
+  - scripts
+  - tests/e2e
+
+paths-ignore:
+  - "**/node_modules"
+  - "**/dist"
+  - "**/build"
+  - "**/.next"
+  - "**/out"
+  - "**/*.generated.ts"
+  - "**/*.gen.go"
+  - "**/openapi/generated/**"
+  - "**/__generated__/**"
+  - "**/testdata/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+
+# Inherit the security-extended suite invoked from the workflow; no extra
+# query packs are added here so we stay aligned with GitHub's curated set.

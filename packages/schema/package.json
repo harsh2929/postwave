@@ -1,0 +1,46 @@
+{
+  "name": "@postwave/schema",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Shared canonical schema (TypeScript + Go via codegen) for Moosewave migration, voice, and automation pillars. Single source of truth for cross-service contracts.",
+  "keywords": [
+    "postwave",
+    "schema",
+    "canonical",
+    "typescript",
+    "zod",
+    "codegen"
+  ],
+  "author": "Moosewave",
+  "license": "MIT",
+  "homepage": "https://moosewave.com/forge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/schema"
+  },
+  "bugs": {
+    "url": "https://github.com/harsh2929/postwave/issues"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

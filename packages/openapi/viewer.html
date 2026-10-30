@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Moosewave API Reference</title>
+    <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%230f172a'/><text x='50%25' y='55%25' text-anchor='middle' fill='white' font-family='system-ui' font-size='14' font-weight='700'>P</text></svg>" />
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; background: #0f172a; }
+      #app { height: 100%; }
+      .branded-header {
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+        color: #f8fafc;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #334155;
+      }
+      .branded-header .badge {
+        background: #6366f1;
+        color: white;
+        font-weight: 700;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 14px;
+      }
+      .branded-header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+      .branded-header small { opacity: 0.7; font-weight: 400; margin-left: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="branded-header">
+      <span class="badge">Moosewave</span>
+      <h1>API Reference <small>OpenAPI 3.1 · v0.1.0</small></h1>
+    </div>
+    <div id="app"></div>
+
+    <script
+      id="api-reference"
+      data-url="./openapi.yaml"
+      data-configuration='{"theme":"deepSpace","layout":"modern","hideDownloadButton":false,"hideTestRequestButton":false,"defaultHttpClient":{"targetKey":"shell","clientKey":"curl"}}'
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>

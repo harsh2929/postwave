@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Moosewave dashboard">
+  <rect width="1280" height="720" fill="#0f172a"/>
+  <rect x="0" y="0" width="240" height="720" fill="#0b1220"/>
+  <rect x="24" y="32" width="180" height="28" rx="6" fill="#2563eb"/>
+  <rect x="24" y="96" width="180" height="14" rx="4" fill="#1e293b"/>
+  <rect x="24" y="124" width="140" height="14" rx="4" fill="#1e293b"/>
+  <rect x="24" y="152" width="160" height="14" rx="4" fill="#1e293b"/>
+  <rect x="280" y="48" width="380" height="32" rx="6" fill="#1e293b"/>
+  <rect x="280" y="120" width="220" height="120" rx="10" fill="#1e293b"/>
+  <rect x="520" y="120" width="220" height="120" rx="10" fill="#1e293b"/>
+  <rect x="760" y="120" width="220" height="120" rx="10" fill="#1e293b"/>
+  <rect x="1000" y="120" width="220" height="120" rx="10" fill="#1e293b"/>
+  <rect x="280" y="280" width="940" height="380" rx="12" fill="#111827"/>
+  <path d="M320 600 L420 540 L520 560 L620 480 L720 520 L820 440 L920 460 L1020 400 L1120 420 L1180 380" stroke="#2563eb" stroke-width="4" fill="none"/>
+</svg>

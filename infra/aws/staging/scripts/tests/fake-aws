@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# fake-aws -- test double for the AWS CLI, used by run.sh through
+# STAGING_AWS_BIN. It answers the read calls the staging scripts make from a
+# scenario directory ($FAKE_AWS_STATE), appends every call to
+# $FAKE_AWS_STATE/calls.log as "READ|WRITE <service> <operation> <args>", and
+# with FAKE_AWS_READONLY=1 fails every write call (exit 97), which is how the
+# tests prove a dry run or a refused interlock writes nothing. An unknown call
+# fails too (exit 99), so no test can pass on a call nobody anticipated.
+#
+# Scenario files (all optional; absence means "does not exist"):
+#   stacks/<stack>.json         describe-stacks output
+#   secrets.json                list-secrets output
+#   repos/<repo>                the repository exists; content = its Project tag
+#   buckets/<bucket>            the bucket exists; content = its Project tag
+#   cluster_tag                 the ECS cluster's Project tag
+#   instance.json               describe-instances Reservations[0].Instances[0]
+#   services.json               describe-services output
+#   snapshots.json              describe-snapshots output
+#   records.json                list-resource-record-sets output
+#   changeset.json              describe-change-set output (create-change-set tests)
+#   images.json                 describe-images output (web-only deploy tests)
+
+set -euo pipefail
+state=${FAKE_AWS_STATE:?FAKE_AWS_STATE is not set}
+region="" args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --region) region=$2; shift 2 ;;
+    --endpoint-url) shift 2 ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+service=${args[0]:-}
+op=${args[1]:-}
+rest="${args[*]:2}"
+arg() { # value after <flag> in the call
+  local i
+  for ((i = 2; i < ${#args[@]}; i++)); do
+    if [ "${args[$i]}" = "$1" ]; then printf '%s' "${args[$((i + 1))]:-}"; return 0; fi
+  done
+  return 1
+}
+query=$(arg --query || true)
+
+case "$op" in
+  describe-*|list-*|get-*|batch-get-*|head-*|validate-*|wait) kind=READ ;;
+  *) kind=WRITE ;;
+esac
+[ "$service $op" != "sts get-caller-identity" ] || kind=READ
+printf '%s %s %s %s [%s]\n' "$kind" "$service" "$op" "$rest" "$region" >>"$state/calls.log"
+if [ "$kind" = WRITE ] && [ "${FAKE_AWS_READONLY:-0}" = 1 ]; then
+  echo "fake-aws: WRITE CALL IN A READ-ONLY TEST: $service $op $rest" >&2
+  exit 97
+fi
+
+not_found() { echo "An error occurred ($1) when calling the $2 operation: $3" >&2; exit 254; }
+unknown() { echo "fake-aws: no answer for: $service $op $rest" >&2; exit 99; }
+tag_or_empty() { if [ -f "$1" ]; then cat "$1"; else printf ''; fi; }
+
+case "$service $op" in
+  "sts get-caller-identity") echo 111122223333 ;;
+
+  "cloudformation describe-stacks")
+    name=$(arg --stack-name)
+    [ -f "$state/stacks/$name.json" ] || not_found ValidationError DescribeStacks "Stack with id $name does not exist"
+    cat "$state/stacks/$name.json" ;;
+  "cloudformation validate-template")
+    template=$(arg --template-body); template=${template#file://}
+    [ "$query" = 'Parameters[].ParameterKey' ] || unknown
+    # the top-level parameter names of the template, tab-separated like the CLI
+    awk '/^Parameters:/ { p = 1; next } /^[A-Za-z]/ { p = 0 } p && /^  [A-Za-z0-9]+:[[:space:]]*$/ { sub(/:.*/, ""); sub(/^ +/, ""); printf "%s%s", sep, $0; sep = "\t" } END { print "" }' "$template" ;;
+  "cloudformation describe-stack-events") echo '{"StackEvents":[]}' ;;
+  "cloudformation create-change-set") echo "arn:aws:cloudformation:$region:111122223333:changeSet/fake/1" ;;
+  "cloudformation describe-change-set")
+    if [ "$query" = Status ]; then jq -r .Status "$state/changeset.json"; else cat "$state/changeset.json"; fi ;;
+  "cloudformation delete-change-set"|"cloudformation execute-change-set"|"cloudformation delete-stack") ;;
+
+  "secretsmanager list-secrets")
+    if [ -f "$state/secrets.json" ]; then cat "$state/secrets.json"; else echo '{"SecretList":[]}'; fi ;;
+  # A small stateful Secrets Manager: values arrive only as file:// (a value
+  # on the command line would land in calls.log, which the tests scan).
+  "secretsmanager create-secret")
+    name=$(arg --name); source=$(arg --secret-string)
+    case "$source" in file://*) ;; *) echo "fake-aws: create-secret value not passed as file://" >&2; exit 98 ;; esac
+    mkdir -p "$state/values"; cp "${source#file://}" "$state/values/$(printf '%s' "$name" | tr / _)"
+    [ -f "$state/secrets.json" ] || echo '{"SecretList":[]}' >"$state/secrets.json"
+    tags=$(arg --tags)
+    jq --arg n "$name" --arg t "$tags" '.SecretList += [{Name: $n,
+      ARN: ("arn:aws:secretsmanager:us-west-2:111122223333:secret:" + $n + "-AbC123"),
+      Tags: (if $t == "Key=Project,Value=moosewave-staging" then [{Key: "Project", Value: "moosewave-staging"}] else [] end)}]' \
+      "$state/secrets.json" >"$state/secrets.tmp" && mv "$state/secrets.tmp" "$state/secrets.json" ;;
+  "secretsmanager put-secret-value")
+    name=$(arg --secret-id); source=$(arg --secret-string)
+    case "$source" in file://*) ;; *) echo "fake-aws: put-secret-value value not passed as file://" >&2; exit 98 ;; esac
+    cp "${source#file://}" "$state/values/$(printf '%s' "$name" | tr / _)" ;;
+  "secretsmanager get-secret-value")
+    name=$(arg --secret-id); file="$state/values/$(printf '%s' "$name" | tr / _)"
+    [ -f "$file" ] || not_found ResourceNotFoundException GetSecretValue "Secrets Manager can't find the specified secret."
+    cat "$file"; echo ;;
+
+  "route53 list-hosted-zones-by-name")
+    echo '{"HostedZones":[{"Id":"/hostedzone/ZFAKEZONE","Name":"moosewave.com.","Config":{"PrivateZone":false}},{"Id":"/hostedzone/ZOTHER","Name":"other.example.","Config":{"PrivateZone":false}}]}' ;;
+  "route53 get-hosted-zone") echo '{"HostedZone":{"Id":"/hostedzone/ZFAKEZONE","Name":"moosewave.com.","Config":{"PrivateZone":false}}}' ;;
+  "route53 list-resource-record-sets")
+    if [ -f "$state/records.json" ]; then cat "$state/records.json"; else echo '{"ResourceRecordSets":[]}'; fi ;;
+
+  "ec2 describe-vpcs")
+    case "$query" in
+      'Vpcs[0].VpcId') echo vpc-0fake ;;
+      'Vpcs[0].CidrBlock') echo 172.31.0.0/16 ;;
+      *) unknown ;;
+    esac ;;
+  "ec2 describe-subnets")
+    case "$rest" in
+      *availability-zone,Values=us-west-2a*) echo subnet-0aaaa ;;
+      *availability-zone,Values=us-west-2b*) echo subnet-0bbbb ;;
+      *--subnet-ids*) echo '{"Subnets":[{"SubnetId":"subnet-0bbbb","CidrBlock":"172.31.16.0/20"},{"SubnetId":"subnet-0aaaa","CidrBlock":"172.31.32.0/20"}]}' ;;
+      *) unknown ;;
+    esac ;;
+  "ec2 describe-instances")
+    [ -f "$state/instance.json" ] || unknown
+    case "$query" in
+      'Reservations[0].Instances[0]') cat "$state/instance.json" ;;
+      'Reservations[0].Instances[0].State.Name') jq -r .State.Name "$state/instance.json" ;;
+      *) unknown ;;
+    esac ;;
+  "ec2 describe-snapshots")
+    if [ -f "$state/snapshots.json" ]; then cat "$state/snapshots.json"; else echo '{"Snapshots":[]}'; fi ;;
+
+  "ssm get-parameter") echo ami-0123456789abcdef0 ;;
+  "ce list-cost-allocation-tags") echo Active ;;
+  "iam get-role") echo arn:aws:iam::111122223333:role/codebuild-docai-role ;;
+  "acm list-certificates") echo '{"CertificateSummaryList":[]}' ;;
+  "resourcegroupstaggingapi get-resources") ;;
+
+  "ecr describe-repositories")
+    repo=$(arg --repository-names)
+    [ -f "$state/repos/$repo" ] || not_found RepositoryNotFoundException DescribeRepositories "The repository with name '$repo' does not exist"
+    echo "arn:aws:ecr:us-west-2:111122223333:repository/$repo" ;;
+  "ecr list-tags-for-resource")
+    repo=$(arg --resource-arn); repo=${repo##*/}
+    tag=$(tag_or_empty "$state/repos/$repo")
+    if [ -n "$tag" ]; then echo "$tag"; else echo None; fi ;;
+  "ecr describe-images")
+    [ -f "$state/images.json" ] || not_found ImageNotFoundException DescribeImages "the image does not exist"
+    cat "$state/images.json" ;;
+
+  "ecs describe-clusters")
+    tag=$(tag_or_empty "$state/cluster_tag"); if [ -n "$tag" ]; then echo "$tag"; else echo None; fi ;;
+  "ecs list-tasks")
+    case "$query" in
+      'length(taskArns)') echo 0 ;;
+      taskArns) echo None ;;
+      *) unknown ;;
+    esac ;;
+  "ecs describe-services")
+    [ -f "$state/services.json" ] || unknown
+    case "$query" in
+      '') cat "$state/services.json" ;;
+      'sum(services[].runningCount)') echo 0 ;;
+      *) unknown ;;
+    esac ;;
+
+  "s3api head-bucket")
+    bucket=$(arg --bucket)
+    [ -f "$state/buckets/$bucket" ] || not_found 404 HeadBucket "Not Found" ;;
+  "s3api get-bucket-tagging")
+    bucket=$(arg --bucket)
+    tag=$(tag_or_empty "$state/buckets/$bucket")
+    [ -n "$tag" ] || not_found NoSuchTagSet GetBucketTagging "The TagSet does not exist"
+    echo "$tag" ;;
+  "s3api list-objects-v2") echo None ;;
+
+  "codebuild batch-get-projects")
+    case "$query" in
+      'length(projects)') echo 0 ;;
+      *) unknown ;;
+    esac ;;
+  "logs describe-log-groups") echo None ;;
+
+  *) unknown ;;
+esac

@@ -1,0 +1,48 @@
+---
+title: Enterprise auth
+---
+
+import { Callout } from 'nextra/components';
+
+# Enterprise auth
+
+Moosewave ships the auth controls enterprises expect: single sign-on, automated user provisioning, and enforceable multi-factor policy.
+
+- [**SSO (OIDC / OAuth)**](/security/sso) — verified-email Google sign-in and explicit identity linking.
+- [**SCIM v2**](/security/scim) — IdP-driven user + group provisioning, bearer tokens, and group → role rules.
+- [**MFA / TOTP**](/security/mfa) — per-user TOTP enrollment and tenant-wide enforcement policy.
+
+## Tenant security settings
+
+The platform-enforced policy lives in one admin-scoped surface:
+
+| Method | Path                          | Scope   | Purpose                          |
+| ------ | ----------------------------- | ------- | -------------------------------- |
+| GET    | `/api/v1/security/settings`   | `admin` | Read the tenant's security policy.|
+| PUT    | `/api/v1/security/settings`   | `admin` | Update it.                       |
+
+```bash
+curl https://api.moosewave.com/api/v1/security/settings \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+```json
+{
+  "require_2fa_for_admins": true,
+  "require_2fa_for_all": false,
+  "sso_provider": "microsoft",
+  "sso_metadata_url": "https://login.microsoftonline.com/.../metadata",
+  "session_max_minutes": 720
+}
+```
+
+These settings are read live on each request (no cache) so policy changes take effect immediately. `require_2fa_*` is enforced by the [MFA gate](/security/mfa); `session_max_minutes` bounds session lifetime.
+
+<Callout type="info">
+A workspace that has never visited security settings has no row — the lazy default is "no requirement". Set the policy explicitly before relying on it.
+</Callout>
+
+## See also
+
+- [Team & roles](/team) — what the provisioned users can do.
+- [API authentication](/api-reference/authentication) — API-key auth (separate from human SSO).

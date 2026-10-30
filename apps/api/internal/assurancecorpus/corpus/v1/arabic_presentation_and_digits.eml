@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <arabic-presentation-and-digits.v1@example.com>
+Subject: فاتورة ١٢٣
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ar-digits-v1"
+
+--pw-ar-digits-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+فاتورة رقم ١٢٣ بمبلغ ٤٥٠ ريال. https://billing.example.com/ar/123
+--pw-ar-digits-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>فاتورة ١٢٣</h1><p>المبلغ ٤٥٠ ريال، يستحق في ٣٠ سبتمبر.</p><p><a href="https://billing.example.com/ar/123">عرض الفاتورة</a></p></body></html>
+--pw-ar-digits-v1--

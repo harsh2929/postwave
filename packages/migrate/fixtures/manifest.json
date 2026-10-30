@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "description": "Sanitized launch-compatibility fixture registry for migration adapters.",
+  "sources": [
+    {
+      "source": "mailchimp",
+      "status": "launch-critical",
+      "files": ["mailchimp/audience.csv"],
+      "expected": {
+        "subscribers_total": 5,
+        "suppressed_total": 2,
+        "custom_fields_min": 3,
+        "tags_min": 4,
+        "segments_min": 2,
+        "automations_min": 1,
+        "campaign_archive_min": 2,
+        "paid_subscriptions_min": 0
+      },
+      "known_gaps": ["Paid subscriptions are not owned by Mailchimp audience exports."]
+    },
+    {
+      "source": "convertkit",
+      "status": "launch-critical",
+      "files": ["convertkit/subscribers.csv"],
+      "expected": {
+        "subscribers_total": 5,
+        "suppressed_total": 2,
+        "custom_fields_min": 3,
+        "tags_min": 4,
+        "segments_min": 2,
+        "automations_min": 1,
+        "campaign_archive_min": 2,
+        "paid_subscriptions_min": 1
+      },
+      "known_gaps": ["Paid subscriptions require the shared Stripe Connect path."]
+    },
+    {
+      "source": "beehiiv",
+      "status": "assisted-beta",
+      "files": ["beehiiv/subscribers.csv"],
+      "expected": {
+        "subscribers_total": 5,
+        "suppressed_total": 2,
+        "custom_fields_min": 3,
+        "tags_min": 3,
+        "segments_min": 2,
+        "automations_min": 1,
+        "campaign_archive_min": 2,
+        "paid_subscriptions_min": 1
+      },
+      "known_gaps": ["Some Beehiiv publication-level monetization metadata must be verified against a sandbox account."]
+    },
+    {
+      "source": "mailerlite",
+      "status": "assisted-beta",
+      "files": ["mailerlite/subscribers.csv"],
+      "expected": {
+        "subscribers_total": 5,
+        "suppressed_total": 2,
+        "custom_fields_min": 3,
+        "tags_min": 3,
+        "segments_min": 2,
+        "automations_min": 1,
+        "campaign_archive_min": 2,
+        "paid_subscriptions_min": 0
+      },
+      "known_gaps": ["Paid subscriptions are outside MailerLite's core export surface."]
+    },
+    {
+      "source": "substack",
+      "status": "assisted-beta",
+      "files": ["substack/subscribers.csv"],
+      "expected": {
+        "subscribers_total": 5,
+        "suppressed_total": 1,
+        "custom_fields_min": 1,
+        "tags_min": 1,
+        "segments_min": 0,
+        "automations_min": 0,
+        "campaign_archive_min": 1,
+        "paid_subscriptions_min": 0
+      },
+      "known_gaps": ["Segments and automations are not exposed in Substack exports.", "Paid/founding/gift/comp values are membership metadata; live Stripe or Apple billing requires a publication-bound handoff.", "Signup dates are provenance, not portable consent timestamps."]
+    },
+    {
+      "source": "csv",
+      "status": "launch-critical",
+      "files": ["csv/subscribers.csv"],
+      "expected": {
+        "subscribers_total": 5,
+        "suppressed_total": 2,
+        "custom_fields_min": 4,
+        "tags_min": 3,
+        "segments_min": 0,
+        "automations_min": 0,
+        "campaign_archive_min": 0,
+        "paid_subscriptions_min": 0
+      },
+      "known_gaps": ["Universal CSV cannot infer source automations or campaign archives without source-specific exports."]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  # @lhci/cli uses LHCI_GITHUB_APP_TOKEN to post commit-status checks.
+  # `statuses: write` is the equivalent default-token scope so the run
+  # still works on PRs from forks where the app token is absent.
+  statuses: write
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse — public pages
+    runs-on: ubuntu-latest
+    # Cold dependency/browser installation + production build + 30 Lighthouse
+    # samples needs more than the former 20-minute ceiling on shared runners.
+    # Keep a bounded fail-closed job timeout so hung Chrome/builds cannot linger.
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: 9
+
+      - name: Install web deps
+        run: pnpm install --filter @postwave/web --filter postwave-playwright --frozen-lockfile
+
+      - name: Install performance browser
+        run: pnpm --dir tests/playwright exec playwright install --with-deps chromium
+
+      - name: Validate fail-closed performance contracts
+        run: pnpm --filter @postwave/web performance:contracts
+
+      - name: Build web workspace dependencies
+        run: pnpm --filter '@postwave/web^...' --if-present run build
+
+      - name: Build web
+        # Run a production build so we measure realistic bundle sizes.
+        # Public marketing pages do not talk to the API at build time so
+        # we can skip the typical NEXT_PUBLIC_* env wiring.
+        # This non-deploying job simulates the already-approved public state so
+        # Lighthouse can exercise crawlability/SEO. It is not a release record
+        # or publication approval, and no deploy/publish step consumes this build.
+        run: pnpm --filter @postwave/web build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          POSTWAVE_PUBLIC_RELEASE_APPROVAL: "approved:CI-LIGHTHOUSE-SIMULATION"
+          POSTWAVE_AUTH_BYPASS: "0"
+          POSTWAVE_LOCAL_AUTH_BYPASS: "0"
+          NEXT_PUBLIC_POSTWAVE_AUTH_BYPASS: "0"
+          NEXT_PUBLIC_POSTWAVE_LOCAL_AUTH_BYPASS: "0"
+
+      - name: Enforce complete route graph budgets
+        run: pnpm --filter @postwave/web bundle:check
+
+      - name: Start web (background)
+        run: pnpm --filter @postwave/web start &
+        env:
+          PORT: "3000"
+          # Runtime middleware must simulate the same non-deploying public state
+          # as the build above; this value is not real publication approval.
+          POSTWAVE_PUBLIC_RELEASE_APPROVAL: "approved:CI-LIGHTHOUSE-SIMULATION"
+          POSTWAVE_AUTH_BYPASS: "0"
+          POSTWAVE_LOCAL_AUTH_BYPASS: "0"
+          NEXT_PUBLIC_POSTWAVE_AUTH_BYPASS: "0"
+          NEXT_PUBLIC_POSTWAVE_LOCAL_AUTH_BYPASS: "0"
+
+      - name: Wait for server
+        # Crude but predictable; `next start` typically prints "Ready" in
+        # under 5s but we give it 30 to be safe on a cold runner. The
+        # subsequent Lighthouse step has its own health probe.
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:3000/; then
+              echo "web is up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "web did not come up within 30s"; exit 1
+
+      - name: Certify interaction and browser memory budgets
+        run: pnpm --dir tests/playwright test:performance
+        env:
+          POSTWAVE_PERFORMANCE_URL: http://localhost:3000
+
+      - name: Run Lighthouse CI — desktop
+        # We invoke @lhci/cli via npx so it stays a one-shot dev tool,
+        # not a permanent dep in apps/web/package.json. The config is at
+        # apps/web/lighthouserc.json; --config makes the path explicit.
+        run: pnpm dlx @lhci/cli@0.15.1 autorun --config=apps/web/lighthouserc.json
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Run Lighthouse CI — mobile
+        run: pnpm dlx @lhci/cli@0.15.1 autorun --config=apps/web/lighthouserc.mobile.json
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Retain private Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lighthouse-${{ github.run_id }}
+          path: |
+            .lighthouseci/
+            apps/web/.next/postwave-bundle-report.json
+          if-no-files-found: error
+          retention-days: 14

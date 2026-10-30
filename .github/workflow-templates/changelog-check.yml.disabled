@@ -1,0 +1,125 @@
+name: Changelog Check
+
+# -----------------------------------------------------------------------------
+# Per-package CHANGELOG enforcement on PRs that touch packages/<pkg>/src/.
+#
+# A PR that modifies the source of any published @postwave/* package must
+# also add an entry to that package's CHANGELOG.md. This isn't a release
+# enforcement — it's a discipline check so the CHANGELOG stays current
+# instead of becoming a thing operators race to write at release time.
+#
+# Bypass: include `[skip changelog]` anywhere in the PR body.
+#
+# Per-package scope: a PR touching only packages/sdk-ts/src/ requires
+# ONLY packages/sdk-ts/CHANGELOG.md to be updated, not all 7.
+#
+# Hard rule: every github.event.* value is routed through env: to
+# defeat workflow injection.
+# -----------------------------------------------------------------------------
+
+on:
+  pull_request:
+    paths:
+      - 'packages/sdk-ts/**'
+      - 'packages/mcp-server/**'
+      - 'packages/cli/**'
+      - 'packages/email-react/**'
+      - 'packages/claude-code-plugin/**'
+      - 'packages/openapi/**'
+      - 'packages/schema/**'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changelog:
+    name: Verify CHANGELOG entries
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PR_BODY: ${{ github.event.pull_request.body }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed package src
+        id: filter
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590
+        with:
+          filters: |
+            sdk-ts:
+              - 'packages/sdk-ts/src/**'
+            mcp-server:
+              - 'packages/mcp-server/src/**'
+            cli:
+              - 'packages/cli/src/**'
+            email-react:
+              - 'packages/email-react/src/**'
+            claude-code-plugin:
+              - 'packages/claude-code-plugin/src/**'
+            openapi:
+              - 'packages/openapi/openapi.yaml'
+              - 'packages/openapi/openapi.json'
+            schema:
+              - 'packages/schema/src/**'
+
+      - name: Check skip marker
+        id: skip
+        run: |
+          if printf '%s' "$PR_BODY" | grep -qiE '\[skip[ -]?changelog\]'; then
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::PR body contains [skip changelog] — bypassing check"
+          else
+            echo "skipped=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify CHANGELOG updates
+        if: steps.skip.outputs.skipped != 'true'
+        env:
+          F_SDK_TS: ${{ steps.filter.outputs.sdk-ts }}
+          F_MCP: ${{ steps.filter.outputs.mcp-server }}
+          F_CLI: ${{ steps.filter.outputs.cli }}
+          F_EMAIL_REACT: ${{ steps.filter.outputs.email-react }}
+          F_CC_PLUGIN: ${{ steps.filter.outputs.claude-code-plugin }}
+          F_OPENAPI: ${{ steps.filter.outputs.openapi }}
+          F_SCHEMA: ${{ steps.filter.outputs.schema }}
+        run: |
+          set -euo pipefail
+          fail=0
+          missing=()
+
+          check_pkg() {
+            local pkg="$1"
+            local flag="$2"
+            if [ "$flag" = "true" ]; then
+              local changelog="packages/$pkg/CHANGELOG.md"
+              if ! git diff --name-only "$BASE_SHA"..."$HEAD_SHA" -- "$changelog" | grep -q .; then
+                missing+=("$changelog")
+                fail=1
+              fi
+            fi
+          }
+
+          check_pkg "sdk-ts" "$F_SDK_TS"
+          check_pkg "mcp-server" "$F_MCP"
+          check_pkg "cli" "$F_CLI"
+          check_pkg "email-react" "$F_EMAIL_REACT"
+          check_pkg "claude-code-plugin" "$F_CC_PLUGIN"
+          check_pkg "openapi" "$F_OPENAPI"
+          check_pkg "schema" "$F_SCHEMA"
+
+          if [ "$fail" -eq 1 ]; then
+            echo "::error::This PR modified package source files but did not update the corresponding CHANGELOG.md:"
+            for m in "${missing[@]}"; do
+              echo "  - $m"
+            done
+            echo
+            echo "Add an entry under [Unreleased] describing the change, or include [skip changelog] in the PR body if this is purely an internal refactor / dep bump that doesn't affect consumers."
+            exit 1
+          fi
+          echo "::notice::All changed packages have CHANGELOG updates."

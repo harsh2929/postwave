@@ -1,0 +1,18 @@
+{
+  "detector_version": "postwave.campaign-checks.deterministic.v2",
+  "policy_version": "postwave.campaign-assurance.gate-policy.v1",
+  "scenario_id": "base--en-US--default--fixture-a",
+  "capabilities": [
+    {
+      "id": "image_ocr",
+      "status": "unavailable",
+      "reason": "no evidence-bound image OCR receipts were supplied"
+    },
+    {
+      "id": "model_comprehension",
+      "status": "unavailable",
+      "reason": "this report contains structural and exact-recovery checks only"
+    }
+  ],
+  "findings": []
+}

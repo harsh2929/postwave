@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <outlook-conditional-variant.v1@example.com>
+Subject: Your itinerary
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-outlook-v1"
+
+--pw-outlook-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your itinerary is ready: https://travel.example.com/itinerary/12
+--pw-outlook-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Your itinerary</h1><div style="mso-hide:all">Your itinerary is ready.</div><p>Your itinerary is ready.</p><p><a href="https://travel.example.com/itinerary/12">View itinerary</a></p></body></html>
+--pw-outlook-v1--

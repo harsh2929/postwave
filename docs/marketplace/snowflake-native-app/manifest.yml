@@ -1,0 +1,43 @@
+# © Moosewave. Proprietary and confidential.
+#
+# Snowflake Marketplace listing manifest for the Moosewave Audit
+# Shareback Native App. This file is consumed by `snow app deploy`
+# (Snowflake CLI). The runtime SQL package lives alongside in
+# package.sql; the Terraform module under ./terraform sets up the
+# customer-side resources (warehouse, role, external stage, COPY
+# task) that the Native App expects.
+#
+# Wire flow:
+#
+#   Moosewave audit_sinks (kind=snowflake_shareback)
+#     -> writes OCSF NDJSON to s3://<bucket>/<prefix>/<account_locator>/
+#        <share_name>/<tenant>/<from>-<to>.ocsf.jsonl
+#     -> Native App's POLL task runs COPY INTO POSTWAVE_AUDIT.RAW
+#        FROM @POSTWAVE_AUDIT.STAGE on the customer's schedule
+#     -> Snowsight dashboards consume RAW directly; no plaintext
+#        credentials ever leave Moosewave's KEK.
+
+manifest_version: 1
+artifacts:
+  setup_script: package.sql
+  default_streamlit: streamlit/dashboard.py
+  readme: README.md
+
+configuration:
+  log_level: info
+  trace_level: always
+
+privileges:
+  - EXECUTE TASK
+  - EXECUTE MANAGED TASK
+  - CREATE TABLE on schema POSTWAVE_AUDIT
+  - CREATE TASK on schema POSTWAVE_AUDIT
+
+references:
+  - name: external_stage
+    label: "Moosewave audit archive stage"
+    description: "External stage on Moosewave's S3 OCSF archive bucket."
+    privileges:
+      - READ
+    object_type: STAGE
+    register_callback: config.register_reference

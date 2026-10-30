@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <emoji-presentation-selectors.v1@example.com>
+Subject: Order confirmed ❤️
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-emoji-v1"
+
+--pw-emoji-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We ❤️ your order ✅
+View it at https://shop.example.com/orders/1042
+--pw-emoji-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><p>We ❤️ your order ✅</p><p><a href="https://shop.example.com/orders/1042">View your order</a></p></body></html>
+--pw-emoji-v1--

@@ -1,0 +1,7 @@
+{
+  "tenantId": "<uuid>",
+  "items": [],
+  "snapshotAt": "<timestamp>",
+  "broadcastDispatchAvailable": false,
+  "broadcastDispatchUnavailableReason": "sms_broadcast_dispatch_release_held"
+}

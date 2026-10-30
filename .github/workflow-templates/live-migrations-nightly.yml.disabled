@@ -1,0 +1,388 @@
+name: Live migration validation
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      activecampaign_source_event_phase:
+        description: "ActiveCampaign retained source-event run (job ID stays in repository/environment secrets)"
+        required: true
+        default: configured
+        type: choice
+        options:
+          - configured
+          - prepare
+          - finish
+          - cleanup
+      hubspot_source_event_phase:
+        description: "HubSpot retained contact-change run (job ID stays in repository/environment secrets)"
+        required: true
+        default: configured
+        type: choice
+        options:
+          - configured
+          - prepare
+          - finish
+          - cleanup
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: live-migrations-nightly
+  cancel-in-progress: false
+
+jobs:
+  validate-live-migrations:
+    name: Validate live migration adapters
+    runs-on: ubuntu-latest
+    env:
+      REQUIRE_LIVE_MIGRATIONS: "1"
+      REQUIRE_MIGRATION_LIFECYCLE: "1"
+      MIGRATION_CANDIDATE_SHA256: ${{ vars.MIGRATION_CANDIDATE_SHA256 }}
+      MIGRATION_RETAINED_EVIDENCE_DIR: ${{ github.workspace }}/.postwave-retained-migration-evidence
+      MIGRATION_EXPORT_ARTIFACT_RUN_ID: ${{ vars.MIGRATION_EXPORT_ARTIFACT_RUN_ID }}
+      MIGRATION_RETAINED_EVIDENCE_RUN_ID: ${{ vars.MIGRATION_RETAINED_EVIDENCE_RUN_ID }}
+      HUBSPOT_SERVICE_KEY: ${{ secrets.HUBSPOT_SERVICE_KEY }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      BREVO_LIVE_DRY_RUN: ${{ secrets.BREVO_LIVE_DRY_RUN }}
+      BREVO_LIVE_COMMIT: ${{ secrets.BREVO_LIVE_COMMIT }}
+      BREVO_LIVE_ROLLBACK: ${{ secrets.BREVO_LIVE_ROLLBACK }}
+      CONVERTKIT_ACCESS_TOKEN: ${{ secrets.CONVERTKIT_ACCESS_TOKEN }}
+      CONVERTKIT_REFRESH_TOKEN: ${{ secrets.CONVERTKIT_REFRESH_TOKEN }}
+      CONVERTKIT_ACCOUNT_ID: ${{ secrets.CONVERTKIT_ACCOUNT_ID }}
+      CONVERTKIT_LIVE_DRY_RUN: ${{ secrets.CONVERTKIT_LIVE_DRY_RUN }}
+      CONVERTKIT_LIVE_COMMIT: ${{ secrets.CONVERTKIT_LIVE_COMMIT }}
+      CONVERTKIT_LIVE_ROLLBACK: ${{ secrets.CONVERTKIT_LIVE_ROLLBACK }}
+      KLAVIYO_API_KEY: ${{ secrets.KLAVIYO_API_KEY }}
+      KLAVIYO_ACCOUNT_ID: ${{ secrets.KLAVIYO_ACCOUNT_ID }}
+      KLAVIYO_LIVE_DRY_RUN: ${{ secrets.KLAVIYO_LIVE_DRY_RUN }}
+      KLAVIYO_LIVE_COMMIT: ${{ secrets.KLAVIYO_LIVE_COMMIT }}
+      KLAVIYO_LIVE_ROLLBACK: ${{ secrets.KLAVIYO_LIVE_ROLLBACK }}
+      POSTWAVE_MIGRATION_URL: ${{ secrets.POSTWAVE_MIGRATION_URL }}
+      POSTWAVE_TEST_TENANT_ID: ${{ secrets.POSTWAVE_TEST_TENANT_ID }}
+      POSTWAVE_INTERNAL_API_TOKEN: ${{ secrets.POSTWAVE_INTERNAL_API_TOKEN }}
+      POSTWAVE_API_URL: ${{ secrets.POSTWAVE_API_URL }}
+      POSTWAVE_API_KEY: ${{ secrets.POSTWAVE_API_KEY }}
+      POSTWAVE_LIVE_MIGRATION_ARTIFACT_DIR: ${{ github.workspace }}/.postwave-live-migration-artifacts
+      MIGRATION_LIVE_ARTIFACT_RUN_ID: live-${{ github.run_id }}-${{ github.run_attempt }}
+      MAILCHIMP_CLIENT_ID: ${{ secrets.MAILCHIMP_CLIENT_ID }}
+      MAILCHIMP_CLIENT_SECRET: ${{ secrets.MAILCHIMP_CLIENT_SECRET }}
+      MAILCHIMP_ACCESS_TOKEN: ${{ secrets.MAILCHIMP_ACCESS_TOKEN }}
+      MAILCHIMP_DC: ${{ secrets.MAILCHIMP_DC }}
+      MAILCHIMP_AUDIENCE_IDS: ${{ secrets.MAILCHIMP_AUDIENCE_IDS }}
+      MAILCHIMP_LIVE_DRY_RUN: ${{ secrets.MAILCHIMP_LIVE_DRY_RUN }}
+      MAILCHIMP_LIVE_COMMIT: ${{ secrets.MAILCHIMP_LIVE_COMMIT }}
+      MAILCHIMP_LIVE_ROLLBACK: ${{ secrets.MAILCHIMP_LIVE_ROLLBACK }}
+      CONVERTKIT_CLIENT_ID: ${{ secrets.CONVERTKIT_CLIENT_ID }}
+      CONVERTKIT_CLIENT_SECRET: ${{ secrets.CONVERTKIT_CLIENT_SECRET }}
+      BEEHIIV_API_KEY: ${{ secrets.BEEHIIV_API_KEY }}
+      BEEHIIV_PUBLICATION_ID: ${{ secrets.BEEHIIV_PUBLICATION_ID }}
+      BEEHIIV_LIVE_DRY_RUN: ${{ secrets.BEEHIIV_LIVE_DRY_RUN }}
+      BEEHIIV_LIVE_COMMIT: ${{ secrets.BEEHIIV_LIVE_COMMIT }}
+      BEEHIIV_LIVE_ROLLBACK: ${{ secrets.BEEHIIV_LIVE_ROLLBACK }}
+      BEEHIIV_LIVE_SHADOW_CHECK: ${{ secrets.BEEHIIV_LIVE_SHADOW_CHECK }}
+      BEEHIIV_LIVE_DELTA_IMPORT: ${{ secrets.BEEHIIV_LIVE_DELTA_IMPORT }}
+      BEEHIIV_LIVE_PILOT_ACCEPTANCE: ${{ secrets.BEEHIIV_LIVE_PILOT_ACCEPTANCE }}
+      BEEHIIV_LIVE_ROLLBACK_REHEARSAL: ${{ secrets.BEEHIIV_LIVE_ROLLBACK_REHEARSAL }}
+      BEEHIIV_LIVE_MANUAL_REVIEW_SIGNOFF: ${{ secrets.BEEHIIV_LIVE_MANUAL_REVIEW_SIGNOFF }}
+      BEEHIIV_LIVE_MANUAL_REVIEW_EVIDENCE_REF: ${{ secrets.BEEHIIV_LIVE_MANUAL_REVIEW_EVIDENCE_REF }}
+      BEEHIIV_LIVE_CREDENTIAL_CLEANUP_REVIEW: ${{ secrets.BEEHIIV_LIVE_CREDENTIAL_CLEANUP_REVIEW }}
+      BEEHIIV_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF: ${{ secrets.BEEHIIV_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF }}
+      BEEHIIV_LIVE_FAIL_ON_DISCOVERY_WARNINGS: ${{ secrets.BEEHIIV_LIVE_FAIL_ON_DISCOVERY_WARNINGS }}
+      BEEHIIV_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS: ${{ secrets.BEEHIIV_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS }}
+      CUSTOMERIO_API_KEY: ${{ secrets.CUSTOMERIO_API_KEY }}
+      CUSTOMERIO_WORKSPACE_ID: ${{ secrets.CUSTOMERIO_WORKSPACE_ID }}
+      CUSTOMERIO_REGION: ${{ secrets.CUSTOMERIO_REGION }}
+      # A green scheduled Customer.io result must represent the entire
+      # certification lifecycle, not credentials plus discovery only.
+      CUSTOMERIO_LIVE_REQUIRE_FULL_CERTIFICATION: "1"
+      CUSTOMERIO_LIVE_DRY_RUN: ${{ secrets.CUSTOMERIO_LIVE_DRY_RUN }}
+      CUSTOMERIO_LIVE_COMMIT: ${{ secrets.CUSTOMERIO_LIVE_COMMIT }}
+      CUSTOMERIO_LIVE_ROLLBACK: ${{ secrets.CUSTOMERIO_LIVE_ROLLBACK }}
+      CUSTOMERIO_LIVE_SHADOW_CHECK: ${{ secrets.CUSTOMERIO_LIVE_SHADOW_CHECK }}
+      # Customer.io has no complete changed-profile feed; the harness requires
+      # a final full-snapshot delta and rejects source-event certification.
+      CUSTOMERIO_LIVE_SOURCE_EVENTS: "0"
+      CUSTOMERIO_LIVE_DELTA_IMPORT: ${{ secrets.CUSTOMERIO_LIVE_DELTA_IMPORT }}
+      CUSTOMERIO_LIVE_PILOT_ACCEPTANCE: ${{ secrets.CUSTOMERIO_LIVE_PILOT_ACCEPTANCE }}
+      CUSTOMERIO_LIVE_ROLLBACK_REHEARSAL: ${{ secrets.CUSTOMERIO_LIVE_ROLLBACK_REHEARSAL }}
+      CUSTOMERIO_LIVE_MANUAL_REVIEW_SIGNOFF: ${{ secrets.CUSTOMERIO_LIVE_MANUAL_REVIEW_SIGNOFF }}
+      CUSTOMERIO_LIVE_MANUAL_REVIEW_EVIDENCE_REF: ${{ secrets.CUSTOMERIO_LIVE_MANUAL_REVIEW_EVIDENCE_REF }}
+      CUSTOMERIO_LIVE_CREDENTIAL_CLEANUP_REVIEW: ${{ secrets.CUSTOMERIO_LIVE_CREDENTIAL_CLEANUP_REVIEW }}
+      CUSTOMERIO_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF: ${{ secrets.CUSTOMERIO_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF }}
+      CUSTOMERIO_LIVE_FAIL_ON_DISCOVERY_WARNINGS: ${{ secrets.CUSTOMERIO_LIVE_FAIL_ON_DISCOVERY_WARNINGS }}
+      CUSTOMERIO_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS: ${{ secrets.CUSTOMERIO_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS }}
+      MAILERLITE_API_KEY: ${{ secrets.MAILERLITE_API_KEY }}
+      MAILERLITE_LIVE_DRY_RUN: ${{ secrets.MAILERLITE_LIVE_DRY_RUN }}
+      MAILERLITE_LIVE_COMMIT: ${{ secrets.MAILERLITE_LIVE_COMMIT }}
+      MAILERLITE_LIVE_ROLLBACK: ${{ secrets.MAILERLITE_LIVE_ROLLBACK }}
+      MAILERLITE_LIVE_FAIL_ON_DISCOVERY_WARNINGS: ${{ secrets.MAILERLITE_LIVE_FAIL_ON_DISCOVERY_WARNINGS }}
+      MAILERLITE_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS: ${{ secrets.MAILERLITE_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS }}
+      ACTIVECAMPAIGN_API_URL: ${{ secrets.ACTIVECAMPAIGN_API_URL }}
+      ACTIVECAMPAIGN_ALLOWED_API_HOSTS: ${{ secrets.ACTIVECAMPAIGN_ALLOWED_API_HOSTS }}
+      ACTIVECAMPAIGN_API_TOKEN: ${{ secrets.ACTIVECAMPAIGN_API_TOKEN }}
+      ACTIVECAMPAIGN_LIVE_DRY_RUN: ${{ secrets.ACTIVECAMPAIGN_LIVE_DRY_RUN }}
+      ACTIVECAMPAIGN_LIVE_COMMIT: ${{ secrets.ACTIVECAMPAIGN_LIVE_COMMIT }}
+      ACTIVECAMPAIGN_LIVE_ROLLBACK: ${{ secrets.ACTIVECAMPAIGN_LIVE_ROLLBACK }}
+      ACTIVECAMPAIGN_LIVE_SHADOW_CHECK: ${{ secrets.ACTIVECAMPAIGN_LIVE_SHADOW_CHECK }}
+      ACTIVECAMPAIGN_LIVE_SOURCE_EVENTS: ${{ secrets.ACTIVECAMPAIGN_LIVE_SOURCE_EVENTS }}
+      ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_PHASE: ${{ secrets.ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_PHASE }}
+      ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_JOB_ID: ${{ secrets.ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_JOB_ID }}
+      ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_INTERVAL_SECONDS: ${{ secrets.ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_INTERVAL_SECONDS }}
+      ACTIVECAMPAIGN_LIVE_DELTA_IMPORT: ${{ secrets.ACTIVECAMPAIGN_LIVE_DELTA_IMPORT }}
+      ACTIVECAMPAIGN_LIVE_PILOT_ACCEPTANCE: ${{ secrets.ACTIVECAMPAIGN_LIVE_PILOT_ACCEPTANCE }}
+      ACTIVECAMPAIGN_LIVE_ROLLBACK_REHEARSAL: ${{ secrets.ACTIVECAMPAIGN_LIVE_ROLLBACK_REHEARSAL }}
+      ACTIVECAMPAIGN_LIVE_CONSENT_EXCLUSION_REVIEW: ${{ secrets.ACTIVECAMPAIGN_LIVE_CONSENT_EXCLUSION_REVIEW }}
+      ACTIVECAMPAIGN_LIVE_CONSENT_EXCLUSION_EVIDENCE_REF: ${{ secrets.ACTIVECAMPAIGN_LIVE_CONSENT_EXCLUSION_EVIDENCE_REF }}
+      ACTIVECAMPAIGN_LIVE_DELIVERABILITY_REVIEW: ${{ secrets.ACTIVECAMPAIGN_LIVE_DELIVERABILITY_REVIEW }}
+      ACTIVECAMPAIGN_LIVE_MANUAL_REVIEW_SIGNOFF: ${{ secrets.ACTIVECAMPAIGN_LIVE_MANUAL_REVIEW_SIGNOFF }}
+      ACTIVECAMPAIGN_LIVE_SMS_READINESS: ${{ secrets.ACTIVECAMPAIGN_LIVE_SMS_READINESS }}
+      ACTIVECAMPAIGN_LIVE_CREDENTIAL_CLEANUP_REVIEW: ${{ secrets.ACTIVECAMPAIGN_LIVE_CREDENTIAL_CLEANUP_REVIEW }}
+      ACTIVECAMPAIGN_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF: ${{ secrets.ACTIVECAMPAIGN_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF }}
+      ACTIVECAMPAIGN_LIVE_FAIL_ON_DISCOVERY_WARNINGS: ${{ secrets.ACTIVECAMPAIGN_LIVE_FAIL_ON_DISCOVERY_WARNINGS }}
+      ACTIVECAMPAIGN_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS: ${{ secrets.ACTIVECAMPAIGN_LIVE_FAIL_ON_SOURCE_ARCHIVE_WARNINGS }}
+      HUBSPOT_PRIVATE_APP_TOKEN: ${{ secrets.HUBSPOT_PRIVATE_APP_TOKEN }}
+      HUBSPOT_HUB_ID: ${{ secrets.HUBSPOT_HUB_ID }}
+      # HubSpot certification is deliberately multi-run: prepare retains the
+      # monitor, finish proves at least seven days, and cleanup only resumes a
+      # previously certified rollback/credential-cleanup sequence.
+      HUBSPOT_LIVE_REQUIRE_FULL_CERTIFICATION: "1"
+      HUBSPOT_LIVE_DRY_RUN: ${{ secrets.HUBSPOT_LIVE_DRY_RUN }}
+      HUBSPOT_LIVE_COMMIT: ${{ secrets.HUBSPOT_LIVE_COMMIT }}
+      HUBSPOT_LIVE_ROLLBACK: ${{ secrets.HUBSPOT_LIVE_ROLLBACK }}
+      HUBSPOT_LIVE_SHADOW_CHECK: ${{ secrets.HUBSPOT_LIVE_SHADOW_CHECK }}
+      HUBSPOT_LIVE_SOURCE_EVENTS: ${{ secrets.HUBSPOT_LIVE_SOURCE_EVENTS }}
+      HUBSPOT_LIVE_SOURCE_EVENT_PHASE: ${{ secrets.HUBSPOT_LIVE_SOURCE_EVENT_PHASE }}
+      HUBSPOT_LIVE_SOURCE_EVENT_JOB_ID: ${{ secrets.HUBSPOT_LIVE_SOURCE_EVENT_JOB_ID }}
+      HUBSPOT_LIVE_SOURCE_EVENT_INTERVAL_SECONDS: ${{ secrets.HUBSPOT_LIVE_SOURCE_EVENT_INTERVAL_SECONDS }}
+      HUBSPOT_LIVE_DELTA_IMPORT: ${{ secrets.HUBSPOT_LIVE_DELTA_IMPORT }}
+      HUBSPOT_LIVE_PILOT_ACCEPTANCE: ${{ secrets.HUBSPOT_LIVE_PILOT_ACCEPTANCE }}
+      HUBSPOT_LIVE_ROLLBACK_REHEARSAL: ${{ secrets.HUBSPOT_LIVE_ROLLBACK_REHEARSAL }}
+      HUBSPOT_LIVE_MANUAL_REVIEW_SIGNOFF: ${{ secrets.HUBSPOT_LIVE_MANUAL_REVIEW_SIGNOFF }}
+      HUBSPOT_LIVE_MANUAL_REVIEW_EVIDENCE_REF: ${{ secrets.HUBSPOT_LIVE_MANUAL_REVIEW_EVIDENCE_REF }}
+      HUBSPOT_LIVE_CREDENTIAL_CLEANUP_REVIEW: ${{ secrets.HUBSPOT_LIVE_CREDENTIAL_CLEANUP_REVIEW }}
+      HUBSPOT_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF: ${{ secrets.HUBSPOT_LIVE_CREDENTIAL_CLEANUP_EVIDENCE_REF }}
+      HUBSPOT_LIVE_FAIL_ON_DISCOVERY_WARNINGS: ${{ secrets.HUBSPOT_LIVE_FAIL_ON_DISCOVERY_WARNINGS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+
+      - name: Download authorized source test exports
+        if: env.MIGRATION_EXPORT_ARTIFACT_RUN_ID != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: migration-source-test-exports
+          run-id: ${{ env.MIGRATION_EXPORT_ARTIFACT_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .postwave-live-exports
+
+      - name: Configure uploaded export rehearsals
+        if: env.MIGRATION_EXPORT_ARTIFACT_RUN_ID != ''
+        run: |
+          node --input-type=module <<'JS'
+          import { existsSync, appendFileSync } from 'node:fs';
+          import path from 'node:path';
+          import { exportSources } from './scripts/lib/migration-qualification.mjs';
+          const files={};
+          for(const source of exportSources) {
+            const csv=path.resolve('.postwave-live-exports', source+'.csv');
+            const zip=path.resolve('.postwave-live-exports', source+'.zip');
+            const file=source==='substack' && existsSync(zip) ? zip : csv;
+            if(existsSync(file)) files[source]=file;
+            const prefix=source.toUpperCase().replaceAll('-','_');
+            appendFileSync(process.env.GITHUB_ENV, `${prefix}_LIVE_COMMIT=1\n${prefix}_LIVE_ROLLBACK=1\n`);
+          }
+          appendFileSync(process.env.GITHUB_ENV, 'MIGRATION_EXPORT_PATHS_JSON='+JSON.stringify(files)+'\n');
+          JS
+
+      - name: Download retained prepare-run evidence
+        if: env.MIGRATION_RETAINED_EVIDENCE_RUN_ID != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: live-migration-evidence-*
+          merge-multiple: true
+          run-id: ${{ env.MIGRATION_RETAINED_EVIDENCE_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: .postwave-retained-migration-evidence
+
+      - name: Verify qualification helper contracts
+        run: |
+          node --test scripts/lib/migration-qualification.test.mjs scripts/lib/migration-harness-http.test.mjs
+          node scripts/validate-live-migrations.mjs --self-test
+
+      - name: Configure ActiveCampaign retained source-event phase
+        shell: bash
+        env:
+          REQUESTED_PHASE: ${{ github.event_name == 'workflow_dispatch' && inputs.activecampaign_source_event_phase || 'configured' }}
+          CONFIGURED_PHASE: ${{ secrets.ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_PHASE }}
+        run: |
+          set -euo pipefail
+          phase="${CONFIGURED_PHASE}"
+          if [[ "${REQUESTED_PHASE}" != "configured" ]]; then
+            phase="${REQUESTED_PHASE}"
+          fi
+          case "${phase}" in
+            "")
+              ;;
+            prepare)
+              {
+                echo "ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_PHASE=prepare"
+                echo "ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_JOB_ID="
+                echo "ACTIVECAMPAIGN_LIVE_SOURCE_EVENTS=1"
+                echo "ACTIVECAMPAIGN_LIVE_COMMIT=1"
+                echo "ACTIVECAMPAIGN_LIVE_ROLLBACK=0"
+                echo "ACTIVECAMPAIGN_LIVE_SHADOW_CHECK=0"
+                echo "ACTIVECAMPAIGN_LIVE_DELTA_IMPORT=0"
+                echo "ACTIVECAMPAIGN_LIVE_PILOT_ACCEPTANCE=0"
+                echo "ACTIVECAMPAIGN_LIVE_ROLLBACK_REHEARSAL=0"
+                echo "ACTIVECAMPAIGN_LIVE_CONSENT_EXCLUSION_REVIEW=0"
+                echo "ACTIVECAMPAIGN_LIVE_DELIVERABILITY_REVIEW=0"
+                echo "ACTIVECAMPAIGN_LIVE_MANUAL_REVIEW_SIGNOFF=0"
+                echo "ACTIVECAMPAIGN_LIVE_SMS_READINESS=0"
+                echo "ACTIVECAMPAIGN_LIVE_CREDENTIAL_CLEANUP_REVIEW=0"
+              } >> "${GITHUB_ENV}"
+              ;;
+            finish)
+              if [[ -z "${ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_JOB_ID:-}" ]]; then
+                echo "ActiveCampaign finish requires the retained job ID repository/environment secret" >&2
+                exit 1
+              fi
+              {
+                echo "ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_PHASE=finish"
+                echo "ACTIVECAMPAIGN_LIVE_SOURCE_EVENTS=1"
+                echo "ACTIVECAMPAIGN_LIVE_DRY_RUN=0"
+                echo "ACTIVECAMPAIGN_LIVE_COMMIT=0"
+                echo "ACTIVECAMPAIGN_LIVE_ROLLBACK=1"
+                echo "ACTIVECAMPAIGN_LIVE_SHADOW_CHECK=1"
+                echo "ACTIVECAMPAIGN_LIVE_DELTA_IMPORT=1"
+                echo "ACTIVECAMPAIGN_LIVE_PILOT_ACCEPTANCE=1"
+                echo "ACTIVECAMPAIGN_LIVE_ROLLBACK_REHEARSAL=1"
+                echo "ACTIVECAMPAIGN_LIVE_CONSENT_EXCLUSION_REVIEW=1"
+                echo "ACTIVECAMPAIGN_LIVE_DELIVERABILITY_REVIEW=1"
+                echo "ACTIVECAMPAIGN_LIVE_MANUAL_REVIEW_SIGNOFF=1"
+                echo "ACTIVECAMPAIGN_LIVE_CREDENTIAL_CLEANUP_REVIEW=1"
+              } >> "${GITHUB_ENV}"
+              ;;
+            cleanup)
+              if [[ -z "${ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_JOB_ID:-}" ]]; then
+                echo "ActiveCampaign cleanup requires the retained job ID repository/environment secret" >&2
+                exit 1
+              fi
+              {
+                echo "ACTIVECAMPAIGN_LIVE_SOURCE_EVENT_PHASE=cleanup"
+                echo "ACTIVECAMPAIGN_LIVE_SOURCE_EVENTS=1"
+                echo "ACTIVECAMPAIGN_LIVE_DRY_RUN=0"
+                echo "ACTIVECAMPAIGN_LIVE_COMMIT=0"
+                echo "ACTIVECAMPAIGN_LIVE_ROLLBACK=1"
+                echo "ACTIVECAMPAIGN_LIVE_SHADOW_CHECK=0"
+                echo "ACTIVECAMPAIGN_LIVE_DELTA_IMPORT=0"
+                echo "ACTIVECAMPAIGN_LIVE_PILOT_ACCEPTANCE=0"
+                echo "ACTIVECAMPAIGN_LIVE_ROLLBACK_REHEARSAL=0"
+                echo "ACTIVECAMPAIGN_LIVE_CONSENT_EXCLUSION_REVIEW=0"
+                echo "ACTIVECAMPAIGN_LIVE_DELIVERABILITY_REVIEW=0"
+                echo "ACTIVECAMPAIGN_LIVE_MANUAL_REVIEW_SIGNOFF=0"
+                echo "ACTIVECAMPAIGN_LIVE_SMS_READINESS=0"
+                echo "ACTIVECAMPAIGN_LIVE_CREDENTIAL_CLEANUP_REVIEW=1"
+              } >> "${GITHUB_ENV}"
+              ;;
+            *)
+              echo "Invalid ActiveCampaign source-event phase" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Configure HubSpot retained source-event phase
+        shell: bash
+        env:
+          REQUESTED_PHASE: ${{ github.event_name == 'workflow_dispatch' && inputs.hubspot_source_event_phase || 'configured' }}
+          CONFIGURED_PHASE: ${{ secrets.HUBSPOT_LIVE_SOURCE_EVENT_PHASE }}
+        run: |
+          set -euo pipefail
+          phase="${CONFIGURED_PHASE}"
+          if [[ "${REQUESTED_PHASE}" != "configured" ]]; then
+            phase="${REQUESTED_PHASE}"
+          fi
+          case "${phase}" in
+            "")
+              ;;
+            prepare)
+              {
+                echo "HUBSPOT_LIVE_SOURCE_EVENT_PHASE=prepare"
+                echo "HUBSPOT_LIVE_SOURCE_EVENT_JOB_ID="
+                echo "HUBSPOT_LIVE_DRY_RUN=1"
+                echo "HUBSPOT_LIVE_COMMIT=1"
+                echo "HUBSPOT_LIVE_SOURCE_EVENTS=1"
+                echo "HUBSPOT_LIVE_ROLLBACK=0"
+                echo "HUBSPOT_LIVE_SHADOW_CHECK=0"
+                echo "HUBSPOT_LIVE_DELTA_IMPORT=0"
+                echo "HUBSPOT_LIVE_PILOT_ACCEPTANCE=0"
+                echo "HUBSPOT_LIVE_ROLLBACK_REHEARSAL=0"
+                echo "HUBSPOT_LIVE_MANUAL_REVIEW_SIGNOFF=0"
+                echo "HUBSPOT_LIVE_CREDENTIAL_CLEANUP_REVIEW=0"
+                echo "HUBSPOT_LIVE_FAIL_ON_DISCOVERY_WARNINGS=1"
+              } >> "${GITHUB_ENV}"
+              ;;
+            finish)
+              if [[ -z "${HUBSPOT_LIVE_SOURCE_EVENT_JOB_ID:-}" ]]; then
+                echo "HubSpot finish requires the retained job ID repository/environment secret" >&2
+                exit 1
+              fi
+              {
+                echo "HUBSPOT_LIVE_SOURCE_EVENT_PHASE=finish"
+                echo "HUBSPOT_LIVE_SOURCE_EVENTS=1"
+                echo "HUBSPOT_LIVE_DRY_RUN=0"
+                echo "HUBSPOT_LIVE_COMMIT=0"
+                echo "HUBSPOT_LIVE_ROLLBACK=1"
+                echo "HUBSPOT_LIVE_SHADOW_CHECK=1"
+                echo "HUBSPOT_LIVE_DELTA_IMPORT=1"
+                echo "HUBSPOT_LIVE_PILOT_ACCEPTANCE=1"
+                echo "HUBSPOT_LIVE_ROLLBACK_REHEARSAL=1"
+                echo "HUBSPOT_LIVE_MANUAL_REVIEW_SIGNOFF=1"
+                echo "HUBSPOT_LIVE_CREDENTIAL_CLEANUP_REVIEW=1"
+                echo "HUBSPOT_LIVE_FAIL_ON_DISCOVERY_WARNINGS=1"
+              } >> "${GITHUB_ENV}"
+              ;;
+            cleanup)
+              if [[ -z "${HUBSPOT_LIVE_SOURCE_EVENT_JOB_ID:-}" ]]; then
+                echo "HubSpot cleanup requires the retained job ID repository/environment secret" >&2
+                exit 1
+              fi
+              {
+                echo "HUBSPOT_LIVE_SOURCE_EVENT_PHASE=cleanup"
+                echo "HUBSPOT_LIVE_SOURCE_EVENTS=1"
+                echo "HUBSPOT_LIVE_DRY_RUN=0"
+                echo "HUBSPOT_LIVE_COMMIT=0"
+                echo "HUBSPOT_LIVE_ROLLBACK=1"
+                echo "HUBSPOT_LIVE_SHADOW_CHECK=0"
+                echo "HUBSPOT_LIVE_DELTA_IMPORT=0"
+                echo "HUBSPOT_LIVE_PILOT_ACCEPTANCE=0"
+                echo "HUBSPOT_LIVE_ROLLBACK_REHEARSAL=0"
+                echo "HUBSPOT_LIVE_MANUAL_REVIEW_SIGNOFF=0"
+                echo "HUBSPOT_LIVE_CREDENTIAL_CLEANUP_REVIEW=1"
+              } >> "${GITHUB_ENV}"
+              ;;
+            *)
+              echo "Unsupported HubSpot retained source-event phase: ${phase}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Validate live migration adapters
+        run: node scripts/validate-live-migrations.mjs
+
+      - name: Upload live migration evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: live-migration-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.POSTWAVE_LIVE_MIGRATION_ARTIFACT_DIR }}
+          if-no-files-found: error
+          retention-days: 30

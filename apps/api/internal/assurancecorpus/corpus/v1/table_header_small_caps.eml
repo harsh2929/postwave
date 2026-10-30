@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <table-header-small-caps.v1@example.com>
+Subject: Usage summary
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-thead-v1"
+
+--pw-thead-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+You sent 12,400 messages in July. Details: https://app.example.com/usage
+--pw-thead-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Usage summary</h1><table><tr><th style="font-size:11px;color:#666666">METRIC</th><th style="font-size:11px;color:#666666">JULY</th></tr><tr><td>Messages sent</td><td>12,400</td></tr></table><p><a href="https://app.example.com/usage">See details</a></p></body></html>
+--pw-thead-v1--

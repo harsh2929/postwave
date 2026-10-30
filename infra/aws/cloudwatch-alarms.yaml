@@ -1,0 +1,759 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Moosewave production CloudWatch alarms, dashboard, and encrypted SNS routing.
+  Deploy only after the API and Campaign Assurance services are enabled and
+  healthy. Missing ECS, ALB, RDS, and log telemetry is treated as a fault
+  rather than a green state.
+
+Parameters:
+  OpsAlertEmail:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$"
+    Description: Optional initial email subscription. Confirm it before sign-off; production paging may subscribe separately.
+  ECSClusterName:
+    Type: String
+    MinLength: 1
+  ECSServiceName:
+    Type: String
+    Default: postwave-api
+  VoiceServiceName:
+    Type: String
+    Default: postwave-voice
+  AutomationServiceName:
+    Type: String
+    Default: postwave-automation
+  DeliverabilityServiceName:
+    Type: String
+    Default: postwave-deliverability
+  MigrationServiceName:
+    Type: String
+    Default: postwave-migration
+  CampaignAssuranceServiceName:
+    Type: String
+    Default: postwave-campaign-assurance
+  ExpectedApiTaskCount:
+    Type: Number
+    Default: 2
+    MinValue: 1
+  ExpectedCampaignAssuranceTaskCount:
+    Type: Number
+    Default: 2
+    MinValue: 1
+  RDSInstanceId:
+    Type: String
+    Default: postwave-prod
+  LoadBalancerFullName:
+    Type: String
+    Description: ALB LoadBalancerFullName attribute, for example app/postwave-prod/abc123.
+  TargetGroupFullName:
+    Type: String
+    Description: ALB target-group TargetGroupFullName attribute, for example targetgroup/postwave-api/abc123.
+  ApiLogGroupName:
+    Type: String
+    Default: /ecs/postwave-api
+  CampaignAssuranceLogGroupName:
+    Type: String
+    Default: /ecs/postwave-campaign-assurance
+  BounceRateAlarmThreshold:
+    Type: Number
+    Default: 0.05
+    MinValue: 0
+    MaxValue: 1
+  ComplaintRateAlarmThreshold:
+    Type: Number
+    Default: 0.001
+    MinValue: 0
+    MaxValue: 1
+
+Conditions:
+  CreateEmailSubscription: !Not [!Equals [!Ref OpsAlertEmail, ""]]
+
+Resources:
+  OpsAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: postwave-ops-alerts
+      DisplayName: Moosewave production alerts
+      KmsMasterKeyId: alias/aws/sns
+      Tags:
+        - Key: Project
+          Value: postwave
+        - Key: Environment
+          Value: production
+
+  OpsAlertsEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: CreateEmailSubscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref OpsAlertEmail
+      TopicArn: !Ref OpsAlertsTopic
+
+  SESBounceRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-ses-bounce-rate
+      AlarmDescription: SES account reputation bounce rate is above the reviewed threshold.
+      Namespace: AWS/SES
+      MetricName: Reputation.BounceRate
+      Statistic: Maximum
+      Period: 900
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: !Ref BounceRateAlarmThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  SESComplaintRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-ses-complaint-rate
+      AlarmDescription: SES account reputation complaint rate is above the reviewed threshold.
+      Namespace: AWS/SES
+      MetricName: Reputation.ComplaintRate
+      Statistic: Maximum
+      Period: 900
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: !Ref ComplaintRateAlarmThreshold
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  SESRejectsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-ses-rejects-spike
+      AlarmDescription: SES rejected sends are elevated.
+      Namespace: AWS/SES
+      MetricName: Reject
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
+  SNSDeliveryFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-sns-delivery-failures
+      AlarmDescription: One or more account SNS deliveries are repeatedly failing.
+      Namespace: AWS/SNS
+      MetricName: NumberOfNotificationsFailed
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
+  ECSCPUHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-cpu-high
+      AlarmDescription: ECS API CPU is above 85 percent for 15 minutes.
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref ECSServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ECSMemoryHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-memory-high
+      AlarmDescription: ECS API memory is above 85 percent for 15 minutes.
+      Namespace: AWS/ECS
+      MetricName: MemoryUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref ECSServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ECSRunningTasksLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-running-tasks-low
+      AlarmDescription: ECS Container Insights reports fewer API tasks than the deployed minimum.
+      Namespace: ECS/ContainerInsights
+      MetricName: RunningTaskCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: !Ref ExpectedApiTaskCount
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref ECSServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  CampaignAssuranceCPUHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-campaign-assurance-cpu-high
+      AlarmDescription: Campaign Assurance data-plane CPU is above 85 percent for 15 minutes.
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref CampaignAssuranceServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  CampaignAssuranceMemoryHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-campaign-assurance-memory-high
+      AlarmDescription: Campaign Assurance data-plane memory is above 85 percent for 15 minutes.
+      Namespace: AWS/ECS
+      MetricName: MemoryUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref CampaignAssuranceServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  CampaignAssuranceRunningTasksLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-campaign-assurance-running-tasks-low
+      AlarmDescription: Campaign Assurance has fewer running tasks than the certified production minimum or Container Insights telemetry is absent.
+      Namespace: ECS/ContainerInsights
+      MetricName: RunningTaskCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: !Ref ExpectedCampaignAssuranceTaskCount
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref CampaignAssuranceServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  VoiceRunningTasksLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-voice-running-tasks-low
+      AlarmDescription: Voice has no running task or Container Insights telemetry is absent.
+      Namespace: ECS/ContainerInsights
+      MetricName: RunningTaskCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref VoiceServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  AutomationRunningTasksLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-automation-running-tasks-low
+      AlarmDescription: Automation has no running task or Container Insights telemetry is absent.
+      Namespace: ECS/ContainerInsights
+      MetricName: RunningTaskCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref AutomationServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  DeliverabilityRunningTasksLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-deliverability-running-tasks-low
+      AlarmDescription: Deliverability has no running task or Container Insights telemetry is absent.
+      Namespace: ECS/ContainerInsights
+      MetricName: RunningTaskCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref DeliverabilityServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  MigrationRunningTasksLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-migration-running-tasks-low
+      AlarmDescription: Migration has no running task or Container Insights telemetry is absent.
+      Namespace: ECS/ContainerInsights
+      MetricName: RunningTaskCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref ECSClusterName
+        - Name: ServiceName
+          Value: !Ref MigrationServiceName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ALBTarget5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-target-5xx
+      AlarmDescription: API targets returned more than five 5xx responses per five-minute period twice.
+      Namespace: AWS/ApplicationELB
+      MetricName: HTTPCode_Target_5XX_Count
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Ref LoadBalancerFullName
+        - Name: TargetGroup
+          Value: !Ref TargetGroupFullName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ALBUnhealthyHostsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-unhealthy-hosts
+      AlarmDescription: The API target group contains an unhealthy host or health telemetry is absent.
+      Namespace: AWS/ApplicationELB
+      MetricName: UnHealthyHostCount
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Ref LoadBalancerFullName
+        - Name: TargetGroup
+          Value: !Ref TargetGroupFullName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ALBHealthyHostsLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-healthy-hosts-low
+      AlarmDescription: The API target group has fewer healthy hosts than the expected task count.
+      Namespace: AWS/ApplicationELB
+      MetricName: HealthyHostCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: !Ref ExpectedApiTaskCount
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Ref LoadBalancerFullName
+        - Name: TargetGroup
+          Value: !Ref TargetGroupFullName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ALBLatencyP95Alarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-alb-latency-p95
+      AlarmDescription: ALB target response p95 is above two seconds.
+      Namespace: AWS/ApplicationELB
+      MetricName: TargetResponseTime
+      ExtendedStatistic: p95
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 2
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !Ref LoadBalancerFullName
+        - Name: TargetGroup
+          Value: !Ref TargetGroupFullName
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  RDSCPUHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-rds-cpu-high
+      AlarmDescription: RDS PostgreSQL CPU is above 80 percent for 15 minutes.
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSInstanceId
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  RDSFreeStorageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-rds-free-storage-low
+      AlarmDescription: RDS free storage is below 10 GiB or telemetry is absent.
+      Namespace: AWS/RDS
+      MetricName: FreeStorageSpace
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 10737418240
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSInstanceId
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  RDSFreeableMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-rds-freeable-memory-low
+      AlarmDescription: RDS freeable memory is below 512 MiB or telemetry is absent.
+      Namespace: AWS/RDS
+      MetricName: FreeableMemory
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 3
+      Threshold: 536870912
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSInstanceId
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  RDSConnectionsHighAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-rds-connections-high
+      AlarmDescription: RDS PostgreSQL has more than 80 open connections.
+      Namespace: AWS/RDS
+      MetricName: DatabaseConnections
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RDSInstanceId
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ApiErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApiLogGroupName
+      FilterName: postwave-api-error-level
+      FilterPattern: '{ ($.level = "ERROR") || ($.level = "FATAL") }'
+      MetricTransformations:
+        - MetricNamespace: Moosewave/Runtime
+          MetricName: ApiErrorLogCount
+          MetricValue: "1"
+          DefaultValue: 0
+          Unit: Count
+
+  ApiErrorLogsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-api-error-logs
+      AlarmDescription: API emitted error-level structured logs in two consecutive periods.
+      Namespace: Moosewave/Runtime
+      MetricName: ApiErrorLogCount
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  CampaignAssuranceErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CampaignAssuranceLogGroupName
+      FilterName: postwave-campaign-assurance-error-level
+      FilterPattern: '{ ($.level = "ERROR") || ($.level = "FATAL") }'
+      MetricTransformations:
+        - MetricNamespace: Moosewave/Runtime
+          MetricName: CampaignAssuranceErrorLogCount
+          MetricValue: "1"
+          DefaultValue: 0
+          Unit: Count
+
+  CampaignAssuranceErrorLogsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-campaign-assurance-error-logs
+      AlarmDescription: Campaign Assurance emitted error-level structured logs in two consecutive periods.
+      Namespace: Moosewave/Runtime
+      MetricName: CampaignAssuranceErrorLogCount
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  EmailHMACProjectionFailureMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CampaignAssuranceLogGroupName
+      FilterName: postwave-email-hmac-projection-failed
+      FilterPattern: '{ $.error_class = "email_hmac_projection_failed" }'
+      MetricTransformations:
+        - MetricNamespace: Moosewave/Runtime
+          MetricName: EmailHMACProjectionFailureCount
+          MetricValue: "1"
+          DefaultValue: 0
+          Unit: Count
+
+  EmailHMACProjectionFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-email-hmac-projection-failed
+      AlarmDescription: At least one exact signing-key email-HMAC projection is failed and public identity ingest is closed for that key.
+      Namespace: Moosewave/Runtime
+      MetricName: EmailHMACProjectionFailureCount
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  EmailHMACProjectionStaleMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CampaignAssuranceLogGroupName
+      FilterName: postwave-email-hmac-projection-stale
+      FilterPattern: '{ $.error_class = "email_hmac_projection_stale" }'
+      MetricTransformations:
+        - MetricNamespace: Moosewave/Runtime
+          MetricName: EmailHMACProjectionStaleCount
+          MetricValue: "1"
+          DefaultValue: 0
+          Unit: Count
+
+  EmailHMACProjectionStaleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: postwave-email-hmac-projection-stale
+      AlarmDescription: Email-HMAC projection work has made no progress for at least 15 minutes, so affected public identity ingest remains closed.
+      Namespace: Moosewave/Runtime
+      MetricName: EmailHMACProjectionStaleCount
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      DatapointsToAlarm: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+      OKActions: [!Ref OpsAlertsTopic]
+
+  ProductionDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: postwave-production
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "API and Campaign Assurance ECS CPU / memory",
+                "region": "${AWS::Region}",
+                "period": 300,
+                "metrics": [
+                  ["AWS/ECS", "CPUUtilization", "ClusterName", "${ECSClusterName}", "ServiceName", "${ECSServiceName}"],
+                  [".", "MemoryUtilization", ".", ".", ".", "."],
+                  [".", "CPUUtilization", ".", ".", ".", "${CampaignAssuranceServiceName}"],
+                  [".", "MemoryUtilization", ".", ".", ".", "."]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "ALB health / 5xx",
+                "region": "${AWS::Region}",
+                "period": 300,
+                "metrics": [
+                  ["AWS/ApplicationELB", "HealthyHostCount", "LoadBalancer", "${LoadBalancerFullName}", "TargetGroup", "${TargetGroupFullName}"],
+                  [".", "UnHealthyHostCount", ".", ".", ".", "."],
+                  [".", "HTTPCode_Target_5XX_Count", ".", ".", ".", "."]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "RDS capacity",
+                "region": "${AWS::Region}",
+                "period": 300,
+                "metrics": [
+                  ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${RDSInstanceId}"],
+                  [".", "DatabaseConnections", ".", "."],
+                  [".", "FreeStorageSpace", ".", "."],
+                  [".", "FreeableMemory", ".", "."]
+                ]
+              }
+            },
+            {
+              "type": "log",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Recent API errors",
+                "region": "${AWS::Region}",
+                "query": "SOURCE '${ApiLogGroupName}' | fields @timestamp, level, msg | filter level in ['ERROR','FATAL'] | sort @timestamp desc | limit 50"
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 12,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "title": "Recent Campaign Assurance errors",
+                "region": "${AWS::Region}",
+                "query": "SOURCE '${CampaignAssuranceLogGroupName}' | fields @timestamp, level, msg | filter level in ['ERROR','FATAL'] | sort @timestamp desc | limit 50"
+              }
+            }
+          ]
+        }
+
+Outputs:
+  OpsAlertsTopicArn:
+    Description: Subscribe the production pager/chat relay and verify a test alarm before enabling customers.
+    Value: !Ref OpsAlertsTopic
+  ProductionDashboardName:
+    Value: !Ref ProductionDashboard

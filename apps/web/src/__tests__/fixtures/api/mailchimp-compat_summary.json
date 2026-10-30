@@ -1,0 +1,40 @@
+{
+  "contacts": {
+    "total": 12,
+    "by_mailchimp_status": {
+      "subscribed": 12
+    },
+    "groups": 0,
+    "activity_events": 0
+  },
+  "campaigns": {
+    "total": 3,
+    "by_type": {
+      "regular": 3
+    },
+    "assets": 0,
+    "reusable_sections": 0
+  },
+  "reports": {
+    "events": 0,
+    "reportable_campaigns": 0
+  },
+  "automations": {
+    "total": 0,
+    "by_status": {}
+  },
+  "growth": {
+    "landing_pages": 0,
+    "popups": 0,
+    "views": 0,
+    "conversions": 0
+  },
+  "ecommerce": {
+    "integrations": 0,
+    "customers": 0,
+    "products": 0,
+    "orders": 0,
+    "revenue_cents": 0,
+    "attributed_revenue_cents": 0
+  }
+}

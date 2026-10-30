@@ -1,0 +1,13 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <malformed-multipart.v1@example.com>
+Subject: Malformed MIME synthetic fixture
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-malformed-v1"
+
+--pw-malformed-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+This multipart body is intentionally truncated before the closing boundary.

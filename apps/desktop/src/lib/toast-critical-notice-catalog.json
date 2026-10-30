@@ -1,0 +1,6 @@
+{
+  "campaign-draft-recovery-unavailable": {
+    "message": "Campaign recovery needs attention",
+    "detail": "Moosewave could not verify an encrypted recovery copy for the open campaign draft. Keep the app open and retry before leaving."
+  }
+}

@@ -1,0 +1,33 @@
+---
+title: Release and upgrade requirements
+---
+
+import { Callout } from "nextra/components";
+
+# Release and upgrade requirements
+
+<Callout type="warning">
+  Moosewave has no approved self-host release channel, customer image tags,
+  automatic-update agent, compatibility promise, or rollback SLA.
+</Callout>
+
+Do not infer a supported version from a branch, a mutable `latest` or semver
+container tag, a development Compose file, or a historical changelog entry.
+Production deployments require signed immutable digests and a release-specific
+migration and rollback record.
+
+A future supported upgrade procedure must, at minimum:
+
+- identify the exact source commit and every application and upstream image
+  digest;
+- attach SBOM, signature/provenance, vulnerability, license, and extraction
+  evidence;
+- run the canonical migrator separately before application rollout;
+- declare the supported previous versions and irreversible schema changes;
+- require a verified backup and isolated restore rehearsal;
+- test application, worker, desktop/API, and Listmonk compatibility; and
+- document rollback or forward-recovery steps with measured recovery times.
+
+Without that release packet, operators who build from source own version
+selection, compatibility testing, data migration, recovery, and incident
+response. Source availability is not an update or maintenance commitment.

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "forbiddenTrackedRoots": [
+    ".audit-mobile-",
+    ".audit-screenshots/",
+    ".e2e-review/",
+    "audit-screenshots/"
+  ],
+  "allowedRasterRoots": [
+    {
+      "path": "apps/desktop/src-tauri/icons/",
+      "owner": "desktop-release",
+      "purpose": "signed desktop and mobile bundle icons",
+      "maxFileBytes": 5242880
+    },
+    {
+      "path": "apps/desktop/src/assets/illustrations/",
+      "owner": "desktop-product",
+      "purpose": "shipped desktop interface illustrations",
+      "maxFileBytes": 5242880
+    },
+    {
+      "path": "apps/desktop/tests/visual/theme.spec.ts-snapshots/",
+      "owner": "desktop-quality",
+      "purpose": "assertion-bearing deterministic visual baselines",
+      "maxFileBytes": 5242880
+    },
+    {
+      "path": "apps/desktop/tests/visual/auth-showcase.spec.ts-snapshots/",
+      "owner": "desktop-quality",
+      "purpose": "assertion-bearing authentication showcase visual baselines",
+      "maxFileBytes": 1048576
+    },
+    {
+      "path": "apps/desktop/tests/visual/dashboard.spec.ts-snapshots/",
+      "owner": "desktop-quality",
+      "purpose": "assertion-bearing dashboard state and reflow visual baselines",
+      "maxFileBytes": 1048576
+    },
+    {
+      "path": "apps/desktop/tests/visual/subscribers.spec.ts-snapshots/",
+      "owner": "desktop-quality",
+      "purpose": "assertion-bearing subscriber workflow visual baselines",
+      "maxFileBytes": 1048576
+    },
+    {
+      "path": "apps/desktop/tests/storybook/stories.spec.ts-snapshots/",
+      "owner": "desktop-quality",
+      "purpose": "reviewed assertion-bearing Storybook visual baselines",
+      "maxFileBytes": 5242880
+    },
+    {
+      "path": "apps/mobile/assets/",
+      "owner": "mobile-release",
+      "purpose": "signed iOS and Android bundle artwork",
+      "maxFileBytes": 5242880
+    },
+    {
+      "path": "docs/demos/newsletter-template-library/",
+      "owner": "web-product",
+      "purpose": "reviewed newsletter template workflow documentation captures",
+      "maxFileBytes": 1048576
+    },
+    {
+      "path": "ios/postwave/Images.xcassets/SplashScreenLegacy.imageset/",
+      "owner": "mobile-release",
+      "purpose": "signed legacy iOS splash-screen bundle artwork",
+      "maxFileBytes": 1048576
+    },
+    {
+      "path": "packages/vscode-extension/media/",
+      "owner": "developer-platform",
+      "purpose": "published VS Code extension artwork",
+      "maxFileBytes": 5242880
+    },
+    {
+      "path": "apps/web/public/icons/",
+      "owner": "web-release",
+      "purpose": "installable web app manifest, badge, and maskable icons served from apps/web/public",
+      "maxFileBytes": 1048576
+    },
+    {
+      "path": "apps/product-video/public/",
+      "owner": "web-product",
+      "purpose": "cinematic stills and template captures composited into the product marketing video by the private apps/product-video Remotion tool",
+      "maxFileBytes": 5242880
+    }
+  ]
+}

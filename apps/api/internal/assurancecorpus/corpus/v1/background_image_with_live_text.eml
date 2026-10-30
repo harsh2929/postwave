@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <background-image-with-live-text.v1@example.com>
+Subject: Summer sale
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-bgimg-v1"
+
+--pw-bgimg-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Summer sale: 20% off everything. https://shop.example.com/summer
+--pw-bgimg-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><table role="presentation"><tr><td background="https://cdn.example.com/bg.jpg" style="background-image:url(https://cdn.example.com/bg.jpg)"><h1>Summer sale</h1><p>20% off everything.</p><p><a href="https://shop.example.com/summer">Shop now</a></p></td></tr></table></body></html>
+--pw-bgimg-v1--

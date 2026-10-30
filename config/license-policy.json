@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "review_required_licenses": [
+    "Unknown",
+    "UNLICENSED",
+    "LGPL-3.0-or-later",
+    "FSL-1.1-MIT"
+  ],
+  "exceptions": [
+    {
+      "package_pattern": "^khroma$",
+      "licenses": ["Unknown"],
+      "versions": ["2.1.0"],
+      "rationale": "Upstream npm metadata omits the identifier; the package repository carries an MIT license (re-read 2026-09-12). Retain the generated package row and re-check on upgrade.",
+      "owner_role": "frontend dependency owner",
+      "evidence": "https://github.com/fabiospampinato/khroma/blob/master/license",
+      "expires_on": "2026-11-30"
+    },
+    {
+      "package_pattern": "^@img/sharp-libvips-",
+      "licenses": ["LGPL-3.0-or-later"],
+      "versions": ["1.3.3"],
+      "rationale": "Optional platform-specific libvips binary used by Sharp (resolved 1.3.3 on 2026-09-12). Release notices must retain the LGPL entry; replacement/relinking obligations are reviewed with each Sharp upgrade.",
+      "owner_role": "web release owner",
+      "evidence": "https://github.com/lovell/sharp-libvips",
+      "expires_on": "2026-12-15"
+    },
+    {
+      "package_pattern": "^@sentry/cli(?:-|$)",
+      "licenses": ["FSL-1.1-MIT"],
+      "versions": ["2.58.4", "2.58.6"],
+      "rationale": "Build-time source-map upload tool; it is not copied into application runtime artifacts. Generated notices still record the resolved package when present.",
+      "owner_role": "release observability owner",
+      "evidence": "https://github.com/getsentry/sentry-cli/blob/master/LICENSE",
+      "expires_on": "2026-12-31"
+    },
+    {
+      "package_pattern": "^(remotion|@remotion/(bundler|cli|compositor-[a-z0-9-]+|media|player|renderer|web-renderer))$",
+      "licenses": ["Unknown"],
+      "versions": ["4.0.519"],
+      "rationale": "Remotion publishes `SEE LICENSE IN LICENSE.md` (the Remotion License, source-available). It is consumed only by the private, non-published apps/product-video marketing-video tool and is never copied into the web, API, ops, desktop or mobile runtime artifacts. The free tier covers individuals, non-profits and for-profit organizations with up to 3 employees; a paid Company License is required beyond that, so the commercial owner must confirm headcount eligibility or purchase a Company License before this exception is renewed.",
+      "owner_role": "commercial and release owners",
+      "evidence": "https://github.com/remotion-dev/remotion/blob/main/LICENSE.md",
+      "expires_on": "2026-12-31"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <preformatted-code-block.v1@example.com>
+Subject: Your API key rotated
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-code-v1"
+
+--pw-code-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your API key was rotated. Docs: https://docs.example.com/keys
+--pw-code-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Your API key rotated</h1><p>Use the new key in your headers:</p><pre><code>Authorization: Bearer pw_live_REDACTED</code></pre><p><a href="https://docs.example.com/keys">Read the key docs</a></p></body></html>
+--pw-code-v1--

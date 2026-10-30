@@ -1,0 +1,6 @@
+{
+  "retention_days": 30,
+  "max_per_tenant": 20,
+  "current_storage_bytes": 0,
+  "updated_at": "2026-08-22 14:52:39.849236+05:30"
+}

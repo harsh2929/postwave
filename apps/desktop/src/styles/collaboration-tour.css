@@ -1,0 +1,1260 @@
+/* =====================================================================
+ * Inline AI Suggestions — banners + variant lists used inside campaign
+ * scheduling, creation, and send-confirmation flows. Tokens (colour,
+ * spacing, radius) inherit from the variables defined at the top of
+ * this file. Append-only block to avoid collisions with other agents.
+ *
+ *   .ai-banner         → SendTimeOptBanner / generic inline AI banner
+ *   .ai-suggestions    → SubjectLineSuggestions panel
+ *   .ir-banner         → InboxRealityBanner pre-send predictor
+ * =================================================================== */
+
+.ai-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  margin-bottom: var(--pw-sp-3);
+  background: color-mix(in srgb, var(--pw-accent) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 25%, transparent);
+  border-radius: var(--pw-radius-md);
+}
+.ai-banner.ai-banner-muted {
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border-soft);
+}
+.ai-banner.ai-banner-loading {
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border-soft);
+}
+.ai-banner-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--pw-accent) 15%, transparent);
+  color: var(--pw-accent);
+}
+.ai-banner-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ai-banner-title {
+  font-size: 13px;
+  color: var(--pw-fg);
+}
+.ai-banner-sub {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+
+/* ---------- subject-line variants panel ----------------------------- */
+
+.ai-suggestions {
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-3);
+  background: var(--pw-bg-elev);
+  margin-top: var(--pw-sp-2);
+  margin-bottom: var(--pw-sp-3);
+}
+.ai-suggestions-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  margin-bottom: var(--pw-sp-2);
+}
+.ai-suggestions-title {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+.ai-suggestions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ai-suggestion-row {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  padding: 6px 8px;
+  border-radius: var(--pw-radius-sm);
+  background: transparent;
+  transition: background 80ms ease;
+}
+.ai-suggestion-row.is-hovered {
+  background: var(--pw-bg-elev-2);
+}
+.ai-suggestion-index {
+  width: 14px;
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.ai-suggestion-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--pw-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ai-suggestions-footer {
+  margin-top: 6px;
+}
+
+/* ---------- mature AI authoring + operations surfaces ------------- */
+
+.ai-card-header,
+.ai-card-actions,
+.ai-subject-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pw-sp-2);
+  flex-wrap: wrap;
+}
+
+.ai-card-header > :first-child,
+.ai-subject-section-heading > :first-child {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.ai-card-actions {
+  align-items: center;
+}
+
+.ai-subject-assistant-brief,
+.ai-subject-bucket-details,
+.ai-compose-result {
+  display: grid;
+  gap: var(--pw-sp-3);
+}
+
+.ai-subject-assistant-brief {
+  margin-bottom: var(--pw-sp-3);
+}
+
+.ai-subject-label-detail {
+  margin-inline-start: var(--pw-sp-2);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.ai-subject-count-label {
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) auto;
+  align-items: center;
+  gap: var(--pw-sp-2);
+}
+
+.ai-subject-assistant-candidates,
+.ai-subject-assistant-buckets,
+.ai-subject-assistant-top {
+  margin-top: var(--pw-sp-4);
+}
+
+.ai-subject-fallback,
+.ai-subject-ab-action,
+.ai-subject-section-heading {
+  margin-top: var(--pw-sp-2);
+}
+
+.ai-suggestions-header {
+  flex-wrap: wrap;
+}
+
+.ai-suggestions-guidance {
+  margin: 0 0 var(--pw-sp-2) 30px;
+  font-size: 11px;
+}
+
+.ai-suggestion-row {
+  align-items: flex-start;
+}
+
+.ai-suggestion-row:hover,
+.ai-suggestion-row:focus-within {
+  background: var(--pw-bg-elev-2);
+}
+
+.ai-suggestion-index {
+  width: auto;
+  min-width: 2.5rem;
+  overflow-wrap: anywhere;
+}
+
+.ai-suggestion-text {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.ai-subject-score,
+.ai-subject-performance-detail,
+.ai-execution-endpoint {
+  display: block;
+  margin-top: 2px;
+}
+
+.ai-subject-score ul {
+  margin: 2px 0 0;
+  padding-inline-start: 1rem;
+}
+
+.ai-subject-table-scroll,
+.ai-execution-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.ai-subject-table-scroll caption {
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: start;
+}
+
+.presend-risk-sample {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presend-risk-sample li {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  min-width: 0;
+  font-size: 12px;
+}
+
+.ai-card-stat-grid,
+.ai-compose-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--pw-sp-3);
+}
+
+.ai-card-stat-grid {
+  font-size: 11px;
+}
+
+.ai-voice-source-form {
+  display: flex;
+  gap: var(--pw-sp-2);
+  margin-bottom: var(--pw-sp-2);
+}
+
+.ai-voice-source-form input {
+  min-width: 0;
+}
+
+.ai-execution-table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+  font-size: 11px;
+}
+
+.ai-execution-table th,
+.ai-execution-table td {
+  padding: 6px 10px;
+  text-align: start;
+  vertical-align: top;
+}
+
+.ai-execution-table thead th {
+  color: var(--pw-fg-muted);
+  font-weight: 600;
+}
+
+.ai-execution-table tbody th,
+.ai-execution-table tbody td {
+  background: var(--pw-bg-elev-2);
+}
+
+.ai-execution-tool {
+  display: block;
+  color: var(--pw-fg);
+  font-family:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.ai-execution-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-inline-end: 4px;
+  border-radius: 50%;
+}
+
+.ai-compose-result {
+  padding-top: var(--pw-sp-3);
+  border-top: 1px solid var(--pw-border);
+}
+
+.ai-compose-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ai-compose-subjects legend {
+  width: 100%;
+  margin-bottom: 4px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+
+.ai-compose-subject {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  padding-block: 4px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+
+.ai-compose-preview,
+.ai-compose-body {
+  padding: 8px 10px;
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg-elev-2);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.ai-compose-preview {
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+.ai-compose-body {
+  max-height: 20rem;
+  overflow-y: auto;
+  color: var(--pw-fg);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 680px) {
+  .ai-card-stat-grid,
+  .ai-compose-input-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ai-suggestion-row {
+    flex-wrap: wrap;
+  }
+
+  .ai-suggestion-row .ai-suggestion-text {
+    flex-basis: calc(100% - 3.5rem);
+  }
+
+  .ai-suggestion-row > .btn {
+    margin-inline-start: 3.5rem;
+  }
+
+  .ai-voice-source-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (forced-colors: active) {
+  .ai-execution-status-dot {
+    border: 1px solid CanvasText;
+    forced-color-adjust: none;
+  }
+
+  .ai-compose-subject[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+}
+
+/* ---------- inbox-reality predictor banner -------------------------- */
+
+.ir-banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev);
+  margin-bottom: var(--pw-sp-3);
+}
+.ir-banner-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+}
+.ir-banner-title {
+  font-size: 13px;
+  color: var(--pw-fg);
+}
+.ir-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ir-bar {
+  position: relative;
+  height: 22px;
+  background: var(--pw-bg-elev-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ir-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4px;
+  transition: width 240ms ease;
+}
+.ir-bar-primary .ir-bar-fill {
+  background: color-mix(in srgb, var(--pw-success) 45%, transparent);
+}
+.ir-bar-promo .ir-bar-fill {
+  background: color-mix(in srgb, var(--pw-warning) 40%, transparent);
+}
+.ir-bar-spam .ir-bar-fill {
+  background: color-mix(in srgb, var(--pw-danger) 40%, transparent);
+}
+.ir-bar-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--pw-fg);
+  gap: 6px;
+}
+.ir-low-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+}
+.ir-why {
+  padding: 8px 10px;
+  background: var(--pw-bg);
+  border: 1px dashed var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+}
+.ir-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--pw-sp-2);
+}
+/* ===== end ===== */
+
+/* ---------- campaign activity feed (slideover) -------------------- */
+.campaign-activity {
+  margin-top: var(--pw-sp-3);
+  border-top: 1px solid var(--pw-border-soft);
+  padding-top: var(--pw-sp-2);
+}
+.campaign-activity-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
+  color: var(--pw-fg);
+  text-align: left;
+}
+.campaign-activity-caret {
+  display: inline-block;
+  width: 10px;
+  font-size: 10px;
+  color: var(--pw-fg-muted);
+}
+.campaign-activity-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  background: var(--pw-bg-elev-2);
+  border-radius: var(--pw-radius-sm);
+  padding: 1px 6px;
+}
+.campaign-activity-reconnect {
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  font-style: italic;
+}
+.campaign-activity-list {
+  margin-top: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg);
+}
+.campaign-activity-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  text-align: center;
+}
+.campaign-activity-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-top: 1px solid var(--pw-border-soft);
+}
+.campaign-activity-row:first-child {
+  border-top: 0;
+}
+.campaign-activity-row-main {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pw-fg);
+}
+.campaign-activity-row-time {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  white-space: nowrap;
+}
+
+/* ---------- collaborative cursor overlay --------------------------- */
+.cursor-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+.cursor-overlay-marker {
+  position: absolute;
+  transform: translate(-2px, -2px);
+  transition: opacity 200ms linear;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+.cursor-overlay-caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid var(--pw-accent);
+}
+.cursor-overlay-label {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  /* stylelint-disable-next-line color-no-hex -- label sits on the user's cursor color (set inline at render time); white text is the readable choice across all palette entries */
+  color: #ffffff;
+  border-radius: var(--pw-radius-sm);
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: var(--pw-shadow-card);
+}
+
+/* =====================================================================
+ * Product tour — overlay, spotlight, tooltip, launcher.
+ *
+ * Layering:
+ *   - .tour-overlay         z-index 1500   (above app shell, below modal)
+ *   - .tour-spotlight       (sits inside .tour-overlay)
+ *   - .tour-tooltip         z-index 1501
+ *   - .tour-launcher        z-index 95     (anchored bottom-right of shell)
+ *   - .tour-launcher-panel  z-index 96
+ *
+ * Modal/onboarding chrome sits at z-index 1100 and the command palette at
+ * 2000 — the tour deliberately stays under both so a user can still pull
+ * up Cmd+K mid-tour without ghost layers.
+ *
+ * Animations are a) spotlight enter (320ms cubic-bezier(0.16, 1, 0.3, 1)),
+ * b) tooltip enter (240ms ease-out, scale + opacity), c) target outline
+ * pulse (1.6s loop), d) confetti burst (1.2s). Reduced-motion path drops
+ * everything except opacity transitions.
+ * =================================================================== */
+
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  pointer-events: none;
+  animation: tour-overlay-enter 240ms ease-out both;
+}
+
+.tour-overlay-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* Paint-only. SVG masks don't affect hit-testing — alpha-zero pixels
+   * in the cutout would still capture clicks — so the SVG passes
+   * everything through and the .tour-overlay-dim divs (positioned
+   * around the spotlight rect) do the click-swallowing instead. */
+  pointer-events: none;
+}
+
+/* Invisible hit-test zones covering the dim area around the spotlight.
+ * The SVG above draws the visuals; these only swallow clicks so the
+ * spotlight hole stays click-through. */
+.tour-overlay-dim {
+  position: absolute;
+  pointer-events: auto;
+}
+
+/* Solid (no spotlight) backdrop — used by centered welcome / done.
+ *
+ * 76% / 2px are the CANONICAL scrim values from @postwave/design-tokens
+ * (`motion.backdrop`). They were 78% / 3px here, which is the top of the exact
+ * "0.72–0.78 across clients" spread that token module says it reconciled —
+ * desktop was simply never migrated onto it. Web reads the same numbers at
+ * runtime (TourOverlay.tsx sets --pw-backdrop-opacity / --pw-backdrop-blur from
+ * the tokens) and mobile via reanimated; desktop has no token injection on this
+ * path, so the values are written here and pinned by the drift guard in
+ * packages/design-tokens/src/drift.test.ts. Change the token and that test
+ * fails until this rule follows. */
+.tour-overlay-solid {
+  background: color-mix(in srgb, var(--pw-shadow-color) 76%, transparent);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: auto;
+}
+
+@keyframes tour-overlay-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Pulsing accent outline glued to the spotlit element. */
+.tour-spotlight {
+  position: fixed;
+  pointer-events: none;
+  border: 2px solid var(--pw-accent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--pw-accent) 25%, transparent),
+    0 8px 32px color-mix(in srgb, var(--pw-shadow-color) 45%, transparent);
+  animation:
+    tour-spotlight-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    tour-spotlight-pulse 1.6s ease-in-out 320ms infinite;
+}
+
+@keyframes tour-spotlight-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tour-spotlight-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--pw-accent) 18%, transparent),
+      0 8px 32px color-mix(in srgb, var(--pw-shadow-color) 45%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px color-mix(in srgb, var(--pw-accent) 32%, transparent),
+      0 8px 32px color-mix(in srgb, var(--pw-shadow-color) 45%, transparent);
+  }
+}
+
+/* ---- tooltip ------------------------------------------------------- */
+
+.tour-tooltip {
+  position: fixed;
+  z-index: 1501;
+  box-sizing: border-box;
+  width: min(320px, calc(100dvw - 16px));
+  max-width: calc(100dvw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  box-shadow:
+    0 12px 36px color-mix(in srgb, var(--pw-shadow-color) 55%, transparent),
+    0 2px 8px color-mix(in srgb, var(--pw-shadow-color) 30%, transparent);
+  padding: 16px 18px 14px;
+  color: var(--pw-fg);
+  font-family: var(--pw-font);
+  animation: tour-tooltip-enter 240ms ease-out both;
+}
+
+.tour-tooltip.is-centered {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  /* Keep the centered animation but anchor on the centre, not the
+   * default top-left, so scale-in origin matches what the eye expects. */
+  animation: tour-tooltip-enter-centered 280ms ease-out both;
+}
+
+.tour-tooltip.is-final {
+  /* Subtle accent ring on the final card — the celebratory beat. */
+  box-shadow:
+    0 12px 36px color-mix(in srgb, var(--pw-shadow-color) 55%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--pw-accent) 40%, transparent);
+}
+
+@keyframes tour-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tour-tooltip-enter-centered {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 6px)) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.tour-tooltip-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0 0 6px;
+  color: var(--pw-fg);
+}
+
+.tour-tooltip-body {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 14px;
+  color: var(--pw-fg-muted);
+}
+
+.tour-tooltip-availability {
+  margin: -6px 0 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg-muted);
+  background: var(--pw-bg-elev-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.tour-tooltip-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tour-tooltip-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+
+.tour-tooltip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pw-border);
+  transition:
+    background-color 200ms ease,
+    transform 200ms ease;
+}
+
+.tour-tooltip-dot.is-done {
+  background: var(--pw-fg-subtle);
+}
+
+.tour-tooltip-dot.is-active {
+  background: var(--pw-accent);
+  transform: scale(1.4);
+}
+
+.tour-tooltip-progress {
+  display: grid;
+  gap: 5px;
+  flex: 1 1 112px;
+  min-width: 96px;
+  color: var(--pw-fg-subtle);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tour-tooltip-progress-track {
+  display: block;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--pw-border-soft);
+}
+
+.tour-tooltip-progress-value {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--pw-accent);
+  transition: width 200ms ease;
+}
+
+.tour-tooltip-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* The skip button is intentionally low-key — it sits with the actions
+ * but is visually tertiary. */
+.tour-tooltip-skip {
+  opacity: 0.7;
+}
+
+.tour-tooltip-skip:hover {
+  opacity: 1;
+}
+
+/* ---- confetti ------------------------------------------------------ */
+
+.tour-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.tour-confetti-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  /* stylelint-disable-next-line function-disallowed-list -- confetti particle uses a per-particle hue rotation via custom property --hue; not a design token */
+  background: hsl(var(--hue, 170) 70% 60%);
+  opacity: 0;
+  animation: tour-confetti-burst 1200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes tour-confetti-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0)))
+      scale(1) rotate(420deg);
+    opacity: 0;
+  }
+}
+
+/* ---- launcher (floating "?" button + popover panel) ---------------- */
+
+/* Keep help in application chrome, not over the operator's work. AppShell
+ * mounts this accessory in the real TopBar, so an offline banner naturally
+ * moves both the trigger and its panel without viewport-offset guesses. */
+.topbar:has(> .tour-launcher) {
+  position: relative;
+  padding-inline-end: max(
+    var(--pw-sp-4),
+    calc(env(safe-area-inset-right) + 8px)
+  );
+}
+
+.tour-launcher {
+  position: relative;
+  flex: 0 0 36px;
+  z-index: 95;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  color: var(--pw-fg-muted);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--pw-font);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--pw-shadow-card);
+  transition:
+    transform 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.tour-launcher:hover {
+  color: var(--pw-accent);
+  border-color: var(--pw-accent);
+  transform: translateY(-1px);
+}
+
+.tour-launcher:focus-visible {
+  outline: 2px solid var(--pw-accent);
+  outline-offset: 2px;
+}
+
+.tour-launcher-panel {
+  position: absolute;
+  right: 8px;
+  top: calc(100% + 8px);
+  bottom: auto;
+  z-index: 96;
+  width: min(268px, calc(100dvw - 24px));
+  max-height: calc(100dvh - 136px);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  box-shadow:
+    0 12px 36px color-mix(in srgb, var(--pw-shadow-color) 50%, transparent),
+    0 2px 8px color-mix(in srgb, var(--pw-shadow-color) 30%, transparent);
+  padding: 8px;
+  font-family: var(--pw-font);
+  animation: tour-launcher-enter 200ms ease-out both;
+}
+
+@keyframes tour-launcher-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tour-launcher-panel-head {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--pw-border-soft);
+  margin-bottom: 6px;
+}
+
+.tour-launcher-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+
+.tour-launcher-panel-sub {
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  margin-top: 2px;
+}
+
+.tour-launcher-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 8px 10px;
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  gap: 8px;
+  transition: background-color 120ms ease;
+}
+
+.tour-launcher-item:hover,
+.tour-launcher-item:focus-visible {
+  background: var(--pw-bg-elev-2);
+  outline: none;
+}
+
+.tour-launcher-item-label {
+  flex: 1;
+}
+
+.tour-launcher-item-hint {
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+}
+
+.tour-launcher-shortcuts {
+  margin-top: 6px;
+  padding: 8px 10px 4px;
+  border-top: 1px solid var(--pw-border-soft);
+}
+
+.tour-launcher-shortcuts-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pw-fg-subtle);
+  margin-bottom: 6px;
+}
+
+.tour-launcher-shortcuts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tour-launcher-shortcuts-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  padding: 2px 0;
+}
+
+.tour-launcher-shortcuts-list .mono {
+  font-family: var(--pw-font-mono);
+  font-size: 11px;
+  background: var(--pw-bg-elev-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--pw-fg);
+  border: 1px solid var(--pw-border-soft);
+}
+
+/* ---- reduced motion ------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-overlay,
+  .tour-spotlight,
+  .tour-tooltip,
+  .tour-launcher,
+  .tour-launcher-panel,
+  .tour-confetti-particle,
+  .tour-tooltip-dot {
+    animation: none !important;
+    transition-property: opacity !important;
+    transition-duration: 10ms !important;
+  }
+  .tour-tooltip.is-centered {
+    transform: translate(-50%, -50%);
+  }
+  /* Confetti completely off — the burst depends on transform. */
+  .tour-confetti-particle {
+    display: none;
+  }
+}
+
+@media (max-width: 360px), (max-height: 360px) {
+  .tour-tooltip-foot {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tour-tooltip-dots {
+    justify-content: center;
+  }
+
+  .tour-tooltip-actions {
+    justify-content: stretch;
+  }
+
+  .tour-tooltip-actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 1000px) {
+  .topbar:has(> .tour-launcher) {
+    padding-inline-end: max(
+      var(--pw-sp-3),
+      calc(env(safe-area-inset-right) + 8px)
+    );
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar:has(> .tour-launcher) {
+    padding-inline-end: max(8px, calc(env(safe-area-inset-right) + 8px));
+  }
+}
+
+@media (forced-colors: active) {
+  .tour-tooltip,
+  .tour-tooltip-availability,
+  .tour-launcher,
+  .tour-launcher-panel {
+    border-color: CanvasText;
+  }
+
+  .tour-spotlight {
+    border-color: Highlight;
+    forced-color-adjust: none;
+  }
+
+  .tour-tooltip-dot {
+    border: 1px solid CanvasText;
+  }
+
+  .tour-tooltip-dot.is-active {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+}
+
+/* ----------------------------------------------------------------------
+ * Shared tab primitives
+ * --------------------------------------------------------------------
+ * Used by MCP, SMS Inbox, and Agency. MCP-specific `.mcp-*` rules live
+ * with the lazy route in styles-mcp.css.
+ */
+
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--pw-border);
+  margin: 16px 0 24px;
+}
+.tab-button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--pw-fg-muted);
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.tab-button:hover {
+  color: var(--pw-fg);
+}
+.tab-button.active {
+  color: var(--pw-accent);
+  border-bottom-color: var(--pw-accent);
+}
+
+/* MCP-specific mcp-* styles live in styles-mcp.css. */
+.btn.small {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+/* Cancel button in the gift slideover */
+.btn.danger {
+  background: var(--pw-danger);
+  color: var(--pw-on-danger, white);
+  border: 1px solid var(--pw-danger);
+}
+.btn.danger:hover {
+  filter: brightness(0.92);
+}
+
+/* ===== P1 systemic: empty-state coherence =================================
+ *
+ * When a page renders <HeroEmptyState> (root class `.hero-empty`), the
+ * page is in a first-time-empty state. In that case the list-shaped
+ * chrome (column-header row, filter chips, pagination footer) competes
+ * with the hero for the user's attention without offering them anything
+ * — there are zero items to filter, paginate, or sort.
+ *
+ * This rule hides those bits across every list-shaped page in one go,
+ * using `:has()` so no per-tab JSX edit is needed. The search input is
+ * deliberately left visible — sometimes the user lands mid-task and a
+ * search-then-empty-result tells a clearer story than missing UI.
+ *
+ * Browser support: `:has()` is supported in Chromium ≥ 105 (Tauri's
+ * webview tracks the system Chrome, comfortably above this).
+ */
+
+.content:has(.hero-empty) .list-header,
+.content:has(.hero-empty) .chips,
+.content:has(.hero-empty) .pagination {
+  display: none;
+}
+
+/* G3 (campaigns 2026): reader-reply quote block inserted from the
+   composer via ReplyQuotePicker. Styled as an attributed pull-quote so
+   reused reader replies read as testimonials in the sent email. */
+.pw-reader-quote {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--pw-accent);
+  background: var(--pw-bg-elev);
+  border-radius: 4px;
+  font-style: italic;
+}
+.pw-reader-quote .pw-reader-attrib {
+  margin-top: 8px;
+  font-style: normal;
+  font-size: 0.85em;
+  color: var(--pw-fg-muted);
+}
+
+/* G12 (campaigns 2026): sortable list-header buttons. Reset the native
+   button chrome so they read as column headers, just clickable. */
+.pw-sort-th {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+.pw-sort-th:hover {
+  color: var(--pw-accent);
+}

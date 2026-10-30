@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <rtl-arabic-body.v1@example.com>
+Subject: طلبك جاهز
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-rtl-v1"
+
+--pw-rtl-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+طلبك جاهز. اطلع عليه هنا: https://shop.example.com/orders/7
+--pw-rtl-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>طلبك جاهز</h1><p>شكرا لطلبك.</p><p><a href="https://shop.example.com/orders/7">عرض الطلب</a></p></body></html>
+--pw-rtl-v1--

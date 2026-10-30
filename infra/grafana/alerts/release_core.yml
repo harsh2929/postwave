@@ -1,0 +1,186 @@
+groups:
+  - name: postwave-release-core
+    interval: 30s
+    rules:
+      - alert: APIScrapeMissing
+        expr: absent(up{job="postwave-api"}) or up{job="postwave-api"} == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The production API metrics target is absent or down.
+          runbook: docs/runbooks/incident-response.md
+
+      - alert: MigrationScrapeMissing
+        expr: absent(up{job="postwave-migration"}) or up{job="postwave-migration"} == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The migration metrics target is absent or down.
+          runbook: docs/runbooks/migration-failure.md
+
+      - alert: DeliverabilityScrapeMissing
+        expr: absent(up{job="postwave-deliverability"}) or up{job="postwave-deliverability"} == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The deliverability metrics target is absent or down.
+          runbook: docs/runbooks/deliverability-incident.md
+
+      - alert: VoiceScrapeMissing
+        expr: absent(up{job="postwave-voice"}) or up{job="postwave-voice"} == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The voice metrics target is absent or down.
+          runbook: docs/runbooks/incident-response.md
+
+      - alert: AutomationScrapeMissing
+        expr: absent(up{job="postwave-automation"}) or up{job="postwave-automation"} == 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The automation metrics target is absent or down.
+          runbook: docs/runbooks/automation-runtime-stuck.md
+
+      - alert: APIHigh5xxRate
+        expr: sum(rate(pw_http_requests_total{job="postwave-api",status_class="5xx"}[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: API 5xx rate is above 0.5 requests per second.
+          runbook: docs/runbooks/incident-response.md
+
+      - alert: APILatencyP95High
+        expr: histogram_quantile(0.95, sum by (le, route) (rate(pw_http_duration_seconds_bucket{job="postwave-api"}[5m]))) > 2
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: API p95 latency is above two seconds.
+          runbook: docs/runbooks/common-failures.md
+
+      - alert: RateLimiterEvicting
+        expr: sum(rate(rate_limit_lru_evictions_total{job="postwave-api"}[5m])) by (limiter) > 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: A bounded rate limiter is evicting active buckets.
+          runbook: docs/runbooks/incident-response.md
+
+      - alert: AuditSinkConsecutiveFailures
+        expr: max(postwave_auditsink_consecutive_failures{job="postwave-api"}) by (kind) >= 10
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: An audit sink has ten or more consecutive failures.
+          runbook: docs/runbooks/common-failures.md#audit-sink-delivery-failures
+
+      - alert: PrivacyRequestOverdue
+        expr: sum(postwave_privacy_overdue_requests{job="postwave-api"}) by (request_type) > 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: A privacy request is past its recorded due date.
+          runbook: docs/runbooks/common-failures.md#privacy-request-overdue
+
+      - alert: RecurrenceScannerStale
+        expr: time() - max(postwave_recurrence_scanner_last_run_timestamp{job="postwave-automation"}) > 900
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: The automation recurrence scanner has not completed for 15 minutes.
+          runbook: docs/runbooks/automation-runtime-stuck.md
+
+      - alert: AutomationQueueBacklogHigh
+        expr: max(postwave_automation_queue_depth{job="postwave-automation"}) > 1000
+        for: 10m
+        labels:
+          severity: page
+        annotations:
+          summary: The automation queue has more than 1,000 pending, scheduled, or retry tasks.
+          runbook: docs/runbooks/automation-runtime-stuck.md
+
+      - alert: AutomationQueueObservationFailing
+        expr: sum(increase(postwave_automation_queue_observation_failures_total{job="postwave-automation"}[10m])) > 2
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Automation cannot reliably inspect its Redis/Asynq queue.
+          runbook: docs/runbooks/automation-runtime-stuck.md
+
+      - alert: ReputationProviderFailures
+        expr: sum(rate(reputation_source_failures_total{job="postwave-deliverability"}[15m])) by (source) > 0.1
+        for: 15m
+        labels:
+          severity: ticket
+        annotations:
+          summary: A deliverability reputation provider is repeatedly failing.
+          runbook: docs/runbooks/deliverability-incident.md
+
+      - alert: EmailVerificationAPI5xx
+        expr: sum(rate(pw_http_requests_total{job="postwave-api",route=~"/api/v1/verification/.*",status_class="5xx"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: page
+        annotations:
+          summary: Email verification API routes are returning server errors.
+          runbook: docs/runbooks/email-verification-health.md
+
+      - alert: RecipientHealthGateEvidenceFailure
+        expr: sum(increase(postwave_sendloop_recipient_health_gate_total{job="postwave-api",reason=~"error|incomplete"}[5m])) > 0
+        labels:
+          severity: page
+        annotations:
+          summary: The campaign send boundary could not obtain complete recipient-health evidence.
+          runbook: docs/runbooks/email-verification-health.md
+
+      - alert: SignupVerificationFailOpen
+        expr: sum(increase(postwave_forms_signup_verification_total{job="postwave-api",outcome=~"degraded_allowed|error_allowed"}[5m])) > 0
+        labels:
+          severity: ticket
+        annotations:
+          summary: Public signup verification admitted addresses through a degraded fail-open path.
+          runbook: docs/runbooks/email-verification-health.md
+
+      - alert: EmailVerificationAmbiguousJob
+        expr: sum(increase(postwave_email_verification_jobs_terminal_total{job="postwave-api",status="failed",failure_code="verification_outcome_ambiguous"}[5m])) > 0
+        labels:
+          severity: page
+        annotations:
+          summary: A durable verification job ended with an ambiguous provider outcome and must not be retried automatically.
+          runbook: docs/runbooks/email-verification-health.md
+
+      - alert: EmailVerificationProviderFailure
+        expr: sum by (provider, outcome) (increase(postwave_email_verification_provider_batches_total{job="postwave-api",outcome=~"no_credits|unauthorized|account_rejected|not_configured|unavailable|error|ambiguous"}[5m])) > 0
+        labels:
+          severity: ticket
+        annotations:
+          summary: A metered email-verification provider batch did not complete successfully.
+          runbook: docs/runbooks/email-verification-health.md
+
+      - alert: EmailVerificationUsagePersistenceFailure
+        expr: sum by (surface) (increase(postwave_email_verification_usage_persistence_failures_total{job="postwave-api"}[5m])) > 0
+        labels:
+          severity: page
+        annotations:
+          summary: Completed email verification could not confirm its tenant usage-accounting record.
+          runbook: docs/runbooks/email-verification-health.md
+
+      - alert: EmailHealthEvidenceUnavailable
+        expr: increase(postwave_email_health_evidence_unavailable_total{job="postwave-api"}[5m]) > 0
+        labels:
+          severity: page
+        annotations:
+          summary: Verification responses were forced fail-closed because recipient-health evidence was unavailable.
+          runbook: docs/runbooks/email-verification-health.md

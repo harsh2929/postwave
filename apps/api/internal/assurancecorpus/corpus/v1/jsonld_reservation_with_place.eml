@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-reservation-with-place.v1@example.com>
+Subject: Your seat is confirmed
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ldres-v1"
+
+--pw-ldres-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Workshop seat R-12 confirmed. https://events.example.com/r/12
+--pw-ldres-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"EventReservation","reservationNumber":"R-12","url":"https://events.example.com/r/12","reservationFor":{"@type":"Event","name":"Automation workshop","location":{"@type":"Place","name":"Postwave Studio"}}}</script></head><body><h1>Your seat is confirmed</h1><p>Automation workshop, reservation R-12.</p><p><a href="https://events.example.com/r/12">View your reservation</a></p></body></html>
+--pw-ldres-v1--

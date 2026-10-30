@@ -1,0 +1,1995 @@
+/* ---------- page header v2 (cross-cutting) ------------------------ */
+/*
+ * Unified page header. Replaces the ad-hoc .page-header per-tab markup
+ * with a single hierarchy: small uppercase eyebrow → headline title →
+ * muted subtitle → right-aligned actions slot. Range/filter chips can
+ * dock under the title via .page-header-v2-meta.
+ */
+.page-header-v2 {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: var(--pw-sp-4);
+}
+.page-header-v2-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.page-header-v2-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+}
+.page-header-v2-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--pw-fg);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-header-v2-subtitle {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  line-height: 1.5;
+  max-width: 72ch;
+  margin-top: 2px;
+}
+.page-header-v2-actions {
+  display: flex;
+  gap: var(--pw-sp-2);
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.page-header-v2-action {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+.page-header-v2-action-reason {
+  max-width: 30ch;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: right;
+  text-wrap: pretty;
+}
+.page-header-v2-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* ---------- stat strip v2 ----------------------------------------- */
+/*
+ * Lightweight horizontal KPI strip that sits between page header and
+ * primary content. Each tile is compact (44px tall), surfaces label +
+ * value + optional delta + optional sparkline mini, and degrades to
+ * em-dash when un-initialized. Use this for tabs that don't warrant a
+ * full .stat-grid; the strip is more glanceable on mid-density tabs.
+ */
+.stat-strip-v2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  margin-bottom: var(--pw-sp-4);
+  background: var(--pw-border-soft);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  overflow: hidden;
+}
+.stat-strip-v2-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: var(--pw-bg-elev);
+  min-width: 0;
+}
+.stat-strip-v2-cell.is-interactive {
+  padding: 0;
+}
+.stat-strip-v2-cell:hover {
+  background: color-mix(in srgb, var(--pw-accent) 4%, var(--pw-bg-elev));
+}
+.stat-strip-v2-cell-action {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.stat-strip-v2-cell-action:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid var(--pw-ring);
+  outline-offset: -3px;
+}
+.stat-strip-v2-cell.has-help .stat-strip-v2-label {
+  padding-right: 28px;
+}
+.stat-strip-v2-help {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+}
+.stat-strip-v2-help .inline-help {
+  margin: 0;
+}
+.stat-strip-v2-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  /* The label participates in a short entrance fade. Using the primary
+     foreground keeps the rendered intermediate frames legible in both themes,
+     while uppercase size and spacing preserve its secondary hierarchy. */
+  color: var(--pw-fg);
+}
+.stat-strip-v2-value {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--pw-fg);
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.stat-strip-v2-delta {
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.stat-strip-v2-delta.up {
+  color: var(--pw-success);
+}
+.stat-strip-v2-delta.down {
+  color: var(--pw-danger);
+}
+.stat-strip-v2-delta.flat {
+  color: var(--pw-fg-subtle);
+}
+.stat-strip-v2-spark {
+  margin-top: 2px;
+  width: 100%;
+  height: 18px;
+  opacity: 0.85;
+}
+
+/* ---------- value-prop card --------------------------------------- */
+/*
+ * Compact inline-education panel used inside a tab to explain an
+ * advanced feature without opening a modal. Smaller than HeroEmptyState,
+ * more present than a tooltip — sits at the top of a section.
+ */
+.value-prop-card {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--pw-radius-md);
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 25%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-accent) 4%, var(--pw-bg-elev));
+  margin-bottom: var(--pw-sp-3);
+}
+.value-prop-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pw-accent) 14%, transparent);
+  color: var(--pw-accent);
+  display: grid;
+  place-items: center;
+}
+.value-prop-card-text {
+  min-width: 0;
+}
+.value-prop-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  margin-bottom: 2px;
+}
+.value-prop-card-body {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  line-height: 1.45;
+}
+
+/* ---------- inline help (i-tooltip) ------------------------------- */
+/*
+ * Small `i` glyph that surfaces a tooltip on hover, focus, or click. The
+ * component owns interaction state; these rules own presentation only.
+ */
+.inline-help {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--pw-bg-elev-2);
+  /* AA contrast audit (2026-05-27): `--pw-fg-subtle` (#6b7280) on
+   * `--pw-bg-elev-2` was 3.5:1 in dark mode, failing WCAG 2.1 AA for
+   * normal text (4.5:1 required). Bumping to `--pw-fg-muted` gives
+   * 5.5:1 dark + 7.2:1 light — AAA-grade in light, AA in dark. */
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: help;
+  vertical-align: middle;
+  margin-left: 4px;
+  position: relative;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+}
+.inline-help:hover,
+.inline-help:focus-visible {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+}
+.inline-help:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+.inline-help-tooltip {
+  position: fixed;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: 6px 10px;
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border);
+  color: var(--pw-fg);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-transform: none;
+  white-space: normal;
+  text-align: left;
+  pointer-events: auto;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 100ms ease-out;
+  z-index: 100;
+  box-shadow: var(--pw-shadow-card);
+}
+.inline-help-tooltip[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ---------- section header v2 ------------------------------------- */
+/*
+ * Replaces ad-hoc <h3>Section</h3> markup with a consistent in-page
+ * divider that pairs a title with optional muted description + action
+ * slot. Use between content sections within a tab.
+ */
+.section-header-v2 {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: var(--pw-sp-6) 0 var(--pw-sp-3);
+  padding-bottom: var(--pw-sp-2);
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.section-header-v2:first-child {
+  margin-top: 0;
+}
+.section-header-v2-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.section-header-v2-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.section-header-v2-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  letter-spacing: -0.005em;
+}
+.section-header-v2-description {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.section-header-v2-actions {
+  display: flex;
+  gap: var(--pw-sp-2);
+  align-items: center;
+}
+
+/* ---------- empty section ----------------------------------------- */
+/*
+ * Mid-density empty state for in-tab sections that aren't important
+ * enough for a hero panel but still deserve more than a single line of
+ * grey text. Used inside a section card when the underlying data is
+ * empty AND a hero already filled the top of the tab.
+ */
+.empty-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--pw-fg-muted);
+}
+.empty-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.empty-section-body {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  max-width: 36ch;
+  line-height: 1.45;
+}
+
+/* ---------- list-row hover affordances ---------------------------- */
+/*
+ * Reveal row-level actions on hover/focus-within. Existing .list-row
+ * stays as-is; this CSS layer adds the affordance pattern.
+ * To use: wrap the row-action buttons in <div className="list-row-actions">
+ * and the row will fade them in on hover.
+ */
+.list-row-actions {
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+.list-row:hover .list-row-actions,
+.list-row:focus-within .list-row-actions {
+  opacity: 1;
+}
+.list-row-action {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: 4px;
+  color: var(--pw-fg-muted);
+  cursor: pointer;
+  transition:
+    background 80ms,
+    color 80ms,
+    border-color 80ms;
+}
+.list-row-action:hover {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+  border-color: color-mix(in srgb, var(--pw-accent) 30%, var(--pw-border));
+}
+.list-row-action.danger:hover {
+  color: var(--pw-danger);
+  border-color: color-mix(in srgb, var(--pw-danger) 30%, var(--pw-border));
+}
+
+/* ---------- keyboard hint ----------------------------------------- */
+/*
+ * Inline visual representation of a keyboard shortcut. Use next to
+ * action labels in tooltips, dropdowns, or help text.
+ */
+.kbd-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border);
+  color: var(--pw-fg-subtle);
+  font-family: var(--pw-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+/* ---------- scroll fade markers ----------------------------------- */
+/*
+ * Subtle top/bottom gradient inside a scroll container to signal that
+ * more content exists. Apply .scroll-fade-top / .scroll-fade-bottom
+ * to the scroll container; the pseudo-elements paint the gradient.
+ */
+.scroll-fade-bottom {
+  position: relative;
+}
+.scroll-fade-bottom::after {
+  content: "";
+  position: sticky;
+  bottom: 0;
+  display: block;
+  height: 24px;
+  margin-top: -24px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--pw-bg) 85%, transparent)
+  );
+}
+
+/* ---------- skeleton variants ------------------------------------- */
+/*
+ * The base `.skel` already handles row-level placeholders. These
+ * variants add page-level layouts so loading screens look like the
+ * thing they will become, not a sea of identical bars.
+ */
+.skel-row {
+  display: grid;
+  grid-template-columns: 24px 1.5fr 1fr 1fr 80px;
+  gap: 12px;
+  padding: 10px 12px;
+  align-items: center;
+}
+.skel-cell {
+  height: 12px;
+  border-radius: 3px;
+}
+.skel-cell.sm {
+  height: 10px;
+  max-width: 40%;
+}
+.skel-cell.lg {
+  height: 14px;
+}
+.skel-stat-card {
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ---------- entrance choreography --------------------------------- */
+/*
+ * Replaces the uniform 280ms hero-rise with three coordinated entrance
+ * tiers:
+ *   • surface  (the panel itself fades + lifts)     220ms
+ *   • content  (text column inside the panel)       180ms · 60ms delay
+ *   • media    (illustration / image)               220ms · 120ms delay
+ *
+ * Each tier is opt-in via a class; the parent only animates if motion
+ * is allowed. All three honor `prefers-reduced-motion: reduce` by
+ * skipping the animation entirely (no opacity flicker, no transform
+ * snap — the element is just there).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  /* Re-declare the hero-empty entrance so we can stagger children. */
+  .hero-empty {
+    animation: pw-enter-surface 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .hero-empty-text {
+    animation: pw-enter-content 180ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+  }
+  .hero-empty-image {
+    animation: pw-enter-media 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+  }
+  .stat-strip-v2 {
+    animation: pw-enter-surface 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .stat-strip-v2-cell {
+    animation: pw-enter-content 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    /* Stagger each cell ~30ms apart. nth-child(n+1) gives n=0 for the
+     * first cell, which means the first plays immediately and each
+     * subsequent cell waits 30ms more. */
+  }
+  .stat-strip-v2-cell:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stat-strip-v2-cell:nth-child(2) {
+    animation-delay: 30ms;
+  }
+  .stat-strip-v2-cell:nth-child(3) {
+    animation-delay: 60ms;
+  }
+  .stat-strip-v2-cell:nth-child(4) {
+    animation-delay: 90ms;
+  }
+  .stat-strip-v2-cell:nth-child(5) {
+    animation-delay: 120ms;
+  }
+  .stat-strip-v2-cell:nth-child(n + 6) {
+    animation-delay: 150ms;
+  }
+
+  .value-prop-card {
+    animation: pw-enter-content 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .promo-card {
+    animation: pw-enter-content 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .checklist {
+    animation: pw-enter-surface 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .checklist-step {
+    animation: pw-enter-content 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .checklist-step:nth-child(1) {
+    animation-delay: 60ms;
+  }
+  .checklist-step:nth-child(2) {
+    animation-delay: 100ms;
+  }
+  .checklist-step:nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .checklist-step:nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .checklist-step:nth-child(5) {
+    animation-delay: 220ms;
+  }
+}
+
+@keyframes pw-enter-surface {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes pw-enter-content {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes pw-enter-media {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/*
+ * Text contrast needs to remain AA throughout entrance motion, not only after
+ * the final keyframe. Keep the same lift choreography for the stat strip and
+ * value proposition card without fading their text through low-contrast
+ * intermediate opacity. Forced-color rendering retains its system behavior.
+ */
+@media (prefers-reduced-motion: no-preference) and (forced-colors: none) {
+  .stat-strip-v2 {
+    animation-name: pw-enter-surface-opaque;
+  }
+  .stat-strip-v2-cell,
+  .value-prop-card {
+    animation-name: pw-enter-content-opaque;
+  }
+}
+
+@keyframes pw-enter-surface-opaque {
+  from {
+    transform: translateY(6px) scale(0.992);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pw-enter-content-opaque {
+  from {
+    transform: translateY(4px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Global reduced-motion guard. Catches anything we missed below — any
+ * animation/transition longer than 50ms collapses to ~10ms so the
+ * page still acknowledges state changes (avoids the "did it work?"
+ * problem of fully-disabled motion) without doing the full move. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 10ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 10ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Windows High Contrast / forced-colors support. System colors preserve the
+ * operator's chosen palette; the explicit focus ring prevents token-based
+ * box-shadows from disappearing when the browser forces backgrounds. */
+@media (forced-colors: active) {
+  *:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"] {
+    forced-color-adjust: auto;
+  }
+
+  .card,
+  .modal-card,
+  .slideover,
+  .list-row,
+  .toast,
+  .badge,
+  .notice {
+    border-color: CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  .modal-backdrop,
+  .slideover-overlay,
+  .slideover-backdrop {
+    background: Canvas !important;
+  }
+}
+
+/* ---------- form field v2 ----------------------------------------- */
+/*
+ * Standardised field chrome:
+ *   <div class="field-v2 [is-invalid] [is-required]">
+ *     <label class="field-v2-label">
+ *       Label text
+ *       <InlineHelp text="..." />
+ *     </label>
+ *     <div class="field-v2-help">Lightweight inline hint, optional.</div>
+ *     <input class="field-v2-input" ... />
+ *     <div class="field-v2-error">Visible only when .is-invalid.</div>
+ *   </div>
+ *
+ * Existing forms still using `.field` / `.field-label` / `.field-error`
+ * keep working — this is an additive set of v2 classes.
+ */
+.field-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.field-v2-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+}
+.field-v2-label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.field-v2-label-actions {
+  display: inline-flex;
+  margin-left: auto;
+  align-items: center;
+  gap: 8px;
+}
+.field-v2-control {
+  position: relative;
+  min-width: 0;
+}
+.field-v2-control > input,
+.field-v2-control > select,
+.field-v2-control > textarea {
+  width: 100%;
+}
+.field-v2-adornment {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pw-fg-subtle);
+  transform: translateY(-50%);
+}
+.field-v2-adornment-start {
+  left: 12px;
+  pointer-events: none;
+}
+.field-v2-adornment-end {
+  right: 4px;
+}
+.field-v2.is-required .field-v2-label::after {
+  content: "*";
+  color: var(--pw-danger);
+  margin-left: 2px;
+  font-weight: 700;
+}
+.field-v2-help {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  line-height: 1.45;
+  margin: -2px 0 4px;
+}
+.field-v2-error {
+  display: none;
+  font-size: 11px;
+  color: var(--pw-danger);
+  line-height: 1.4;
+  margin-top: 2px;
+  align-items: center;
+  gap: 4px;
+}
+.field-v2.is-invalid .field-v2-error {
+  display: inline-flex;
+}
+.field-v2.is-invalid input,
+.field-v2.is-invalid select,
+.field-v2.is-invalid textarea,
+.field-v2.is-invalid .field-v2-input {
+  border-color: var(--pw-danger) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pw-danger) 18%, transparent) !important;
+}
+.form-error-summary {
+  padding: var(--pw-sp-3);
+  border: 1px solid var(--pw-danger);
+  border-left-width: 4px;
+  border-radius: var(--pw-radius-sm);
+  background: color-mix(in srgb, var(--pw-danger) 7%, var(--pw-bg-elev));
+}
+.form-error-summary h3 {
+  margin: 0 0 var(--pw-sp-2);
+  font-size: var(--pw-text-body);
+}
+.form-error-summary ul {
+  margin: 0;
+  padding-left: var(--pw-sp-4);
+}
+.form-error-summary a {
+  color: var(--pw-danger);
+  text-underline-offset: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .field-v2.is-invalid .field-v2-error {
+    /* Validation text must retain AA contrast for every animation frame. */
+    animation: pw-enter-content-opaque 140ms ease-out both;
+  }
+  .field-v2.is-invalid input,
+  .field-v2.is-invalid textarea {
+    animation: pw-field-shake 220ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+}
+@keyframes pw-field-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-2px);
+  }
+  40% {
+    transform: translateX(2px);
+  }
+  60% {
+    transform: translateX(-1px);
+  }
+  80% {
+    transform: translateX(1px);
+  }
+}
+
+/* ---------- slideover v2 (chrome standardization) ---------------- */
+/*
+ * Existing `.slideover` is 380px and very minimal (just padding + a
+ * close button). The chrome below adds standard header/body/footer
+ * partitions plus width variants, so individual slideovers don't each
+ * invent their own header markup.
+ *
+ * Use:
+ *   <div class="slideover-overlay slideover-overlay-v2" />
+ *   <aside class="slideover slideover-v2 slideover-md">
+ *     <header class="slideover-header">
+ *       <div>
+ *         <div class="slideover-eyebrow">…</div>
+ *         <h2 class="slideover-title">…</h2>
+ *       </div>
+ *       <button class="slideover-close" />
+ *     </header>
+ *     <div class="slideover-body">…</div>
+ *     <footer class="slideover-footer">…</footer>
+ *   </aside>
+ */
+.slideover-overlay-v2 {
+  background: var(--pw-overlay-dim);
+  animation: pw-fade-in 160ms ease-out;
+}
+.slideover-v2 {
+  padding: 0; /* header/body/footer own their padding */
+  gap: 0;
+  overflow: hidden;
+  max-width: 100vw;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .slideover-v2 {
+    animation: pw-slideover-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+@keyframes pw-slideover-in {
+  /*
+   * Keep the surface fully opaque throughout entrance motion. Fading an
+   * entire dialog blends every text token into the page behind it and can
+   * transiently drop otherwise compliant labels below WCAG contrast.
+   */
+  from {
+    transform: translateX(12px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.slideover-sm {
+  width: 360px;
+}
+.slideover-md {
+  width: 480px;
+}
+.slideover-lg {
+  width: 640px;
+}
+.slideover-xl {
+  width: 820px;
+}
+
+@media (max-width: 900px) {
+  .slideover-v2 {
+    width: min(100vw, 720px);
+  }
+}
+
+@media (max-width: 700px) {
+  .slideover-v2 {
+    width: 100vw;
+    border-left: 0;
+  }
+}
+
+@media (max-height: 640px) {
+  .slideover-header {
+    padding-top: calc(var(--pw-titlebar-h) + var(--pw-sp-2));
+  }
+  .slideover-body {
+    padding-block: var(--pw-sp-3);
+  }
+}
+
+.slideover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: calc(var(--pw-titlebar-h) + var(--pw-sp-3)) var(--pw-sp-4)
+    var(--pw-sp-3);
+  border-bottom: 1px solid var(--pw-border-soft);
+  background: var(--pw-bg-elev);
+  flex-shrink: 0;
+}
+.slideover-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+  margin-bottom: 2px;
+}
+.slideover-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--pw-fg);
+  line-height: 1.3;
+  margin: 0;
+}
+.slideover-subtitle {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.slideover-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pw-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-3);
+}
+
+.slideover-body:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: -3px;
+}
+
+/* Subscriber detail uses two horizontally scrollable tab rows inside the
+ * slideover's vertical flex scroller. Keep their intrinsic hit-target height:
+ * otherwise flex shrink compresses the rows to a clipped sliver when a detail
+ * panel contains more content than the available viewport height. */
+.subscriber-detail-group-tabs,
+.subscriber-detail-tabs {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+/* Subscriber lifecycle editor: draft-and-review ceremony for a stage change
+ * that may start automations. Numeric text accompanies every visual signal. */
+.subscriber-lifecycle-card {
+  display: grid;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  border: 1px solid
+    color-mix(in srgb, var(--pw-accent) 22%, var(--pw-border-soft));
+  border-radius: var(--pw-radius-lg);
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--pw-accent) 9%, transparent),
+      transparent 46%
+    ),
+    var(--pw-bg-elev);
+}
+
+.subscriber-lifecycle-card__header,
+.subscriber-lifecycle-card__footer,
+.subscriber-lifecycle-card__current,
+.subscriber-lifecycle-card__footer > div {
+  display: flex;
+  align-items: center;
+}
+
+.subscriber-lifecycle-card__header,
+.subscriber-lifecycle-card__footer {
+  justify-content: space-between;
+  gap: var(--pw-sp-3);
+}
+
+.subscriber-lifecycle-card__current {
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.subscriber-lifecycle-stage-badge,
+.subscriber-lifecycle-safety {
+  border-radius: 999px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.subscriber-lifecycle-stage-badge {
+  padding: 3px 8px;
+  color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 13%, transparent);
+}
+
+.subscriber-lifecycle-score {
+  display: grid;
+  justify-items: end;
+  flex: 0 0 auto;
+}
+
+.subscriber-lifecycle-score strong {
+  color: var(--pw-fg);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.subscriber-lifecycle-score span,
+.subscriber-lifecycle-card__footer,
+.subscriber-lifecycle-score-picker p {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+}
+
+.subscriber-lifecycle-meter {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.subscriber-lifecycle-meter > span {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pw-fg-muted) 18%, transparent);
+}
+
+.subscriber-lifecycle-meter > span[data-active] {
+  background: var(--pw-accent);
+}
+
+.subscriber-lifecycle-editor {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(170px, 0.8fr);
+  gap: var(--pw-sp-3);
+  align-items: end;
+}
+
+.subscriber-lifecycle-score-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.subscriber-lifecycle-score-picker legend {
+  margin-bottom: 5px;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.subscriber-lifecycle-score-picker > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(28px, 1fr));
+  gap: 4px;
+}
+
+.subscriber-lifecycle-score-picker label {
+  min-width: 0;
+  cursor: pointer;
+}
+
+.subscriber-lifecycle-score-picker label > span {
+  display: grid;
+  place-items: center;
+  min-height: 34px;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg-muted);
+  background: color-mix(in srgb, var(--pw-bg) 45%, transparent);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.subscriber-lifecycle-score-picker label:hover > span {
+  border-color: color-mix(in srgb, var(--pw-accent) 45%, var(--pw-border));
+}
+
+.subscriber-lifecycle-score-picker input:checked + span {
+  border-color: var(--pw-accent);
+  color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 12%, transparent);
+  box-shadow: inset 0 0 0 1px var(--pw-accent);
+}
+
+.subscriber-lifecycle-score-picker input:focus-visible + span {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+
+.subscriber-lifecycle-score-picker:disabled label {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.subscriber-lifecycle-score-picker p {
+  margin: 4px 0 0;
+  text-align: right;
+}
+
+.subscriber-lifecycle-card__footer > div {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subscriber-lifecycle-safety {
+  padding: 2px 6px;
+  color: var(--pw-success);
+  background: color-mix(in srgb, var(--pw-success) 10%, transparent);
+}
+
+.subscriber-lifecycle-review {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev-2);
+}
+
+.subscriber-lifecycle-review > div {
+  display: grid;
+  gap: 2px;
+}
+
+.subscriber-lifecycle-review > div:last-child {
+  text-align: right;
+}
+
+.subscriber-lifecycle-review span,
+.subscriber-lifecycle-review small {
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+
+@media (max-width: 520px) {
+  .subscriber-lifecycle-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .subscriber-lifecycle-card__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .subscriber-lifecycle-card__footer .btn {
+    width: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .subscriber-lifecycle-card,
+  .subscriber-lifecycle-score-picker input:checked + span {
+    border-color: CanvasText;
+  }
+
+  .subscriber-lifecycle-meter > span[data-active] {
+    background: Highlight;
+  }
+}
+.slideover-footer {
+  flex-shrink: 0;
+  padding: var(--pw-sp-3) var(--pw-sp-4);
+  border-top: 1px solid var(--pw-border-soft);
+  background: var(--pw-bg-elev);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--pw-sp-2);
+}
+.slideover-footer.justify-between {
+  justify-content: space-between;
+}
+
+/* ---------- toast v2 enhancements --------------------------------- */
+/*
+ * Adds left-stripe + icon glyph + optional action button. Existing
+ * .toast / .toast-dot still works; this layer enhances when the toast
+ * uses the v2 component. Auto-dismiss timing visualised via a thin
+ * progress bar at the bottom.
+ */
+.toast {
+  position: relative;
+  padding-left: 14px;
+}
+.toast-icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--pw-fg);
+}
+.toast-success .toast-icon {
+  color: var(--pw-success);
+}
+.toast-error .toast-icon {
+  color: var(--pw-danger);
+}
+.toast-info .toast-icon {
+  color: var(--pw-accent);
+}
+.toast-soon .toast-icon {
+  color: var(--pw-advisor);
+}
+.toast-msg-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.toast-msg-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pw-fg);
+}
+.toast-msg-detail {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  line-height: 1.4;
+}
+.toast-action {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pw-accent);
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  border-radius: var(--pw-radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.toast-action:hover {
+  background: color-mix(in srgb, var(--pw-accent) 12%, transparent);
+}
+.toast-action:focus-visible,
+.toast-dismiss:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+.toast-dismiss {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: var(--pw-radius-sm);
+  background: transparent;
+  color: var(--pw-fg-subtle);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.toast-dismiss:hover {
+  background: color-mix(in srgb, var(--pw-fg) 8%, transparent);
+  color: var(--pw-fg);
+}
+/* Left stripe — kind-coloured. */
+.toast::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-top-left-radius: var(--pw-radius-md);
+  border-bottom-left-radius: var(--pw-radius-md);
+  background: var(--pw-fg-subtle);
+}
+.toast-success::before {
+  background: var(--pw-success);
+}
+.toast-error::before {
+  background: var(--pw-danger);
+}
+.toast-info::before {
+  background: var(--pw-accent);
+}
+.toast-soon::before {
+  background: var(--pw-advisor);
+}
+
+/* ---------- skeleton placeholders ---------------------------------- */
+
+.skel {
+  background: linear-gradient(
+    90deg,
+    var(--pw-bg-elev) 0%,
+    var(--pw-bg-elev-2) 50%,
+    var(--pw-bg-elev) 100%
+  );
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.4s linear infinite;
+  border-radius: 4px;
+}
+@keyframes skel-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* ---------- inline notice / error ---------------------------------- */
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  background: color-mix(in srgb, var(--pw-danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-danger) 25%, transparent);
+  border-radius: var(--pw-radius-sm);
+  font-size: 12px;
+  color: var(--pw-fg);
+  margin-bottom: var(--pw-sp-3);
+}
+.notice .spacer {
+  flex: 1;
+}
+
+/* ---------- thin progress bar (loading) ---------------------------- */
+
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  background: transparent;
+  z-index: 5;
+}
+.progress-bar::after {
+  content: "";
+  display: block;
+  width: 30%;
+  height: 100%;
+  background: var(--pw-accent);
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+/* Without this override, the global reduce clamp (10ms, iter=1) would
+ * land the bar at translateX(400%) — offscreen — so the loading state
+ * disappears entirely. Keep the bar visible as a static full-width fill
+ * so users still see "something is loading". */
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar::after {
+    animation: none;
+    transform: none;
+    width: 100%;
+  }
+}
+
+/* ---------- command palette ---------------------------------------- */
+
+.cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--pw-shadow-color) 40%, transparent);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 96px;
+  z-index: 100;
+}
+.cmdk {
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: 480px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  box-shadow: var(--pw-elev-4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Frosted glass (Phase-3): where the engine supports it, the palette becomes
+   a translucent panel over a softly-blurred app — the Raycast signature
+   surface. The opaque fallback above keeps it legible everywhere else. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .cmdk {
+    background: color-mix(in srgb, var(--pw-bg-elev) 82%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+  .cmdk-overlay {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+}
+.cmdk-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--pw-border);
+}
+.cmdk-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pw-fg-subtle);
+  pointer-events: none;
+  display: flex;
+}
+.cmdk-input {
+  flex: 1;
+  height: 44px;
+  padding: 0 36px 0 36px;
+  border: none;
+  background: transparent;
+  color: var(--pw-fg);
+  font-size: 14px;
+  outline: none;
+}
+.cmdk-input::placeholder {
+  color: var(--pw-fg-subtle);
+}
+.cmdk-spinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--pw-fg-subtle);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: cmdk-spin 0.7s linear infinite;
+}
+@keyframes cmdk-spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+.cmdk-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.cmdk-section-label {
+  padding: 8px var(--pw-sp-3) 2px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pw-fg-subtle);
+}
+.cmdk-item {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  padding: 7px var(--pw-sp-3);
+  margin: 0 4px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--pw-fg);
+  width: calc(100% - 8px);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+.cmdk-item.is-active {
+  background: var(--pw-bg-elev-2);
+}
+.cmdk-item-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--pw-fg-muted);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cmdk-item-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmdk-item-hint {
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  margin-right: var(--pw-sp-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+.cmdk-item-kbd {
+  font-family: var(--pw-font-mono);
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  background: var(--pw-bg-elev-2);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--pw-border);
+}
+.cmdk-empty {
+  padding: var(--pw-sp-4);
+  text-align: center;
+  font-size: 13px;
+  color: var(--pw-fg-muted);
+}
+.cmdk-empty-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  line-height: 1.6;
+}
+.cmdk-kbd-inline {
+  display: inline-block;
+  font-family: var(--pw-font-mono);
+  font-size: 10px;
+  background: var(--pw-bg-elev-2);
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid var(--pw-border);
+  color: var(--pw-fg-muted);
+}
+.cmdk-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--pw-border);
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 50%, transparent);
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+}
+.cmdk-footer kbd {
+  display: inline-block;
+  font-family: var(--pw-font-mono);
+  font-size: 10px;
+  background: var(--pw-bg-elev);
+  padding: 1px 5px;
+  border-radius: 2px;
+  border: 1px solid var(--pw-border);
+  color: var(--pw-fg-muted);
+  margin-right: 3px;
+}
+.cmdk-footer .spacer {
+  flex: 1;
+}
+.cmdk-footer-hint {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- status bar --------------------------------------------- */
+
+.statusbar {
+  height: var(--pw-statusbar-h);
+  border-top: 1px solid var(--pw-border);
+  background: var(--pw-bg-sidebar);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--pw-sp-3);
+  gap: var(--pw-sp-3);
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  flex-shrink: 0;
+}
+.statusbar .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pw-fg-subtle);
+}
+.statusbar .dot.up {
+  background: var(--pw-success);
+}
+.statusbar .dot.down {
+  background: var(--pw-danger);
+}
+.statusbar-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--pw-border);
+}
+.statusbar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+  padding: 0 6px;
+  margin: 0 0 0 2px;
+  border-radius: 8px;
+  border: 1px solid var(--pw-border);
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 80%, transparent);
+  color: var(--pw-fg-muted);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+.statusbar-chip:hover {
+  color: var(--pw-fg);
+  background: color-mix(in srgb, var(--pw-fg) 8%, var(--pw-bg-elev-2));
+}
+.statusbar-chip-danger {
+  border-color: color-mix(in srgb, var(--pw-danger) 40%, transparent);
+  color: var(--pw-danger);
+  background: color-mix(in srgb, var(--pw-danger) 8%, transparent);
+}
+.statusbar-chip-danger:hover {
+  color: var(--pw-danger);
+  background: color-mix(in srgb, var(--pw-danger) 16%, transparent);
+}
+
+/* At 200% zoom the 880px native minimum exposes roughly 440 CSS pixels. Keep
+   connection state and actionable queue chips visible; API URL and build
+   metadata remain available in Settings/About and must not wrap the fixed
+   status bar or force the app shell beyond the viewport. */
+@media (max-width: 700px) {
+  .statusbar {
+    min-width: 0;
+    gap: var(--pw-sp-2);
+    padding-inline: var(--pw-sp-2);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .statusbar-api,
+  .statusbar-version,
+  .statusbar > .statusbar-sep {
+    display: none;
+  }
+}
+
+/* ---------- offline banner ---------------------------------------- */
+
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: color-mix(in srgb, var(--pw-warning) 12%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--pw-warning) 35%, transparent);
+  color: var(--pw-warning);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.offline-banner-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pw-warning);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pw-warning) 18%, transparent);
+}
+.offline-banner-text {
+  flex: 1;
+}
+.offline-banner-link {
+  border: 0;
+  background: transparent;
+  color: var(--pw-warning);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.offline-banner-link:hover {
+  text-decoration: underline;
+}
+
+.pending-sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 42%, var(--pw-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pw-warning) 10%, transparent);
+  color: var(--pw-fg);
+  font-size: 12px;
+  font-weight: 550;
+  margin-bottom: 12px;
+}
+.pending-sync-status.is-compact {
+  min-height: 22px;
+  padding: 2px 7px;
+  font-size: 11px;
+  margin-bottom: 0;
+}
+.pending-sync-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pw-warning);
+}
+.pending-sync-status-replaying .pending-sync-status-dot {
+  animation: pw-pulse 1.2s ease-in-out infinite;
+}
+.pending-sync-status-conflict,
+.pending-sync-status-failed {
+  border-color: color-mix(in srgb, var(--pw-danger) 48%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-danger) 10%, transparent);
+}
+.pending-sync-status-conflict .pending-sync-status-dot,
+.pending-sync-status-failed .pending-sync-status-dot {
+  background: var(--pw-danger);
+}
+
+/* ---------- queue tray slideover ---------------------------------- */
+
+.queue-tray-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--pw-shadow-color) 45%, transparent);
+  z-index: 70;
+}
+.queue-tray {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 92vw);
+  background: var(--pw-bg-elev);
+  border-left: 1px solid var(--pw-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 71;
+  box-shadow: -8px 0 24px
+    color-mix(in srgb, var(--pw-shadow-color) 40%, transparent);
+}
+.queue-tray-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--pw-border);
+}
+.queue-tray-title {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+  margin: 0;
+}
+.queue-tray-close {
+  border: 0;
+  background: transparent;
+  color: var(--pw-fg-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.queue-tray-close:hover {
+  background: color-mix(in srgb, var(--pw-fg) 6%, var(--pw-bg-elev));
+  color: var(--pw-fg);
+}
+.queue-tray-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.queue-tray-body > .notice {
+  margin-bottom: 12px;
+}
+.queue-tray-section {
+  margin-bottom: 16px;
+}
+.queue-tray-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pw-fg-muted);
+  margin: 0 0 6px;
+}
+.queue-tray-item {
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 86%, transparent);
+}
+.queue-tray-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.queue-tray-item-row > strong {
+  min-width: 0;
+  flex: 1;
+}
+.queue-tray-item-method {
+  font-family: var(--pw-font-mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--pw-fg) 6%, var(--pw-bg-elev));
+  color: var(--pw-fg-muted);
+}
+.queue-tray-item-path {
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+.queue-tray-item-meta {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.queue-tray-item-error {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--pw-danger);
+}
+.queue-tray-item-technical {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.queue-tray-item-technical summary {
+  cursor: pointer;
+}
+.queue-tray-item-technical code {
+  display: block;
+  margin-top: 4px;
+  padding: 6px;
+  border-radius: 5px;
+  overflow-wrap: anywhere;
+  background: color-mix(in srgb, var(--pw-fg) 5%, transparent);
+}
+.queue-tray-item-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.queue-tray-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--pw-fg-muted);
+  font-size: 12.5px;
+}
+.queue-tray-badge {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--pw-fg) 6%, var(--pw-bg-elev));
+  color: var(--pw-fg-muted);
+}
+.queue-tray-badge-danger {
+  background: color-mix(in srgb, var(--pw-danger) 16%, transparent);
+  color: var(--pw-danger);
+}
+.queue-tray-badge-warn {
+  background: color-mix(in srgb, var(--pw-warning) 18%, transparent);
+  color: var(--pw-warning);
+}
+
+/* ---------- conflict modal columns ------------------------------- */
+.conflict-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.conflict-col {
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 86%, transparent);
+}
+.conflict-col-head {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--pw-border);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pw-fg-muted);
+}
+.conflict-col-body {
+  padding: 10px 12px;
+  font-family: var(--pw-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  color: var(--pw-fg);
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.conflict-field-table-wrap {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+}
+.conflict-field-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.conflict-field-table caption {
+  padding: 8px 10px;
+  text-align: left;
+  color: var(--pw-fg-muted);
+}
+.conflict-field-table th,
+.conflict-field-table td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--pw-border);
+  text-align: left;
+  vertical-align: top;
+}
+.conflict-field-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+.conflict-field-table code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 620px) {
+  .conflict-cols {
+    grid-template-columns: 1fr;
+  }
+}

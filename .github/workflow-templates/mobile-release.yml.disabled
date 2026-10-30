@@ -1,0 +1,605 @@
+name: Mobile Release
+
+# Store-bound mobile release pipeline. A tag or manual run first passes the
+# source/config gate, then builds every selected platform, retains the exact EAS
+# build identities, and only then permits artifact-specific submission. The
+# `mobile-production` GitHub environment must be configured out of band with
+# required reviewers and the secrets documented in apps/mobile/README.md.
+
+on:
+  push:
+    tags:
+      - "mobile-v*"
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Which platform to build"
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - ios
+          - android
+          - all
+      submit_after_build:
+        description: "Submit the exact builds produced by this run"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      build_mode:
+        description: "eas creates store artifacts; export creates retained diagnostic JS bundles"
+        required: false
+        default: "eas"
+        type: choice
+        options:
+          - eas
+          - export
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Mobile release source gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      platforms: ${{ steps.plan.outputs.platforms }}
+      build_mode: ${{ steps.plan.outputs.build_mode }}
+      submit_after_build: ${{ steps.plan.outputs.submit_after_build }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Resolve release plan
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PLATFORM: ${{ github.event.inputs.platform }}
+          BUILD_MODE: ${{ github.event.inputs.build_mode }}
+          SUBMIT_AFTER_BUILD: ${{ github.event.inputs.submit_after_build }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "workflow_dispatch" ]; then
+            INPUT_PLATFORM="all"
+            BUILD_MODE="eas"
+            SUBMIT_AFTER_BUILD="false"
+          fi
+          INPUT_PLATFORM="${INPUT_PLATFORM:-all}"
+          BUILD_MODE="${BUILD_MODE:-eas}"
+          SUBMIT_AFTER_BUILD="${SUBMIT_AFTER_BUILD:-false}"
+
+          case "$INPUT_PLATFORM" in
+            ios) platforms='["ios"]' ;;
+            android) platforms='["android"]' ;;
+            all) platforms='["ios","android"]' ;;
+            *) echo "unsupported platform: $INPUT_PLATFORM" >&2; exit 1 ;;
+          esac
+          case "$BUILD_MODE" in
+            eas|export) ;;
+            *) echo "unsupported build mode: $BUILD_MODE" >&2; exit 1 ;;
+          esac
+          case "$SUBMIT_AFTER_BUILD" in
+            true|false) ;;
+            *) echo "unsupported submit flag: $SUBMIT_AFTER_BUILD" >&2; exit 1 ;;
+          esac
+          if [ "$SUBMIT_AFTER_BUILD" = "true" ] && [ "$BUILD_MODE" != "eas" ]; then
+            echo "submit_after_build=true requires build_mode=eas" >&2
+            exit 1
+          fi
+
+          {
+            echo "platforms=$platforms"
+            echo "build_mode=$BUILD_MODE"
+            echo "submit_after_build=$SUBMIT_AFTER_BUILD"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build mobile workspace dependencies
+        run: pnpm --filter '@postwave/mobile^...' --if-present run build
+
+      - name: Validate mobile tag version
+        env:
+          # runtimeVersion follows expo.version, so a store submission must
+          # come from a mobile-v<version> tag: a second binary under an
+          # existing runtime would take OTA updates meant for different
+          # native code. The script refuses a submitting run on any other ref.
+          SUBMIT_AFTER_BUILD: ${{ steps.plan.outputs.submit_after_build }}
+        run: pnpm --filter @postwave/mobile release:version-check
+
+      - name: Lint mobile
+        run: pnpm --filter @postwave/mobile lint
+
+      - name: Typecheck mobile
+        run: pnpm --filter @postwave/mobile typecheck
+
+      - name: Test mobile
+        run: pnpm --filter @postwave/mobile test:coverage
+
+      - name: Enforce source size and complexity ratchets
+        run: pnpm --filter @postwave/mobile quality:source-budgets
+
+      - name: Validate generated runtime documentation
+        run: pnpm --filter @postwave/mobile docs:runtime-check
+
+      - name: Validate Expo dependency and native config
+        run: |
+          pnpm --filter @postwave/mobile quality:doctor
+          pnpm --filter @postwave/mobile exec expo config --type public
+
+  native-smoke:
+    name: Native ${{ matrix.platform }} Release prerequisite
+    needs: quality
+    runs-on: ${{ matrix.platform == 'ios' && 'macos-15' || 'ubuntu-latest' }}
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.quality.outputs.platforms) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Setup Java and Gradle cache
+        if: matrix.platform == 'android'
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            apps/mobile/package.json
+
+      - name: Cache CocoaPods downloads
+        if: matrix.platform == 'ios'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: mobile-release-pods-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/mobile/package.json') }}
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build mobile workspace dependencies
+        run: pnpm --filter '@postwave/mobile^...' --if-present run build
+
+      - name: Install pinned CocoaPods
+        if: matrix.platform == 'ios'
+        run: gem install cocoapods --version 1.16.2 --no-document
+
+      - name: Generate clean native project
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+          EXPO_APPLE_TEAM_ID: ABCDE12345
+          EXPO_PUBLIC_API_URL: https://api.invalid
+          EXPO_PUBLIC_APP_URL: https://app.invalid
+          EXPO_PUBLIC_BUILD_PROFILE: verification
+          EXPO_PUBLIC_POSTWAVE_ENV: verification
+        run: pnpm --filter @postwave/mobile exec expo prebuild --clean --no-install --platform ${{ matrix.platform }}
+
+      - name: Compile Android Release APK
+        if: matrix.platform == 'android'
+        working-directory: apps/mobile/android
+        env:
+          SENTRY_DISABLE_AUTO_UPLOAD: "true"
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Smoke-check Android artifact
+        if: matrix.platform == 'android'
+        working-directory: apps/mobile/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifacts=(app/build/outputs/apk/release/*.apk)
+          test -f "${artifacts[0]}"
+          unzip -t "${artifacts[0]}"
+          test "$(stat -c %s "${artifacts[0]}")" -gt 1000000
+
+      - name: Install locked iOS native dependencies
+        if: matrix.platform == 'ios'
+        working-directory: apps/mobile/ios
+        run: pod install
+
+      - name: Compile unsigned iOS Release simulator app
+        if: matrix.platform == 'ios'
+        working-directory: apps/mobile/ios
+        env:
+          SENTRY_DISABLE_AUTO_UPLOAD: "true"
+        run: >-
+          xcodebuild
+          -workspace Moosewave.xcworkspace
+          -scheme Moosewave
+          -configuration Release
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build/DerivedData
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          COMPILER_INDEX_STORE_ENABLE=NO
+          build
+
+      - name: Smoke-check iOS artifact
+        if: matrix.platform == 'ios'
+        working-directory: apps/mobile/ios
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifacts=(build/DerivedData/Build/Products/Release-iphonesimulator/*.app)
+          test -d "${artifacts[0]}"
+          plutil -lint "${artifacts[0]}/Info.plist"
+          executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${artifacts[0]}/Info.plist")"
+          test -x "${artifacts[0]}/${executable}"
+          # App Store Connect checks each embedded binary for required-reason
+          # APIs (ITMS-91053), and the widget and share extensions both use
+          # App Group UserDefaults. Their manifests live in apps/mobile/targets/
+          # and reach the .appex only through @bacons/apple-targets' synchronized
+          # folder, which nothing short of a real Xcode build can confirm.
+          shopt -s nullglob
+          extensions=("${artifacts[0]}"/PlugIns/*.appex)
+          if [ "${#extensions[@]}" -lt 2 ]; then
+            echo "::error::expected the widget and share extensions under PlugIns/, found ${#extensions[@]}" >&2
+            exit 1
+          fi
+          for appex in "${extensions[@]}"; do
+            if [ ! -f "$appex/PrivacyInfo.xcprivacy" ]; then
+              echo "::error::$(basename "$appex") has no PrivacyInfo.xcprivacy; App Store Connect would reject it with ITMS-91053" >&2
+              exit 1
+            fi
+            plutil -lint "$appex/PrivacyInfo.xcprivacy"
+          done
+          ditto -c -k --keepParent "${artifacts[0]}" build/mobile-native-release.app.zip
+
+      - name: Retain native prerequisite artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mobile-native-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apps/mobile/android/app/build/outputs/apk/release/*.apk
+            apps/mobile/ios/build/mobile-native-release.app.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  build:
+    name: Build ${{ matrix.platform }} (${{ needs.quality.outputs.build_mode }})
+    needs:
+      - quality
+      - native-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    environment:
+      name: mobile-production
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.quality.outputs.platforms) }}
+    env:
+      HAS_SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN != '' }}
+      # The committed PUBLIC expo-updates certificate, relative to apps/mobile
+      # (app.config.js rejects an absolute path). Set once for the job so the
+      # preflight, EAS Build and Expo export steps cannot drift apart; eas.json
+      # sets the same path for the EAS worker. The private key that signs OTA
+      # updates never enters this workflow.
+      EXPO_UPDATES_CODE_SIGNING_CERTIFICATE: certs/postwave-updates.pem
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e
+        with:
+          eas-version: 20.5.1
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Validate live app link association files
+        working-directory: apps/mobile
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          POSTWAVE_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          POSTWAVE_ANDROID_SHA256_CERT_FINGERPRINTS: ${{ secrets.POSTWAVE_ANDROID_SHA256_CERT_FINGERPRINTS }}
+        run: pnpm run release:app-links-check
+
+      - name: Validate production runtime env
+        working-directory: apps/mobile
+        env:
+          EAS_BUILD_PROFILE: production
+          EAS_BUILD_PLATFORM: ${{ matrix.platform }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          EXPO_PUBLIC_API_URL: https://api.moosewave.com
+          EXPO_PUBLIC_APP_URL: https://app.moosewave.com
+          EXPO_PUBLIC_BUILD_PROFILE: production
+          EXPO_PUBLIC_SENTRY_DSN_MOBILE: ${{ vars.EXPO_PUBLIC_SENTRY_DSN_MOBILE || secrets.EXPO_PUBLIC_SENTRY_DSN_MOBILE }}
+          EXPO_PUBLIC_POSTWAVE_RELEASE: ${{ github.sha }}
+          EXPO_PUBLIC_POSTWAVE_ENV: production
+          EXPO_PUBLIC_POSTHOG_KEY: ${{ vars.EXPO_PUBLIC_POSTHOG_KEY || secrets.EXPO_PUBLIC_POSTHOG_KEY }}
+          EXPO_PUBLIC_POSTHOG_HOST: ${{ vars.EXPO_PUBLIC_POSTHOG_HOST || secrets.EXPO_PUBLIC_POSTHOG_HOST }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID || secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_OWNER: ${{ vars.EXPO_OWNER || secrets.EXPO_OWNER }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT || 'postwave-mobile' }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # The App Store Connect app's numeric Apple ID (the ASC_APP_ID
+          # number). The iOS forced-upgrade button opens that listing; the
+          # preflight fails an iOS build without it.
+          EXPO_PUBLIC_IOS_APP_STORE_ID: ${{ vars.EXPO_PUBLIC_IOS_APP_STORE_ID }}
+        run: pnpm run release:preflight
+
+      - name: EAS Build (production)
+        id: eas-build
+        if: needs.quality.outputs.build_mode == 'eas'
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          POSTWAVE_RELEASE: ${{ github.sha }}
+          SENTRY_RELEASE: ${{ github.sha }}
+          EXPO_PUBLIC_API_URL: https://api.moosewave.com
+          EXPO_PUBLIC_APP_URL: https://app.moosewave.com
+          EXPO_PUBLIC_BUILD_PROFILE: production
+          EXPO_PUBLIC_SENTRY_DSN_MOBILE: ${{ vars.EXPO_PUBLIC_SENTRY_DSN_MOBILE || secrets.EXPO_PUBLIC_SENTRY_DSN_MOBILE }}
+          EXPO_PUBLIC_POSTWAVE_RELEASE: ${{ github.sha }}
+          EXPO_PUBLIC_POSTWAVE_ENV: production
+          EXPO_PUBLIC_POSTHOG_KEY: ${{ vars.EXPO_PUBLIC_POSTHOG_KEY || secrets.EXPO_PUBLIC_POSTHOG_KEY }}
+          EXPO_PUBLIC_POSTHOG_HOST: ${{ vars.EXPO_PUBLIC_POSTHOG_HOST || secrets.EXPO_PUBLIC_POSTHOG_HOST }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID || secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_OWNER: ${{ vars.EXPO_OWNER || secrets.EXPO_OWNER }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT || 'postwave-mobile' }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EXPO_PUBLIC_IOS_APP_STORE_ID: ${{ vars.EXPO_PUBLIC_IOS_APP_STORE_ID }}
+        run: |
+          set -euo pipefail
+          evidence_dir="$GITHUB_WORKSPACE/.release-evidence"
+          mkdir -p "$evidence_dir"
+          build_json="$evidence_dir/eas-build-${MATRIX_PLATFORM}.json"
+          eas build \
+            --non-interactive \
+            --wait \
+            --json \
+            --environment production \
+            --profile production \
+            --platform "$MATRIX_PLATFORM" > "$build_json"
+
+          build_id="$(jq -er '
+            if type == "array" and length == 1 then .[0].id
+            elif type == "object" then .id
+            else error("expected exactly one EAS build result")
+            end
+          ' "$build_json")"
+          jq -e \
+            --arg id "$build_id" \
+            --arg platform "$MATRIX_PLATFORM" \
+            --arg sha "$GITHUB_SHA" '
+              (if type == "array" then .[0] else . end) as $build |
+              $build.id == $id and
+              ($build.platform | ascii_downcase) == $platform and
+              $build.status == "FINISHED" and
+              $build.buildProfile == "production" and
+              $build.gitCommitHash == $sha
+            ' "$build_json" >/dev/null
+          echo "build_id=$build_id" >> "$GITHUB_OUTPUT"
+
+      - name: Retain immutable EAS build identity
+        if: steps.eas-build.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: eas-build-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release-evidence/eas-build-${{ matrix.platform }}.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Expo export (diagnostic, non-store artifact)
+        id: expo-export
+        if: needs.quality.outputs.build_mode == 'export'
+        working-directory: apps/mobile
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          POSTWAVE_RELEASE: ${{ github.sha }}
+          SENTRY_RELEASE: ${{ github.sha }}
+          EXPO_PUBLIC_API_URL: https://api.moosewave.com
+          EXPO_PUBLIC_APP_URL: https://app.moosewave.com
+          EXPO_PUBLIC_BUILD_PROFILE: production
+          EXPO_PUBLIC_SENTRY_DSN_MOBILE: ${{ vars.EXPO_PUBLIC_SENTRY_DSN_MOBILE || secrets.EXPO_PUBLIC_SENTRY_DSN_MOBILE }}
+          EXPO_PUBLIC_POSTWAVE_RELEASE: ${{ github.sha }}
+          EXPO_PUBLIC_POSTWAVE_ENV: production
+          EXPO_PUBLIC_POSTHOG_KEY: ${{ vars.EXPO_PUBLIC_POSTHOG_KEY || secrets.EXPO_PUBLIC_POSTHOG_KEY }}
+          EXPO_PUBLIC_POSTHOG_HOST: ${{ vars.EXPO_PUBLIC_POSTHOG_HOST || secrets.EXPO_PUBLIC_POSTHOG_HOST }}
+          EXPO_PUBLIC_EAS_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EAS_PROJECT_ID || secrets.EXPO_PUBLIC_EAS_PROJECT_ID }}
+          EXPO_OWNER: ${{ vars.EXPO_OWNER || secrets.EXPO_OWNER }}
+          EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EXPO_PUBLIC_IOS_APP_STORE_ID: ${{ vars.EXPO_PUBLIC_IOS_APP_STORE_ID }}
+        run: |
+          pnpm exec expo export \
+            --platform "$MATRIX_PLATFORM" \
+            --source-maps external \
+            --output-dir dist
+
+      - name: Upload source maps to Sentry
+        if: steps.expo-export.outcome == 'success' && env.HAS_SENTRY_AUTH_TOKEN == 'true'
+        working-directory: apps/mobile
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT || 'postwave-mobile' }}
+          POSTWAVE_RELEASE: ${{ github.sha }}
+          DIST_DIR: ./dist
+        run: ./scripts/upload-sourcemaps.sh
+
+      - name: Enforce diagnostic export budgets
+        if: steps.expo-export.outcome == 'success'
+        working-directory: apps/mobile
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+        run: node ./scripts/check-export-budgets.mjs ./dist --platform="$MATRIX_PLATFORM"
+
+      - name: Retain diagnostic export
+        if: steps.expo-export.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mobile-export-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            apps/mobile/dist/
+            apps/mobile/.expo/mobile-export-budget.json
+          if-no-files-found: error
+          retention-days: 30
+
+  submit:
+    name: Submit exact ${{ matrix.platform }} build
+    needs:
+      - quality
+      - build
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      needs.quality.outputs.submit_after_build == 'true' &&
+      needs.quality.outputs.build_mode == 'eas'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: mobile-production
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.quality.outputs.platforms) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e
+        with:
+          eas-version: 20.5.1
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download this run's EAS build evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: eas-build-${{ matrix.platform }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .release-evidence
+
+      - name: Revalidate immutable EAS build identity
+        id: evidence
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          build_json=".release-evidence/eas-build-${MATRIX_PLATFORM}.json"
+          build_id="$(jq -er '
+            if type == "array" and length == 1 then .[0].id
+            elif type == "object" then .id
+            else error("expected exactly one EAS build result")
+            end
+          ' "$build_json")"
+          jq -e \
+            --arg id "$build_id" \
+            --arg platform "$MATRIX_PLATFORM" \
+            --arg sha "$GITHUB_SHA" '
+              (if type == "array" then .[0] else . end) as $build |
+              $build.id == $id and
+              ($build.platform | ascii_downcase) == $platform and
+              $build.status == "FINISHED" and
+              $build.buildProfile == "production" and
+              $build.gitCommitHash == $sha
+            ' "$build_json" >/dev/null
+          echo "build_id=$build_id" >> "$GITHUB_OUTPUT"
+
+      - name: EAS Submit (optional)
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          EAS_BUILD_ID: ${{ steps.evidence.outputs.build_id }}
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_API_KEY_P8_BASE64: ${{ secrets.ASC_API_KEY_P8_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "${EXPO_TOKEN:-}" ] || missing+=("EXPO_TOKEN")
+          [ -n "${EAS_BUILD_ID:-}" ] || missing+=("EAS_BUILD_ID")
+          if [ "$MATRIX_PLATFORM" = "ios" ]; then
+            [ -n "${ASC_APP_ID:-}" ] || missing+=("ASC_APP_ID")
+            [ -n "${ASC_API_KEY_ID:-}" ] || missing+=("ASC_API_KEY_ID")
+            [ -n "${ASC_API_KEY_ISSUER_ID:-}" ] || missing+=("ASC_API_KEY_ISSUER_ID")
+            [ -n "${ASC_API_KEY_P8_BASE64:-}" ] || missing+=("ASC_API_KEY_P8_BASE64")
+            [ -n "${APPLE_TEAM_ID:-}" ] || missing+=("APPLE_TEAM_ID")
+          else
+            [ -n "${GOOGLE_SERVICE_ACCOUNT_JSON:-}" ] || missing+=("GOOGLE_SERVICE_ACCOUNT_JSON")
+          fi
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing submit secret(s) for %s: %s\n' "$MATRIX_PLATFORM" "${missing[*]}" >&2
+            exit 1
+          fi
+
+          export POSTWAVE_EAS_SUBMIT_DIR="$RUNNER_TEMP/eas-submit-$MATRIX_PLATFORM"
+          node ./scripts/prepare-eas-submit-profile.mjs
+          eas submit \
+            --non-interactive \
+            --id "$EAS_BUILD_ID" \
+            --profile production \
+            --platform "$MATRIX_PLATFORM"
+
+      - name: Remove runner-temporary store credentials
+        if: always()
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+        run: rm -rf "$RUNNER_TEMP/eas-submit-$MATRIX_PLATFORM"

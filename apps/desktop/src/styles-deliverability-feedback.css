@@ -1,0 +1,404 @@
+/* Admin-scoped recipient feedback evidence. */
+
+.dhw-feedback {
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+}
+
+.dhw-feedback > header {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+}
+
+.dhw-feedback-icon,
+.dhw-feedback-empty > span,
+.dhw-feedback-locked > span {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--pw-info) 30%, var(--pw-border));
+  border-radius: 12px;
+  color: var(--pw-info);
+  background: color-mix(in srgb, var(--pw-info) 9%, transparent);
+}
+
+.dhw-feedback h3,
+.dhw-feedback h4,
+.dhw-feedback p {
+  margin: 0;
+}
+
+.dhw-feedback > header h3 {
+  color: var(--pw-fg);
+  font-size: 14px;
+  font-weight: 670;
+}
+
+.dhw-feedback > header p {
+  margin-top: 4px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.dhw-feedback-access {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  color: var(--pw-fg-muted);
+  background: var(--pw-bg-elev-2);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.dhw-feedback > form {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid var(--pw-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 72%, transparent);
+}
+
+.dhw-feedback > form > label {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dhw-feedback > form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+}
+
+.dhw-feedback > form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev);
+  font: inherit;
+  font-size: 13px;
+}
+
+.dhw-feedback > form input:focus-visible {
+  border-color: var(--pw-accent);
+  outline: none;
+  box-shadow: var(--pw-focus-ring);
+}
+
+.dhw-feedback > form .btn {
+  min-height: 42px;
+}
+
+.dhw-feedback > form > small {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.dhw-feedback-empty,
+.dhw-feedback-error {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  min-height: 80px;
+  padding: 15px;
+  border: 1px dashed var(--pw-border);
+  border-radius: 14px;
+}
+
+.dhw-feedback-empty strong,
+.dhw-feedback-error strong {
+  color: var(--pw-fg);
+  font-size: 12px;
+}
+
+.dhw-feedback-empty p,
+.dhw-feedback-error p {
+  margin-top: 4px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.48;
+}
+
+.dhw-feedback-empty.is-verified {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--pw-success) 28%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-success) 6%, transparent);
+}
+
+.dhw-feedback-empty.is-verified > span {
+  border-color: color-mix(in srgb, var(--pw-success) 32%, var(--pw-border));
+  color: var(--pw-success);
+  background: color-mix(in srgb, var(--pw-success) 9%, transparent);
+}
+
+.dhw-feedback-error {
+  grid-template-columns: 22px minmax(0, 1fr);
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--pw-danger) 30%, var(--pw-border));
+  color: var(--pw-danger);
+  background: color-mix(in srgb, var(--pw-danger) 6%, transparent);
+}
+
+.dhw-feedback-loading {
+  min-height: 80px;
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  padding: 15px;
+  border: 1px solid var(--pw-border);
+  border-radius: 14px;
+}
+
+.dhw-feedback-loading .skel {
+  width: 70%;
+  height: 11px;
+}
+
+.dhw-feedback-loading .skel:last-of-type {
+  width: 45%;
+}
+
+.dhw-feedback-results {
+  display: grid;
+  gap: 18px;
+}
+
+.dhw-feedback-result-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 13px 15px;
+  border: 1px solid var(--pw-border);
+  border-radius: 13px;
+  background: var(--pw-bg-elev-2);
+}
+
+.dhw-feedback-result-head > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dhw-feedback-result-head > div:last-child {
+  align-items: flex-end;
+}
+
+.dhw-feedback-result-head span {
+  color: var(--pw-fg-muted);
+  font-size: 9px;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dhw-feedback-result-head strong {
+  overflow: hidden;
+  color: var(--pw-fg);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dhw-feedback-group {
+  display: grid;
+  gap: 9px;
+}
+
+.dhw-feedback-group > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dhw-feedback-group h4 {
+  color: var(--pw-fg);
+  font-size: 12px;
+  font-weight: 660;
+}
+
+.dhw-feedback-group > header span {
+  min-width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+}
+
+.dhw-feedback-group > p {
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+
+.dhw-feedback-group ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dhw-feedback-group li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 11px;
+  background: var(--pw-bg-elev-2);
+}
+
+.dhw-feedback-kind {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  color: var(--pw-fg-muted);
+  background: var(--pw-bg-elev);
+  font-size: 10px;
+  font-weight: 660;
+  text-transform: capitalize;
+}
+
+.dhw-feedback-kind.is-hard,
+.dhw-feedback-kind.is-abuse,
+.dhw-feedback-kind.is-spam {
+  border-color: color-mix(in srgb, var(--pw-danger) 32%, var(--pw-border));
+  color: var(--pw-danger);
+  background: color-mix(in srgb, var(--pw-danger) 8%, transparent);
+}
+
+.dhw-feedback-kind.is-soft,
+.dhw-feedback-kind.is-fbl {
+  border-color: color-mix(in srgb, var(--pw-warning) 34%, var(--pw-border));
+  color: var(--pw-warning);
+  background: color-mix(in srgb, var(--pw-warning) 8%, transparent);
+}
+
+.dhw-feedback-kind.is-transient {
+  border-color: color-mix(in srgb, var(--pw-info) 30%, var(--pw-border));
+  color: var(--pw-info);
+  background: color-mix(in srgb, var(--pw-info) 8%, transparent);
+}
+
+.dhw-feedback-group li > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dhw-feedback-group li strong,
+.dhw-feedback-group li small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dhw-feedback-group li strong {
+  color: var(--pw-fg);
+  font-size: 11px;
+}
+
+.dhw-feedback-group li small,
+.dhw-feedback-group li time {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dhw-feedback-group li time {
+  text-align: right;
+}
+
+.dhw-feedback-locked {
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  min-height: 112px;
+}
+
+.dhw-feedback-locked h3 {
+  color: var(--pw-fg);
+  font-size: 13px;
+}
+
+.dhw-feedback-locked p {
+  max-width: 680px;
+  margin-top: 5px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .dhw-feedback {
+    padding: 16px;
+  }
+
+  .dhw-feedback > header {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .dhw-feedback-access {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .dhw-feedback > form > div {
+    grid-template-columns: 1fr;
+  }
+
+  .dhw-feedback > form .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .dhw-feedback-group li {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .dhw-feedback-group li time {
+    grid-column: 2;
+    text-align: left;
+  }
+}
+
+@media (forced-colors: active) {
+  .dhw-feedback > form,
+  .dhw-feedback-empty,
+  .dhw-feedback-error,
+  .dhw-feedback-loading,
+  .dhw-feedback-result-head,
+  .dhw-feedback-group li {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+}

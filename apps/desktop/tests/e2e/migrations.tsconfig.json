@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test", "vite/client"]
+  },
+  "include": [
+    "migrations-evidence-harness.ts",
+    "migrations-maturity.spec.ts",
+    "migrations.playwright.config.ts"
+  ],
+  "exclude": ["../../node_modules", "../../dist", "../../src-tauri"],
+  "references": []
+}

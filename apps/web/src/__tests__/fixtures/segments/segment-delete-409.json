@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "segment_in_use",
+    "message": "This segment is the audience of 2 campaigns that haven't sent yet: \"Spring launch\" and \"Walkthrough check campaign\". Move them to another audience, or delete them, before deleting this segment."
+  }
+}

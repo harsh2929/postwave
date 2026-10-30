@@ -1,0 +1,430 @@
+{
+  "expo": {
+    "name": "Moosewave",
+    "slug": "moosewave",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "moosewave",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f0f0f"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "requireFullScreen": true,
+      "bundleIdentifier": "com.moosewave.app",
+      "buildNumber": "1",
+      "associatedDomains": [
+        "applinks:app.moosewave.com",
+        "webcredentials:app.moosewave.com"
+      ],
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.moosewave.app"
+        ],
+        "com.apple.developer.usernotifications.time-sensitive": true
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Moosewave uses Face ID to unlock your workspace so your campaigns, subscribers, and approvals stay private on this device.",
+        "NSCameraUsageDescription": "Moosewave uses the camera to scan QR codes \u2014 for example to add a subscriber from a printed sign-up code \u2014 and, when you choose, to photograph an image for your workspace's asset library.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "app.moosewave",
+            "CFBundleURLSchemes": [
+              "moosewave"
+            ]
+          }
+        ]
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1",
+              "1C8F.1"
+            ]
+          }
+        ],
+        "NSPrivacyCollectedDataTypes": [
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeDeviceID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeProductInteraction",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeCrashData",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePerformanceData",
+            "NSPrivacyCollectedDataTypeLinked": false,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality",
+              "NSPrivacyCollectedDataTypePurposeAnalytics"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypePhotosorVideos",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          }
+        ]
+      }
+    },
+    "android": {
+      "package": "com.moosewave.app",
+      "versionCode": 1,
+      "allowBackup": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f0f0f"
+      },
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/auth"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/auth/magic"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/auth/reset"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/auth/oauth-return"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/magic-link"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/reset-password"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/cli/auth"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/verify-email"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/approvals"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/campaigns"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/discounts"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/flows"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/forms"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/helpdesk"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/inbound-webhooks"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/integrations"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/landing-pages"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/lists"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/migrations"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/segments"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/sequences"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/subscribers"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/suppressions"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "pathPrefix": "/app/templates"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/agency"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/agent-routines"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/analytics"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/assets"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/audience-syncs"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/billing"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/compliance"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/deliverability"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/dmarc"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/notifications"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/omnichannel"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/referrals"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/reviews"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/settings"
+            },
+            {
+              "scheme": "https",
+              "host": "app.moosewave.com",
+              "path": "/app/sms"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "moosewave"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "predictiveBackGestureEnabled": true
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://app.moosewave.com"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0f0f0f",
+          "image": "./assets/splash.png"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#e55262",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Moosewave uses the camera to scan QR codes \u2014 for example to add a subscriber from a printed sign-up code \u2014 and, when you choose, to photograph an image for your workspace's asset library.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": false
+        }
+      ],
+      [
+        "@sentry/react-native",
+        {
+          "project": "postwave-mobile"
+        }
+      ],
+      "@bacons/apple-targets",
+      "./plugins/withAndroidShareTarget",
+      "./plugins/withAppIntents",
+      "./plugins/withSwiftUICoreAutolinkFix",
+      "expo-font",
+      "expo-image",
+      "expo-web-browser",
+      "expo-localization",
+      "expo-background-task",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Moosewave uses your photo library so you can attach an image to a campaign, set a workspace logo, or scan a QR code out of a screenshot.",
+          "cameraPermission": "Moosewave uses the camera to scan QR codes \u2014 for example to add a subscriber from a printed sign-up code \u2014 and, when you choose, to photograph an image for your workspace's asset library.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-quick-actions"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "tsconfigPaths": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://app.moosewave.com"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}

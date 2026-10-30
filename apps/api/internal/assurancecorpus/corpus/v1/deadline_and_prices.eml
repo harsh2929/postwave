@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <deadline-and-prices.v1@example.com>
+Subject: Renewal on 1 September
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-deadline-v1"
+
+--pw-deadline-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your plan renews on 1 September 2026 at 49.00 USD.
+Manage it: https://billing.example.com/plan
+--pw-deadline-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Renewal on 1 September</h1><p>Your plan renews on 1 September 2026 at 49.00 USD.</p><p><a href="https://billing.example.com/plan">Manage your plan</a></p></body></html>
+--pw-deadline-v1--

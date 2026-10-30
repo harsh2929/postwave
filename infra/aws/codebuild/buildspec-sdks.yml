@@ -1,0 +1,68 @@
+version: 0.2
+
+# AWS CodeBuild buildspec — builds + tests all six client SDKs on a runner that
+# has each toolchain. An alternative to the GitHub Actions `SDKs` workflow when
+# GitHub Actions is unavailable (e.g. an Actions billing block).
+#
+# Recommended image: aws/codebuild/standard:7.0 (Ubuntu 22.04). It ships Go,
+# Java (Corretto), Ruby, and .NET via runtime-versions; Rust + Elixir are
+# installed in the install phase below.
+#
+# Create the project (one-time), then run it:
+#   aws codebuild create-project --name postwave-sdks \
+#     --source type=GITHUB,location=https://github.com/<owner>/Moosewave.git,buildspec=infra/aws/codebuild/buildspec-sdks.yml \
+#     --artifacts type=NO_ARTIFACTS \
+#     --environment type=LINUX_CONTAINER,image=aws/codebuild/standard:7.0,computeType=BUILD_GENERAL1_SMALL \
+#     --service-role <codebuild-service-role-arn>
+#   aws codebuild start-build --project-name postwave-sdks
+
+phases:
+  install:
+    runtime-versions:
+      golang: 1.21
+      java: corretto17
+      ruby: 3.2
+      dotnet: 6.0
+    commands:
+      # Rust
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+      - export PATH="$HOME/.cargo/bin:$PATH"
+      # Elixir — apt's Elixir on Ubuntu 22.04 is 1.12.2 (the SDK requires
+      # ~> 1.14), so install Erlang/OTP from apt and drop in a modern
+      # precompiled Elixir (1.16, matching the GitHub Actions workflow). The
+      # precompiled build is OTP-forward-compatible, so elixir-otp-24 runs on
+      # the apt OTP 24+.
+      # erlang-dev carries the lib .hrl headers (e.g. public_key.hrl) that
+      # mint's -include_lib needs at compile time; erlang-nox alone omits them.
+      - apt-get update -y
+      - DEBIAN_FRONTEND=noninteractive apt-get install -y erlang-nox erlang-dev unzip
+      - curl -fsSL -o /tmp/elixir.zip https://github.com/elixir-lang/elixir/releases/download/v1.16.3/elixir-otp-24.zip
+      - mkdir -p /opt/elixir && unzip -q -o /tmp/elixir.zip -d /opt/elixir
+      - export PATH="/opt/elixir/bin:$PATH"
+      - elixir --version
+      - mix local.hex --force
+      - mix local.rebar --force
+
+  build:
+    commands:
+      # Run every SDK and aggregate — one failing toolchain must not hide the
+      # results of the others (Java/Elixir/.NET are the ones with no local
+      # toolchain on the maintainer's machine, so seeing all six in one run
+      # matters). Each SDK's pass/fail is recorded; the phase exits non-zero at
+      # the end iff any SDK failed.
+      - |
+        export PATH="/opt/elixir/bin:$HOME/.cargo/bin:$PATH"
+        FAILED=""
+        run() {
+          echo "===== $1 SDK ====="
+          if ( eval "$2" ); then echo "PASS: $1"; else echo "FAIL: $1"; FAILED="$FAILED $1"; fi
+        }
+        run "Go"     "cd packages/sdk-go && GOWORK=off go vet ./... && GOWORK=off go test ./..."
+        run "Ruby"   "cd packages/sdk-ruby && ruby -Ilib -Itest test/test_postwave.rb"
+        run "Rust"   "cd packages/sdk-rust && cargo build --verbose && cargo test --verbose"
+        run "Java"   "cd packages/sdk-java && javac -Xlint:all -d out \$(find src/main/java test -name '*.java') && java -cp out com.moosewave.Smoke"
+        run "Elixir" "cd packages/sdk-elixir && mix deps.get && mix compile && mix test"
+        run ".NET"   "cd packages/sdk-dotnet && dotnet build Moosewave.csproj -c Release && dotnet run --project tests/Smoke/Smoke.csproj -c Release"
+        echo "================= SUMMARY ================="
+        if [ -n "$FAILED" ]; then echo "FAILED SDKS:$FAILED"; exit 1; fi
+        echo "ALL SIX SDKS PASSED"

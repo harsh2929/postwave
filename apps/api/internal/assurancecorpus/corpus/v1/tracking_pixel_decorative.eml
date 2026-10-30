@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <tracking-pixel-decorative.v1@example.com>
+Subject: Newsletter 14
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-pixel-v1"
+
+--pw-pixel-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three links this week: https://news.example.com/14
+--pw-pixel-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Newsletter 14</h1><p>Three links this week.</p><p><a href="https://news.example.com/14">Read it</a></p><img src="https://track.example.com/o.gif" alt="" aria-hidden="true" width="1" height="1"></body></html>
+--pw-pixel-v1--

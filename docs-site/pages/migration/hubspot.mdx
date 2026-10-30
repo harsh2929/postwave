@@ -1,0 +1,121 @@
+---
+title: HubSpot migration
+---
+
+import { Callout } from "nextra/components";
+
+# HubSpot migration
+
+HubSpot is a CRM contact bridge for controlled email cutovers. Moosewave imports
+the contact fields needed for targeting while HubSpot remains the CRM system of
+record. Any SMS-related source field is non-sendable review evidence; hosted SMS
+remains **HOLD / NO-GO**.
+
+<Callout type="warning">
+  Do not treat HubSpot as a full ESP replacement migration. Deals, companies,
+  tickets, tasks, notes, pipelines, workflows, marketing emails, forms, landing
+  pages, and templates stay in HubSpot or must be rebuilt explicitly.
+</Callout>
+
+## Credentials
+
+Create a dedicated HubSpot private app with these read scopes:
+
+- `crm.objects.contacts.read`
+- `crm.schemas.contacts.read`
+- `crm.lists.read`
+- `subscriptions-definition-read`
+- `subscriptions-status-read`
+
+The bridge uses HubSpot's `2026-03` account-info, CRM
+objects/properties/lists, and communication-preferences APIs. It deliberately
+requests only `dataSensitivity=non_sensitive` contact property values. An
+optional numeric Hub ID is checked against the provider identity response; the
+Moosewave credential response and evidence expose only
+`[redacted-hubspot-portal]`.
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/migrations/hubspot/credentials" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "api_key": "$HUBSPOT_PRIVATE_APP_TOKEN", "account_id": "$HUBSPOT_HUB_ID" }'
+```
+
+## What Imports
+
+| HubSpot surface                | Moosewave result                                                                                                                                                            |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email-addressable contacts     | Subscribers with phone, lifecycle stage, populated non-sensitive fields, source IDs, CRM provenance, exact preference evidence, and conservative current-email eligibility |
+| Contacts without primary email | Exact count and non-reversible fingerprint evidence; no fabricated subscriber                                                                                              |
+| Additional email addresses     | Exact count and controlled evidence only; never independent sendable subscribers                                                                                           |
+| Contact property definitions   | Exact non-sensitive inventory and fingerprint; only populated values become custom fields, not empty schema                                                                |
+| Lists                          | Exact `hubspot:list:{id}` frozen membership tags plus allowlisted structural metadata; predicates are not fetched or stored                                                |
+| Email subscription types       | Exact `hubspot:subscription:{businessUnitId}:{subscriptionId}` frozen tags and per-contact status evidence                                                                 |
+| Changed contacts               | Safe contact upserts during the retained overlap; not a complete change feed                                                                                               |
+
+Discovery's `segments_count` is the combined number of list snapshots and
+active email-subscription targeting boundaries. It is not a lists-only count;
+`subscription_channels_count` separately reports the active email subscription
+definitions included in that combined targeting inventory.
+
+Email status is fail-closed. A contact can be enabled only when every active
+email subscription definition is `SUBSCRIBED`, no scoped or
+account/brand-wide opt-out exists, and the current primary email has no
+hard-bounce reason, quarantine, invalid-address, non-marketing/unknown
+marketing-contact, pending or unconfirmed double-opt-in, or legacy email-opt-out
+restriction. `NOT_SPECIFIED` remains unconfirmed. Consent timestamps are kept
+only where every active subscribed row carries defensible legal-basis or
+self-service-resubscription evidence. This is a conservative import projection,
+not exact HubSpot sendability parity; HubSpot remains authoritative. Eligibility
+and double-opt-in evidence are tied to the current primary email, so a
+primary-email change requires a fresh authoritative snapshot. The final report
+must account for every contact in both preference and eligibility rows; an
+operator acknowledgment cannot bypass either gate.
+
+List identity/version, object type, and processing type/status are retained for
+review. Dynamic predicates are deliberately not requested or persisted because
+their operations can contain sensitive property and integration-event literals.
+Inspect those rules in HubSpot, then rebuild, retain, or retire each dependency.
+The imported tags are a frozen membership boundary.
+
+## Hard Operational Limits
+
+HubSpot discovery fails closed instead of returning a partial import when any
+of these bounds would be exceeded:
+
+- 1,000,000 contacts.
+- 10,000 traversal pages.
+- 64 MiB of aggregate retained snapshot data.
+- 10,000 results from one changed-contact CRM Search window. Poll more
+  frequently or use a narrower window before retrying; the bridge never treats
+  a truncated search as complete overlap evidence.
+- HubSpot's daily API budget must cover one usage probe, two communication-
+  preference reads per email-addressable contact, and a reserve of the larger
+  of 1,000 calls or 5% of the account's daily limit.
+
+Requests stay within explicit page/chunk bounds: 100 contacts per contact page
+or preference batch, 100 contact properties per chunk, 500 list rows per page,
+and 100 list-definition IDs per detail read.
+
+## Readiness Gates
+
+1. Connect with a private app token and optional numeric Hub ID; confirm the redacted provider-verified portal binding.
+2. Run discovery and reconcile email contacts, non-email contacts, additional identities, non-sensitive property definitions, lists, active subscription definitions, current-primary-email eligibility, and every hard traversal/API-budget bound.
+3. Run dry-run and review the verification report.
+4. Commit only into the intended destination tenant.
+5. Keep HubSpot live as CRM and retain changed-contact replay for at least seven continuous days.
+6. Understand the polling gaps: list-only changes, preference-only changes, deletions, and contacts that lose email may not appear.
+7. Freeze contact, list/rule, and preference edits and run the authoritative final full snapshot.
+8. Run a clean same-count-sensitive fingerprint shadow check after that snapshot.
+9. Record the post-snapshot scope decision for excluded identities/property schema, dynamic list rules, and every unsupported HubSpot product surface.
+10. Rehearse rollback from the durable imported-resource ledger.
+11. Require strict pilot acceptance status `pass`.
+12. Authorize post-pilot cleanup, delete the local source session, complete rollback, then rotate or revoke the external private app token with a non-secret evidence reference.
+
+<Callout type="info">
+  Do not call a HubSpot bridge 100% production ready until a real HubSpot portal
+  has passed exact discovery, dry-run, commit, at least seven days of retained
+  overlap, authoritative final snapshot, fingerprint shadow check, hard scope
+  review, rollback rehearsal, strict pilot acceptance, local session deletion,
+  rollback, and external credential cleanup in an isolated destination tenant.
+</Callout>

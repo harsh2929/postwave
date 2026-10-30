@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-label="Moosewave">
+  <rect width="192" height="192" fill="#FFDF38"/>
+  <g transform="translate(37 37) scale(1.84)" fill="#D20A3A">
+    <path d="M30 28C26 26 22 23 17 23 11 23 6 20 5 16L7 11 13 12 15 15 14 9 19 7 21 13 24 9 29 10 28 17 31 22 30 28ZM34 28C38 26 42 23 47 23 53 23 58 20 59 16L57 11 51 12 49 15 50 9 45 7 43 13 40 9 35 10 36 17 33 22 34 28Z"/>
+    <path d="M22 25Q32 18 42 25L41 37C40.5 43 38.5 48 36 51 34 53.5 30 53.5 28 51 25.5 48 23.5 43 23 37L22 25Z"/>
+    <path d="M24 37C27 33 30 33 32 36 34 39 37 39 40 35" fill="none" stroke="#FFDF38" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="37" cy="38" r="3.6" fill="#FFDF38"/>
+    <circle cx="37" cy="38" r="1.35"/>
+  </g>
+</svg>

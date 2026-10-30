@@ -1,0 +1,99 @@
+{
+  "normalization_version": "campaign-comprehension-extraction-normalization-v1",
+  "canonical_extraction": {
+    "schema_version": 1,
+    "summary": "Launch is on 14 August at 4 PM IST.",
+    "primary_intent": {
+      "kind": "promote",
+      "value": "Reserve a seat for the workflow launch",
+      "evidence_ids": [
+        "blk_claim",
+        "blk_intro"
+      ]
+    },
+    "core_claim": {
+      "value": "Workflow automation launches on 14 August",
+      "evidence_ids": [
+        "blk_claim"
+      ]
+    },
+    "primary_action": {
+      "action_id": "reserve_seat",
+      "block_id": "blk_cta",
+      "role": "register",
+      "label": "Reserve my seat",
+      "canonical_url": "https://example.test/events/launch?seat=founder",
+      "evidence_ids": [
+        "blk_cta"
+      ]
+    },
+    "facts": [
+      {
+        "fact_id": "capacity",
+        "type": "quantity",
+        "raw": "100 seats",
+        "normalized": "100",
+        "unit": "seats",
+        "evidence_ids": [
+          "blk_capacity"
+        ]
+      },
+      {
+        "fact_id": "deadline",
+        "type": "datetime",
+        "raw": "14 August, 4 PM IST",
+        "normalized": "2026-08-14T16:00:00+05:30",
+        "timezone": "Asia/Kolkata",
+        "evidence_ids": [
+          "blk_deadline"
+        ]
+      },
+      {
+        "fact_id": "details_url",
+        "type": "url",
+        "raw": "Event details",
+        "normalized": "https://example.test/events/launch?seat=founder",
+        "evidence_ids": [
+          "blk_cta"
+        ]
+      },
+      {
+        "fact_id": "feature",
+        "type": "text",
+        "raw": "Workflow automation included",
+        "normalized": "Workflow automation is included",
+        "evidence_ids": [
+          "blk_feature"
+        ]
+      },
+      {
+        "fact_id": "price",
+        "type": "money",
+        "raw": "₹1,499.50",
+        "normalized": "1499.5",
+        "currency": "INR",
+        "evidence_ids": [
+          "blk_price"
+        ]
+      }
+    ],
+    "unsupported_claims": [
+      {
+        "statement": "Every customer is guaranteed to double revenue",
+        "evidence_ids": [
+          "blk_claim"
+        ]
+      }
+    ],
+    "ambiguities": [
+      {
+        "field": "price",
+        "description": "Taxes are not stated",
+        "evidence_ids": [
+          "blk_price"
+        ]
+      }
+    ]
+  },
+  "receipt_hash": "9a31f5238c5778437bc005461fd000f23023475c8e9e61745568880d45fb116d"
+}

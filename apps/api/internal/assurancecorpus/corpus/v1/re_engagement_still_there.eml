@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <re-engagement-still-there.v1@example.com>
+Subject: Still want these?
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-reengage-v1"
+
+--pw-reengage-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Still want these emails? https://news.example.com/prefs
+--pw-reengage-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Still want these?</h1><p>You have not opened our last few emails. Tell us to keep sending, or unsubscribe below.</p><p><a href="https://news.example.com/prefs">Update preferences</a></p><p style="font-size:11px"><a href="https://news.example.com/u/9">Unsubscribe</a></p></body></html>
+--pw-reengage-v1--

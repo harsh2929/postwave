@@ -1,0 +1,27 @@
+{
+  "name": "@postwave/errors",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Canonical API error-envelope parser + message renderer shared by Moosewave web/desktop (and compatible with the SDK's PostwaveError) so error parsing and the request-id suffix can't drift between surfaces.",
+  "author": "Moosewave",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist"
+  ]
+}

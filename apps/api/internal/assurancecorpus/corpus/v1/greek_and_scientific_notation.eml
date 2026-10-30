@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <greek-and-scientific-notation.v1@example.com>
+Subject: Experiment results
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-greek-v1"
+
+--pw-greek-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Mean 0.42, sigma 0.03, alpha 0.05. Report: https://lab.example.com/r/7
+--pw-greek-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Experiment results</h1><p>μ = 0.42, σ = 0.03, α = 0.05, Δ = +0.07</p><p><a href="https://lab.example.com/r/7">Read the report</a></p></body></html>
+--pw-greek-v1--

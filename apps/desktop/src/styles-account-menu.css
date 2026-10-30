@@ -1,0 +1,220 @@
+/* SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * AccountMenu — top-right profile popover. Separate file so a
+ * parallel-session edit to styles.css can't merge-clobber it.
+ * Visual lineage: matches NotificationsPanel + WorkspaceMenu chrome
+ * (right-anchored absolute popover with a header + item list).
+ */
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - var(--pw-topbar-h) - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--pw-shadow-color) 30%, transparent),
+    0 12px 32px color-mix(in srgb, var(--pw-shadow-color) 28%, transparent);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: account-menu-in 120ms ease-out;
+  transform-origin: top right;
+  scrollbar-width: thin;
+}
+@keyframes account-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --- header ---------------------------------------------------------- */
+
+.account-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 6px;
+}
+.account-menu-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--pw-accent),
+    color-mix(in srgb, var(--pw-accent) 60%, var(--pw-fg))
+  );
+  color: var(--pw-accent-fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* Outline ring so the avatar reads as a deliberate token, not a
+     stray coloured circle. */
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pw-accent) 18%, transparent);
+}
+.account-menu-header-text {
+  flex: 1;
+  min-width: 0;
+}
+.account-menu-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account-menu-role-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  min-width: 0;
+}
+.account-menu-role {
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+.account-menu-workspace {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+
+/* --- separator ------------------------------------------------------- */
+
+.account-menu-sep {
+  height: 1px;
+  background: var(--pw-border-soft);
+  margin: 2px 6px;
+}
+
+/* --- item rows ------------------------------------------------------- */
+
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  font-size: 13px;
+  color: var(--pw-fg);
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background 80ms ease-out,
+    color 80ms ease-out;
+}
+.account-menu-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pw-fg) 6%, transparent);
+}
+.account-menu-item:focus-visible {
+  outline: 2px solid var(--pw-selection-ring);
+  outline-offset: -2px;
+}
+.account-menu-item:active:not(:disabled) {
+  background: color-mix(in srgb, var(--pw-fg) 10%, transparent);
+}
+.account-menu-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.account-menu-item-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account-menu-item-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-menu-item-detail {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.account-menu-item-tail {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  flex: none;
+}
+.account-menu-item-tail kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--pw-border);
+  border-radius: 4px;
+  background: var(--pw-bg);
+  font-family: inherit;
+  font-size: 10.5px;
+  color: var(--pw-fg-muted);
+}
+
+/* Danger variant — used by Sign out. */
+.account-menu-item-danger {
+  color: var(--pw-danger);
+}
+.account-menu-item-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pw-danger) 12%, transparent);
+}
+
+/* SUB-091: active state for the View-as-Viewer toggle — subtle accent
+ * tint so the operator can tell the preview is engaged at a glance. */
+.account-menu-item.is-active {
+  background: color-mix(in srgb, var(--pw-accent) 10%, transparent);
+  color: var(--pw-accent);
+}
+.account-menu-item.is-active:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pw-accent) 16%, transparent);
+}
+
+/* --- footer ---------------------------------------------------------- */
+
+.account-menu-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 6px;
+  margin-top: 2px;
+  border-top: 1px solid var(--pw-border-soft);
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.account-menu-version {
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+}

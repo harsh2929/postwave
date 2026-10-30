@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <feature-deprecation-notice.v1@example.com>
+Subject: A feature is being retired
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-deprecate-v1"
+
+--pw-deprecate-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The legacy importer retires on 1 November. https://docs.example.com/importer
+--pw-deprecate-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>A feature is being retired</h1><p>The legacy importer stops working on 1 November. Move to the new importer before then.</p><p><a href="https://docs.example.com/importer">Read the migration guide</a></p></body></html>
+--pw-deprecate-v1--

@@ -1,0 +1,1462 @@
+[
+  {
+    "name": "migrate_start",
+    "category": "migration",
+    "description": "Begin OAuth authorization for Mailchimp or ConvertKit; pass an existing callback job_id for same-job OAuth reconnect."
+  },
+  {
+    "name": "migrate_credentials",
+    "category": "migration",
+    "description": "Create a credential-backed migration job. Beehiiv requires an API key and explicit pub_ publication ID; Klaviyo requires a private API key and accepts an optional explicit account ID."
+  },
+  {
+    "name": "migrate_discover",
+    "category": "migration",
+    "description": "Pre-flight source inventory. Mailchimp scoped discovery is informative; dry-run persists the authoritative selected audience scope."
+  },
+  {
+    "name": "migrate_dry_run",
+    "category": "migration",
+    "description": "Start asynchronous verification without destination writes; Mailchimp selected_audience_ids becomes the authoritative reviewed scope."
+  },
+  {
+    "name": "migrate_commit",
+    "category": "migration",
+    "description": "Execute the reviewed migration. Mailchimp repeats the exact dry-run audience scope; tracked writes have a 7-day conflict-aware rollback window."
+  },
+  {
+    "name": "migrate_status",
+    "category": "migration",
+    "description": "Poll the raw migration job, including status, progress, authoritative audience scope, verification report, and rollback deadline."
+  },
+  {
+    "name": "migrate_source_session_refresh",
+    "category": "migration",
+    "description": "Refresh a same-job encrypted source session after verifying the explicit source/job binding; credentials are never returned."
+  },
+  {
+    "name": "migrate_verification",
+    "category": "migration",
+    "description": "Read the bound job's authoritative verification report; verification alone is not cutover acceptance."
+  },
+  {
+    "name": "migrate_delta_import",
+    "category": "migration",
+    "description": "Run the approved post-freeze final delta import; poll completion before fresh checks or cutover evidence."
+  },
+  {
+    "name": "migrate_shadow_check",
+    "category": "migration",
+    "description": "Compare fresh source discovery with the latest bound verification report and persist bounded shadow history."
+  },
+  {
+    "name": "migrate_shadow_monitor_start",
+    "category": "migration",
+    "description": "Start approved recurring shadow checks for a source-bound completed migration during overlap."
+  },
+  {
+    "name": "migrate_shadow_monitor_status",
+    "category": "migration",
+    "description": "Read a bound job's shadow monitor configuration and recent check history."
+  },
+  {
+    "name": "migrate_shadow_monitor_stop",
+    "category": "migration",
+    "description": "Stop future shadow observations only with explicit approval after validating the source/job binding."
+  },
+  {
+    "name": "migrate_source_events_start",
+    "category": "migration",
+    "description": "Start approved incremental ActiveCampaign, HubSpot, or Klaviyo source-event polling after validating the source/job binding."
+  },
+  {
+    "name": "migrate_source_events_status",
+    "category": "migration",
+    "description": "Read the bound source-event monitor, continuity state, recent replay evidence, failures, and manual-review rows."
+  },
+  {
+    "name": "migrate_source_events_stop",
+    "category": "migration",
+    "description": "Stop future source-event polling only with explicit approval after overlap, final snapshot, verification, and acceptance checks."
+  },
+  {
+    "name": "migrate_automation_rebuild_list",
+    "category": "migration",
+    "description": "List the bound job's durable automation or Klaviyo flow rebuild, test, and waiver checklist."
+  },
+  {
+    "name": "migrate_automation_rebuild_update",
+    "category": "migration",
+    "description": "Update one approved automation rebuild item with bounded, non-secret test or waiver evidence."
+  },
+  {
+    "name": "migrate_rollback_rehearsal",
+    "category": "migration",
+    "description": "Generate and persist approved rollback-readiness evidence without executing a rollback."
+  },
+  {
+    "name": "migrate_pilot_acceptance",
+    "category": "migration",
+    "description": "Read strict post-delta pilot acceptance; warnings or blockers mean the migration is not ready."
+  },
+  {
+    "name": "migrate_cutover_evidence",
+    "category": "migration",
+    "description": "Record approved, non-secret ActiveCampaign, Beehiiv, HubSpot, Klaviyo, or Customer.io evidence only after the latest successful final delta or full snapshot."
+  },
+  {
+    "name": "migrate_rollback",
+    "category": "migration",
+    "description": "Start an asynchronous rollback of tracked destination writes within 7 days without overwriting later edits or later-job ownership."
+  },
+  {
+    "name": "migrate_rollback_status",
+    "category": "migration",
+    "description": "Poll asynchronous rollback state and per-resource deleted/total counters."
+  },
+  {
+    "name": "diagnose_campaign",
+    "category": "deliverability",
+    "description": "Run the AI Diagnostician on a sent campaign. Returns a ranked list of fixes (each with severity, evidence, and a suggested action) for any deliverability issues observed across the seedlist."
+  },
+  {
+    "name": "predict_placement",
+    "category": "deliverability",
+    "description": "Predict inbox placement (Primary / Promotions / Spam) for a draft email BEFORE you send. Takes raw HTML and a subject line."
+  },
+  {
+    "name": "check_reputation",
+    "category": "deliverability",
+    "description": "Sender-reputation snapshot for the tenant's sending domain + IP. Returns SenderScore, blocklist status, and Postmaster Tools signals when available."
+  },
+  {
+    "name": "check_auth",
+    "category": "deliverability",
+    "description": "Status of SPF, DKIM, DMARC, and BIMI for the tenant's sending domain. Returns each record with pass/fail and a remediation hint when failing."
+  },
+  {
+    "name": "render_cross_client",
+    "category": "deliverability",
+    "description": "Render an HTML email across major clients (Gmail web/mobile, Outlook desktop/web, Apple Mail, Yahoo) and return one preview URL per environment."
+  },
+  {
+    "name": "inbox_report",
+    "category": "deliverability",
+    "description": "Full Inbox Reality report for a sent campaign: placement from the active controlled seed roster, opens/clicks per observed provider, and any auth/content signals that fired."
+  },
+  {
+    "name": "render_preview_html",
+    "category": "deliverability",
+    "description": "Preview raw HTML across major email clients without saving anything. Wraps the same render pipeline as render_cross_client but takes HTML directly so an agent can iterate on a draft before any campaign object exists."
+  },
+  {
+    "name": "campaign_assurance_run",
+    "category": "deliverability",
+    "description": "Start a durable, potentially billable Predicted Agent Comprehension run over an exact frozen campaign revision and send plan. This models comprehension; it does not observe Gmail, Gemini, or any recipient's inbox."
+  },
+  {
+    "name": "campaign_assurance_get",
+    "category": "deliverability",
+    "description": "Read the latest applicable Campaign Assurance receipt or one exact run view. Source classes and the Predicted Agent Comprehension disclosure are returned unchanged."
+  },
+  {
+    "name": "campaign_assurance_apply_fix",
+    "category": "deliverability",
+    "description": "After explicit user approval, apply only one server-stored deterministic Campaign Assurance patch under the exact strong campaign ETag the user reviewed. This creates a new immutable revision, marks the originating run stale, and requires assurance to run again."
+  },
+  {
+    "name": "campaign_assurance_override",
+    "category": "deliverability",
+    "description": "Record an immutable owner/admin governed decision for one overridable finding. This does not fix content or change the certified artifact; allow_send requires a fresh matching finding and remains visible in the send receipt."
+  },
+  {
+    "name": "campaign_assurance_cancel",
+    "category": "deliverability",
+    "description": "Cancel one queued or running Campaign Assurance run. Completed evidence remains immutable; cancellation cannot erase an existing receipt."
+  },
+  {
+    "name": "voice_profile_get",
+    "category": "voice",
+    "description": "Fetch the tenant's current voice profile. Includes tonality vector, pacing, characteristic phrasings, and the list of ingested sources used to build it."
+  },
+  {
+    "name": "voice_source_add",
+    "category": "voice",
+    "description": "Register a new ingestion source for voice training. URL-bearing sources (rss, url) are SSRF-validated. Pasted text is stored in-place."
+  },
+  {
+    "name": "voice_profile_build",
+    "category": "voice",
+    "description": "Re-compute the voice profile from currently-ingested sources. Run after adding new sources via voice_source_add."
+  },
+  {
+    "name": "sequence_generate",
+    "category": "voice",
+    "description": "Generate a multi-email sequence from one of the 50 templates, written in the tenant's voice. Returns a full Sequence with per-email fidelity scores."
+  },
+  {
+    "name": "sequence_regenerate_email",
+    "category": "voice",
+    "description": "Regenerate a single email at the given position within a sequence. Pass an optional hint string to nudge the rewrite (e.g. 'shorter', 'more direct opening')."
+  },
+  {
+    "name": "subscribers_list",
+    "category": "subscribers",
+    "description": "Paginated subscriber list across the WHOLE tenant. Optional filters: q, status, page, per_page. There is no list filter here — use list_members to read the subscribers of one list. Returns items with email, status, consent metadata, tags, custom fields."
+  },
+  {
+    "name": "subscribers_search",
+    "category": "subscribers",
+    "description": "Full-text search subscribers by email, name, or custom fields. Returns up to 100 matches."
+  },
+  {
+    "name": "subscriber_create",
+    "category": "subscribers",
+    "description": "Create a single subscriber. Email is required. Custom fields and tags are optional. Idempotent on email (returns existing record if already present)."
+  },
+  {
+    "name": "subscriber_suppress",
+    "category": "subscribers",
+    "description": "Move a subscriber to the suppression list. Idempotent: subsequent calls are no-ops. Resolves the email to its subscriber ID first."
+  },
+  {
+    "name": "custom_field_create",
+    "category": "subscribers",
+    "description": "Create a tenant-scoped custom field on the subscriber schema. `key` is the machine slug, `label` is the human display name, `type` is one of string/number/boolean/date. Returns the persisted field."
+  },
+  {
+    "name": "segment_create",
+    "category": "subscribers",
+    "description": "Persist a saved segment from the Moosewave SegmentNode AST (and/or/not/leaf with field+comparator+value). Optional description is shown in the UI. Returns the segment id."
+  },
+  {
+    "name": "segment_list",
+    "category": "subscribers",
+    "description": "List saved segments for the tenant, cursor-paginated. Returns id, name, query_ast, and created_at for each."
+  },
+  {
+    "name": "segment_delete",
+    "category": "subscribers",
+    "description": "Delete a saved segment by id. Refused with 409 segment_in_use while a campaign that hasn't started sending uses the segment as its audience; the error names those campaigns, so move them to another audience (or delete them) and retry. A segment that no longer exists returns 404 not_found. Does not affect subscribers; only removes the saved query definition."
+  },
+  {
+    "name": "segment_compile_from_text",
+    "category": "subscribers",
+    "description": "Compile a natural-language audience description (e.g. 'people who opened the last campaign but did not click') into a canonical SegmentNode AST. Pair with segment_create or segment_eval."
+  },
+  {
+    "name": "segment_eval",
+    "category": "subscribers",
+    "description": "Evaluate a canonical Segment AST against the subscriber base. Returns the matching count and a sample of up to 25 subscriber records. Useful for previewing audience size before sending."
+  },
+  {
+    "name": "batch_subscriber_upsert",
+    "category": "subscribers",
+    "description": "Upsert up to 1000 subscriber records in one call. Each record: {email (required), status?, first_name?, last_name?, custom_fields?, merge_fields?, tags?}. Idempotent on email; returns per-record created/updated/error outcomes. Use this instead of looping subscriber_create."
+  },
+  {
+    "name": "form_create",
+    "category": "forms",
+    "description": "Create a hosted form. Toggle `double_optin: true` to require email confirmation. Returns the form ID, hosted URL, and embed snippet."
+  },
+  {
+    "name": "form_submissions_list",
+    "category": "forms",
+    "description": "Paginated submissions for a form. Each submission includes timestamp, IP, user-agent, and the field values."
+  },
+  {
+    "name": "form_update",
+    "category": "forms",
+    "description": "Patch an existing hosted form. Pass only the fields to change in `patch` (name, fields, double_optin, redirect_url, thank_you_message). Returns the updated form."
+  },
+  {
+    "name": "form_delete",
+    "category": "forms",
+    "description": "Delete a hosted form by id. Existing submissions are retained but the public submit/embed URLs stop accepting new entries. Idempotent."
+  },
+  {
+    "name": "optin_confirm",
+    "category": "forms",
+    "description": "Programmatically confirm a pending double-opt-in submission via its confirmation token (the same token sent in the confirmation email). Returns ok plus the resolved subscriber email."
+  },
+  {
+    "name": "automation_trigger",
+    "category": "forms",
+    "description": "Fire a behavioral automation for a specific subscriber. Optional payload is passed to the first node's context."
+  },
+  {
+    "name": "automation_set_state",
+    "category": "forms",
+    "description": "Pause or resume an automation. `action` must be 'pause' or 'resume'. Idempotent."
+  },
+  {
+    "name": "campaign_create",
+    "category": "campaigns",
+    "description": "Draft a single-variant campaign. Body is MJML. Audience can be a list_id or a segment_id. Returns the campaign as a draft — call campaign_send to actually send."
+  },
+  {
+    "name": "campaign_send",
+    "category": "campaigns",
+    "description": "Send a draft campaign immediately. The campaign must already be in 'draft' status with an audience attached."
+  },
+  {
+    "name": "campaign_create_ab",
+    "category": "campaigns",
+    "description": "Configure an A/B test for a campaign: upsert 2-4 variants and (optionally) the settings (winner_metric, evaluation_window_hours, winner_recipients_pct). Each variant has a weight (any non-negative number — they'll be normalized)."
+  },
+  {
+    "name": "campaign_ab_results",
+    "category": "campaigns",
+    "description": "Per-variant aggregate results for an A/B campaign. Returns settings, all variants, per-variant counts (recipients, opens, clicks, unsubscribes, complaints), and the winning variant id once a winner has been decided (95% confidence two-proportion z-test)."
+  },
+  {
+    "name": "send_test_email",
+    "category": "campaigns",
+    "description": "Send a one-off transactional message via the tenant's sending pipeline. Useful for previewing a draft body in a real inbox before promoting it to a campaign. Provide either body_html OR body_mjml (server compiles MJML)."
+  },
+  {
+    "name": "campaign_template_search",
+    "category": "campaigns",
+    "description": "Search every page of the visual newsletter design library with stable filters, sorting, and opaque cursor pagination."
+  },
+  {
+    "name": "campaign_template_compare",
+    "category": "campaigns",
+    "description": "Compare two to four template IDs or slugs in the requested order without persisting the comparison."
+  },
+  {
+    "name": "campaign_template_favorite",
+    "category": "campaigns",
+    "description": "Idempotently favorite one visible template for the authenticated user using the API key's bound, non-impersonable dashboard principal."
+  },
+  {
+    "name": "campaign_template_unfavorite",
+    "category": "campaigns",
+    "description": "Idempotently remove one visible template from the authenticated user's favorites using the API key's bound dashboard principal."
+  },
+  {
+    "name": "campaign_template_recent_record",
+    "category": "campaigns",
+    "description": "Record an authenticated user's view of one template; repeated views update the durable recent item."
+  },
+  {
+    "name": "campaign_template_recent_list",
+    "category": "campaigns",
+    "description": "List the authenticated user's recently viewed templates newest-first with compact metadata and view counts."
+  },
+  {
+    "name": "campaign_template_recent_clear",
+    "category": "campaigns",
+    "description": "Clear one template or the entire authenticated user's recent-template history."
+  },
+  {
+    "name": "campaign_template_collection_list",
+    "category": "campaigns",
+    "description": "List the authenticated user's private named template collections and item counts."
+  },
+  {
+    "name": "campaign_template_collection_get",
+    "category": "campaigns",
+    "description": "Get one private collection with ordered template IDs and compact, favorite-aware catalog items."
+  },
+  {
+    "name": "campaign_template_collection_create",
+    "category": "campaigns",
+    "description": "Create a private named collection with up to 100 unique templates in the supplied order."
+  },
+  {
+    "name": "campaign_template_collection_update",
+    "category": "campaigns",
+    "description": "Rename or update the description of one private template collection."
+  },
+  {
+    "name": "campaign_template_collection_replace_items",
+    "category": "campaigns",
+    "description": "Atomically replace a collection's ordered membership with up to 100 unique template IDs."
+  },
+  {
+    "name": "campaign_template_collection_delete",
+    "category": "campaigns",
+    "description": "Delete one private collection without deleting or unfavoriting any templates."
+  },
+  {
+    "name": "campaign_template_saved_search_list",
+    "category": "campaigns",
+    "description": "List the authenticated user's private named catalog searches."
+  },
+  {
+    "name": "campaign_template_saved_search_get",
+    "category": "campaigns",
+    "description": "Get one private saved catalog filter definition."
+  },
+  {
+    "name": "campaign_template_saved_search_create",
+    "category": "campaigns",
+    "description": "Save a named catalog query without persisting its cursor or pagination position."
+  },
+  {
+    "name": "campaign_template_saved_search_update",
+    "category": "campaigns",
+    "description": "Rename or replace the filters of one private saved search."
+  },
+  {
+    "name": "campaign_template_saved_search_results",
+    "category": "campaigns",
+    "description": "Run one saved search and return a stable compact page with an opaque continuation cursor."
+  },
+  {
+    "name": "campaign_template_saved_search_delete",
+    "category": "campaigns",
+    "description": "Delete one private saved search without changing templates or favorites."
+  },
+  {
+    "name": "campaign_template_get",
+    "category": "campaigns",
+    "description": "Fetch one visual campaign template by ID, including design metadata, provenance, variables, and editable MJML/HTML when available."
+  },
+  {
+    "name": "campaign_template_revisions",
+    "category": "campaigns",
+    "description": "List immutable lifecycle revisions for an editable workspace template, newest first."
+  },
+  {
+    "name": "campaign_template_revision_get",
+    "category": "campaigns",
+    "description": "Get one immutable historical template snapshot by positive version."
+  },
+  {
+    "name": "campaign_template_create",
+    "category": "campaigns",
+    "description": "Create a tenant-owned editable visual template. Provenance, review, licensing, import, quality, and generation lineage remain server controlled."
+  },
+  {
+    "name": "campaign_template_update",
+    "category": "campaigns",
+    "description": "Update an editable tenant-owned visual template. Inspiration references are read-only and must use Make it mine."
+  },
+  {
+    "name": "campaign_template_change_preview",
+    "category": "campaigns",
+    "description": "Preview one exact source-fragment replacement on an editable template. Requires its current strong ETag and a unique target; does not write or send."
+  },
+  {
+    "name": "campaign_template_change_apply",
+    "category": "campaigns",
+    "description": "Apply only the reviewed exact HTML or MJML source change with the matching preview hash and ETag. Does not send."
+  },
+  {
+    "name": "campaign_template_clone",
+    "category": "campaigns",
+    "description": "Clone a visible editable template. Inspiration references must be adapted into an original design instead."
+  },
+  {
+    "name": "campaign_template_archive",
+    "category": "campaigns",
+    "description": "Safely archive an editable workspace template using its exact current ETag while retaining content and history."
+  },
+  {
+    "name": "campaign_template_restore",
+    "category": "campaigns",
+    "description": "Restore an archived editable workspace template using its exact current ETag."
+  },
+  {
+    "name": "campaign_template_delete",
+    "category": "campaigns",
+    "description": "Deprecated compatibility alias that safely archives an editable workspace template; it never permanently deletes content or history."
+  },
+  {
+    "name": "campaign_template_adapt",
+    "category": "campaigns",
+    "description": "Start a durable Make-it-mine design job from an approved inspiration reference."
+  },
+  {
+    "name": "campaign_template_generate",
+    "category": "campaigns",
+    "description": "Start a durable visual newsletter design job from a brief and optional governed references."
+  },
+  {
+    "name": "campaign_template_design_list",
+    "category": "campaigns",
+    "description": "Recover the exact authenticated actor's active, non-expired durable design jobs as compact newest-first pages with actor-bound cursors."
+  },
+  {
+    "name": "campaign_template_design_get",
+    "category": "campaigns",
+    "description": "Poll a durable design job and inspect its current immutable validated revision and output hash."
+  },
+  {
+    "name": "campaign_template_design_revisions",
+    "category": "campaigns",
+    "description": "List immutable revisions for a durable newsletter design, newest first."
+  },
+  {
+    "name": "campaign_template_design_refine",
+    "category": "campaigns",
+    "description": "Queue a refinement from the current revision with optimistic concurrency."
+  },
+  {
+    "name": "campaign_template_design_retry",
+    "category": "campaigns",
+    "description": "Retry a failed durable design job with its exact original request."
+  },
+  {
+    "name": "campaign_template_save",
+    "category": "campaigns",
+    "description": "Save the exact reviewed immutable design revision and output hash without accepting caller-supplied HTML."
+  },
+  {
+    "name": "campaign_template_design_create_campaign",
+    "category": "campaigns",
+    "description": "Create an editable, never-sent campaign draft from an exact reviewed design revision."
+  },
+  {
+    "name": "campaign_template_design_archive",
+    "category": "campaigns",
+    "description": "Archive completed, failed, or abandoned durable design work while retaining revision evidence."
+  },
+  {
+    "name": "campaign_create_from_template",
+    "category": "campaigns",
+    "description": "Create an editable campaign draft from a visual template while applying content, brand, variable, subject, and audience overrides."
+  },
+  {
+    "name": "emails_send",
+    "category": "emails",
+    "description": "Send a single transactional email (Resend-style): from/to/cc/bcc/reply_to + subject + html/text, with optional custom headers, per-message tags, attachments (base64 or remote URL), and scheduled_at for delayed delivery. Suppressed recipients are skipped. Returns {id, status}."
+  },
+  {
+    "name": "emails_get",
+    "category": "emails",
+    "description": "Fetch the status of one transactional email by id (sent | scheduled | failed | skipped, plus the provider message id)."
+  },
+  {
+    "name": "emails_list",
+    "category": "emails",
+    "description": "List the tenant's recent transactional sends (most recent first)."
+  },
+  {
+    "name": "automation_create",
+    "category": "automations",
+    "description": "Create a new automation graph. Provide `name`, an array of `triggers`, and a graph of `nodes`+`edges`. Each node has an id, type (e.g. 'send_email', 'wait', 'branch'), and config. Returns the automation in 'draft' status."
+  },
+  {
+    "name": "automation_list",
+    "category": "automations",
+    "description": "List automations for the tenant. Optional `status` filter (draft/active/paused). Cursor-paginated."
+  },
+  {
+    "name": "automation_update",
+    "category": "automations",
+    "description": "Patch an existing automation. Pass any subset of name/status/triggers/nodes/edges in `patch`. Returns the updated automation."
+  },
+  {
+    "name": "automation_create_behavioral_trigger",
+    "category": "automations",
+    "description": "Wire a behavioral trigger (campaign open/no-open, link click/no-click, page visit, no-activity) to an existing automation. Provide automation_id and trigger_type. campaign_id, url_pattern, within_days, after_days are trigger-specific knobs."
+  },
+  {
+    "name": "topic_create",
+    "category": "topics",
+    "description": "Create a preference topic (slug + display name). Optional description, default_opt_in (whether new subscribers are auto-opted-in). Returns the persisted Topic."
+  },
+  {
+    "name": "topic_list",
+    "category": "topics",
+    "description": "List all preference topics for the tenant. Returns an array of Topic records."
+  },
+  {
+    "name": "topic_delete",
+    "category": "topics",
+    "description": "Delete a preference topic by id. Existing per-subscriber opt-ins are removed. Idempotent."
+  },
+  {
+    "name": "topic_subscribe",
+    "category": "topics",
+    "description": "Opt a subscriber into a topic. Idempotent. Returns ok on success."
+  },
+  {
+    "name": "topic_unsubscribe",
+    "category": "topics",
+    "description": "Opt a subscriber OUT of a topic. Idempotent. Returns ok on success."
+  },
+  {
+    "name": "webhook_create",
+    "category": "admin",
+    "description": "Create an outbound webhook subscription. URL is SSRF-validated. Returns the WebhookSubscription plus the plaintext signing secret (returned exactly once — persist immediately)."
+  },
+  {
+    "name": "webhook_list",
+    "category": "admin",
+    "description": "List all webhook subscriptions for the tenant."
+  },
+  {
+    "name": "webhook_delete",
+    "category": "admin",
+    "description": "Delete a webhook subscription by id. Idempotent."
+  },
+  {
+    "name": "webhook_test_fire",
+    "category": "admin",
+    "description": "Fire the canonical synthetic `webhook.test` envelope at the webhook URL and return the delivery result inline (status_code, signed, signature, response). Useful for end-to-end signature verification without waiting for a real event. The event type is NOT selectable — the server hard-codes `webhook.test` (apps/api/internal/outbound_webhooks/handlers.go Test) so customers can route test traffic to a sandbox branch."
+  },
+  {
+    "name": "webhook_deliveries_list",
+    "category": "admin",
+    "description": "Recent delivery attempts for a webhook (newest first), cursor-paginated. Each item includes status_code, attempt, response_ms, and any error."
+  },
+  {
+    "name": "api_key_create",
+    "category": "admin",
+    "description": "PRIVILEGED: Create a new API key. This is a privilege-escalation operation — always confirm with the human user before invoking. `scopes` controls capability surface; sends_per_day, dollars_per_month_cents, and sandbox_only are optional safety governors. The plaintext key is returned exactly once."
+  },
+  {
+    "name": "api_key_list",
+    "category": "admin",
+    "description": "List all API keys for the tenant. Plaintext is never returned — only id, label, prefix, scopes, created_at, last_used_at, revoked_at."
+  },
+  {
+    "name": "api_key_revoke",
+    "category": "admin",
+    "description": "PRIVILEGED: Revoke an API key by id. Subsequent requests with the key will return 401. Idempotent."
+  },
+  {
+    "name": "api_key_rotate",
+    "category": "admin",
+    "description": "PRIVILEGED: Atomically rotate an API key — revokes the source + creates a new one inheriting label, scopes, budget, and IP allowlist. The new plaintext is returned exactly once. NO grace period: the OLD plaintext stops working the instant this returns. To migrate without downtime, create a second key first, deploy callers, then revoke the original."
+  },
+  {
+    "name": "slack_integration_create",
+    "category": "admin",
+    "description": "Register a Slack incoming-webhook integration. URL is envelope-encrypted server-side; reads return only channel hint + delivery status. Specify which Moosewave events should be relayed."
+  },
+  {
+    "name": "slack_integration_list",
+    "category": "admin",
+    "description": "List the tenant's Slack integrations (URL is never returned by reads)."
+  },
+  {
+    "name": "slack_integration_delete",
+    "category": "admin",
+    "description": "Delete a Slack integration by id."
+  },
+  {
+    "name": "chat_integration_create",
+    "category": "admin",
+    "description": "Register a Slack, Discord, or Teams incoming-webhook integration. URL is envelope-encrypted server-side; reads return only channel hint + delivery status."
+  },
+  {
+    "name": "chat_integration_list",
+    "category": "admin",
+    "description": "List Slack, Discord, or Teams integrations. URLs are never returned."
+  },
+  {
+    "name": "chat_integration_update",
+    "category": "admin",
+    "description": "Update a Slack, Discord, or Teams integration: rotate URL, channel hint, events, or enabled state."
+  },
+  {
+    "name": "chat_integration_delete",
+    "category": "admin",
+    "description": "Delete a Slack, Discord, or Teams integration by id."
+  },
+  {
+    "name": "landing_page_create",
+    "category": "admin",
+    "description": "Create a landing page in 'draft' status. Slug must be lowercase alphanumeric or dashes (max 64 chars)."
+  },
+  {
+    "name": "landing_page_list",
+    "category": "admin",
+    "description": "List the tenant's landing pages (newest-first)."
+  },
+  {
+    "name": "landing_page_publish",
+    "category": "admin",
+    "description": "Publish a landing page (status -> 'published')."
+  },
+  {
+    "name": "campaign_report",
+    "category": "admin",
+    "description": "Aggregate analytics for a campaign — sent / delivered / opens / unique_opens / clicks / bounces / complaints / unsubscribes plus computed rates and the top-5 clicked links. Reads from campaign_report_events at query time."
+  },
+  {
+    "name": "dashboard_stats",
+    "category": "admin",
+    "description": "Tenant overview: total subscribers + 30-day rolling rollups (added, unsubbed, campaigns sent, opens, clicks, bounces)."
+  },
+  {
+    "name": "sequence_job_wait",
+    "category": "admin",
+    "description": "Block until a sequence-generation job (returned from generate() or regenerate() in async mode) reaches a terminal status — 'succeeded' (sequence_id populated) or 'failed' (error_message populated). Polls every 2s, 5min default timeout."
+  },
+  {
+    "name": "audit_query",
+    "category": "agent-primitives",
+    "description": "Query the tenant audit log. All filters optional. `since` is ISO-8601. Returns cursor-paginated entries (actor, action, resource, metadata, timestamp)."
+  },
+  {
+    "name": "approvals_list",
+    "category": "agent-primitives",
+    "description": "List human-approval requests for the tenant. Optional `status` filter (pending/approved/rejected/expired). Cursor-paginated."
+  },
+  {
+    "name": "approvals_decide",
+    "category": "agent-primitives",
+    "description": "Approve or reject a pending approval request by id. `decision` is 'approve' or 'reject'. Optional `notes` are stored on the audit entry."
+  },
+  {
+    "name": "sandbox_status",
+    "category": "agent-primitives",
+    "description": "Status of a sandbox campaign run: state (scheduled/running/completed), the simulated event stream so far, and remaining scheduled deliveries. Use to inspect a dry-run before promoting to a live send."
+  },
+  {
+    "name": "cost_aggregate",
+    "category": "agent-primitives",
+    "description": "Aggregate the cost ledger since `since` (ISO-8601), grouped by api_key_id, kind, day, or actor_label. Returns buckets with total_cents and count per group."
+  },
+  {
+    "name": "safety_check",
+    "category": "agent-primitives",
+    "description": "Pre-send safety eval for a draft message. Runs the same gating evaluator the send pipeline uses. Returns blocking flag plus per-finding severity (low/medium/high/block)."
+  },
+  {
+    "name": "events_subscribe",
+    "category": "events",
+    "description": "Register a declarative event subscription. Optional filters: event_types (e.g. ['opened','clicked']), campaign_id, subscriber_email. Returns a subscription_id; matching events flow to the existing `moosewave://events/stream` MCP resource."
+  },
+  {
+    "name": "campaign_link_report",
+    "category": "analytics",
+    "description": "Per-link click breakdown for one campaign. Returns each clicked URL with total clicks, distinct unique clickers, and CTR (unique clickers / total recipients). Sorted by clicks desc."
+  },
+  {
+    "name": "report_export_csv",
+    "category": "analytics",
+    "description": "Stream the per-subscriber lifecycle CSV for a campaign (sent/delivered/opened/clicked/bounced/complained/unsubscribed). Bodies larger than ~10 MiB are truncated and the response includes a `truncated: true` flag plus the row count so the caller can re-issue with offset/limit."
+  },
+  {
+    "name": "campaigns_compare",
+    "category": "analytics",
+    "description": "Side-by-side comparison of up to 25 campaigns. Returns per-campaign open_rate, click_rate, bounce_rate, complaint_rate, unsub_rate, and total_recipients."
+  },
+  {
+    "name": "campaign_geography",
+    "category": "analytics",
+    "description": "Per-country open/click totals for one campaign. Country is derived from the IP recorded at engagement time; rows without a resolved country bucket into 'unknown'."
+  },
+  {
+    "name": "campaign_devices",
+    "category": "analytics",
+    "description": "Per-mail-client open/click totals for one campaign. Client family is parsed from User-Agent: Gmail / Outlook / Apple Mail / Yahoo / Other."
+  },
+  {
+    "name": "campaign_bounces",
+    "category": "analytics",
+    "description": "Bounce category breakdown for one campaign: hard, soft, spam_trap, total. Categorization heuristics: 5xx -> hard, 4xx -> soft, 'trap' substring -> spam_trap."
+  },
+  {
+    "name": "analytics_cohorts",
+    "category": "analytics",
+    "description": "Cohort matrix: subscribers grouped by signup month for the past 12 cohorts, with the chosen metric (open_rate, click_rate, retention) over the first N weeks since signup. Default weeks=12."
+  },
+  {
+    "name": "campaign_revenue",
+    "category": "analytics",
+    "description": "Stripe-attributed revenue for one campaign. Attributes a paid signup or upgrade to the most recent campaign opened by the subscriber within 7 days before payment. Returns {attributed_revenue_cents, currency, conversions, attribution_window_days}; `note: 'no_billing_data'` if the underlying paid_subscriptions table is not present."
+  },
+  {
+    "name": "list_create",
+    "category": "audience",
+    "description": "Create a Listmonk audience list. type defaults to 'private', optin defaults to 'single'. Returns the upstream Listmonk envelope."
+  },
+  {
+    "name": "list_list",
+    "category": "audience",
+    "description": "List audience lists for the tenant. Returns the upstream Listmonk envelope; consume `data.results` for the array."
+  },
+  {
+    "name": "list_members",
+    "category": "audience",
+    "description": "The subscribers that belong to ONE list, paginated. This is the only list-scoped membership read — subscribers_list has no list filter and returns the whole tenant. `id` accepts a Moosewave UUID or a legacy Listmonk numeric id. Optional q (email substring), status (enabled|disabled|blocklisted|unconfirmed), page, per_page (max 200)."
+  },
+  {
+    "name": "list_delete",
+    "category": "audience",
+    "description": "Delete an audience list by numeric Listmonk id."
+  },
+  {
+    "name": "tag_create",
+    "category": "audience",
+    "description": "Register a tenant-scoped tag in the catalog. Returns the persisted row."
+  },
+  {
+    "name": "tag_list",
+    "category": "audience",
+    "description": "List tenant-scoped tags ordered by name."
+  },
+  {
+    "name": "tag_delete",
+    "category": "audience",
+    "description": "Delete a catalog tag by id. Does not strip the tag from existing subscribers."
+  },
+  {
+    "name": "suppression_import",
+    "category": "audience",
+    "description": "Bulk import addresses into the suppression list. Conflicts are skipped, not erred. Returns {imported, skipped, errors}."
+  },
+  {
+    "name": "subscribers_import_csv",
+    "category": "audience",
+    "description": "Import subscribers from CSV. Pass the CSV body as a base64 string. Headers must include `email`; `name` and any extra columns are folded into custom_fields. Upserts in batches of 500."
+  },
+  {
+    "name": "subscribers_export_csv",
+    "category": "audience",
+    "description": "Export the tenant's subscribers as CSV. Truncates at ~5MB; use `limit` to bound row count for large audiences and paginate from the dashboard for the full set."
+  },
+  {
+    "name": "subscriber_merge",
+    "category": "audience",
+    "description": "Merge a duplicate subscriber into a primary. Moves events, suppressions, tags, and custom fields under the primary id, then deletes the duplicate. Wrapped in a single transaction."
+  },
+  {
+    "name": "subscriber_activity",
+    "category": "audience",
+    "description": "Recent engagement events for one subscriber (newest first). Default limit 50 (max 500). Pass `before` (RFC3339) to page backwards in time."
+  },
+  {
+    "name": "subscriber_engagement",
+    "category": "audience",
+    "description": "Compute the 0-100 engagement score for one subscriber, or a batch (pass `ids` instead of `id`). Window is the trailing 90 days. Score is cached on the subscriber row."
+  },
+  {
+    "name": "sending_settings_get",
+    "category": "sending-settings",
+    "description": "Read the tenant's sending throttle and quiet-hours configuration. Set include_coordination_status=true after an outcome-ambiguous write to read shared-cap recovery proof. A missing or null max_sends_per_hour means no workspace-specific hourly ceiling; provider, quota, and safety controls still apply."
+  },
+  {
+    "name": "sending_settings_set",
+    "category": "sending-settings",
+    "description": "Replace the tenant's sending throttle and quiet-hours policy using exactly one wire attempt. The tool has no fallback route and never automatically repeats an ambiguous write; reconcile with sending_settings_get(include_coordination_status=true) before another write. A null cap removes only the workspace-specific ceiling."
+  },
+  {
+    "name": "asset_upload",
+    "category": "platform",
+    "description": "Upload an image to the tenant asset library. Image-only, max 10MB. Returns {id, url, width, height, bytes}."
+  },
+  {
+    "name": "asset_list",
+    "category": "platform",
+    "description": "List recent assets (cursor-paginated). Optional limit and before-id cursor."
+  },
+  {
+    "name": "asset_delete",
+    "category": "platform",
+    "description": "Soft-delete an asset by id."
+  },
+  {
+    "name": "inbound_webhook_create",
+    "category": "platform",
+    "description": "Create a tenant-scoped inbound webhook endpoint. Returns slug + plaintext signing secret (shown once)."
+  },
+  {
+    "name": "inbound_webhook_list",
+    "category": "platform",
+    "description": "List the tenant's inbound webhook endpoints (without secrets)."
+  },
+  {
+    "name": "inbound_webhook_delete",
+    "category": "platform",
+    "description": "Revoke an inbound webhook endpoint by id."
+  },
+  {
+    "name": "track_event",
+    "category": "platform",
+    "description": "Record a product event for a subscriber. Pass either subscriber_id or email; supply event_name and an optional properties object. Triggers automations of kind product_event."
+  },
+  {
+    "name": "track_events_list",
+    "category": "platform",
+    "description": "List recent product events for a subscriber."
+  },
+  {
+    "name": "inbound_email_list",
+    "category": "platform",
+    "description": "List inbound emails. Optionally filter by subscriber_id or campaign_id."
+  },
+  {
+    "name": "inbound_email_endpoint_get",
+    "category": "platform",
+    "description": "Get inbound-email endpoint metadata. Never returns or decrypts the signing secret."
+  },
+  {
+    "name": "inbound_email_endpoint_rotate",
+    "category": "platform",
+    "description": "Create or rotate the inbound-email signing secret. Returns the plaintext secret once; copy it immediately."
+  },
+  {
+    "name": "dmarc_reports_list",
+    "category": "platform",
+    "description": "List parsed DMARC aggregate reports. Optional domain, from/to ISO timestamps, and limit."
+  },
+  {
+    "name": "template_preview",
+    "category": "template-render",
+    "description": "Render a conditional MJML/HTML template with the supplied vars. Supports {{#if a == \"x\"}}...{{else}}...{{/if}} and {{#if has subscriber.tag \"vip\"}}...{{/if}}."
+  },
+  {
+    "name": "template_render",
+    "category": "template-render",
+    "description": "Alias of template_preview. Use whichever name reads better in your prompt; both call the same backend."
+  },
+  {
+    "name": "template_list",
+    "category": "templates",
+    "description": "List the tenant's saved voice templates. Optionally filter by category (welcome, sales, newsletter_series, etc.). Returns the full template objects including variables, email skeletons, and historical performance."
+  },
+  {
+    "name": "template_get",
+    "category": "templates",
+    "description": "Fetch a single saved template by its id or slug. Returns the full template object (category, variables, per-position email skeletons, tags, author, performance)."
+  },
+  {
+    "name": "template_create",
+    "category": "templates",
+    "description": "Create and save a new voice template. Supply slug, category, name, the variable list, and at least one email skeleton (position + subject/body skeletons). The created template can then drive sequence_generate."
+  },
+  {
+    "name": "template_update",
+    "category": "templates",
+    "description": "Update an existing saved template in place, addressed by id or slug. Only the fields you include in `patch` are changed; everything else is preserved."
+  },
+  {
+    "name": "template_delete",
+    "category": "templates",
+    "description": "Permanently delete a saved template by id or slug. This cannot be undone; sequences already generated from it are unaffected."
+  },
+  {
+    "name": "voice_drift_check",
+    "category": "voice-drift",
+    "description": "Pre-send voice-fidelity check. Scores a draft body (0-100) against the tenant's voice profile and returns a severity ('ok' | 'warn' | 'critical') plus an optional reason, per-component breakdown, and suggestions. Advisory only — do not gate sends on it. Runs heuristic-only when no embedding client is configured."
+  },
+  {
+    "name": "account_whoami",
+    "category": "account",
+    "description": "Return the identity the configured API key resolves to: the tenant and (when the key is user-scoped) the user. Use this to confirm which workspace you are operating against before making changes."
+  },
+  {
+    "name": "account_sending_identity_update",
+    "category": "account",
+    "description": "Update the tenant's sending identity (workspace defaults): display_name (the outbound 'from' display name) and/or default_reply_to (default reply-to address). Supply only the fields you want to change. Returns the updated workspace settings. To add or verify a sending DOMAIN, use the sending-identities (DKIM) wizard instead."
+  },
+  {
+    "name": "custom_domain_create",
+    "category": "custom-domains",
+    "description": "Register a custom domain for hosted forms, link redirects, or the public archive. Returns DNS records the operator must publish before verification will succeed."
+  },
+  {
+    "name": "custom_domain_list",
+    "category": "custom-domains",
+    "description": "List every custom domain registered for the current tenant."
+  },
+  {
+    "name": "custom_domain_verify",
+    "category": "custom-domains",
+    "description": "Recheck the DNS records for a custom domain. Flips the row to verified=true when every record we asked for is present."
+  },
+  {
+    "name": "custom_domain_delete",
+    "category": "custom-domains",
+    "description": "Delete a custom domain registration. Idempotent for missing rows."
+  },
+  {
+    "name": "campaign_check_links",
+    "category": "link-check",
+    "description": "Pre-send link check. Extracts every absolute href from the campaign body and HEAD-requests each (5s timeout, dedupe). Returns one result per URL with its HTTP status."
+  },
+  {
+    "name": "campaign_publish_to_archive",
+    "category": "archive",
+    "description": "Mark a sent campaign as publicly visible in the tenant's archive. Optional slug + excerpt control how it shows on the index page."
+  },
+  {
+    "name": "campaign_unpublish_from_archive",
+    "category": "archive",
+    "description": "Hide a previously archived campaign from the public archive. The row is preserved."
+  },
+  {
+    "name": "archive_list",
+    "category": "archive",
+    "description": "List the tenant's archived campaigns (admin view, cursor-paginated). Optional `q` runs a server-side case-insensitive substring search over subject + slug, so an old issue is reachable without walking every cursor page. Rows carry pinned + viewCount + uniqueVisitors on this admin path."
+  },
+  {
+    "name": "referral_program_get",
+    "category": "referrals",
+    "description": "Inspect the tenant's last active referral-program configuration as historical configuration data. Live attribution and referral operations remain release-gated."
+  },
+  {
+    "name": "discount_list",
+    "category": "discounts",
+    "description": "List one bounded page of sanitized local discount-history records newest first. Redeemable codes, tenant/provider identifiers, and subscriber identities are omitted; this is not checkout truth."
+  },
+  {
+    "name": "discount_redemptions",
+    "category": "discounts",
+    "description": "List a bounded page of PII-free redemption events for an opaque discount-history record UUID. Returns only redemption time and whether a subscriber record was linked."
+  },
+  {
+    "name": "gift_subscription_list",
+    "category": "gift-subscriptions",
+    "description": "List bounded, identity-minimized historical gift lifecycle records. Personal identities, free-text messages, redemption material, and provider identifiers or credentials are not returned."
+  },
+  {
+    "name": "subscriber_best_send_time",
+    "category": "send-time",
+    "description": "Read the cached modal hour-of-week (0-167, Sunday 00:00 UTC = 0) at which a subscriber has historically opened email. Cold subscribers (< 5 opens) return -1."
+  },
+  {
+    "name": "campaign_schedule_by_best_time",
+    "category": "send-time",
+    "description": "Reschedule a campaign to send each recipient at their best hour-of-week within the next `within_days` window. Recipients without a cached best hour fall back to the tenant mean."
+  },
+  {
+    "name": "integrations_catalog",
+    "category": "integrations",
+    "description": "Search the honest Moosewave integrations catalog. Badges distinguish Native, Partner, Zapier, Webhook, API/SDK, Migration-only, and Planned support."
+  },
+  {
+    "name": "integrations_connections",
+    "category": "integrations",
+    "description": "List installed integration state across all connector surfaces, including connection ids, health state, last sync, and errors."
+  },
+  {
+    "name": "audience_destination_providers",
+    "category": "integrations",
+    "description": "List readiness-gated Moosewave-owned ad audience destination foundations: Meta, Google Ads, TikTok, LinkedIn, and Snap."
+  },
+  {
+    "name": "audience_destination_list",
+    "category": "integrations",
+    "description": "List adapter-backed ad audience destinations, optionally filtered by provider."
+  },
+  {
+    "name": "audience_destination_create",
+    "category": "integrations",
+    "description": "Create an adapter-backed ad audience destination from a list or segment. Use readiness first to identify provider config keys and unresolved credential prerequisites."
+  },
+  {
+    "name": "audience_destination_get",
+    "category": "integrations",
+    "description": "Get one adapter-backed ad audience destination by id."
+  },
+  {
+    "name": "audience_destination_update",
+    "category": "integrations",
+    "description": "Update status, external audience id, or non-secret provider config for an adapter-backed ad audience destination."
+  },
+  {
+    "name": "audience_destination_readiness",
+    "category": "integrations",
+    "description": "Validate ad audience provider config and return exact missing keys or driver prerequisites before a sync is attempted."
+  },
+  {
+    "name": "audience_destination_preview",
+    "category": "integrations",
+    "description": "Preview consent-firewall exclusions for an ad audience destination without shipping members to the platform."
+  },
+  {
+    "name": "audience_destination_sync",
+    "category": "integrations",
+    "description": "Attempt a readiness-gated ad audience sync through Meta, Google Ads, TikTok, LinkedIn, or Snap; missing credentials or unfinished drivers are recorded as failed jobs."
+  },
+  {
+    "name": "audience_destination_jobs",
+    "category": "integrations",
+    "description": "List sync jobs for an adapter-backed ad audience destination."
+  },
+  {
+    "name": "audience_destination_job_diagnostics",
+    "category": "integrations",
+    "description": "Retrieve provider diagnostics for an ad audience destination sync job using stored provider-side evidence such as a Google Data Manager requestId."
+  },
+  {
+    "name": "audience_destination_disconnect",
+    "category": "integrations",
+    "description": "Delete/disconnect an adapter-backed ad audience destination by id."
+  },
+  {
+    "name": "native_integration_providers",
+    "category": "integrations",
+    "description": "List provider specs for a first-party native integration family, including runtime_status, sync_model, and verification_mode where the family exposes native-foundation metadata."
+  },
+  {
+    "name": "native_integration_list",
+    "category": "integrations",
+    "description": "List stored first-party native integration records for one family. Support returns a minimized release-held historical projection and accepts optional limit/cursor pagination with manual continuation."
+  },
+  {
+    "name": "native_integration_get",
+    "category": "integrations",
+    "description": "Read one stored first-party native integration by lowercase canonical UUID. Support returns only a tenant-bound minimized historical projection with held runtime status, not live credential, callback, synchronization, or run-history evidence."
+  },
+  {
+    "name": "native_integration_create",
+    "category": "integrations",
+    "description": "Create a first-party native integration. Commerce, CRM, lead, reviews, loyalty, subscriptions, analytics, marketing, and warehouse use credential_ref/settings-style credential references; do not pass raw credentials in config. Support is release-held with code support_integration_runtime_held."
+  },
+  {
+    "name": "native_integration_sync",
+    "category": "integrations",
+    "description": "Run a first-party native sync/import. Commerce, CRM, lead, reviews, loyalty, subscriptions, and marketing accept canonical payload rows or empty provider-managed pulls when the configured provider exposes a native puller or delegated foundation handoff; analytics requires canonical rows; warehouse accepts object selection plus supported run fields through payload. Support is release-held with code support_integration_runtime_held."
+  },
+  {
+    "name": "native_integration_backfill",
+    "category": "integrations",
+    "description": "Run a first-party native backfill or canonical-row import. Uses the same family-aware payload rules as native_integration_sync, including empty provider-managed pulls for providers that expose native backfillers. Support is release-held with code support_integration_runtime_held."
+  },
+  {
+    "name": "native_integration_ingest",
+    "category": "integrations",
+    "description": "Ingest a canonical Moosewave payload for lead, reviews, loyalty, subscriptions, or analytics connectors. Raw provider webhook payload verification is exposed only after a family has a verified adapter. Support is release-held with code support_integration_runtime_held."
+  },
+  {
+    "name": "native_integration_pause",
+    "category": "integrations",
+    "description": "Pause a first-party native integration connection by family and id. Support is release-held with code support_integration_runtime_held."
+  },
+  {
+    "name": "native_integration_disconnect",
+    "category": "integrations",
+    "description": "Disconnect/delete a first-party native integration connection by family and id. Support is release-held with code support_integration_runtime_held."
+  },
+  {
+    "name": "native_integration_runs",
+    "category": "integrations",
+    "description": "List sync/backfill run history for native families that expose runs. Commerce currently returns an explanatory unsupported response; Support is release-held with code support_integration_runtime_held."
+  },
+  {
+    "name": "sms_setup",
+    "category": "sms",
+    "description": "Read partial first-party SMS setup status, including sender profiles, can_send, and blocking reasons."
+  },
+  {
+    "name": "sms_compliance",
+    "category": "sms",
+    "description": "Audit first-party SMS compliance gates for consent, registration, provider callback verification, and send readiness."
+  },
+  {
+    "name": "sms_pilot_readiness",
+    "category": "sms",
+    "description": "Check whether SMS pilot traffic is safe to enable and return pass/warning/blocker evidence."
+  },
+  {
+    "name": "sms_sender_list",
+    "category": "sms",
+    "description": "List first-party SMS sender profiles for Twilio, Telnyx, or Bandwidth. Provider app/profile setup remains operator-owned."
+  },
+  {
+    "name": "sms_sender_upsert",
+    "category": "sms",
+    "description": "Create or update a first-party SMS sender profile. Hosted mode has no configured or accepted process-global provider credentials. Provider effects and callbacks remain release-held until a tenant-bound encrypted credential vault and provider-account ownership resolver exists; this does not create provider messaging services, profiles, applications, or phone-number campaign assignments."
+  },
+  {
+    "name": "sms_sender_pause",
+    "category": "sms",
+    "description": "Pause an SMS sender profile, optionally recording the operator reason."
+  },
+  {
+    "name": "sms_sender_resume",
+    "category": "sms",
+    "description": "Resume a paused SMS sender profile."
+  },
+  {
+    "name": "sms_sender_pilot_certification",
+    "category": "sms",
+    "description": "Export pilot-certification evidence for a sender profile, including readiness items and provider callback/status URLs."
+  },
+  {
+    "name": "sms_a2p_brand_submit",
+    "category": "sms",
+    "description": "Release-held: A2P brand submission is unavailable until durable provider idempotency, reconciliation, and minimized receipts are deployed."
+  },
+  {
+    "name": "sms_a2p_campaign_submit",
+    "category": "sms",
+    "description": "Release-held: A2P campaign submission is unavailable until durable provider idempotency, reconciliation, and minimized receipts are deployed."
+  },
+  {
+    "name": "sms_a2p_poll",
+    "category": "sms",
+    "description": "Release-held: A2P polling is unavailable while provider responses can contain unbounded sensitive raw data."
+  },
+  {
+    "name": "sms_list_list",
+    "category": "sms",
+    "description": "List SMS audience lists."
+  },
+  {
+    "name": "sms_list_create",
+    "category": "sms",
+    "description": "Create an SMS audience list with optional opt-in keyword and default sender profile."
+  },
+  {
+    "name": "sms_consent_record",
+    "category": "sms",
+    "description": "Record only a conservative operator SMS revocation. This cannot grant/import consent, clear carrier STOP, or manufacture provider evidence."
+  },
+  {
+    "name": "sms_suppression_list",
+    "category": "sms",
+    "description": "Exact-admin read of one tenant-bound SMS suppression page at a response cutoff. Exact phone filtering uses a JSON body, never a URL. The tool never silently follows the opaque nextCursor or claims complete/current history; pass the returned cursor explicitly to continue."
+  },
+  {
+    "name": "sms_suppression_add",
+    "category": "sms",
+    "description": "Exact-admin add or reassert of one reversible manual/manual workspace hold. It cannot mint carrier/system authority, grant consent, or make texting lawful. A later same-provider START restores only a provably preserved manual hold; historical or cross-authority ambiguity remains review-held."
+  },
+  {
+    "name": "sms_suppression_remove",
+    "category": "sms",
+    "description": "Exact-admin removal of one reversible manual/manual workspace hold after explicit confirmation. Locked provider, STOP, carrier, complaint, imported, API, and system authority remains fail-closed. Success does not restore consent or make texting lawful."
+  },
+  {
+    "name": "sms_campaign_list",
+    "category": "sms",
+    "description": "List first-party SMS campaigns."
+  },
+  {
+    "name": "sms_campaign_get",
+    "category": "sms",
+    "description": "Get one first-party SMS campaign by id."
+  },
+  {
+    "name": "sms_campaign_create",
+    "category": "sms",
+    "description": "Create a draft or paused first-party SMS campaign. Scheduling and dispatch are release-held."
+  },
+  {
+    "name": "sms_campaign_report",
+    "category": "sms",
+    "description": "Release-held: the legacy campaign evidence report is unavailable until it has a bounded private fail-closed audit contract."
+  },
+  {
+    "name": "sms_campaign_report_export",
+    "category": "sms",
+    "description": "Release-held: recipient-level campaign export is unavailable until it has a bounded private fail-closed audit contract."
+  },
+  {
+    "name": "sms_campaign_send",
+    "category": "sms",
+    "description": "Release-held: SMS campaign dispatch has no durable budget/provider reconciliation lifecycle."
+  },
+  {
+    "name": "sms_campaign_schedule",
+    "category": "sms",
+    "description": "Release-held: SMS campaign scheduling cannot imply a future send while dispatch is unavailable."
+  },
+  {
+    "name": "sms_campaign_pause",
+    "category": "sms",
+    "description": "Pause a scheduled or in-flight SMS campaign."
+  },
+  {
+    "name": "sms_campaign_resume",
+    "category": "sms",
+    "description": "Release-held: resuming an SMS campaign cannot imply future dispatch while the worker lifecycle is unavailable."
+  },
+  {
+    "name": "sms_campaign_cancel",
+    "category": "sms",
+    "description": "Cancel an SMS campaign before it reaches a terminal state."
+  },
+  {
+    "name": "sms_test_send",
+    "category": "sms",
+    "description": "Release-held: test sends have no durable budget/provider reconciliation lifecycle."
+  },
+  {
+    "name": "push_suppression_list",
+    "category": "push",
+    "description": "Exact-admin read of one private tenant-customer APNs/FCM/Web suppression-authority snapshot page. Returns only minimized 16-hex fingerprints and an opaque cursor, never raw tokens or full digests. Customer runtime, audience materialization, live providers, and automatic provider feedback remain release-held; Web is registry-only."
+  },
+  {
+    "name": "push_suppression_add",
+    "category": "push",
+    "description": "Exact-admin add or reassert of one reversible manual/dashboard authority after explicit approval. The raw customer token is sensitive request input only and must never enter logs or evidence; this cannot mint provider, user, complaint, or legacy authority."
+  },
+  {
+    "name": "push_suppression_remove",
+    "category": "push",
+    "description": "Exact-admin compare-and-swap removal of one reviewed manual/dashboard authority using its expected_version. Locked authority remains fail-closed, and stillSuppressed=true means another independent authority remains."
+  },
+  {
+    "name": "push_suppression_bulk_import",
+    "category": "push",
+    "description": "Exact-admin atomic add or reassert of 1–100 unique manual/dashboard authorities. Raw tokens are sensitive request input only; any invalid, duplicate, storage, or audit outcome rolls back every item."
+  },
+  {
+    "name": "push_suppression_bulk_remove",
+    "category": "push",
+    "description": "Exact-admin atomic compare-and-swap removal of 1–100 unique reviewed manual/dashboard authorities. One stale, missing, locked, invalid, storage, or audit outcome rolls back every removal; receipts preserve stillSuppressed truth."
+  },
+  {
+    "name": "developer_marketplace_catalog",
+    "category": "developer-marketplace",
+    "description": "Read developer marketplace catalogs for app types, scopes, webhook topics, OAuth runtime, review policy, and revocation paths."
+  },
+  {
+    "name": "developer_marketplace_app_validate",
+    "category": "developer-marketplace",
+    "description": "Validate a marketplace app draft payload before create/update or review submission."
+  },
+  {
+    "name": "developer_marketplace_app_list",
+    "category": "developer-marketplace",
+    "description": "List marketplace apps for the current tenant, optionally filtered by status."
+  },
+  {
+    "name": "developer_marketplace_app_create",
+    "category": "developer-marketplace",
+    "description": "Create a marketplace app draft from a JSON payload."
+  },
+  {
+    "name": "developer_marketplace_app_get",
+    "category": "developer-marketplace",
+    "description": "Get one marketplace app by id."
+  },
+  {
+    "name": "developer_marketplace_app_update",
+    "category": "developer-marketplace",
+    "description": "Update a marketplace app draft from a JSON payload."
+  },
+  {
+    "name": "developer_marketplace_app_submit_review",
+    "category": "developer-marketplace",
+    "description": "Submit a marketplace app for review."
+  },
+  {
+    "name": "developer_marketplace_app_monitoring",
+    "category": "developer-marketplace",
+    "description": "Read app monitoring: OAuth client state, installs, webhooks, test accounts, token usage, review blockers, and API revision warnings."
+  },
+  {
+    "name": "developer_marketplace_oauth_client_list",
+    "category": "developer-marketplace",
+    "description": "List OAuth clients for a marketplace app."
+  },
+  {
+    "name": "developer_marketplace_oauth_client_create",
+    "category": "developer-marketplace",
+    "description": "Create an OAuth client for a marketplace app. Plaintext client_secret is returned once."
+  },
+  {
+    "name": "developer_marketplace_oauth_client_revoke",
+    "category": "developer-marketplace",
+    "description": "Revoke one OAuth client for a marketplace app."
+  },
+  {
+    "name": "developer_marketplace_test_account_list",
+    "category": "developer-marketplace",
+    "description": "List test accounts for a marketplace app."
+  },
+  {
+    "name": "developer_marketplace_test_account_create",
+    "category": "developer-marketplace",
+    "description": "Create a test account for marketplace review and partner testing."
+  },
+  {
+    "name": "developer_marketplace_listing_list",
+    "category": "developer-marketplace",
+    "description": "List marketplace listings, optionally filtered by category."
+  },
+  {
+    "name": "developer_marketplace_listing_upsert",
+    "category": "developer-marketplace",
+    "description": "Create or update the marketplace listing for an app."
+  },
+  {
+    "name": "developer_marketplace_listing_submit_review",
+    "category": "developer-marketplace",
+    "description": "Submit a marketplace listing for review."
+  },
+  {
+    "name": "developer_marketplace_installation_list",
+    "category": "developer-marketplace",
+    "description": "List marketplace app installations, optionally filtered by status."
+  },
+  {
+    "name": "developer_marketplace_installation_create",
+    "category": "developer-marketplace",
+    "description": "Install a marketplace app for the current tenant."
+  },
+  {
+    "name": "developer_marketplace_installation_revoke",
+    "category": "developer-marketplace",
+    "description": "Revoke a marketplace app installation."
+  },
+  {
+    "name": "developer_marketplace_webhook_list",
+    "category": "developer-marketplace",
+    "description": "List app webhook subscriptions for a marketplace app."
+  },
+  {
+    "name": "developer_marketplace_webhook_create",
+    "category": "developer-marketplace",
+    "description": "Create an app webhook subscription for a marketplace app."
+  },
+  {
+    "name": "developer_marketplace_partner_profile_list",
+    "category": "developer-marketplace",
+    "description": "List marketplace partner profiles, optionally filtered by profile type."
+  },
+  {
+    "name": "developer_marketplace_partner_profile_upsert",
+    "category": "developer-marketplace",
+    "description": "Create or update the current tenant's marketplace partner profile."
+  },
+  {
+    "name": "developer_marketplace_partner_profile_submit_review",
+    "category": "developer-marketplace",
+    "description": "Submit the current tenant's partner profile for review."
+  },
+  {
+    "name": "developer_marketplace_review_queue",
+    "category": "developer-marketplace",
+    "description": "Reviewer-only: list pending/resolved app, listing, and partner-profile review items."
+  },
+  {
+    "name": "developer_marketplace_review_app_decision",
+    "category": "developer-marketplace",
+    "description": "Reviewer-only: approve or reject a marketplace app."
+  },
+  {
+    "name": "developer_marketplace_review_listing_decision",
+    "category": "developer-marketplace",
+    "description": "Reviewer-only: approve or reject a marketplace listing."
+  },
+  {
+    "name": "developer_marketplace_review_partner_profile_decision",
+    "category": "developer-marketplace",
+    "description": "Reviewer-only: approve or reject a marketplace partner profile."
+  },
+  {
+    "name": "developer_marketplace_oauth_authorize",
+    "category": "developer-marketplace",
+    "description": "Run marketplace OAuth authorization and return an authorization code and redirect URL."
+  },
+  {
+    "name": "developer_marketplace_oauth_token",
+    "category": "developer-marketplace",
+    "description": "Exchange a marketplace OAuth authorization code for a scoped access token."
+  },
+  {
+    "name": "developer_marketplace_oauth_revoke",
+    "category": "developer-marketplace",
+    "description": "Revoke a marketplace OAuth access token."
+  },
+  {
+    "name": "developer_marketplace_audit_logs_list",
+    "category": "developer-marketplace",
+    "description": "List developer marketplace audit logs, optionally filtered by app id."
+  }
+]

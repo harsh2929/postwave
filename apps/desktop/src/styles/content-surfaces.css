@@ -1,0 +1,1927 @@
+/* ---------- welcome ------------------------------------------------- */
+
+.welcome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pw-sp-6);
+  padding-top: calc(var(--pw-titlebar-h) + var(--pw-sp-6));
+}
+.welcome-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  padding: var(--pw-sp-6);
+  box-shadow: var(--pw-shadow-card);
+}
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  margin-bottom: var(--pw-sp-4);
+}
+.welcome-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--pw-accent);
+  color: var(--pw-accent-fg);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.welcome-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+.welcome-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.welcome-sub {
+  font-size: 13px;
+  color: var(--pw-fg-muted);
+  margin-bottom: var(--pw-sp-4);
+}
+.welcome-steps {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--pw-sp-4);
+}
+.welcome-step-dot {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--pw-bg-elev-2);
+}
+.welcome-step-dot.is-done {
+  background: var(--pw-accent);
+}
+.welcome-step-dot.is-active {
+  background: var(--pw-fg-muted);
+}
+.welcome-actions {
+  display: flex;
+  gap: var(--pw-sp-2);
+  justify-content: flex-end;
+  margin-top: var(--pw-sp-4);
+}
+
+/* ---------- legacy boot/error/offline shells ------------------------ */
+/* Kept simple — these fill the whole window before the shell mounts. */
+
+.pw-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  gap: 12px;
+  padding-top: calc(var(--pw-titlebar-h) + 24px);
+}
+.pw-screen h1 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.pw-screen p {
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: 13px;
+  max-width: 420px;
+}
+.pw-wordmark {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--pw-accent);
+}
+.pw-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+@keyframes pw-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.pw-pulse {
+  animation: pw-pulse 1.4s ease-in-out infinite;
+}
+
+/* Feature 12 — UI-from-variables pending/failed row markers.
+   Applied to .list-row, table rows, or any container holding an
+   optimistically-rendered draft. The pending state plays a subtle
+   pulse on a 3px left border using the muted token; the failed state
+   shifts to warning yellow + exposes a Retry link. */
+.pw-pending-row {
+  position: relative;
+  border-left: 3px solid color-mix(in srgb, var(--pw-fg-muted) 60%, transparent);
+  background: color-mix(in srgb, var(--pw-fg-muted) 4%, transparent);
+}
+.pw-pending-row::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--pw-fg-muted);
+  animation: pw-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.pw-failed-row {
+  border-left: 3px solid var(--pw-warning);
+  background: color-mix(in srgb, var(--pw-warning) 8%, transparent);
+}
+.pw-retry-link {
+  background: transparent;
+  border: 0;
+  padding: 0 0 0 6px;
+  margin: 0;
+  font: inherit;
+  color: var(--pw-warning);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pw-retry-link:hover {
+  color: color-mix(in srgb, var(--pw-warning) 80%, var(--pw-fg));
+}
+
+/* slide-over (subscriber details, etc.) */
+.slideover-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--pw-shadow-color) 40%, transparent);
+  z-index: 90;
+  /* Fade the scrim in with the panel (Phase-2). Reduced-motion is honored
+     by the global clamp. */
+  animation: pw-fade-in 160ms ease-out;
+}
+.slideover {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--pw-bg-elev);
+  border-left: 1px solid var(--pw-border);
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  /* Float above content + spring in from the right, matching .slideover-v2
+     (Phase-2). The two most-opened panels — Subscriber + Campaign detail —
+     use this legacy base, so they previously slammed in flat and edgeless. */
+  box-shadow: -16px 0 48px
+    color-mix(in srgb, var(--pw-shadow-color) 32%, transparent);
+  animation: pw-slideover-in 220ms var(--pw-ease-out);
+}
+.slideover:not(.slideover-v2) {
+  width: 380px;
+  padding: var(--pw-sp-4);
+  padding-top: calc(var(--pw-titlebar-h) + var(--pw-sp-4));
+  gap: var(--pw-sp-3);
+  overflow-y: auto;
+}
+.slideover-close {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  color: var(--pw-fg-muted);
+}
+.slideover:not(.slideover-v2) > .slideover-close {
+  position: absolute;
+  top: calc(var(--pw-titlebar-h) + 8px);
+  right: 8px;
+}
+.slideover-close:hover {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+}
+
+/* sequences step list */
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-2);
+}
+.step-item {
+  display: flex;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+}
+.step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--pw-bg-elev-2);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pw-fg-muted);
+  flex-shrink: 0;
+}
+
+/* form/template card grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--pw-sp-3);
+}
+
+/* settings section blocks */
+.settings-section {
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev);
+  margin-bottom: var(--pw-sp-3);
+}
+.settings-section-head {
+  padding: var(--pw-sp-3) var(--pw-sp-4);
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+.settings-section-sub {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  margin-top: 2px;
+}
+.settings-section-body {
+  padding: var(--pw-sp-4);
+}
+.settings-webhook-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pw-sp-2);
+}
+/* Safety net: several cards (e.g. Workspace profile, Notifications) render
+   their fields directly under .settings-section without the
+   .settings-section-body wrapper the other cards use, so labels / inputs /
+   hints hugged the card's edge. Pad any body content child — excluding the
+   header (keeps its full-width divider) and an explicit body wrapper (so
+   correctly-built cards aren't double-padded). Vertical rhythm already
+   comes from .field { margin-bottom }, so only the first child needs a top
+   gap below the header. */
+.settings-section > :not(.settings-section-head):not(.settings-section-body) {
+  padding-left: var(--pw-sp-4);
+  padding-right: var(--pw-sp-4);
+}
+.settings-section > .settings-section-head + :not(.settings-section-body) {
+  padding-top: var(--pw-sp-4);
+}
+.settings-section
+  > :not(.settings-section-head):not(.settings-section-body):last-child {
+  padding-bottom: var(--pw-sp-4);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-2) 0;
+}
+.settings-row + .settings-row {
+  border-top: 1px solid var(--pw-border-soft);
+}
+
+.settings-device-code-form,
+.settings-device-review,
+.settings-device-complete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-3);
+}
+.settings-device-code-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--pw-sp-2);
+}
+.settings-device-code-controls .input {
+  min-width: 0;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.settings-device-message,
+.settings-device-warning {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.settings-device-review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-3);
+}
+.settings-device-review-head > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-device-disclosure {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--pw-bg-elev-2);
+}
+.settings-device-disclosure-row,
+.settings-device-scopes {
+  display: flex;
+  min-width: 0;
+  padding: var(--pw-sp-3);
+  flex-direction: column;
+  gap: 3px;
+}
+.settings-device-disclosure-row + .settings-device-disclosure-row {
+  border-left: 1px solid var(--pw-border-soft);
+}
+.settings-device-disclosure-row > span,
+.settings-device-scopes > span {
+  color: var(--pw-fg-subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.settings-device-disclosure-row > strong {
+  overflow-wrap: anywhere;
+  color: var(--pw-fg);
+  font-size: 13px;
+}
+.settings-device-disclosure-row > small,
+.settings-device-scopes > small {
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.settings-device-scopes {
+  border-top: 1px solid var(--pw-border-soft);
+  grid-column: 1 / -1;
+}
+.settings-device-scopes ul {
+  display: flex;
+  margin: 4px 0;
+  padding: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+}
+.settings-device-scopes code {
+  display: inline-flex;
+  padding: 3px 6px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg);
+  color: var(--pw-fg);
+  font-size: 10px;
+}
+.settings-device-warning {
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  border-left: 2px solid var(--pw-warning);
+  background: color-mix(in srgb, var(--pw-warning) 6%, transparent);
+}
+.settings-device-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+}
+.settings-device-complete {
+  padding: var(--pw-sp-3);
+  border: 1px solid color-mix(in srgb, var(--pw-success) 30%, var(--pw-border));
+  border-radius: var(--pw-radius-md);
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--pw-success) 6%, var(--pw-bg-elev));
+}
+.settings-device-complete > span {
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .settings-device-code-controls,
+  .settings-device-disclosure {
+    grid-template-columns: 1fr;
+  }
+  .settings-device-disclosure-row + .settings-device-disclosure-row {
+    border-top: 1px solid var(--pw-border-soft);
+    border-left: 0;
+  }
+  .settings-device-scopes {
+    grid-column: 1;
+  }
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  font-size: 13px;
+  color: var(--pw-fg);
+}
+.radio-row.is-disabled {
+  color: var(--pw-fg-subtle);
+  cursor: not-allowed;
+}
+
+/* pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  justify-content: flex-end;
+  padding: var(--pw-sp-3) 0;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Modal -------------------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: color-mix(in srgb, var(--pw-shadow-color) 55%, transparent);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 96px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  width: 100%;
+  /* 480 was too tight for forms with help text + multiple credential
+     fields. 560 leaves room without going wide enough to look like a
+     dashboard panel. */
+  max-width: 560px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  box-shadow: 0 12px 48px
+    color-mix(in srgb, var(--pw-shadow-color) 50%, transparent);
+  /* Keep the modal subtree fully opaque throughout entrance. Fading an
+     ancestor blends both foreground and surface into the page and creates a
+     temporary WCAG contrast failure. Transform-only motion stays legible. */
+  animation: pw-rise 140ms ease-out;
+  /* Cap height so long forms scroll inside the modal instead of
+     overflowing the viewport. modal-body becomes the scroll container
+     via its own overflow declaration below. */
+  max-height: min(720px, calc(100vh - 64px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Width presets — wired from the Modal `size` prop (`pw-modal-${size}`).
+   md mirrors the .modal-card default above; sm suits confirm dialogs,
+   lg/xl suit wide forms and previews while staying inside the viewport. */
+.pw-modal-sm {
+  max-width: 420px;
+}
+.pw-modal-md {
+  max-width: 560px;
+}
+.pw-modal-lg {
+  max-width: 720px;
+}
+.pw-modal-xl {
+  max-width: min(920px, calc(100vw - 64px));
+}
+
+.modal-header {
+  position: relative;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  margin: 0;
+}
+.modal-description {
+  font-size: 13px;
+  color: var(--pw-fg-muted);
+  margin: 6px 0 0 0;
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--pw-fg-subtle);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--pw-radius-sm);
+}
+.modal-close:hover {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+}
+
+.modal-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* Scroll long forms inside the body rather than expanding the card
+     beyond the viewport. modal-card sets the height cap. */
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  /*
+   * Sticks to the bottom of modal-body's scroll container so long
+   * forms keep the action row visible. Negative side+bottom margins
+   * extend the strip past modal-body's padding to touch the card
+   * edges; z-index keeps it above content scrolling underneath.
+   */
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 14px -20px -18px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--pw-border-soft);
+  background: var(--pw-bg-elev);
+}
+
+/* form pieces inside modals */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--pw-fg-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.field-error {
+  font-size: 12px;
+  color: var(--pw-danger);
+}
+
+/* ---------- Toast --------------------------------------------------- */
+
+.toast-host {
+  position: fixed;
+  bottom: 38px;
+  right: 16px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--pw-radius-md);
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg);
+  font-size: 13px;
+  cursor: default;
+  box-shadow: 0 6px 24px
+    color-mix(in srgb, var(--pw-shadow-color) 45%, transparent);
+  animation: pw-rise 160ms ease-out;
+  min-width: 240px;
+  max-width: 360px;
+  text-align: left;
+}
+
+@media (max-width: 520px) {
+  .toast-host {
+    right: 12px;
+    left: 12px;
+  }
+
+  .toast {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+}
+.toast-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.toast-success .toast-dot {
+  background: var(--pw-success);
+}
+.toast-error .toast-dot {
+  background: var(--pw-danger);
+}
+.toast-info .toast-dot {
+  background: var(--pw-accent);
+}
+.toast-soon .toast-dot {
+  /* stylelint-disable-next-line color-no-hex -- typed status indicator (purple = "soon"), same in both themes */
+  background: #9333ea;
+}
+
+@keyframes pw-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pw-rise {
+  from {
+    transform: translateY(6px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ---------- forms: tabs + copy row --------------------------------- */
+
+.tabs {
+  display: inline-flex;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  padding: 2px;
+  gap: 2px;
+  width: 100%;
+}
+.tab {
+  flex: 1;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--pw-fg);
+}
+.tab.is-active {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+}
+
+.copy-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.copy-row textarea,
+.copy-row .copy-text {
+  flex: 1;
+  min-height: 60px;
+  padding: 8px 10px;
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg);
+  font-family: var(--pw-font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+.copy-row textarea:focus {
+  border-color: var(--pw-accent);
+}
+
+.form-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 132px;
+}
+.form-tile[data-selected="true"] {
+  outline: 2px solid var(--pw-accent);
+  outline-offset: -2px;
+}
+.form-tile-open {
+  display: block;
+  width: 100%;
+  color: var(--pw-fg);
+  text-align: left;
+}
+.form-tile-open:hover {
+  color: var(--pw-accent);
+}
+.form-tile-select {
+  background: var(--pw-bg-elev-2);
+  border-radius: var(--pw-radius-xs);
+}
+.form-tile-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.form-tile-stats {
+  display: flex;
+  gap: var(--pw-sp-3);
+  margin-top: auto;
+  padding-top: var(--pw-sp-2);
+  border-top: 1px solid var(--pw-border-soft);
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.form-tile-stat-num {
+  color: var(--pw-fg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.forms-selection-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  flex-wrap: wrap;
+}
+
+.danger-zone {
+  border: 1px solid color-mix(in srgb, var(--pw-danger) 30%, transparent);
+  background: color-mix(in srgb, var(--pw-danger) 5%, transparent);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-3);
+}
+
+/* ---------- templates ---------------------------------------------- */
+
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  min-height: 200px;
+}
+.tpl-name {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tpl-card-open:hover {
+  color: var(--pw-accent);
+}
+.tpl-thumb {
+  position: relative;
+}
+.tpl-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 12px 16px;
+  border-top: 2px solid color-mix(in srgb, var(--pw-accent) 35%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--pw-accent) 18%, transparent);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ---------- charts (Analytics page) -------------------------------- */
+
+.pw-chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-3);
+  animation: pw-fade-in 200ms ease-out;
+}
+.pw-chart-card.is-drilldown-highlight {
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pw-accent) 20%, transparent);
+}
+.pw-chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pw-sp-3);
+}
+.pw-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+/* ---------- pre / code blocks (slide-over JSON metadata) ----------- */
+
+.pw-pre {
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+  padding: 8px 10px;
+  max-height: 220px;
+  overflow: auto;
+  line-height: 1.45;
+}
+
+/* ---------- workspace dropdown menu (Sidebar) ---------------------- */
+
+/*
+ * The menu is portaled and fixed-positioned from the workspace tile's
+ * viewport box. This lets it escape the sidebar's required overflow clipping
+ * and retain a usable width when the responsive sidebar collapses to 64px.
+ *
+ * The base `.sidebar-workspace` (above) styles the row layout;
+ * here we just normalise the <button> defaults so it looks
+ * identical to the previous <div role="button"> tile.
+ */
+.sidebar-workspace-wrap {
+  position: relative;
+}
+
+.sidebar-workspace {
+  width: 100%;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  text-align: left;
+  /* Do not inherit body's 200ms theme-transition color: during a light/dark
+     switch that intermediate gray falls below AA on the static sidebar. */
+  color: var(--pw-fg);
+  font: inherit;
+}
+
+.ws-menu {
+  position: fixed;
+  z-index: 50;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  box-shadow:
+    0 8px 24px color-mix(in srgb, var(--pw-shadow-color) 32%, transparent),
+    0 2px 6px color-mix(in srgb, var(--pw-shadow-color) 18%, transparent);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  animation: pw-rise 120ms ease-out;
+}
+
+.ws-menu-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  padding: 8px 8px 10px;
+}
+.ws-menu-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--pw-radius-sm);
+  /* stylelint-disable-next-line color-no-hex -- brand-identity workspace avatar gradient (ember), intentionally identical in both themes */
+  background: linear-gradient(135deg, #f08591 0%, #c8102e 100%);
+  color: var(--pw-solid-fg);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.ws-menu-header-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ws-menu-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-menu-slug {
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ws-menu-sep {
+  height: 1px;
+  background: var(--pw-border-soft);
+  margin: 4px 0;
+}
+
+.ws-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  padding: 7px 8px;
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg);
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.ws-menu-item:hover {
+  background: var(--pw-bg-elev-2);
+}
+.ws-menu-item-label {
+  flex: 1;
+}
+.ws-menu-item-danger {
+  color: var(--pw-danger);
+}
+.ws-menu-item-danger:hover {
+  background: color-mix(in srgb, var(--pw-danger) 10%, transparent);
+}
+
+/* ---------- notifications panel (TopBar bell) ---------------------- */
+
+.topbar-notif-wrap {
+  position: relative;
+}
+
+.topbar-iconbtn {
+  position: relative;
+}
+
+.topbar-bell-count {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--pw-danger);
+  border: 1.5px solid var(--pw-bg-elev);
+  color: var(--pw-bg);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* SUB-091: View-as-Viewer indicator. Subtle accent pill in the topbar
+ * that's only present while the admin is previewing the read-only UI.
+ * Clicking it re-opens the account menu so the operator can exit. */
+.topbar-viewer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--pw-warning);
+  background: color-mix(in srgb, var(--pw-warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 32%, transparent);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 80ms ease-out;
+}
+.topbar-viewer-badge:hover {
+  background: color-mix(in srgb, var(--pw-warning) 20%, transparent);
+}
+.topbar-viewer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pw-warning);
+  flex: none;
+}
+
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(410px, calc(100dvw - 24px));
+  max-height: min(560px, calc(100dvh - 88px));
+  z-index: 50;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  box-shadow:
+    0 10px 32px color-mix(in srgb, var(--pw-shadow-color) 36%, transparent),
+    0 2px 8px color-mix(in srgb, var(--pw-shadow-color) 18%, transparent);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  animation: pw-rise 120ms ease-out;
+}
+
+.notif-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-2);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.notif-panel-title {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--pw-fg);
+}
+
+.notif-panel-summary {
+  margin-top: 2px;
+  color: var(--pw-fg-subtle);
+  font-size: 11px;
+}
+
+.notif-panel-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-2);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+
+.notif-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.notif-filter .btn[aria-pressed="true"] {
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev-2);
+  box-shadow: inset 0 0 0 1px var(--pw-border);
+}
+
+.notif-persist-error {
+  padding: 9px 12px;
+  color: var(--pw-danger);
+  background: color-mix(in srgb, var(--pw-danger) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--pw-danger) 28%, transparent);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.notif-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.notif-panel-empty {
+  min-height: 160px;
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1.45;
+}
+
+.notif-panel-empty strong {
+  color: var(--pw-fg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.notif-panel-empty span {
+  max-width: 300px;
+}
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.notif-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 2px 0;
+  border-radius: var(--pw-radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--pw-fg);
+  width: 100%;
+}
+
+.notif-row.is-unread {
+  background: color-mix(in srgb, var(--pw-accent) 7%, transparent);
+  border-color: color-mix(in srgb, var(--pw-accent) 18%, transparent);
+}
+
+.notif-row:hover,
+.notif-row:focus-within {
+  background: var(--pw-bg-elev-2);
+  border-color: var(--pw-border-soft);
+}
+
+.notif-row-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--pw-radius-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notif-row-heading {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-row-action {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+
+.notif-unread-label {
+  flex: none;
+  color: var(--pw-accent);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.notif-row-body {
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.notif-row-meta {
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.notif-row-meta time {
+  font-variant-numeric: tabular-nums;
+}
+
+.notif-row-archive {
+  flex: none;
+  margin: 7px 6px 0 0;
+  padding: 4px 6px;
+  color: var(--pw-fg-subtle);
+  background: transparent;
+  border: 0;
+  border-radius: var(--pw-radius-sm);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.notif-row-archive:hover,
+.notif-row-archive:focus-visible {
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev-2);
+}
+
+@media (max-width: 700px) {
+  .notif-panel {
+    position: fixed;
+    inset: 56px 12px auto;
+    width: auto;
+    max-height: calc(100dvh - 68px);
+  }
+
+  .notif-panel-tools {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-panel {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .notif-panel,
+  .notif-panel-header,
+  .notif-panel-tools,
+  .notif-row,
+  .notif-persist-error {
+    border-color: CanvasText;
+  }
+
+  .notif-row.is-unread {
+    border-color: Highlight;
+  }
+}
+
+/* ---------- detail slideovers (subscriber / campaign / sequence) ---- */
+
+.sub-detail-header {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-3);
+}
+.sub-detail-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.sub-detail-actions {
+  display: flex;
+  gap: var(--pw-sp-2);
+  padding-top: var(--pw-sp-2);
+  border-top: 1px solid var(--pw-border-soft);
+}
+
+/* removable chips for tags + custom fields */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip-removable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 4px 0 8px;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--pw-fg);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chip-removable button {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  color: var(--pw-fg-subtle);
+  font-size: 12px;
+  line-height: 1;
+}
+.chip-removable button:hover {
+  background: color-mix(in srgb, var(--pw-danger) 16%, transparent);
+  color: var(--pw-danger);
+}
+
+/* activity timeline */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.timeline-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+}
+.timeline-row + .timeline-row {
+  border-top: 1px solid var(--pw-border-soft);
+}
+.timeline-icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--pw-fg-muted);
+}
+.timeline-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.timeline-time {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* campaign slideover bits */
+.campaign-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: var(--pw-sp-2) 0;
+  border-top: 1px solid var(--pw-border-soft);
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.campaign-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.campaign-stats .stat-card {
+  padding: 8px 10px;
+}
+.campaign-stats .stat-value {
+  font-size: 18px;
+}
+
+.link-table {
+  width: 100%;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  overflow: hidden;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.link-table tr + tr td {
+  border-top: 1px solid var(--pw-border-soft);
+}
+.link-table td {
+  padding: 6px 10px;
+}
+.link-table td:last-child {
+  text-align: right;
+  width: 60px;
+  font-variant-numeric: tabular-nums;
+}
+.link-meta-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.link-meta-row + .link-meta-row {
+  border-top: 1px solid var(--pw-border-soft);
+}
+
+/* sequence steps editor */
+.step-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.step-editor-card {
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.step-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.step-editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--pw-border-soft);
+}
+
+/* sequence funnel mini-chart */
+.seq-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.seq-funnel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.seq-funnel-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--pw-bg-elev-2);
+  border-radius: 4px;
+  display: flex;
+  overflow: hidden;
+}
+.seq-funnel-seg {
+  display: block;
+  height: 100%;
+}
+.seg-reached {
+  background: color-mix(in srgb, var(--pw-accent) 40%, transparent);
+}
+.seg-opened {
+  background: color-mix(in srgb, var(--pw-accent) 70%, transparent);
+}
+.seg-clicked {
+  background: var(--pw-accent);
+}
+
+/* ----- live SSE indicator (LiveDot.tsx) --------------------------- */
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  line-height: 1;
+  user-select: none;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pw-success);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--pw-success) 60%, transparent);
+  flex: 0 0 auto;
+}
+.live-dot-muted {
+  background: var(--pw-fg-subtle);
+  box-shadow: none;
+}
+.live-pulse {
+  animation: live-pulse 1.6s ease-out infinite;
+}
+.live-label {
+  letter-spacing: 0.02em;
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--pw-success) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--pw-success) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--pw-success) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-pulse {
+    animation: none;
+  }
+}
+
+/* ---------- Phase-10 email preview tabs ---------------------------- */
+/* Used by EmailPreviewTabs — host frame, per-client iframe wrapper,
+   warnings banner, and the thin reload progress bar. We DO NOT redefine
+   `.tabs` / `.tab` — those come from the Forms agent's section above. */
+
+.email-preview-host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  padding: 8px;
+}
+
+.email-preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The client tab strip stretches; refresh button stays compact. */
+.email-preview-tabs {
+  flex: 1;
+}
+
+/* Empty + disclaimer text. */
+.email-preview-empty {
+  padding: 32px 12px;
+  text-align: center;
+  font-size: 12px;
+}
+.email-preview-disclaimer {
+  font-size: 11px;
+  text-align: center;
+  padding-top: 4px;
+}
+
+/* Warnings — yellow notice. */
+.email-preview-warning {
+  background: color-mix(in srgb, var(--pw-warning) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 30%, transparent);
+  color: var(--pw-fg);
+  border-radius: var(--pw-radius-sm);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.email-preview-warning strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--pw-fg);
+}
+.email-preview-warning ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.email-preview-warning li {
+  margin: 2px 0;
+  color: var(--pw-fg-muted);
+}
+
+/* Iframe stage — center the per-client viewport-shaped iframe. */
+.email-preview-frame {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  padding: 12px;
+  min-height: 480px;
+  overflow: auto;
+}
+
+.email-preview-iframe {
+  /* stylelint-disable-next-line color-no-hex -- email canvas is white regardless of app theme (matches how recipients see it) */
+  background: #ffffff;
+  border: 1px solid var(--pw-border);
+  border-radius: 4px;
+  /* Width + height come inline (per-client viewport); we just style chrome. */
+}
+
+/* Indeterminate progress bar — pulses while a fresh preview is fetching.
+   Stays above the (possibly stale) preview so users see "we're refreshing"
+   without losing the previous render. */
+.email-preview-progress {
+  position: relative;
+  height: 2px;
+  background: color-mix(in srgb, var(--pw-accent) 15%, transparent);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.email-preview-progress::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 30%;
+  background: var(--pw-accent);
+  animation: email-preview-progress-slide 1.1s ease-in-out infinite;
+}
+@keyframes email-preview-progress-slide {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .email-preview-progress::before {
+    animation: none;
+    width: 100%;
+  }
+}
+
+/* ---------- Moosewave AI (chat panel) ------------------------------- */
+
+/*
+ * Two-column shell: history+composer on the left, suggestions on the
+ * right. The page sits inside `.content` so it inherits the 24px outer
+ * padding and overflow-y. The page itself is a flex column so the input
+ * row docks naturally below the history.
+ */
+
+.ai-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.ai-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--pw-sp-3);
+  flex: 1;
+  min-height: 0;
+}
+@media (max-width: 1000px) {
+  .ai-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ai-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-3);
+  min-height: 0;
+}
+
+.ai-history {
+  flex: 1;
+  min-height: 320px;
+  overflow-y: auto;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-2);
+}
+
+/* Message bubble — card-like, left/right aligned by role. */
+
+.ai-msg {
+  position: relative;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: 10px 12px 10px;
+  max-width: 85%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+.ai-msg-user {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--pw-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--pw-accent) 28%, transparent);
+}
+.ai-msg-assistant {
+  align-self: flex-start;
+}
+.ai-msg-errored {
+  background: color-mix(in srgb, var(--pw-danger) 6%, transparent);
+  border-color: color-mix(in srgb, var(--pw-danger) 25%, transparent);
+}
+
+.ai-msg-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pw-sp-2);
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+}
+.ai-msg-role {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--pw-fg-muted);
+}
+.ai-msg-time {
+  margin-left: auto;
+}
+
+.ai-msg-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--pw-fg);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  /* Avoid "trailing dot" jump while streaming an empty body */
+  min-height: 1em;
+}
+
+.ai-msg-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--pw-border-soft);
+}
+.ai-msg-action-hint {
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Streaming progress bar at the bottom edge of the latest assistant
+ * bubble. 2px tall, ember, pulsing — NOT a typing-cursor caret. Subtle.
+ */
+.ai-streaming-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--pw-accent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: ai-stream-slide 1.3s ease-in-out infinite;
+  opacity: 0.85;
+  pointer-events: none;
+}
+@keyframes ai-stream-slide {
+  0% {
+    background-position: 100% 0;
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+  100% {
+    background-position: -100% 0;
+    opacity: 0.55;
+  }
+}
+
+/* Composer ---------------------------------------------------------- */
+
+.ai-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-2);
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-3);
+}
+
+.ai-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 64px;
+  max-height: 240px;
+  padding: 8px 10px;
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 80ms;
+}
+.ai-input:focus {
+  border-color: var(--pw-accent);
+}
+.ai-input::placeholder {
+  color: var(--pw-fg-subtle);
+}
+
+.ai-input-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-2);
+}
+.ai-input-hint {
+  font-size: 11px;
+}
+
+/* Suggestions side panel ------------------------------------------- */
+
+.ai-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-2);
+  align-self: start;
+}
+.ai-suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ai-suggestion-chip {
+  /* Override the default `.chip` (small horizontal pill) so the vertical
+     list reads as a stack of left-aligned action tiles. */
+  height: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev-2);
+  border-radius: var(--pw-radius-sm);
+  text-align: left;
+  font-size: 12px;
+  color: var(--pw-fg);
+  white-space: normal;
+  cursor: pointer;
+  transition:
+    background 80ms,
+    border-color 80ms;
+}
+.ai-suggestion-chip:hover {
+  background: var(--pw-bg-elev);
+  border-color: var(--pw-fg-subtle);
+  color: var(--pw-fg);
+}
+.ai-suggestion-foot {
+  margin-top: var(--pw-sp-2);
+  padding-top: var(--pw-sp-2);
+  border-top: 1px solid var(--pw-border-soft);
+  font-size: 11px;
+}
+
+/* Empty state inside .ai-history ------------------------------------ */
+
+.ai-empty {
+  flex: 1;
+  padding: 32px 24px;
+}
+.ai-empty .empty-state-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--pw-accent);
+}
+.ai-empty-privacy {
+  margin-top: var(--pw-sp-2);
+  font-size: 11px;
+  max-width: 360px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-streaming-bar {
+    animation: none;
+    opacity: 0.6;
+  }
+}

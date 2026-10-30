@@ -1,0 +1,248 @@
+/* Guided MCP doorway inside Moosewave AI. Administration remains MCP-owned. */
+
+.ai-agent-summary {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  overflow: hidden;
+  padding: clamp(17px, 2.5vw, 25px);
+  background:
+    radial-gradient(
+      circle at 90% 8%,
+      color-mix(in srgb, var(--pw-accent) 13%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pw-bg-elev-2) 95%, transparent),
+      var(--pw-bg-elev)
+    );
+  border-radius: calc(var(--pw-radius-md) + 3px);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 4%, transparent) inset,
+    0 18px 44px color-mix(in srgb, var(--pw-shadow-color) 10%, transparent);
+}
+
+.ai-agent-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+
+.ai-agent-header > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-agent-glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: color-mix(in srgb, var(--pw-accent) 10%, var(--pw-bg-elev-2));
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 34%, var(--pw-border));
+  border-radius: 14px;
+  box-shadow: 0 10px 24px
+    color-mix(in srgb, var(--pw-shadow-color) 15%, transparent);
+}
+
+.ai-agent-glyph::before,
+.ai-agent-glyph::after,
+.ai-agent-glyph span {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  content: "";
+  background: var(--pw-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pw-accent) 11%, transparent);
+}
+
+.ai-agent-glyph::before {
+  top: 10px;
+  left: 19px;
+}
+
+.ai-agent-glyph::after {
+  right: 9px;
+  bottom: 10px;
+}
+
+.ai-agent-glyph span:nth-child(1) {
+  bottom: 9px;
+  left: 10px;
+}
+
+.ai-agent-glyph span:nth-child(2),
+.ai-agent-glyph span:nth-child(3) {
+  width: 1px;
+  height: 17px;
+  background: color-mix(in srgb, var(--pw-accent) 46%, transparent);
+  border-radius: 0;
+  box-shadow: none;
+  transform-origin: center;
+}
+
+.ai-agent-glyph span:nth-child(2) {
+  top: 17px;
+  left: 16px;
+  transform: rotate(48deg);
+}
+
+.ai-agent-glyph span:nth-child(3) {
+  top: 17px;
+  right: 15px;
+  transform: rotate(-48deg);
+}
+
+.ai-agent-kicker {
+  color: var(--pw-accent);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.ai-agent-header .section-title {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: -0.018em;
+}
+
+.ai-agent-intro {
+  max-width: 720px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.ai-agent-boundaries {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.ai-agent-boundaries li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 80%, transparent);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+}
+
+.ai-agent-boundaries li > span {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  color: var(--pw-accent);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--pw-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 28%, transparent);
+  border-radius: 9px;
+}
+
+.ai-agent-boundaries li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ai-agent-boundaries strong {
+  color: var(--pw-fg);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ai-agent-boundaries small {
+  color: var(--pw-fg-subtle);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.ai-agent-boundary-note {
+  display: grid;
+  grid-template-columns: minmax(120px, auto) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 11px 12px;
+  background: color-mix(in srgb, var(--pw-accent) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 20%, var(--pw-border));
+  border-radius: var(--pw-radius-md);
+}
+
+.ai-agent-boundary-note strong {
+  color: var(--pw-fg);
+  font-size: 11px;
+}
+
+.ai-agent-boundary-note span {
+  color: var(--pw-fg-muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.ai-agent-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 1px;
+}
+
+@media (max-width: 800px) {
+  .ai-agent-boundaries {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .ai-agent-summary {
+    padding: 14px;
+  }
+
+  .ai-agent-boundary-note {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .ai-agent-actions > .btn {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-agent-glyph,
+  .ai-agent-glyph * {
+    animation: none;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ai-agent-summary,
+  .ai-agent-glyph,
+  .ai-agent-boundaries li,
+  .ai-agent-boundary-note {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}

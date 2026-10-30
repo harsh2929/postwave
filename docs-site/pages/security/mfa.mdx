@@ -1,0 +1,68 @@
+---
+title: MFA / TOTP
+---
+
+import { Callout } from 'nextra/components';
+
+# MFA / TOTP
+
+Moosewave supports time-based one-time password (TOTP) two-factor auth, with a tenant policy that can require it for admins or for everyone. The policy is enforced at session-access time — an enrolled-but-unchallenged session is blocked from protected routes until it completes a challenge.
+
+## Enrollment flow
+
+| Method | Path                              | Purpose                                                        |
+| ------ | --------------------------------- | -------------------------------------------------------------- |
+| POST   | `/api/v1/auth/totp/enroll`        | Mint a TOTP secret + recovery codes (one-shot reveal).         |
+| POST   | `/api/v1/auth/totp/verify`        | Confirm a code; enrolls the user and marks the session MFA-OK. |
+| POST   | `/api/v1/auth/totp/challenge`     | Step-up: satisfy MFA on an already-enrolled user's new session.|
+| DELETE | `/api/v1/auth/totp`               | Wipe enrollment.                                               |
+
+1. **Enroll** returns an `otpauth_uri` (render it as a QR code) and one-time `recovery_codes`. The server stores only hashes from here on.
+2. **Verify** with a code from the authenticator app. This both confirms the secret is on a real device *and* enrolls the user; the current session is flipped to MFA-satisfied.
+3. On a later fresh sign-in (a new session minted without MFA), **challenge** with a current code to satisfy MFA for that session.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/auth/totp/enroll \
+  -H "Cookie: $POSTWAVE_SESSION"
+```
+
+```json
+{
+  "otpauth_uri": "otpauth://totp/Moosewave:alice@example.com?secret=...&issuer=Moosewave",
+  "recovery_codes": ["a1b2-c3d4", "e5f6-g7h8", "..."]
+}
+```
+
+<Callout type="warning">
+`recovery_codes` are shown exactly once. Store them somewhere safe — they are the only way back in if the authenticator device is lost. Re-enrolling rotates the secret and invalidates the previous one.
+</Callout>
+
+Why both `/verify` and `/challenge`: `/verify` is the first-confirmation step that *also* enrolls (we want a known-good code before trusting the secret). `/challenge` is the per-session step-up when the user is already enrolled but their current session was minted without MFA.
+
+## Enforcement policy
+
+The tenant decides whether MFA is mandatory, via [security settings](/security#tenant-security-settings):
+
+```bash
+curl -X PUT https://api.moosewave.com/api/v1/security/settings \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "require_2fa_for_admins": true, "require_2fa_for_all": false }'
+```
+
+When a policy applies to the current user (`require_2fa_for_all`, or `require_2fa_for_admins` and the user is `owner`/`admin`) and their session has not satisfied MFA, protected routes return:
+
+```json
+{ "error": { "code": "mfa_required", "message": "tenant policy requires two-factor authentication; submit a TOTP challenge before retrying" } }
+```
+
+(HTTP `403`.) The dashboard intercepts this and redirects to the challenge page.
+
+<Callout type="info">
+A small exempt set of routes is always reachable so the user can actually complete MFA — `/api/v1/me`, logout, and the TOTP challenge/recovery endpoints. **API-key requests bypass the gate entirely**: keys are long-lived bearer credentials issued out of band, so per-request TOTP does not apply — protect them with scoping and rotation instead. The policy is read live (no cache), so flipping it takes effect on the next request.
+</Callout>
+
+## See also
+
+- [Enterprise auth](/security) — the security-settings surface.
+- [SSO (OIDC / OAuth)](/security/sso) — TOTP layers on top of SSO sign-in.
+- [Sessions](/team/sessions) — see and revoke active sessions.

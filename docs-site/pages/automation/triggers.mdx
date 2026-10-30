@@ -1,0 +1,99 @@
+---
+title: Triggers
+---
+
+# Triggers
+
+A trigger creates a new run of an automation for a specific subscriber. Moosewave supports four trigger types.
+
+## `list_join`
+
+Fires when a subscriber is added to a specified list (any source — form, manual add, API, migration).
+
+**Config:**
+
+```yaml
+trigger:
+  type: list_join
+  config:
+    list_id: <uuid>
+    only_on_initial_join: true   # don't fire if subscriber rejoins a list they were on before
+```
+
+**Most common use**: welcome sequences. Wire `list_join` on your main list to a [welcome template](/voice-ai/templates).
+
+## `tag_added`
+
+Fires when a specific tag is added to a subscriber.
+
+**Config:**
+
+```yaml
+trigger:
+  type: tag_added
+  config:
+    tag: "purchased-course"
+    only_on_first: false   # if true, only fires the very first time this tag is added; default false
+```
+
+**Common uses:**
+
+- `purchased-X` → post-purchase onboarding.
+- `survey-completed` → thank-you + next-step.
+- `vip` → VIP nurture sequence.
+
+## `custom_event`
+
+Fires when your application POSTs an event to the [Automations API](/api-reference/automations) endpoint.
+
+**Config:**
+
+```yaml
+trigger:
+  type: custom_event
+  config:
+    event_name: "checkout_completed"
+    filter:                          # optional; only fire when event payload matches
+      - { field: "amount", op: "gt", value: 100 }
+```
+
+To send the event:
+
+```bash
+curl -X POST https://api.moosewave.com/v1/events \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -d '{
+    "subscriber_email": "alice@example.com",
+    "event_name": "checkout_completed",
+    "payload": { "amount": 149, "product": "Pro Plan" }
+  }'
+```
+
+**Common uses:** product-side events that should drive email — checkout, abandoned cart, feature adoption.
+
+## `date_field`
+
+Fires on (or relative to) a date stored on the subscriber.
+
+**Config:**
+
+```yaml
+trigger:
+  type: date_field
+  config:
+    attribute: "trial_ends_at"
+    offset_days: -3        # fire 3 days before the date; positive = after
+    time_of_day: "09:00"   # subscriber's local time if known, else workspace default
+    repeat: false          # if true, refires annually (good for birthdays)
+```
+
+**Common uses:** trial-ending reminders, renewal reminders, birthdays, anniversaries.
+
+## Combining triggers
+
+A single automation has **one trigger type**. To run the same downstream graph from multiple trigger types, duplicate the automation (or split the trigger into a small "router" automation that fans out).
+
+## Next steps
+
+- [Branches](/automation/branches) — conditional routing within the automation.
+- [Actions](/automation/actions) — what to do besides sending emails.

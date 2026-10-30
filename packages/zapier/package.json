@@ -1,0 +1,23 @@
+{
+  "name": "postwave-zapier",
+  "version": "0.1.0",
+  "description": "Zapier integration for Moosewave — email marketing with AI assistance.",
+  "license": "MIT",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test \"./test/**/*.test.js\"",
+    "build": "echo 'no build step'",
+    "validate": "zapier validate --without-style",
+    "push": "zapier push"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "zapier-platform-core": "16.3.0"
+  },
+  "devDependencies": {
+    "zapier-platform-cli": "16.3.0"
+  }
+}

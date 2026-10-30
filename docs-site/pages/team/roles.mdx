@@ -1,0 +1,94 @@
+---
+title: Roles & RBAC
+---
+
+import { Callout } from 'nextra/components';
+
+# Roles & RBAC
+
+## Role bands
+
+Every dashboard user has one durable role. The bands, strongest to weakest:
+
+| Role     | Can                                                                                  |
+| -------- | ------------------------------------------------------------------------------------ |
+| `owner`  | Everything, including billing and the full-access (`admin`) surface.                 |
+| `admin`  | All admin-tier routes (security settings, senders, SCIM config, scheduled reports…). |
+| `editor` | Create / edit / send campaigns and manage subscribers; no admin-tier routes.         |
+| `viewer` | Read-only.                                                                           |
+
+How the bands are enforced on the **dashboard** (cookie-session) path: a route gated by any *admin-tier* scope requires the user to be `owner` or `admin`. Read-only scopes (`read:subscribers`, `read:campaigns`, `read:reports`, `audit:read`) admit any logged-in user. Everything outside that read-only allowlist — including `write:*`, `send:transactional`, `admin`, and the destructive `audit:configure_*` / `audit:execute_actions` levers — is admin-tier and fails closed for `editor`/`viewer`.
+
+<Callout type="info">
+This is a real privilege boundary, not a UI hint. The same `RequireScope` middleware that checks API-key scopes also enforces the role band on cookie sessions, so a `viewer` cannot reach a write route by calling the API directly from the dashboard.
+</Callout>
+
+## Scopes
+
+API keys carry scopes (not roles). The catalog:
+
+| Scope                 | Grants                                                       |
+| --------------------- | ----------------------------------------------------------- |
+| `read:subscribers`    | Read subscribers, lists, segments.                          |
+| `write:subscribers`   | Create / update / delete subscribers, lists, segments.      |
+| `read:campaigns`      | Read campaigns + templates.                                 |
+| `write:campaigns`     | Create / update campaigns; manage A/B tests.                |
+| `send:transactional`  | Authorizes eligible mail effects; SMS dispatch remains structurally release-held even when this scope is present. |
+| `read:reports`        | Read reports + analytics.                                   |
+| `admin`               | Wildcard — everything. Owner/admin only.                    |
+| `mcp`                 | Drive the [MCP server](/mcp). `admin` grants it implicitly. |
+
+Plus the `audit:*` family for the audit/compliance surface: `audit:read`, `audit:read_pii`, `audit:read_all_tenants`, `audit:configure_sinks`, `audit:configure_retention`, `audit:execute_actions`.
+
+`admin` is a wildcard: a key (or role) with `admin` satisfies any scope check.
+Mail send routes require the documented scope conjunction. Scope satisfaction
+does not override SMS effect holds such as
+`sms_campaign_dispatch_release_held` or
+`sms_reply_dispatch_release_held`.
+
+## The role-scope matrix API
+
+Custom roles and their assigned audit scopes are managed through these routes (the "Settings → Team → Roles" matrix):
+
+| Method | Path                              | Scope   | Purpose                                            |
+| ------ | --------------------------------- | ------- | -------------------------------------------------- |
+| GET    | `/api/v1/roles`                   | `audit:read` | List tenant roles + each role's assigned scopes + `availableScopes`. |
+| PUT    | `/api/v1/roles/{id}/scopes`       | `admin` | Replace (not merge) a role's assigned audit scopes.|
+| GET    | `/api/v1/audit/my-scopes`         | `audit:read` | The caller's effective scopes + `isAdmin`.     |
+
+```bash
+curl https://api.moosewave.com/api/v1/roles \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+```json
+{
+  "roles": [
+    {
+      "id": "rol_01HK...",
+      "name": "Compliance reviewer",
+      "description": "Read audit incl. PII",
+      "assignedScopes": ["audit:read", "audit:read_pii"],
+      "createdAt": "2026-05-01T10:00:00Z",
+      "updatedAt": "2026-05-01T10:00:00Z"
+    }
+  ],
+  "availableScopes": ["audit:read", "audit:read_pii", "audit:read_all_tenants",
+                      "audit:configure_sinks", "audit:configure_retention",
+                      "audit:execute_actions"]
+}
+```
+
+<Callout type="warning">
+`PUT /api/v1/roles/{id}/scopes` **replaces** the role's scope set — it is not additive. Unknown or non-audit scope strings are rejected up front (`422 validation_failed`) so a typo cannot silently drop a grant, and only `audit:*` scopes may be assigned here (so the matrix can't accidentally grant `admin` or `write:*`). Every change writes an `audit.rbac.role_updated` entry recording who changed which role and the before/after scope sets.
+</Callout>
+
+## Seats
+
+Seats are the count of provisioned users in your workspace. The canonical way to add/remove seats at scale is your IdP via [SCIM v2 provisioning](/security/scim) — pushing or deprovisioning a SCIM user creates or disables the corresponding Moosewave user row. Google OAuth signs in a previously linked user; it does not just-in-time provision seats or infer a link from a matching email.
+
+## See also
+
+- [Sessions](/team/sessions) — viewer-mode preview + logout-all.
+- [Enterprise auth → SCIM](/security/scim) — group → role mappings drive seat provisioning.
+- [API authentication](/api-reference/authentication) — creating scoped API keys.

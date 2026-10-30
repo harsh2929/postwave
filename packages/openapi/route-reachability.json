@@ -1,0 +1,1847 @@
+{
+  "version": 1,
+  "composition_root": "apps/api/main.go",
+  "additional_sources": [
+    {
+      "path": "apps/api/internal/a11y",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "a11y.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/accounts",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCRMReferenceRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/operator_reference_routes.go",
+          "function": "MountCRMReferenceRoutes",
+          "symbol": "accounts.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed CRM-reference helper."
+    },
+    {
+      "path": "apps/api/internal/actionticket",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountActionTicketRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountActionTicketRoutes",
+          "symbol": "deps.MountRoutes"
+        }
+      ],
+      "reason": "Mounted by the reviewed internal/server action-link composition helper. Unauthenticated by design: the single-use ticket IS the credential, because the surface exists to act from an email or chat message where no session exists."
+    },
+    {
+      "path": "apps/api/internal/activation_firewall",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAudienceActivationSurface"
+        },
+        {
+          "source": "apps/api/internal/server/audience_activation.go",
+          "function": "MountAudienceActivationSurface",
+          "symbol": "activation_firewall.MountSyncRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/audience_activation.go",
+          "function": "MountAudienceActivationSurface",
+          "symbol": "activation_firewall.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server audience-activation composition helper; the general exclusion list, per-sync preview, and signed receipt routes all require the full main-to-helper call chain."
+    },
+    {
+      "path": "apps/api/internal/activitycursor",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountContinuityRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountContinuityRoutes",
+          "symbol": "cursor.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server continuity composition helper. It was mounted, and called by both web and desktop, while absent from this list \u2014 so the generator emitted no capability, routeauth answered 403 route_authorization_unclassified, and startup validation failed outright. Invisible to the parity guard and unclassified for release; registering it is what puts it back under the contract."
+    },
+    {
+      "path": "apps/api/internal/agency",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCommercialAdminRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/tenant_governance.go",
+          "function": "MountCommercialAdminRoutes",
+          "symbol": "agency.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server commercial-administration composition helper."
+    },
+    {
+      "path": "apps/api/internal/analytics_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAuthenticatedAnalyticsIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/analytics_integrations.go",
+          "function": "MountAuthenticatedAnalyticsIntegrationRoutes",
+          "symbol": "analytics_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountPublicAnalyticsIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/analytics_integrations.go",
+          "function": "MountPublicAnalyticsIntegrationRoutes",
+          "symbol": "analytics_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed analytics integration surface; authenticated administration and public signed/token ingest both require their full main-to-helper chains."
+    },
+    {
+      "path": "apps/api/internal/api_usage_dashboard",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountPlatformCatalogRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountPlatformCatalogRoutes",
+          "symbol": "api_usage_dashboard.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed platform-catalog helper."
+    },
+    {
+      "path": "apps/api/internal/audience_destinations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAudienceActivationSurface"
+        },
+        {
+          "source": "apps/api/internal/server/audience_activation.go",
+          "function": "MountAudienceActivationSurface",
+          "symbol": "audience_destinations.MountSyncRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/audience_activation.go",
+          "function": "MountAudienceActivationSurface",
+          "symbol": "audience_destinations.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed audience-activation helper; moving its schedulers into internal/workers must not hide the HTTP surface from reachability audit."
+    },
+    {
+      "path": "apps/api/internal/audiences",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountLookalikeAudienceRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_lists_segments.go",
+          "function": "MountLookalikeAudienceRoutes",
+          "symbol": "audiences.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the focused lookalike-audience helper between segment and decay registrations."
+    },
+    {
+      "path": "apps/api/internal/audit_alerts",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountImportAuditAlertRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/operator_reference_routes.go",
+          "function": "MountImportAuditAlertRoutes",
+          "symbol": "audit_alerts.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed import and audit-alert helper."
+    },
+    {
+      "path": "apps/api/internal/bot_open_filter",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "bot_open_filter.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/campaign_benchmarks",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "campaign_benchmarks.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/campaignassuranceapi",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "campaignAssuranceRuntime.MountRead"
+        },
+        {
+          "source": "apps/api/campaign_assurance_composition.go",
+          "function": "MountRead",
+          "symbol": "campaignassuranceapi.MountRead"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "campaignAssuranceRuntime.MountWrite"
+        },
+        {
+          "source": "apps/api/campaign_assurance_composition.go",
+          "function": "MountWrite",
+          "symbol": "campaignassuranceapi.MountWrite"
+        }
+      ],
+      "reason": "Mounted through the reviewed Campaign Assurance runtime composition. Reads remain mounted and fail closed when the runtime is disabled; writes additionally inherit the shared idempotency boundary."
+    },
+    {
+      "path": "apps/api/internal/assurancelegalholdapi",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "campaignAssuranceRuntime.MountWrite"
+        },
+        {
+          "source": "apps/api/campaign_assurance_composition.go",
+          "function": "MountWrite",
+          "symbol": "assurancelegalholdapi.Mount"
+        }
+      ],
+      "reason": "Campaign Assurance legal holds, mounted through the same reviewed runtime composition as the assurance surface. Every route requires the audit.configure permission because suspending evidence deletion is a retention control, not a campaign edit; the surface stays mounted and answers 503 when no store is wired so an operator is never told a hold was placed when nothing is preserved."
+    },
+    {
+      "path": "apps/api/internal/campaign_clone",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCampaignDeliveryUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountCampaignDeliveryUtilities",
+          "symbol": "campaign_clone.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed campaign-delivery utility helper."
+    },
+    {
+      "path": "apps/api/internal/campaign_to_template",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "campaign_to_template.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/cdp_transforms",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWorkspaceDataUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "cdp_transforms.MountRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "MountApplyRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed workspace-data helper; pure preview and DB-backed apply routes require the complete call chain."
+    },
+    {
+      "path": "apps/api/internal/cohorts",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "cohorts.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/collections",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCRMReferenceRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/operator_reference_routes.go",
+          "function": "MountCRMReferenceRoutes",
+          "symbol": "collections.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed CRM-reference helper."
+    },
+    {
+      "path": "apps/api/internal/commerce",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAuthenticatedProviderIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountAuthenticatedProviderIntegrationRoutes",
+          "symbol": "commerce.Mount"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCommercePublicRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountCommercePublicRoutes",
+          "symbol": "commerce.MountPublic"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed provider-integration composition helpers; authenticated administration and Shopify signed-state/HMAC callbacks require both main-to-helper call chains."
+    },
+    {
+      "path": "apps/api/internal/compliance",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountPrivacyComplianceRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/tenant_governance.go",
+          "function": "MountPrivacyComplianceRoutes",
+          "symbol": "MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server privacy-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/consent",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "consent.MountRoutes"
+        }
+      ],
+      "reason": "Authenticated consent evidence is mounted transitively by the reviewed reporting-and-compliance helper; public consent routes retain their separate direct mount."
+    },
+    {
+      "path": "apps/api/internal/contact_rating",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberPersonalizationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountSubscriberPersonalizationRoutes",
+          "symbol": "contact_rating.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-personalization helper."
+    },
+    {
+      "path": "apps/api/internal/contact_ratings",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberPersonalizationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountSubscriberPersonalizationRoutes",
+          "symbol": "manualRatings.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-personalization helper."
+    },
+    {
+      "path": "apps/api/internal/content_optimizer",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSendingDiscoveryRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/sending_forms_routes.go",
+          "function": "MountSendingDiscoveryRoutes",
+          "symbol": "content_optimizer.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed sending/discovery helper."
+    },
+    {
+      "path": "apps/api/internal/content_remix",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSendingDiscoveryRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/sending_forms_routes.go",
+          "function": "MountSendingDiscoveryRoutes",
+          "symbol": "content_remix.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed sending/discovery helper."
+    },
+    {
+      "path": "apps/api/internal/control_group",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberProtectionUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountSubscriberProtectionUtilities",
+          "symbol": "control_group.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-protection composition helper."
+    },
+    {
+      "path": "apps/api/internal/crm_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAuthenticatedProviderIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountAuthenticatedProviderIntegrationRoutes",
+          "symbol": "crm_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountProviderOAuthCallbackRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountProviderOAuthCallbackRoutes",
+          "symbol": "crm_integrations.MountOAuthCallbackRoutes"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountPublicProviderIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountPublicProviderIntegrationRoutes",
+          "symbol": "crm_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed provider-integration composition helpers across authenticated, OAuth-state, and signed provider-callback trust boundaries."
+    },
+    {
+      "path": "apps/api/internal/custom_domains",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWebDomainToolRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/web_domain_tool_routes.go",
+          "function": "MountWebDomainToolRoutes",
+          "symbol": "domainRoutes.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed web/domain-tool helper."
+    },
+    {
+      "path": "apps/api/internal/customobjects",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWorkspaceDataUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "customObjectRoutes.MountRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "customObjectRoutes.MountProfileLinkRoutes"
+        }
+      ],
+      "reason": "Mounted conditionally and transitively by the reviewed workspace-data helper after the PostgreSQL store is constructed successfully."
+    },
+    {
+      "path": "apps/api/internal/dedupeinfo",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberProtectionUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountSubscriberProtectionUtilities",
+          "symbol": "dedupeinfo.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-protection composition helper."
+    },
+    {
+      "path": "apps/api/internal/deliverability_control",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "deliverability_control.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/deliverability_hub",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "deliverability_hub.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/dmarc",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWebDomainToolRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/web_domain_tool_routes.go",
+          "function": "MountWebDomainToolRoutes",
+          "symbol": "dmarcRoutes.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed web/domain-tool helper."
+    },
+    {
+      "path": "apps/api/internal/dns_health",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "dns_health.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/domain_warmup",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "domain_warmup.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/editorcheckpoint",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountContinuityRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountContinuityRoutes",
+          "symbol": "checkpoint.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the same continuity composition helper as activitycursor; the two are mounted together so a resume offer cannot appear without the draft behind it."
+    },
+    {
+      "path": "apps/api/internal/email_blocks",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountEditorQueueRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/editor_queue_routes.go",
+          "function": "MountEditorQueueRoutes",
+          "symbol": "email_blocks.MountRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/editor_queue_routes.go",
+          "function": "MountEditorQueueRoutes",
+          "symbol": "email_blocks.MountSavedRoutes"
+        }
+      ],
+      "reason": "Both compose/catalog and saved-block surfaces are mounted transitively by the reviewed editor and queue helper."
+    },
+    {
+      "path": "apps/api/internal/email_template",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWebDomainToolRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/web_domain_tool_routes.go",
+          "function": "MountWebDomainToolRoutes",
+          "symbol": "templateRoutes.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed web/domain-tool helper."
+    },
+    {
+      "path": "apps/api/internal/email_validator",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberProtectionUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountSubscriberProtectionUtilities",
+          "symbol": "email_validator.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-protection composition helper."
+    },
+    {
+      "path": "apps/api/internal/engagementclassification",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAnalyticsReportingRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/analytics_asset_routes.go",
+          "function": "MountAnalyticsReportingRoutes",
+          "symbol": "surface.EngagementClassification.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively inside the reviewed authenticated analytics/reporting heavy-read group; exposes tenant-scoped classifier summary, human-engaged reach-floor reads, and a fixed-window evidence export."
+    },
+    {
+      "path": "apps/api/internal/exports",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "exports.MountRetentionRoutes"
+        }
+      ],
+      "reason": "Export-retention policy routes are mounted transitively by the reviewed reporting-and-compliance helper; the primary export surface retains its separate mount."
+    },
+    {
+      "path": "apps/api/internal/feature_flags",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCampaignDeliveryUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountCampaignDeliveryUtilities",
+          "symbol": "feature_flags.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed campaign-delivery utility helper."
+    },
+    {
+      "path": "apps/api/internal/firewall_attack_mode",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "firewall_attack_mode.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/form_variants",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountFormAdminRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/sending_forms_routes.go",
+          "function": "MountFormAdminRoutes",
+          "symbol": "variants.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed form-administration helper."
+    },
+    {
+      "path": "apps/api/internal/freq_caps",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "freq_caps.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/from_name_picker",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "from_name_picker.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/goals",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "goals.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/growth_source",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "growth_source.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/holdout",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberProtectionUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountSubscriberProtectionUtilities",
+          "symbol": "holdout.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-protection composition helper."
+    },
+    {
+      "path": "apps/api/internal/html2text",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCampaignDeliveryUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountCampaignDeliveryUtilities",
+          "symbol": "html2text.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed campaign-delivery utility helper."
+    },
+    {
+      "path": "apps/api/internal/inactive_keys",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "inactive_keys.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/integration_writeback",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAudienceActivationSurface"
+        },
+        {
+          "source": "apps/api/internal/server/audience_activation.go",
+          "function": "MountAudienceActivationSurface",
+          "symbol": "integration_writeback.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed audience-activation helper; moving its scheduler into internal/workers must not hide the HTTP surface from reachability audit."
+    },
+    {
+      "path": "apps/api/internal/integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountPlatformCatalogRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountPlatformCatalogRoutes",
+          "symbol": "integrations.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed platform-catalog helper."
+    },
+    {
+      "path": "apps/api/internal/isp_breakdown",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "isp_breakdown.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/klaviyo_migrate",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWorkspaceDataUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "klaviyo_migrate.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed workspace-data helper."
+    },
+    {
+      "path": "apps/api/internal/lead_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAuthenticatedProviderIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountAuthenticatedProviderIntegrationRoutes",
+          "symbol": "lead_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountPublicProviderIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountPublicProviderIntegrationRoutes",
+          "symbol": "lead_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed provider-integration composition helpers; authenticated administration and signed lead-provider callbacks require both call chains."
+    },
+    {
+      "path": "apps/api/internal/link_checker",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWebDomainToolRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/web_domain_tool_routes.go",
+          "function": "MountWebDomainToolRoutes",
+          "symbol": "linkRoutes.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed web/domain-tool helper."
+    },
+    {
+      "path": "apps/api/internal/list_health",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "list_health.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper; the adjacent history worker is not a route-reachability substitute."
+    },
+    {
+      "path": "apps/api/internal/loyalty_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountLoyaltyLifecycleRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/customer_lifecycle_integrations.go",
+          "function": "MountLoyaltyLifecycleRoutes",
+          "symbol": "loyalty_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/customer_lifecycle_integrations.go",
+          "function": "MountLoyaltyLifecycleRoutes",
+          "symbol": "loyalty_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server customer-lifecycle composition helper; authenticated administration and credentialed provider callbacks require the full main-to-helper call chain."
+    },
+    {
+      "path": "apps/api/internal/maintenance",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "maintenance.MountAdminRoutes"
+        }
+      ],
+      "reason": "Authenticated maintenance administration is mounted transitively by the reviewed reporting-and-compliance helper; public status maintenance retains its direct mount."
+    },
+    {
+      "path": "apps/api/internal/mandate",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAgentMandateRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountAgentMandateRoutes",
+          "symbol": "deps.MountRoutes"
+        }
+      ],
+      "reason": "Mounted by the reviewed internal/server agent-mandate composition helper. Session-only: a mandate must trace to a person, because an agent that can mint its own grant is not bounded by one."
+    },
+    {
+      "path": "apps/api/internal/marketing_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAuthenticatedProviderIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountAuthenticatedProviderIntegrationRoutes",
+          "symbol": "marketing_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountPublicProviderIntegrationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/provider_integrations.go",
+          "function": "MountPublicProviderIntegrationRoutes",
+          "symbol": "marketing_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed provider-integration composition helpers; authenticated administration and signed marketing-provider callbacks require both call chains."
+    },
+    {
+      "path": "apps/api/internal/merge",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountEditorQueueRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/editor_queue_routes.go",
+          "function": "MountEditorQueueRoutes",
+          "symbol": "merge.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed editor and queue helper."
+    },
+    {
+      "path": "apps/api/internal/nql",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSendingDiscoveryRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/sending_forms_routes.go",
+          "function": "MountSendingDiscoveryRoutes",
+          "symbol": "nql.MountRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/sending_forms_routes.go",
+          "function": "MountSendingDiscoveryRoutes",
+          "symbol": "nql.MountAnalyticsRoutes"
+        }
+      ],
+      "reason": "Both subscriber/campaign preview and analytics natural-language query surfaces are mounted transitively by the reviewed sending/discovery helper."
+    },
+    {
+      "path": "apps/api/internal/onboarding_progress",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberCampaignInsightRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountSubscriberCampaignInsightRoutes",
+          "symbol": "onboarding_progress.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber/campaign-insights helper."
+    },
+    {
+      "path": "apps/api/internal/operation",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountOperationsRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountOperationsRoutes",
+          "symbol": "deps.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server operations composition helper. The registry package had exactly one non-test importer before this and served no route at all; GET /api/v1/operations is its first."
+    },
+    {
+      "path": "apps/api/internal/partition_rotator",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "partitionRoutes.MountRoutes"
+        }
+      ],
+      "reason": "The authenticated admin run endpoint is mounted through the reviewed reporting-and-compliance helper with the exact rotator instance used by the background worker."
+    },
+    {
+      "path": "apps/api/internal/predictive",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "predictive.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper; predictive worker extraction no longer masks HTTP reachability."
+    },
+    {
+      "path": "apps/api/internal/preset_segments",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "preset_segments.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/privacy_portal",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "privacyPortal.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/pushsuppressions",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountMessagingEngagementRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/messaging_engagement_routes.go",
+          "function": "MountMessagingEngagementRoutes",
+          "symbol": "pushSuppressions.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed messaging and engagement helper."
+    },
+    {
+      "path": "apps/api/internal/recipient_tz_send",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCampaignDeliveryUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountCampaignDeliveryUtilities",
+          "symbol": "recipient_tz_send.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed campaign-delivery utility helper."
+    },
+    {
+      "path": "apps/api/internal/reply_analytics",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberCampaignInsightRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountSubscriberCampaignInsightRoutes",
+          "symbol": "reply_analytics.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber/campaign-insights helper."
+    },
+    {
+      "path": "apps/api/internal/reporting",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountAnalyticsReportingRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/analytics_asset_routes.go",
+          "function": "MountAnalyticsReportingRoutes",
+          "symbol": "reporting.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively inside the reviewed analytics/reporting heavy-read route group."
+    },
+    {
+      "path": "apps/api/internal/resend_unopened",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberCampaignInsightRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountSubscriberCampaignInsightRoutes",
+          "symbol": "resend_unopened.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber/campaign-insights helper."
+    },
+    {
+      "path": "apps/api/internal/retention",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWorkspaceDataUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "retentionRoutes.MountRoutes"
+        }
+      ],
+      "reason": "The route-visible retention runner is mounted transitively with the exact sweeper instance used by the background worker."
+    },
+    {
+      "path": "apps/api/internal/review_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReviewLifecycleRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/customer_lifecycle_integrations.go",
+          "function": "MountReviewLifecycleRoutes",
+          "symbol": "review_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/customer_lifecycle_integrations.go",
+          "function": "MountReviewLifecycleRoutes",
+          "symbol": "review_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server customer-lifecycle composition helper; authenticated administration and credentialed provider callbacks require the full main-to-helper call chain."
+    },
+    {
+      "path": "apps/api/internal/reviews",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReviewLifecycleRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/customer_lifecycle_integrations.go",
+          "function": "MountReviewLifecycleRoutes",
+          "symbol": "reviews.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server customer-lifecycle composition helper."
+    },
+    {
+      "path": "apps/api/internal/sar",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "sar.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/scheduled_reports",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "scheduled_reports.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper; scheduled-report worker extraction no longer masks HTTP reachability."
+    },
+    {
+      "path": "apps/api/internal/scoring",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "MountScoringRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/identity_api.go",
+          "function": "MountScoringRoutes",
+          "symbol": "scoring.MountRoutes"
+        }
+      ],
+      "reason": "Mounted through the reviewed reporting-and-compliance helper and the focused scoring wrapper; scoring worker extraction no longer masks HTTP reachability."
+    },
+    {
+      "path": "apps/api/internal/search",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSendingDiscoveryRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/sending_forms_routes.go",
+          "function": "MountSendingDiscoveryRoutes",
+          "symbol": "search.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed sending/discovery helper."
+    },
+    {
+      "path": "apps/api/internal/send_window",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberCampaignInsightRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountSubscriberCampaignInsightRoutes",
+          "symbol": "MountSendWindowRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/campaign_sending.go",
+          "function": "MountSendWindowRoutes",
+          "symbol": "send_window.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively through the reviewed subscriber/campaign-insights helper and the focused campaign-sending registration helper."
+    },
+    {
+      "path": "apps/api/internal/sender_reputation",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountReportingComplianceTools"
+        },
+        {
+          "source": "apps/api/internal/server/reporting_compliance_tools.go",
+          "function": "MountReportingComplianceTools",
+          "symbol": "sender_reputation.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed reporting-and-compliance composition helper."
+    },
+    {
+      "path": "apps/api/internal/sending_identity",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSendingIdentityRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/campaign_sending.go",
+          "function": "MountSendingIdentityRoutes",
+          "symbol": "sending_identity.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server campaign-sending composition helper."
+    },
+    {
+      "path": "apps/api/internal/service_suite",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSupportIntegrationsSurface"
+        },
+        {
+          "source": "apps/api/internal/server/support_integrations.go",
+          "function": "MountSupportIntegrationsSurface",
+          "symbol": "service_suite.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server customer-support composition helper."
+    },
+    {
+      "path": "apps/api/internal/settings",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWorkspaceDataUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed workspace-data helper; all five settings dependency values share the process pool and authenticated router."
+    },
+    {
+      "path": "apps/api/internal/soft_bounce_recovery",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberProtectionUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountSubscriberProtectionUtilities",
+          "symbol": "soft_bounce_recovery.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-protection composition helper."
+    },
+    {
+      "path": "apps/api/internal/spam_trap_guard",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberProtectionUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountSubscriberProtectionUtilities",
+          "symbol": "spam_trap_guard.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-protection helper; the returned worker shares the same pool and suppression store."
+    },
+    {
+      "path": "apps/api/internal/subject_analyzer",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberCampaignInsightRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountSubscriberCampaignInsightRoutes",
+          "symbol": "subject_analyzer.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber/campaign-insights helper."
+    },
+    {
+      "path": "apps/api/internal/subscriber_dedupe",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberProtectionUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountSubscriberProtectionUtilities",
+          "symbol": "subscriber_dedupe.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-protection composition helper."
+    },
+    {
+      "path": "apps/api/internal/subscriber_import",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountImportAuditAlertRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/operator_reference_routes.go",
+          "function": "MountImportAuditAlertRoutes",
+          "symbol": "subscriber_import.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed import and audit-alert helper."
+    },
+    {
+      "path": "apps/api/internal/subscriber_notes",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberCampaignInsightRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/platform_insights_routes.go",
+          "function": "MountSubscriberCampaignInsightRoutes",
+          "symbol": "subscriber_notes.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber/campaign-insights helper."
+    },
+    {
+      "path": "apps/api/internal/subscription_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriptionLifecycleRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/customer_lifecycle_integrations.go",
+          "function": "MountSubscriptionLifecycleRoutes",
+          "symbol": "subscription_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/customer_lifecycle_integrations.go",
+          "function": "MountSubscriptionLifecycleRoutes",
+          "symbol": "subscription_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server customer-lifecycle composition helper; authenticated administration and credentialed provider callbacks require the full main-to-helper call chain."
+    },
+    {
+      "path": "apps/api/internal/support_integrations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSupportIntegrationsSurface"
+        },
+        {
+          "source": "apps/api/internal/server/support_integrations.go",
+          "function": "MountSupportIntegrationsSurface",
+          "symbol": "support_integrations.MountRoutes"
+        },
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "support_integrations.MountPublicRoutes"
+        }
+      ],
+      "reason": "Authenticated Helpdesk/support administration is mounted transitively by the reviewed internal/server helper, while the Route41 method-agnostic provider-family release hold is deliberately root-mounted before authentication in main."
+    },
+    {
+      "path": "apps/api/internal/tag_taxonomy",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountDeliverabilitySurface"
+        },
+        {
+          "source": "apps/api/internal/server/deliverability.go",
+          "function": "MountDeliverabilitySurface",
+          "symbol": "tag_taxonomy.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed internal/server deliverability composition helper."
+    },
+    {
+      "path": "apps/api/internal/translations",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountWorkspaceDataUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/workspace_data_utilities.go",
+          "function": "MountWorkspaceDataUtilities",
+          "symbol": "translations.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed workspace-data helper with the configured voice-service gateway."
+    },
+    {
+      "path": "apps/api/internal/userprefs",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountSubscriberPersonalizationRoutes"
+        },
+        {
+          "source": "apps/api/internal/server/user_experience_routes.go",
+          "function": "MountSubscriberPersonalizationRoutes",
+          "symbol": "preferences.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed subscriber-personalization helper."
+    },
+    {
+      "path": "apps/api/internal/utm_tagging",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountCampaignDeliveryUtilities"
+        },
+        {
+          "source": "apps/api/internal/server/subscriber_campaign_utilities.go",
+          "function": "MountCampaignDeliveryUtilities",
+          "symbol": "utm_tagging.MountRoutes"
+        }
+      ],
+      "reason": "Mounted transitively by the reviewed campaign-delivery utility helper."
+    },
+    {
+      "path": "apps/api/internal/verification",
+      "reason": "Email-verification connector layer (ZeroBounce/Kickbox drivers plus the free local tier). Mounted as its own surface because MountSubscriberProtectionUtilities is pinned by a route-count contract test.",
+      "required_calls": [
+        {
+          "source": "apps/api/main.go",
+          "function": "run",
+          "symbol": "apiserver.MountVerificationSurface"
+        },
+        {
+          "source": "apps/api/internal/server/verification_surface.go",
+          "function": "MountVerificationSurface",
+          "symbol": "verification.MountRoutes"
+        }
+      ]
+    }
+  ],
+  "forbidden_composition_calls": [
+    {
+      "symbol": "affiliatesDeps.MountPublicRoutes",
+      "reason": "The public affiliate offer cannot be remounted until its commercial and legal release gates are approved."
+    },
+    {
+      "symbol": "affiliatesDeps.MountAdminRoutes",
+      "reason": "The affiliate admin surface manages the commercial affiliate program, which is closed until commission, payout, tax, privacy, and program terms are approved (same gate as MountPublicRoutes). Mounted only behind POSTWAVE_AFFILIATE_ADMIN_ENABLED; remains unregistered in the gateway manifest until that approval lands."
+    },
+    {
+      "symbol": "ai_agent.MountRoutes",
+      "reason": "The legacy deterministic campaign-agent router in campaign.go is superseded by the explicit MountAgentRoutes release boundary. Its nested session mutation scaffold is not mounted and must not enter OpenAPI, routeauth, or SDK contracts while the interactive agent remains release-held."
+    },
+    {
+      "symbol": "nbp.MountExtended",
+      "reason": "The optional NBP experiment/performance extension is excluded from the executable gateway inventory. If it is mounted, remove the three matching excluded_routes entries so parity and routeauth must classify the newly executable routes."
+    },
+    {
+      "symbol": "sto_predictive_clv.MountRoutes",
+      "reason": "The API imports this package only for its background recompute worker. Its scaffold HTTP handlers remain excluded until their runtime, entitlement, routeauth, and OpenAPI contracts are production-backed."
+    },
+    {
+      "symbol": "aeo.MountSensorRoutes",
+      "reason": "Only the per-tenant AEO Sensor API (aeo.MountRoutes) is composed. The public industry-wide Sensor surface in sensor_handlers.go stays unmounted until the per-tenant rollup pull, prompt-pack curation, differential-privacy noise, caching, and abuse controls in internal/aeo/MIGRATION.md are production-backed."
+    }
+  ],
+  "excluded_routes": [
+    {
+      "method": "GET",
+      "path": "/api/v1/nbp/experiments",
+      "reason": "The optional NBP experiment extension is not mounted by the API composition root; only nbp.Mount is part of the executable gateway surface."
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/nbp/experiments",
+      "reason": "The optional NBP experiment extension is not mounted by the API composition root; only nbp.Mount is part of the executable gateway surface."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/nbp/performance/{campaign_id}",
+      "reason": "The optional NBP performance extension is not mounted by the API composition root; only nbp.Mount is part of the executable gateway surface."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/templates/{id}/thumbnail.png",
+      "reason": "The legacy email-template thumbnail handler is not mounted by the API composition root. Thumbnail regeneration remains a background-worker concern; the uncomposed HTTP scaffold must not enter OpenAPI, routeauth, or client contracts."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/gift-subscriptions/attribution",
+      "reason": "Uncommitted work-in-progress surface: not yet reviewed for the gateway route contract."
+    }
+  ],
+  "excluded_sources": [
+    {
+      "path": "apps/api/internal/aeo/sensor_handlers.go",
+      "reason": "The public industry-wide AEO Sensor routes (/api/v1/sensor/aeo/*) and their publisher are unfinished and must not be mounted; only the per-tenant AEO Sensor API in handlers.go is composed. The matching forbidden composition call (aeo.MountSensorRoutes) makes any future mount fail closed."
+    },
+    {
+      "path": "apps/api/internal/affiliates/handlers.go",
+      "reason": "The composition package imports internal/affiliates only for the AffiliateSignupNotice type its signup mailer adapter renders (apps/api/event_billing_notification_adapters.go). This file's Deps.MountAdminRoutes and Deps.MountPublicRoutes are not composed, and the reachability scan fails if any composition file refers to either: regenerate.go resolves the reference by type, so a renamed variable, an aliased import, or a method value is caught, whereas the forbidden composition calls affiliatesDeps.MountPublicRoutes and affiliatesDeps.MountAdminRoutes match only that spelling. Both methods also return before registering anything while OperationallyAvailable() is compile-time false, which it stays until the commercial, legal, tax, and payout release gates are approved."
+    },
+    {
+      "path": "apps/api/internal/ai_agent/campaign.go",
+      "reason": "This file's legacy MountRoutes scaffold is dormant and superseded by sessions.go's explicit MountAgentRoutes release boundary. Excluding the source prevents its relative nested registrations from being mistaken for executable routes; the matching forbidden composition call makes any future mount fail closed."
+    },
+    {
+      "path": "apps/api/internal/archive_content_remix",
+      "reason": "The archived asynchronous remix job/worker scaffold is not mounted; the separate deterministic internal/content_remix campaign draft endpoint remains supported."
+    },
+    {
+      "path": "apps/api/internal/inboxreality/handlers.go",
+      "reason": "The composition package imports internal/inboxreality only to build the Inbox Reality runtime (apps/api/inbox_reality_lifecycle_composition.go). main.go registers all seven Inbox Reality routes itself, as literals, each behind its own API-key scope, the very-expensive tenant limit, or the internal bearer guard. Deps.MountRoutes and Deps.MountInternal in this file apply none of that middleware, and the reachability scan fails if any composition file refers to either: regenerate.go resolves the reference by type, so a renamed variable, a struct field, a method value, or a wrapper elsewhere in the package is caught. MountInternal serves handler tests only. This file therefore declares no reachable route; its handlers reach the inventory through main.go's registrations."
+    },
+    {
+      "path": "apps/api/internal/sto_predictive_clv/sto_predictive_clv.go",
+      "reason": "Only this package's background worker is composed. Its heuristic CLV HTTP route scaffold remains unmounted and must not be confused with the mounted internal/predictive surface."
+    }
+  ]
+}

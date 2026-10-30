@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "retention-history-evidence-harness.ts",
+    "retention-history-maturity.spec.ts",
+    "retention-history.playwright.config.ts"
+  ],
+  "exclude": ["../../node_modules", "../../dist", "../../src-tauri"],
+  "references": []
+}

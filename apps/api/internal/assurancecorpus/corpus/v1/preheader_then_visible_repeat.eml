@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <preheader-then-visible-repeat.v1@example.com>
+Subject: Your receipt
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-preheadrepeat-v1"
+
+--pw-preheadrepeat-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your receipt for 24.00 USD. https://shop.example.com/r/12
+--pw-preheadrepeat-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><div style="display:none;max-height:0;overflow:hidden">Your receipt for 24.00 USD.</div><h1>Your receipt</h1><p>Your receipt for 24.00 USD.</p><p><a href="https://shop.example.com/r/12">View the receipt</a></p></body></html>
+--pw-preheadrepeat-v1--

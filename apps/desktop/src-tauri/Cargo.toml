@@ -1,0 +1,122 @@
+[package]
+name = "postwave-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "Moosewave Desktop — native shell that hosts the Moosewave admin"
+authors = ["Moosewave"]
+license = "AGPL-3.0-only"
+repository = "https://github.com/postwave/postwave"
+
+# Bin target — Tauri's `generate_context!` macro looks for this binary.
+[[bin]]
+name = "postwave-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Core Tauri runtime. `tray-icon` enables the system tray; we don't enable
+# `protocol-asset` because the dashboard loads from devUrl / frontendDist
+# over the standard tauri:// scheme and remote URLs (Moosewave admin) via
+# the WebView's normal HTTPS handling.
+tauri = { version = "2", features = ["tray-icon"] }
+
+# Native plugins (Tauri 2.x). All explicitly opt-in.
+tauri-plugin-opener = "2"            # opening external URLs (modern replacement for shell::open)
+tauri-plugin-dialog = "2"            # native open/save pickers; renderer gets only open/save ACLs
+tauri-plugin-fs = "2"                # exact picker-granted read/stat scope; no global renderer paths
+# Direct notification backend access retains desktop activation handles. The
+# official plugin's fire-and-forget wrapper discards those handles; keeping
+# only this backend prevents duplicate delivery paths. Exact permission and
+# activation behavior is still qualified through the installed-app matrix.
+notify-rust = "4.18.0"
+tauri-plugin-clipboard-manager = "2" # native text clipboard; renderer ACL grants only text read/write + clear
+tauri-plugin-deep-link = "2"         # moosewave:// URL handling
+tauri-plugin-single-instance = "2"   # focus existing window on second launch
+tauri-plugin-window-state = "2"      # remember window size + position
+# Global quick-compose hotkey (CmdOrCtrl+Shift+P, see src/shortcut.rs).
+# Registered from Rust only — no JS-side plugin API is exposed, so no
+# capability entry is needed in capabilities/main.json.
+tauri-plugin-global-shortcut = "2"
+# Signed auto-updates. The plugin is only REGISTERED when both
+# POSTWAVE_UPDATER_PUBKEY and POSTWAVE_UPDATER_ENDPOINT were present in the
+# build environment (see src/updater.rs) — otherwise every updater command
+# returns a typed `not_configured` result and no network code can run.
+tauri-plugin-updater = "2"
+
+# OS-level network-interface watcher (src/net.rs). Cross-platform address
+# add/remove events: rtnetlink on Linux, SCDynamicStore/route socket on
+# macOS, IP Helper on Windows. Maintained by the libp2p project and tiny
+# compared to the alternatives (netwatch pulls half of iroh's dep tree).
+if-watch = { version = "3", features = ["tokio"] }
+# Only the timer is used (debounce in net.rs); tokio itself is already in
+# the dependency graph via tauri + if-watch.
+tokio = { version = "1", features = ["time", "sync", "macros"] }
+
+# Renderer-safe API transport. The webview sends a bounded same-origin
+# request description; Rust injects the keychain-held bearer and refuses
+# redirects so credentials can never cross the configured API origin.
+reqwest = { version = "0.13.4", default-features = false, features = ["rustls"] }
+
+# Serialization for IPC payloads.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+url = "2"
+# RFC 6265 Set-Cookie parsing. The renderer never receives parsed values.
+cookie = "0.18.1"
+aes-gcm = "0.10.3"
+base64 = "0.22"
+getrandom = "0.3"
+zeroize = "1"
+
+# Structured logging.
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Never fall back to keyring-rs's process-local mock for persisted sessions.
+keyring = { version = "3", features = ["apple-native"] }
+
+[target.'cfg(windows)'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+windows-sys = { version = "0.61", features = ["Win32_Storage_FileSystem"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Freedesktop Secret Service provides a durable encrypted store across
+# restarts on GNOME, KDE, and other supported Linux desktops.
+keyring = { version = "3", features = ["sync-secret-service"] }
+
+# --- v2 candidate (PW_OFFLINE_SQL feature flag) -----------------------
+# Offline campaign drafts with FTS5 search land on tauri-plugin-sql +
+# SQLCipher. Gated behind the `offline_sql` cargo feature so v1 builds
+# stay lean — flip the flag and uncomment to activate in 2027+.
+# tauri-plugin-sql = { version = "2", features = ["sqlite"], optional = true }
+
+[features]
+# Default: bundled production build with custom protocol enabled.
+default = ["custom-protocol"]
+# `custom-protocol` is required for `tauri build` (production); dev mode does
+# not need it because it serves the frontend over devUrl.
+custom-protocol = ["tauri/custom-protocol"]
+# Offline campaign drafts (v2). Activates the tauri-plugin-sql dep + the
+# renderer side reading `PW_OFFLINE_SQL=1` env to enable the drafts code
+# path. Not built by default; ship without enabling until v2.
+offline_sql = []
+# offline_sql = ["dep:tauri-plugin-sql"]
+
+# Tauri 2.11.5 still resolves tauri-utils 2.9.3 from crates.io with
+# urlpattern 0.3, whose retired `unic-*` dependency family is flagged by
+# RustSec. Upstream replaced it with urlpattern 0.6 (ICU4X) in the focused,
+# reviewed commit below; pin that immutable Tauri commit until the next
+# tauri-utils crates.io release contains the same change.
+#
+# Upstream change: https://github.com/tauri-apps/tauri/commit/dd725f4b13c30a86b398ccc59eb498f151f461c5
+[patch.crates-io]
+tauri-utils = { git = "https://github.com/tauri-apps/tauri", rev = "dd725f4b13c30a86b398ccc59eb498f151f461c5" }
+# The official clipboard plugin enables Wayland support through arboard.
+# wayland-scanner 0.31.10's crates.io artifact still pins vulnerable
+# quick-xml 0.39; upstream kept the crate version and upgraded to fixed 0.41.
+# Pin the reviewed immutable upstream revision until the next crates.io cut.
+wayland-scanner = { git = "https://github.com/Smithay/wayland-rs", rev = "249f35c8ce18c8a8000c627ffe04ac235bc0764f" }

@@ -1,0 +1,92 @@
+---
+title: SCIM v2
+---
+
+import { Callout } from 'nextra/components';
+
+# SCIM v2
+
+Moosewave implements SCIM 2.0 so your identity provider can push users and groups to the workspace automatically. Provision a user in Okta / Entra / Google Workspace and they appear in Moosewave; deprovision them and their seat is removed.
+
+## Two surfaces
+
+SCIM has two distinct route groups with **different authentication**:
+
+1. **The SCIM provisioning API** (`/scim/v2/*`) — consumed by your **IdP**, authenticated with a **SCIM bearer token** (not a Moosewave API key).
+2. **The admin config API** (`/api/v1/scim/*`) — consumed by **your operators** over the regular API key, to mint tokens and manage group → role rules.
+
+## Provisioning API (for your IdP)
+
+By RFC convention these live under `/scim/v2`. Discovery endpoints are unauthenticated; everything else requires the SCIM bearer token.
+
+| Method | Path                                  | Auth   | Purpose                          |
+| ------ | ------------------------------------- | ------ | -------------------------------- |
+| GET    | `/scim/v2/ServiceProviderConfig`      | none   | Capability discovery.            |
+| GET    | `/scim/v2/ResourceTypes`              | none   | Resource discovery.              |
+| GET    | `/scim/v2/Schemas`                    | none   | Schema discovery.                |
+| GET    | `/scim/v2/Users`                      | bearer | List / filter users.             |
+| POST   | `/scim/v2/Users`                      | bearer | Provision a user.                |
+| GET    | `/scim/v2/Users/{id}`                 | bearer | Get a user.                      |
+| PUT    | `/scim/v2/Users/{id}`                 | bearer | Replace a user.                  |
+| PATCH  | `/scim/v2/Users/{id}`                 | bearer | Patch a user (e.g. deactivate).  |
+| DELETE | `/scim/v2/Users/{id}`                 | bearer | Deprovision a user.             |
+| GET    | `/scim/v2/Groups`                     | bearer | List / filter groups.            |
+| POST   | `/scim/v2/Groups`                     | bearer | Create a group.                  |
+| GET    | `/scim/v2/Groups/{id}`                | bearer | Get a group.                     |
+| PUT    | `/scim/v2/Groups/{id}`                | bearer | Replace a group.                 |
+| PATCH  | `/scim/v2/Groups/{id}`                | bearer | Patch group membership.          |
+| DELETE | `/scim/v2/Groups/{id}`                | bearer | Delete a group.                  |
+
+List endpoints support standard SCIM `startIndex` + `count` pagination and `eq` filters (e.g. `filter=userName eq "alice@example.com"`).
+
+Point your IdP's SCIM connector at `https://api.moosewave.com/scim/v2` and paste the bearer token you mint below.
+
+## Tokens (for your operators)
+
+SCIM bearer tokens are minted from the admin config API. The plaintext is revealed exactly once.
+
+| Method | Path                              | Scope   | Purpose                                |
+| ------ | --------------------------------- | ------- | -------------------------------------- |
+| GET    | `/api/v1/scim/tokens`             | `admin` | List tokens (prefix-only view).        |
+| POST   | `/api/v1/scim/tokens`             | `admin` | Mint a token (one-shot reveal).        |
+| DELETE | `/api/v1/scim/tokens/{id}`        | `admin` | Revoke a token.                        |
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/scim/tokens \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+<Callout type="warning">
+Copy the token immediately — only a prefix is stored and shown afterward. Revoke and re-mint if it leaks.
+</Callout>
+
+## Group to role mappings
+
+A SCIM/SSO user needs a Moosewave role. Map an IdP group's display name to a role; at provisioning (or SSO login) time Moosewave resolves the user's role from the matching rule.
+
+| Method | Path                                    | Scope   | Purpose                          |
+| ------ | --------------------------------------- | ------- | -------------------------------- |
+| GET    | `/api/v1/scim/role-mappings`            | `admin` | List mappings.                   |
+| POST   | `/api/v1/scim/role-mappings`            | `admin` | Create / update a mapping.       |
+| DELETE | `/api/v1/scim/role-mappings/{id}`       | `admin` | Delete a mapping.                |
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/scim/role-mappings \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "group_name": "Marketing-Admins", "role": "admin", "precedence": 10 }'
+```
+
+Rules:
+
+- `role` must be one of `owner` / `admin` / `editor` / `viewer` (else `400 bad_role`).
+- `group_name` is unique per tenant — re-POSTing the same group upserts the rule.
+- `precedence` is `[0, 1000]` (default `100`); lower precedence wins when a user is in multiple mapped groups. Use `*` as the group name for a catch-all default role.
+- Every change emits a `scim.role_mapping.upsert` audit event.
+
+Because the SSO path uses the **same** mapping set, a user who signs in with Google whose assertion carries `Marketing-Admins` lands as an `admin` — identical to the SCIM-provisioned outcome.
+
+## See also
+
+- [SSO (OIDC / OAuth)](/security/sso) — the login path that shares these mappings.
+- [Team & roles](/team/roles) — the role bands these resolve to.
+- [Enterprise auth](/security) — tenant security policy.

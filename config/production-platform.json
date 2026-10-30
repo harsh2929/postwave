@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "service": "postwave-cloud",
+  "deploymentState": "not-certified",
+  "cloud": "aws",
+  "region": "us-west-2",
+  "domain": "moosewave.com",
+  "infrastructureAsCode": "cloudformation",
+  "authoritativeRunbook": "infra/aws/PRODUCTION_DEPLOY_RUNBOOK.md",
+  "releaseContract": "scripts/release/verify-aws-deployment-contracts.mjs",
+  "publicHosts": {
+    "apex": "moosewave.com",
+    "app": "app.moosewave.com",
+    "api": "api.moosewave.com",
+    "docs": "docs.moosewave.com",
+    "status": "status.moosewave.com",
+    "forms": "forms.moosewave.com"
+  },
+  "canonicalTemplates": [
+    "infra/aws/cloudformation/postwave-stack.yaml",
+    "infra/aws/cloudformation/postwave-sidecars.yaml",
+    "infra/aws/cloudformation/postwave-web.yaml",
+    "infra/aws/observability-stack.yaml",
+    "infra/aws/cloudwatch-alarms.yaml",
+    "infra/backup/aws-backup-dr.yaml",
+    "infra/backup/aws-rds-dr.yaml",
+    "infra/backup/aws-dns-failover.yaml"
+  ],
+  "releaseWorkloads": [
+    "api",
+    "web",
+    "voice",
+    "automation",
+    "deliverability",
+    "migration",
+    "db-migrator",
+    "observability-collector"
+  ],
+  "nonProductionDeploymentPaths": [
+    "infra/terraform/README.md",
+    "infra/mvp/README.md",
+    "infra/docker-compose.full.yml"
+  ],
+  "externalQualificationRequired": [
+    "AWS account deployment and CloudFormation change-set review",
+    "owned DNS and TLS validation",
+    "private Redis and Listmonk provisioning",
+    "provider credentials and callback registration",
+    "signed artifact promotion and rollback rehearsal",
+    "alert delivery, acknowledgement and incident exercise"
+  ]
+}

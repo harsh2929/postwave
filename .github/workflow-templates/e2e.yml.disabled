@@ -1,0 +1,130 @@
+name: E2E
+
+# -----------------------------------------------------------------------------
+# End-to-end test suite.
+#
+# Runs against the real docker-compose stack — the same one operators use
+# locally — to catch integration regressions that unit tests miss
+# (Listmonk integration, RLS policies, audit-log writes, cross-service
+# wiring, etc).
+#
+# Trigger surface:
+#   - pull requests: the full-stack gate blocks regressions before merge.
+#   - push to main: every merge also records a known-good main signal.
+#   - workflow_dispatch: lets a maintainer kick off a run manually
+#     against a feature branch (handy for verifying a docker-compose
+#     change before merging).
+#
+# Status: blocking. The harness promotes environment skips and soft dependency
+# assertions to failures through POSTWAVE_E2E_STRICT_ASSERTIONS=1.
+#
+# Security note: NO untrusted github.event.* values are interpolated
+# into shell commands. Every dynamic value goes through env: blocks.
+# -----------------------------------------------------------------------------
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: E2E - full stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: true
+
+      # Ubuntu runners ship docker + the compose v2 plugin out of the
+      # box. We don't install anything extra here.
+      - name: Bring up local stack
+        # The same compose invocation tests/e2e/run.sh uses, but in two
+        # steps so the GitHub UI shows distinct timings for "stack up"
+        # vs "tests run".
+        env:
+          POSTWAVE_POSTGRES_PORT: "5432"
+          POSTWAVE_REDIS_PORT: "6379"
+          POSTWAVE_LISTMONK_PORT: "9000"
+        run: |
+          docker compose \
+            -f infra/docker-compose.yml \
+            -f infra/docker-compose.full.yml \
+            up -d --build
+
+      - name: Wait for /api/ready
+        # Defence in depth: the e2e helpers also poll, but failing here
+        # gives a clearer error than a 30s WaitForStack timeout inside
+        # the test logs.
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/api/ready >/dev/null; then
+              echo "api healthy after ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "api never became healthy" >&2
+          docker compose \
+            -f infra/docker-compose.yml \
+            -f infra/docker-compose.full.yml \
+            ps
+          docker compose \
+            -f infra/docker-compose.yml \
+            -f infra/docker-compose.full.yml \
+            logs --tail=200
+          exit 1
+
+      - name: Run e2e suite
+        # POSTWAVE_E2E_SKIP_UP=1 because we already brought the stack
+        # up in the previous step (we want the GitHub-UI step boundary).
+        # POSTWAVE_E2E_KEEP_STACK=1 so run.sh's trap does not tear down
+        # before the Collect logs step gets a chance to grab them.
+        env:
+          POSTWAVE_E2E_SKIP_UP: "1"
+          POSTWAVE_E2E_KEEP_STACK: "1"
+          POSTWAVE_E2E_STRICT_ASSERTIONS: "1"
+        run: ./tests/e2e/run.sh
+
+      - name: Collect docker logs on failure
+        if: failure()
+        run: |
+          mkdir -p e2e-logs
+          docker compose \
+            -f infra/docker-compose.yml \
+            -f infra/docker-compose.full.yml \
+            logs --no-color > e2e-logs/compose.log
+
+      - name: Upload e2e logs
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: e2e-logs
+          path: e2e-logs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose \
+            -f infra/docker-compose.yml \
+            -f infra/docker-compose.full.yml \
+            down --volumes --remove-orphans || true

@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "description": "Shrink-only OpenAPI contract debt ledger. Any inventory change, regression, or unretained improvement must be reviewed by updating this file. Through 2026-08-23, the ledger retained the reviewed EQ-score, AI regression, notification delivery, campaign assurance, campaign poll, agent mandate, consent, and Route40 SMS contract improvements described in repository history. 2026-08-29: retained the combined Route41\u201343 Helpdesk, SMS-suppression, and push-suppression contract hardening. Exact-admin and explicit release-held boundaries replace generic/public defaults, moving the reviewed inventory 1955 -> 1959 and correcting the public inventory 190 -> 155 while every measured debt count falls. Route44 makes the build-wide OpenAPI artifact an authenticated viewer read instead of anonymous developer docs, reducing the reviewed public inventory 155 -> 154 and retaining the corresponding description, response, and error-contract improvements. The bulk email-verification job POST is now a hand-curated editor/write contract with a bounded typed body, 202 job schema, exact idempotency identity, and explicit error set. The Custom Objects body-search route, SMS body-search and tag-removal routes, Audience strong-ETag/CAS contracts, and audit export/alert/sink control plane are now fully typed with exact authority and diagnostic boundaries, moving the reviewed inventory 1959 -> 1962 while retaining substantial reductions across every affected debt category. Subscriber timeline, channel-consent, secondary-email, and suppression contracts now pin category-before-pagination semantics plus mandatory strong parent/address CAS. Warehouse, reverse-ETL, and streaming control planes expose safe redacted version-bound projections; assets, folders, saved blocks, and reference collections now carry explicit versions, closed CAS bodies, typed receipts, and distinct stale/missing outcomes. The newly inventoried saved-block detail read moves the reviewed inventory 1963 -> 1964 while the broader synchronization retains every measured debt reduction. The authenticated audit access-decision readback, private tenant-export GET/HEAD download operations, and outbound-webhook playground fire receipt move the reviewed inventory 1964 -> 1968. Each new operation has a hand-written description, bounded success schema, explicit errors, and reviewed admin authority, retaining four-operation reductions in generic descriptions, generated response descriptions, untyped body-success responses, missing error responses, and bodyless mutations. Dedicated mirror and authorization-manifest tests pin the finite response schemas, private boundaries, and role/scope contracts. 2026-08-30: retained the three authenticated conversion-ingest secret list, issue, and revoke operations, moving reviewed inventory 1968 -> 1971 while reducing generated response descriptions 705 -> 700, untyped body-success operations 794 -> 789, missing error responses 943 -> 942, and bodyless mutations 522 -> 521. The authenticated, editor-scoped Fact Contract replacement operation is now included in the reviewed route-authority inventory, moving it 1971 -> 1972 while retaining zero unclassified operations. 2026-08-31: reviewed nine mounted operations: canonical-offer resolution plus action-ticket preview/redeem; authenticated campaign direct-attribution evidence; and five authenticated IMAP reply-mailbox registry/lifecycle operations. This moves the reviewed inventory 1972 -> 1981 and its explicitly public subset 154 -> 157 while retaining reductions in generic descriptions 751 -> 746, generated response descriptions 700 -> 694, generic one-word summaries 88 -> 87, untyped body-success operations 789 -> 782, missing error responses 942 -> 935, and bodyless mutations 521 -> 520. F15 remediation then classified the unauthenticated canonical-offer resolver as an explicit release hold until recipient eligibility, origination, allowlisted projection, and live reconciliation are certified, reducing the reviewed public subset 157 -> 156 without removing its structural contract. All nine carry explicit authority, bounded success contracts, and explicit error outcomes. The curated 27-operation surface remains zero-defect. Final 2026-08-31 synchronization retains further reductions from authenticated and release-held contract corrections: generic descriptions 746 -> 743, generated responses 694 -> 689, untyped body successes 782 -> 776, and missing errors 935 -> 929; inventories remain 1981/156 and the curated 27-operation surface remains zero-defect. 2026-09-03 rich newsletter-feed closure replaces six generic public route contracts with exact RSS 2.0 and JSON Feed 1.1 media types, a bounded JSON response schema, explicit cache validators, and 304/404 outcomes. It retains the resulting full/public description, response-schema, and error-contract reductions together with two concurrent reviewed mutation-body improvements; operation inventories remain unchanged.",
+  "latest_review": "2026-09-15: staging fix wave. Inventory +1: GET /api/v1/segments/{id}/members (live segment members, so a new segment shows who is in it without a manual snapshot). Retained improvements measured in the merged document: three more operations and two more public operations now document their error responses (895 and 103 remain), and one more mutation declares its request body (509 remain).",
+  "documents": {
+    "full": {
+      "path": "packages/openapi/openapi.json",
+      "metrics": {
+        "operations_total": 2001,
+        "public_operations_total": 154,
+        "generic_operation_descriptions": 728,
+        "generated_response_descriptions": 668,
+        "handler_fragment_summaries": 0,
+        "generic_one_word_summaries": 87,
+        "body_success_operations_without_schema": 755,
+        "operations_without_error_response": 895,
+        "mutations_without_request_body": 509,
+        "public_generic_operation_descriptions": 79,
+        "public_generated_response_descriptions": 99,
+        "public_body_success_operations_without_schema": 107,
+        "public_operations_without_error_response": 103,
+        "public_mutations_without_request_body": 70,
+        "unclassified_spec_operations": 0,
+        "root_tenant_header_only_security_alternatives": 0,
+        "unresolved_local_refs": 0
+      }
+    },
+    "curated": {
+      "path": "packages/openapi/surfaces/openapi.yaml",
+      "metrics": {
+        "operations_total": 27,
+        "operations_without_description": 0,
+        "operations_without_security": 0,
+        "body_success_operations_without_schema": 0,
+        "operations_without_error_response": 0,
+        "mutations_without_request_body": 0,
+        "operations_without_examples": 0,
+        "runtime_route_mismatches": 0,
+        "security_exposure_mismatches": 0,
+        "missing_or_mismatched_scope_contracts": 0,
+        "missing_or_mismatched_scope_modes": 0,
+        "unresolved_security_schemes": 0,
+        "duplicate_operation_ids": 0,
+        "unresolved_local_refs": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <small-but-readable-legal-text.v1@example.com>
+Subject: Receipt for order 1042
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-legal-v1"
+
+--pw-legal-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Total 49.00 USD. Terms: https://legal.example.com/terms
+--pw-legal-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><p>Total 49.00 USD.</p><p style="font-size:11px;color:#555555">Prices include tax. <a href="https://legal.example.com/terms">Terms apply</a>.</p></body></html>
+--pw-legal-v1--

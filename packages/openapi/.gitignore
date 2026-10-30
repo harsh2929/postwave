@@ -1,0 +1,6 @@
+# Override the repo-wide /dist ignore — the generated TypeScript
+# types in dist/types.ts are committed so the openapi:codegen --check
+# step in CI can detect drift between surfaces/openapi.yaml and the
+# generated artifact. See ./MIGRATION.md.
+!dist/
+!dist/types.ts

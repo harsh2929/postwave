@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+# verify.py — AIVS (AI Verifiable Session) offline bundle verifier.
+#
+# Moosewave audit-2026 / EU AI Act Article 50 transparency support.
+#
+# Validates that:
+#   1. manifest.json is well-formed and uses known algorithms.
+#   2. each events.jsonl line, in order, reproduces the row_hash_hex
+#      recorded in chain.json (row_hash = sha256(line + prev_hash)).
+#   3. each Ed25519 signature in chain.json verifies against the row
+#      hash and the public key embedded in manifest.json.
+#
+# Stdlib-only — no pip install required. Python 3.8+.
+#
+# Usage:
+#   python3 verify.py [bundle_dir]
+#
+# Exit codes:
+#   0 — verified
+#   1 — schema / structural error
+#   2 — chain mismatch (tamper)
+#   3 — signature failure
+import hashlib
+import json
+import os
+import sys
+from typing import Dict, List, Tuple
+
+# Pure-Python Ed25519 verify — RFC 8032 §6.
+# Adapted from the reference implementation; ~80 LOC, no deps.
+P = 2**255 - 19
+L = 2**252 + 27742317777372353535851937790883648493
+D = (-121665 * pow(121666, -1, P)) % P
+I = pow(2, (P - 1) // 4, P)
+
+
+def _recover_x(y: int, sign: int) -> int:
+    xx = (y * y - 1) * pow(D * y * y + 1, -1, P) % P
+    x = pow(xx, (P + 3) // 8, P)
+    if (x * x - xx) % P != 0:
+        x = (x * I) % P
+    if x % 2 != sign:
+        x = P - x
+    return x
+
+
+def _point_add(P1: Tuple[int, int], P2: Tuple[int, int]) -> Tuple[int, int]:
+    x1, y1 = P1
+    x2, y2 = P2
+    x3 = (x1 * y2 + x2 * y1) * pow(1 + D * x1 * x2 * y1 * y2, -1, P) % P
+    y3 = (y1 * y2 + x1 * x2) * pow(1 - D * x1 * x2 * y1 * y2, -1, P) % P
+    return (x3, y3)
+
+
+def _scalar_mult(P1: Tuple[int, int], e: int) -> Tuple[int, int]:
+    if e == 0:
+        return (0, 1)
+    Q = _scalar_mult(P1, e // 2)
+    Q = _point_add(Q, Q)
+    if e & 1:
+        Q = _point_add(Q, P1)
+    return Q
+
+
+BY = (4 * pow(5, -1, P)) % P
+BX = _recover_x(BY, 0)
+B = (BX, BY)
+
+
+def _decode_point(s: bytes) -> Tuple[int, int]:
+    y = int.from_bytes(s, "little") & ((1 << 255) - 1)
+    sign = s[31] >> 7
+    x = _recover_x(y, sign)
+    return (x, y)
+
+
+def _h_int(*parts: bytes) -> int:
+    return int.from_bytes(hashlib.sha512(b"".join(parts)).digest(), "little")
+
+
+def ed25519_verify(pub: bytes, msg: bytes, sig: bytes) -> bool:
+    if len(sig) != 64 or len(pub) != 32:
+        return False
+    try:
+        A = _decode_point(pub)
+        R = _decode_point(sig[:32])
+        S = int.from_bytes(sig[32:], "little")
+    except Exception:
+        return False
+    k = _h_int(sig[:32], pub, msg)
+    R2 = _point_add(_scalar_mult(B, S), _scalar_mult(A, L - (k % L)))
+    return R2 == R
+
+
+def fail(code: int, msg: str) -> None:
+    print(f"FAIL: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def main(bundle_dir: str) -> None:
+    try:
+        with open(os.path.join(bundle_dir, "manifest.json"), "rb") as f:
+            manifest = json.loads(f.read())
+    except Exception as e:
+        fail(1, f"manifest.json unreadable: {e}")
+    if manifest.get("algorithms", {}).get("hash") != "sha256":
+        fail(1, "unsupported hash algorithm")
+    if manifest.get("algorithms", {}).get("signature") != "ed25519":
+        fail(1, "unsupported signature algorithm")
+    pub_hex = manifest.get("pubkey_ed25519_hex", "")
+    if len(pub_hex) != 64:
+        fail(1, "pubkey must be 32 bytes hex")
+    pub = bytes.fromhex(pub_hex)
+
+    try:
+        with open(os.path.join(bundle_dir, "chain.json"), "rb") as f:
+            chain = json.loads(f.read())
+    except Exception as e:
+        fail(1, f"chain.json unreadable: {e}")
+
+    entries: List[Dict] = chain.get("entries", [])
+    try:
+        with open(os.path.join(bundle_dir, "events.jsonl"), "rb") as f:
+            lines = [ln for ln in f.read().split(b"\n") if ln]
+    except Exception as e:
+        fail(1, f"events.jsonl unreadable: {e}")
+
+    if len(entries) != len(lines):
+        fail(1, f"chain has {len(entries)} entries, events has {len(lines)} lines")
+
+    prev = b"\x00" * 32
+    for i, (line, entry) in enumerate(zip(lines, entries)):
+        h = hashlib.sha256()
+        h.update(line)
+        h.update(prev)
+        row = h.digest()
+        if row.hex() != entry["row_hash_hex"]:
+            fail(2, f"line {i + 1}: row_hash mismatch (tampered or wrong order)")
+        if entry["prev_hash_hex"] != prev.hex():
+            fail(2, f"line {i + 1}: prev_hash mismatch")
+        sig = bytes.fromhex(entry["sig_hex"])
+        if not ed25519_verify(pub, row, sig):
+            fail(3, f"line {i + 1}: signature verification failed")
+        prev = row
+
+    print(f"OK: verified {len(lines)} events for session "
+          f"{manifest.get('session_id', '?')} (generator={manifest.get('generator')}, "
+          f"version={manifest.get('version')})")
+
+
+if __name__ == "__main__":
+    bd = sys.argv[1] if len(sys.argv) > 1 else "."
+    main(bd)

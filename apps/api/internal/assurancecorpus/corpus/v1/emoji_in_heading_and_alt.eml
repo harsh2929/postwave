@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <emoji-in-heading-and-alt.v1@example.com>
+Subject: Welcome 🎉
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-emojialt-v1"
+
+--pw-emojialt-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Welcome aboard. Start here: https://app.example.com/start
+--pw-emojialt-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Welcome 🎉</h1><img src="https://cdn.example.com/confetti.png" alt="Confetti 🎉" width="400" height="200"><p>Your workspace is ready.</p><p><a href="https://app.example.com/start">Start here</a></p></body></html>
+--pw-emojialt-v1--

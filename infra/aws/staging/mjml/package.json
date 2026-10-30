@@ -1,0 +1,10 @@
+{
+  "name": "postwave-staging-mjml",
+  "version": "0.0.0",
+  "private": true,
+  "description": "NON-PRODUCTION: the pinned mjml CLI the staging api-mjml image adds (infra/aws/staging/api-mjml.Dockerfile).",
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "mjml": "5.4.0"
+  }
+}

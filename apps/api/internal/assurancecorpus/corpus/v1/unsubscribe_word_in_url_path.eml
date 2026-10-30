@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <unsubscribe-word-in-url-path.v1@example.com>
+Subject: Product update
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-unsuburl-v1"
+
+--pw-unsuburl-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+New filters are live: https://docs.example.com/updates/unsubscribe-improvements
+--pw-unsuburl-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Product update</h1><p>We improved how unsubscribes are handled.</p><p><a href="https://docs.example.com/updates/unsubscribe-improvements">Read the update</a></p><footer><a href="https://news.example.com/unsubscribe">Unsubscribe</a></footer></body></html>
+--pw-unsuburl-v1--

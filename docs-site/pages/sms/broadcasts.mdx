@@ -1,0 +1,102 @@
+---
+title: SMS broadcasts & campaigns
+---
+
+import { Callout } from 'nextra/components';
+
+# SMS broadcasts & campaigns
+
+Moosewave models two draft shapes:
+
+- **Campaigns** — named, list-targeted draft records and retained lifecycle
+  metadata.
+- **Broadcasts** — an admin composer and bounded progress presentation over
+  retained records.
+
+<Callout type="warning">
+**HOLD / NO-GO.** Campaign send is `sms_campaign_dispatch_release_held`,
+schedule is `sms_campaign_schedule_release_held`, broadcast send is
+`sms_broadcast_dispatch_release_held`, and one-recipient test dispatch is
+`sms_test_dispatch_release_held`. Do not call these routes for customer
+traffic. Draft records and source idempotency code do not prove a live,
+reconciled provider effect.
+</Callout>
+
+## Campaign endpoints
+
+| Method | Path                                          | Scope             | Purpose                                   |
+| ------ | --------------------------------------------- | ----------------- | ----------------------------------------- |
+| GET    | `/api/v1/sms/campaigns`                       | `read:campaigns`  | List campaigns.                           |
+| POST   | `/api/v1/sms/campaigns`                       | `write:campaigns` | Create a campaign.                        |
+| GET    | `/api/v1/sms/campaigns/{id}`                  | `read:campaigns`  | Get one.                                  |
+| POST   | `/api/v1/sms/campaigns/{id}/send`             | `write:campaigns` | Held before dispatch.                     |
+| POST   | `/api/v1/sms/campaigns/{id}/schedule`         | `write:campaigns` | Held before scheduling.                   |
+| POST   | `/api/v1/sms/campaigns/{id}/pause`            | `write:campaigns` | Pause.                                    |
+| POST   | `/api/v1/sms/campaigns/{id}/resume`           | `write:campaigns` | Dispatch-affecting resume is held.        |
+| POST   | `/api/v1/sms/campaigns/{id}/cancel`           | `write:campaigns` | Cancel.                                   |
+| GET    | `/api/v1/sms/campaigns/{id}/report`           | `read:reports`    | Private evidence read is release-held.    |
+| GET    | `/api/v1/sms/campaigns/{id}/report/export`    | `read:reports`    | Private evidence export is release-held.  |
+
+`/api/v1/sms/test-send` is also held. There is no supported “quick test” path.
+
+### Create a campaign
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/sms/campaigns \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sender_profile_id": "snd_01HK...",
+    "list_id": "lst_01HK...",
+    "name": "Flash sale",
+    "body": "24h only: 20% off with code SAVE20. Reply STOP to opt out."
+  }'
+```
+
+This creates source/draft state only. A `media_url` field does not establish MMS
+readiness; `sms_mms_readiness_release_held` is current. Do not create a
+scheduled-looking draft as proof that a worker will run it.
+
+### No send or report example
+
+This page intentionally provides no dispatch command or successful report
+fixture. A runnable example could be mistaken for supported customer traffic.
+Private campaign report/export evidence returns
+`sms_evidence_read_release_held`; tracked clicks return
+`sms_click_resolver_release_held`; balance, cost, and usage return
+`sms_financial_ledger_release_held`.
+
+If a retained progress row says `sent`, presentation copy must identify it as
+provider-accepted when that is the wire meaning. It is not device-confirmed
+delivery. Later provider status changes are mutable and pagination uses only a
+created-at insertion cutoff, not a repeatable database snapshot.
+
+## Broadcasts
+
+Broadcasts are admin-scoped and sized at send time:
+
+| Method | Path                                       | Scope          | Purpose                          |
+| ------ | ------------------------------------------ | -------------- | -------------------------------- |
+| GET    | `/api/v1/sms/broadcasts`                   | `read:reports` | List broadcasts.                 |
+| POST   | `/api/v1/sms/broadcasts`                   | `admin`        | Create a broadcast.              |
+| GET    | `/api/v1/sms/broadcasts/{id}`              | `read:reports` | Get one.                         |
+| PATCH  | `/api/v1/sms/broadcasts/{id}`              | `admin`        | Update.                          |
+| DELETE | `/api/v1/sms/broadcasts/{id}`              | `admin`        | Delete.                          |
+| POST   | `/api/v1/sms/broadcasts/{id}/send`         | `admin`        | Held before provider dispatch.   |
+| POST   | `/api/v1/sms/broadcasts/{id}/cancel`       | `admin`        | Cancel.                          |
+| GET    | `/api/v1/sms/broadcasts/{id}/progress`     | `read:reports` | Bounded retained progress state. |
+
+Broadcast lists are cursor-bounded. Refresh replaces the first page and
+invalidates older cursors; clients must not merge pages from different
+boundaries. A dispatch control must be structurally absent or disabled while
+`broadcastDispatchAvailable` is false, and the client must make zero POSTs.
+
+Idempotency middleware, status claims, and draft progress fields are source
+defenses, not proof of durable budget reservation, provider reconciliation, or
+exactly-once external delivery.
+
+## See also
+
+- [Credits & billing](/sms/credits) — why preview, balance, and top-up are held.
+- [Compliance](/sms/compliance) — quiet hours, consent, STOP/HELP.
+- [Campaigns API](/api-reference/campaigns) — the email equivalent.

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <legal-respond-within-14-days.v1@example.com>
+Subject: Notice of change
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-legal14-v1"
+
+--pw-legal14-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+You must respond within 14 days. Details: https://legal.example.com/n/4
+--pw-legal14-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Notice of change</h1><p>You must respond within 14 days of this notice. If you do not respond, the existing terms continue unchanged.</p><p><a href="https://legal.example.com/n/4">Read the notice</a></p></body></html>
+--pw-legal14-v1--

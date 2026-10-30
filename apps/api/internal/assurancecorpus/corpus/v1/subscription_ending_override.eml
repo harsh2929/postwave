@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <subscription-ending-override.v1@example.com>
+Subject: Your trial ends Friday
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-trial-v1"
+
+--pw-trial-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your trial ends Friday. Override the default and pick a plan: https://app.example.com/plan
+--pw-trial-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Your trial ends Friday</h1><p>Your trial ends on Friday. To override the default downgrade, pick a plan before then.</p><p><a href="https://app.example.com/plan">Pick a plan</a></p></body></html>
+--pw-trial-v1--

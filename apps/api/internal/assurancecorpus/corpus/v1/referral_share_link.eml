@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <referral-share-link.v1@example.com>
+Subject: Share and both get credit
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-referral-v1"
+
+--pw-referral-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Share your link: https://app.example.com/refer/abc
+--pw-referral-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Share and both get credit</h1><p>Send your link to a colleague. You both get one month free.</p><p><a href="https://app.example.com/refer/abc">Copy your link</a></p></body></html>
+--pw-referral-v1--

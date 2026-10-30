@@ -1,0 +1,65 @@
+{
+  "schema_version": "postwave.service_suite.v2",
+  "provenance": {
+    "tenant_bound": false,
+    "source": "static_server_catalog"
+  },
+  "agent_run_types": ["draft_reply", "triage", "handoff", "summary"],
+  "channels": [
+    { "key": "web_chat", "label": "Web chat", "runtime_status": "held" },
+    { "key": "email", "label": "Email", "runtime_status": "held" },
+    { "key": "sms", "label": "SMS", "runtime_status": "held" },
+    { "key": "instagram", "label": "Instagram", "runtime_status": "held" },
+    { "key": "whatsapp", "label": "WhatsApp", "runtime_status": "held" },
+    { "key": "facebook", "label": "Facebook", "runtime_status": "held" }
+  ],
+  "conversation_statuses": [
+    "open",
+    "pending",
+    "waiting",
+    "resolved",
+    "closed",
+    "spam",
+    "archived"
+  ],
+  "capabilities": {
+    "outbound_reply_delivery": {
+      "status": "held",
+      "code": "helpdesk_delivery_unavailable"
+    },
+    "inbound_email_bridge": { "status": "held" },
+    "internal_notes": { "status": "available" },
+    "privacy_lifecycle": { "status": "held" },
+    "customer_hub_runtime": {
+      "status": "held",
+      "code": "customer_hub_runtime_unavailable"
+    },
+    "channel_runtime": {
+      "status": "held",
+      "code": "helpdesk_channel_runtime_unavailable"
+    },
+    "customer_agent": {
+      "status": "held",
+      "code": "customer_agent_draft_write_held",
+      "execution_mode": "deterministic_template_only"
+    },
+    "macro_usage_evidence": {
+      "status": "held",
+      "code": "macro_usage_evidence_unavailable"
+    },
+    "spam_assessment_write": {
+      "status": "held",
+      "code": "spam_assessment_write_held"
+    },
+    "resource_creation": {
+      "status": "held",
+      "code": "helpdesk_create_replay_unavailable"
+    }
+  },
+  "guardrail": {
+    "draft_only": true,
+    "provider_executed": false,
+    "customer_mutations": false,
+    "requires_human_review": true
+  }
+}

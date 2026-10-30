@@ -1,0 +1,557 @@
+name: Desktop Release
+
+# -----------------------------------------------------------------------------
+# Release pipeline for the Moosewave desktop app (Tauri 2).
+#
+# What this builds:
+#   - macOS: a universal .dmg + .app (signed with Developer ID, notarized,
+#     stapled). Universal = a single binary that runs natively on both Apple
+#     Silicon and Intel Macs.
+#   - Windows: an .msi (WiX-based) and an .exe (NSIS), both signtool-signed.
+#
+# What it produces:
+#   - A draft GitHub Release with the artifacts attached.
+#   - The Tauri updater manifest (`latest.json`) pointing at those artifacts.
+#     Operators must upload `latest.json` to the updater CDN
+#     (releases.moosewave.com) — see docs/runbooks/desktop-distribution.md.
+#
+# Trigger:
+#   - Tag push matching `desktop-v*` (e.g. `desktop-v0.1.0`). Tags are the
+#     authoritative source of truth for the release version.
+#   - workflow_dispatch for manual builds (e.g. testing the pipeline without
+#     cutting a real version). Manual runs do NOT publish a release.
+#
+# Why a separate workflow from .github/workflows/ci.yml:
+#   The desktop build matrix runs on macos-14 + windows-2022, which costs
+#   ~10x ubuntu minutes. We don't want every PR paying that — desktop-ci.yml
+#   handles fast PR feedback on macos-14 only.
+#
+# Security note on workflow inputs:
+#   We only consume `github.ref_name`, `github.sha`, `github.run_id`, and
+#   `github.ref_type` — all repo-controlled, none user-controlled. No issue
+#   bodies / PR titles / commit messages are interpolated into shell commands.
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+
+# Minimum required permissions. `contents: write` is needed for the release
+# action to create / update the draft GitHub Release. Everything else stays
+# read-only — supply-chain hygiene.
+permissions:
+  contents: write
+
+# If a new tag arrives while a build is mid-flight, cancel the older one. We
+# only ever care about the latest release attempt for a given ref.
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # `fail-fast: false` so a Windows failure doesn't abort an in-flight Mac
+    # build (and vice versa). Operators want to inspect both logs after a
+    # failed release attempt.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ---------------------------------------------------------------
+          # macOS: macos-14 = Apple Silicon (M-series). Building on Apple
+          # Silicon is required for native arm64 codegen; we cross-build
+          # the x86_64 slice via the universal-apple-darwin target.
+          # ---------------------------------------------------------------
+          - platform: macos-14
+            rust_targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+            tauri_args: "--target universal-apple-darwin"
+            artifact_label: "macos-universal"
+
+          # ---------------------------------------------------------------
+          # Windows: pin Server 2022 instead of the moving windows-latest
+          # alias. Tauri produces
+          # both an .msi (via WiX 3) and an .exe (via NSIS) by default. We
+          # ship both so users on locked-down corporate machines can pick
+          # whichever their MDM allows.
+          # ---------------------------------------------------------------
+          - platform: windows-2022
+            rust_targets: "x86_64-pc-windows-msvc"
+            tauri_args: ""
+            artifact_label: "windows-x86_64"
+
+    runs-on: ${{ matrix.platform }}
+    env:
+      POSTWAVE_RELEASE: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: postwave-desktop
+      SENTRY_RELEASE: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+          # Need full history so the release action can derive changelog.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate tagged release source
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REPOSITORY" != "harsh2929/postwave" ]]; then
+            echo "::error::only harsh2929/postwave may create desktop releases"
+            exit 1
+          fi
+          if [[ ! "$GITHUB_REF_NAME" =~ ^desktop-v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::desktop release tag has an invalid shape: $GITHUB_REF_NAME"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::desktop release tag commit is not reachable from origin/main"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.94.0
+          # Comma-separated list of compile targets. On macOS we want both
+          # arm64 and x86_64 so `--target universal-apple-darwin` can lipo
+          # them together. On Windows we only need msvc x86_64 — arm64
+          # Windows is not yet a Moosewave shipping target.
+          targets: ${{ matrix.rust_targets }}
+
+      - name: Cache cargo registry & build
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          # Keying on Cargo.lock means a dependency bump invalidates the
+          # cache exactly once. Platform is part of the key so the macOS
+          # cache doesn't pollute Windows and vice versa.
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: ${{ matrix.platform }}-cargo-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform }}-cargo-
+
+      - name: Install workspace dependencies
+        # `--frozen-lockfile` enforces pnpm-lock.yaml is in sync. CI must
+        # never silently mutate the lockfile.
+        run: pnpm install --frozen-lockfile
+
+      - name: Build desktop workspace dependencies
+        run: pnpm --filter 'postwave-desktop-shell^...' --if-present run build
+
+      - name: Generate platform third-party notices
+        run: pnpm licenses:generate -- --output artifacts/desktop/${{ matrix.artifact_label }}/THIRD_PARTY_NOTICES-${{ matrix.artifact_label }}.md
+
+      - name: Validate desktop icon matrix
+        # Fail before signing/package creation if any platform icon is stale,
+        # missing, or has the wrong dimensions.
+        run: pnpm --dir apps/desktop check:icons
+
+      - name: Validate desktop release version
+        # For real tags, desktop-vX.Y.Z must match package.json,
+        # Cargo.toml, tauri.conf.json, and CHANGELOG.md. Manual runs execute
+        # the explicit dry-run contract against the package version.
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            pnpm --filter postwave-desktop-shell run release:version-check
+          else
+            pnpm --filter postwave-desktop-shell run release:version-check -- --dry-run
+          fi
+
+      - name: Validate production release secrets
+        # Tag builds are production artifacts: they must not silently
+        # fall back to unsigned, non-notarized, or updater-disabled
+        # bundles. workflow_dispatch runs a distinct no-secret dry-run check.
+        shell: bash
+        env:
+          MATRIX_PLATFORM: ${{ matrix.platform }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          POSTWAVE_UPDATER_PUBKEY: ${{ secrets.POSTWAVE_UPDATER_PUBKEY }}
+          POSTWAVE_UPDATER_ENDPOINT: ${{ secrets.POSTWAVE_UPDATER_ENDPOINT }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            pnpm --filter postwave-desktop-shell run release:env-check
+          else
+            pnpm --filter postwave-desktop-shell run release:env-check -- --dry-run
+          fi
+
+      - name: Lint (Stylelint + ESLint)
+        run: pnpm --filter postwave-desktop-shell run lint
+
+      - name: Unit tests and full-source coverage ratchets (Vitest)
+        run: pnpm --filter postwave-desktop-shell run test:coverage
+
+      - name: Desktop performance contract tests
+        run: pnpm --dir apps/desktop run test:performance-contracts
+
+      - name: Install Chromium for exact-candidate renderer qualification
+        if: matrix.platform == 'macos-14'
+        run: pnpm --dir apps/desktop exec playwright install chromium
+
+      - name: Qualify exact-candidate renderer startup and retained heap
+        if: matrix.platform == 'macos-14'
+        # This source-side Chromium gate is release-blocking, but publication
+        # still requires the signed installed-target evidence documented in
+        # apps/desktop/docs/performance-qualification.md.
+        run: pnpm --dir apps/desktop run test:performance
+
+      - name: Retain exact-candidate renderer performance evidence
+        if: always() && matrix.platform == 'macos-14'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: desktop-release-renderer-performance-${{ github.run_id }}
+          path: |
+            apps/desktop/test-results/performance
+            apps/desktop/playwright-report
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Rust formatting check
+        run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check
+
+      - name: Rust clippy
+        run: cargo clippy --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+      - name: Install pinned cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
+      - name: Rust dependency audit
+        # Identical to desktop-ci: raw warnings are matched exactly, policy
+        # expiry is enforced, and supported-target reachability is recomputed
+        # before any tag artifact can be signed or uploaded.
+        run: pnpm --dir apps/desktop check:rust-dependencies
+
+      - name: Frontend production build
+        env:
+          VITE_SENTRY_DSN_DESKTOP: ${{ secrets.VITE_SENTRY_DSN_DESKTOP }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          VITE_POSTWAVE_RELEASE: ${{ env.POSTWAVE_RELEASE }}
+          # Only the macOS leg produces the upload copy. Tauri's later
+          # beforeBuildCommand runs without this opt-in and therefore embeds
+          # a clean renderer with no source maps on both platforms.
+          POSTWAVE_GENERATE_SOURCEMAPS: ${{ matrix.platform == 'macos-14' && '1' || '0' }}
+        run: pnpm --filter postwave-desktop-shell build
+
+      - name: Assert upload source maps were generated
+        if: matrix.platform == 'macos-14'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! find apps/desktop/dist -type f -name '*.map' -print -quit | grep -q .; then
+            echo "::error::source-map opt-in produced no files to upload"
+            exit 1
+          fi
+
+      - name: Require Sentry source-map credentials for tag releases
+        if: matrix.platform == 'macos-14' && github.ref_type == 'tag'
+        shell: bash
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: postwave-desktop
+        run: |
+          set -euo pipefail
+          test -n "$SENTRY_AUTH_TOKEN"
+          test -n "$SENTRY_ORG"
+          test -n "$SENTRY_PROJECT"
+
+      - name: Upload release source maps to Sentry
+        # Upload before native packaging. The pinned CLI is fail-closed: an
+        # auth/network/upload/finalize error stops the release before Tauri
+        # can create a draft artifact from this matrix leg.
+        if: ${{ matrix.platform == 'macos-14' && env.SENTRY_AUTH_TOKEN != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sentry_cli() { npx --yes @sentry/cli@3.6.0 "$@"; }
+          if ! sentry_cli releases new "$POSTWAVE_RELEASE"; then
+            sentry_cli releases info "$POSTWAVE_RELEASE" >/dev/null
+          fi
+          # Sentry's '~/' prefix is its own host wildcard, not a shell tilde.
+          # shellcheck disable=SC2088
+          sentry_cli releases files "$POSTWAVE_RELEASE" \
+            upload-sourcemaps ./apps/desktop/dist \
+            --url-prefix '~/' \
+            --rewrite
+          sentry_cli releases finalize "$POSTWAVE_RELEASE"
+
+      - name: Remove source maps before packaging
+        shell: bash
+        run: |
+          set -euo pipefail
+          find apps/desktop/dist -type f -name '*.map' -delete
+          if find apps/desktop/dist -type f -name '*.map' -print -quit | grep -q .; then
+            echo "::error::desktop dist still contains source maps"
+            exit 1
+          fi
+
+      - name: Bundle-size guard
+        run: pnpm --filter postwave-desktop-shell run check:bundle-size
+
+      - name: Source-size guard
+        run: pnpm --filter postwave-desktop-shell run check:source-size
+
+      # No platform-specific system dependencies are needed: macOS ships
+      # with codesign / notarytool / stapler, and Windows GitHub runners
+      # come with signtool.exe pre-installed (it lives under
+      # C:\Program Files (x86)\Windows Kits\10\bin\... ; tauri-action
+      # discovers it automatically).
+
+      # ---------------------------------------------------------------------
+      # Code-signing scaffold.
+      #
+      # Tag builds fail earlier in "Validate production release secrets" when
+      # signing or updater material is missing. These signing-availability
+      # checks remain so workflow_dispatch dry-runs can still produce unsigned
+      # artifacts for pipeline testing, with clear warnings in the log.
+      #
+      # Unsigned-build behaviour (workflow_dispatch only, when secrets are NOT set):
+      #   - macOS .app and .dmg are produced but Gatekeeper will warn
+      #     "<app> can't be opened because Apple cannot check it for
+      #     malicious software". User has to right-click -> Open or run
+      #     `xattr -dr com.apple.quarantine /Applications/Moosewave.app`.
+      #   - Windows .msi and .exe are produced but SmartScreen will warn
+      #     "Microsoft Defender SmartScreen prevented an unrecognized app
+      #     from starting." User has to click "More info -> Run anyway".
+      # ---------------------------------------------------------------------
+
+      - name: Determine macOS signing availability
+        # We expose a per-step boolean output instead of repeating the
+        # secret-presence check across every if: clause. The empty-string
+        # comparison runs against the env var, never the raw secret, so the
+        # secret value never appears in logs (a bare `if: secrets.X != ''`
+        # check is safe today but env-var indirection survives any future
+        # GitHub change to expression evaluation visibility).
+        id: mac-sign-check
+        if: matrix.platform == 'macos-14'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ]; then
+            echo "sign=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sign=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::APPLE_CERTIFICATE not set — building UNSIGNED macOS bundle. Gatekeeper will warn on first launch."
+          fi
+          if [ -n "$APPLE_ID" ] && [ -n "$APPLE_TEAM_ID" ] && [ -n "$APPLE_PASSWORD" ]; then
+            echo "notarize=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "notarize=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::APPLE_ID / APPLE_TEAM_ID / APPLE_PASSWORD not all set — skipping notarization."
+          fi
+
+      - name: Import Apple Developer ID certificate
+        # apple-actions/import-codesign-certs creates an ephemeral keychain
+        # with a random password, imports the .p12, and unlocks it for the
+        # rest of the job. Keychain is destroyed when the runner shuts
+        # down. Pinned to v3 — v3.0.0 is the current major as of Apr 2025;
+        # v2 used a deprecated security-cli flag combination that broke
+        # on macos-14.
+        if: matrix.platform == 'macos-14' && steps.mac-sign-check.outputs.sign == 'true'
+        uses: apple-actions/import-codesign-certs@63fff01cd422d4b7b855d40ca1e9d34d2de9427d
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Determine Windows signing availability
+        id: win-sign-check
+        if: matrix.platform == 'windows-2022'
+        shell: bash
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+        run: |
+          if [ -n "$WINDOWS_CERTIFICATE" ]; then
+            echo "sign=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sign=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::WINDOWS_CERTIFICATE not set — building UNSIGNED Windows bundle. SmartScreen will warn on first launch."
+          fi
+
+      - name: Build & sign desktop app (tauri-action)
+        # tauri-action @v0 = pinned to the v0 major. It:
+        #   1. Reads tauri.conf.json for productName / version / bundle targets.
+        #   2. Runs `pnpm tauri build` with the args passed in.
+        #   3. On macOS: imports APPLE_CERTIFICATE, runs codesign, runs
+        #      `xcrun notarytool submit --wait`, runs `xcrun stapler staple`.
+        #   4. On Windows: invokes signtool against each produced .msi / .exe.
+        #   5. Uploads every produced artifact to a draft GitHub Release
+        #      identified by `tagName`.
+        #   6. Generates `latest.json` (the Tauri updater manifest) signed
+        #      with TAURI_SIGNING_PRIVATE_KEY.
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
+        env:
+          # The action needs this only for a real tag's draft release upload.
+          # Checkout does not persist it and repository build scripts never
+          # receive it.
+          GITHUB_TOKEN: ${{ github.ref_type == 'tag' && github.token || '' }}
+          # ---- Apple signing (macOS only; Windows job ignores these) ----
+          # Base64-encoded .p12 export of the Developer ID Application cert.
+          # Acquire: download .p12 from developer.apple.com -> Certificates,
+          # then `base64 -i cert.p12 | pbcopy`.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # The .p12 export password set when you exported the cert.
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # Exact CN of the cert, e.g.
+          # "Developer ID Application: Moosewave Inc. (ABCDE12345)".
+          # Find via `security find-identity -v -p codesigning`.
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # Apple ID email used for notarization (the developer account).
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          # App-specific password generated at appleid.apple.com ->
+          # Sign-In and Security -> App-Specific Passwords. NOT the regular
+          # Apple ID password — Apple blocks those for notarytool.
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # 10-character team ID from developer.apple.com -> Membership.
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+          # ---- Windows signing (Windows only; macOS job ignores these) ----
+          # Base64-encoded .pfx export of the EV code-signing cert.
+          # Acquire: vendor (Sectigo / DigiCert / GlobalSign) ships you
+          # the cert. Export from Windows cert store as .pfx, then base64.
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+
+          # ---- Tauri updater signing (both platforms) ----
+          # ed25519 keypair generated locally with:
+          #   pnpm tauri signer generate -w ~/.tauri/postwave.key
+          # The private key (base64) signs latest.json. The public key
+          # and manifest endpoint are compiled into the Rust binary via
+          # option_env! so the updater plugin registers in production.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          POSTWAVE_UPDATER_PUBKEY: ${{ secrets.POSTWAVE_UPDATER_PUBKEY }}
+          POSTWAVE_UPDATER_ENDPOINT: ${{ secrets.POSTWAVE_UPDATER_ENDPOINT }}
+
+          # ---- Frontend release telemetry (both platforms) ----
+          # Vite STATICALLY INLINES `import.meta.env.VITE_*` at build time
+          # (the `vite build` invoked by tauri-action). If these aren't in
+          # the build step's environment, the shipped bundle carries NO
+          # Sentry init (src/lib/sentry.ts reads VITE_SENTRY_DSN_DESKTOP +
+          # VITE_POSTWAVE_RELEASE) and NO PostHog (src/lib/telemetry.ts
+          # reads VITE_POSTHOG_KEY + VITE_POSTHOG_HOST). All are optional —
+          # an unset secret yields an empty string and the corresponding
+          # SDK stays dormant (zero code shipped, by design). Sourced from
+          # secrets; none are user-controllable workflow inputs.
+          VITE_SENTRY_DSN_DESKTOP: ${{ secrets.VITE_SENTRY_DSN_DESKTOP }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          # The release identifier Sentry tags events with. Derived from
+          # the git tag (repo-controlled) so source maps / issues line up
+          # with the exact build; falls back to the commit SHA on manual
+          # dry-runs that have no tag.
+          VITE_POSTWAVE_RELEASE: ${{ env.POSTWAVE_RELEASE }}
+        with:
+          # An empty tagName makes workflow_dispatch package-only: no GitHub
+          # Release is created. Real tags upload into a draft for smoke tests.
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: "Moosewave Desktop ${{ github.ref_name }}"
+          releaseBody: |
+            Automated build from commit ${{ github.sha }}.
+
+            See `apps/desktop/CHANGELOG.md` for human-readable notes.
+
+            Verify before publishing:
+            - macOS: download .dmg, open it, Gatekeeper should NOT warn.
+              `spctl -a -v /Applications/Moosewave.app` should print "accepted".
+            - Windows: download .msi, install, no SmartScreen warning
+              (or "More info -> Run anyway" if the EV cert is still building
+              reputation; see runbook).
+            - Installed performance: collect the three target records required
+              by `apps/desktop/performance-budgets.json` from these exact
+              signed installers, run `verify:installed-performance` with this
+              version and `${{ github.sha }}`, and attach the JSON, raw traces,
+              digests, and passing command log. Keep this release in draft
+              until that external qualification is independently reviewed.
+          # Always create a draft. Operators publish manually after smoke
+          # testing. Never auto-publish — a bad release is hard to retract.
+          releaseDraft: true
+          prerelease: false
+          # The platform-specific extra args. Mac gets `--target universal-...`,
+          # Windows gets nothing (default = host arch).
+          args: ${{ matrix.tauri_args }}
+          # Path to the Tauri project relative to repo root.
+          projectPath: apps/desktop
+
+      - name: Attach third-party notices to draft release
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload "$GITHUB_REF_NAME" \
+            "artifacts/desktop/${{ matrix.artifact_label }}/THIRD_PARTY_NOTICES-${{ matrix.artifact_label }}.md" \
+            --clobber
+
+      - name: Assert packaged bundles contain no source maps
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find apps/desktop/dist apps/desktop/src-tauri/target \
+            -type f -name '*.map' -path '*/bundle/*' -print -quit | grep -q .; then
+            echo "::error::a packaged desktop bundle contains a source map"
+            exit 1
+          fi
+          if find apps/desktop/dist -type f -name '*.map' -print -quit | grep -q .; then
+            echo "::error::Tauri regenerated source maps in desktop dist"
+            exit 1
+          fi
+
+      - name: Upload build artifacts (per-platform fallback)
+        # Even if the GitHub Release upload fails (e.g. tag conflict,
+        # 5xx from GitHub releases API), keep the artifacts available
+        # via the workflow run page for 14 days. Operators have rescued
+        # releases this way before.
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: postwave-desktop-${{ matrix.artifact_label }}
+          path: |
+            artifacts/desktop/${{ matrix.artifact_label }}/THIRD_PARTY_NOTICES-${{ matrix.artifact_label }}.md
+            apps/desktop/src-tauri/target/release/bundle/**/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/**/*.app
+            apps/desktop/src-tauri/target/release/bundle/**/*.msi
+            apps/desktop/src-tauri/target/release/bundle/**/*.exe
+            apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/**/*.dmg
+            apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/**/*.app
+            apps/desktop/src-tauri/target/release/bundle/**/latest.json
+          if-no-files-found: warn
+          retention-days: 14

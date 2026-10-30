@@ -1,0 +1,42 @@
+{
+  "slug": "public-welcome-example",
+  "category": "welcome",
+  "name": "Public welcome example",
+  "description": "Uncalibrated, redistributable example for local development. Replace with operator-authored content.",
+  "length": 3,
+  "variables": [
+    {
+      "key": "newsletter_name",
+      "label": "Newsletter name",
+      "required": true,
+      "example": "Example newsletter"
+    }
+  ],
+  "emails": [
+    {
+      "position": 1,
+      "delay_seconds": 0,
+      "subject_skeleton": "Example update 1 from {{newsletter_name}}",
+      "body_skeleton": "Hello,\n\nThis is an example message from {{newsletter_name}}. Replace this text with information your audience has asked to receive. Include the required sender identity and unsubscribe details before sending.\n\nThank you.",
+      "notes": "Development example only. Review content, consent, sender identity and unsubscribe behavior before use."
+    },
+    {
+      "position": 2,
+      "delay_seconds": 86400,
+      "subject_skeleton": "Example update 2 from {{newsletter_name}}",
+      "body_skeleton": "Hello,\n\nThis is an example message from {{newsletter_name}}. Replace this text with information your audience has asked to receive. Include the required sender identity and unsubscribe details before sending.\n\nThank you.",
+      "notes": "Development example only. Review content, consent, sender identity and unsubscribe behavior before use."
+    },
+    {
+      "position": 3,
+      "delay_seconds": 172800,
+      "subject_skeleton": "Example update 3 from {{newsletter_name}}",
+      "body_skeleton": "Hello,\n\nThis is an example message from {{newsletter_name}}. Replace this text with information your audience has asked to receive. Include the required sender identity and unsubscribe details before sending.\n\nThank you.",
+      "notes": "Development example only. Review content, consent, sender identity and unsubscribe behavior before use."
+    }
+  ],
+  "tags": [
+    "public-example"
+  ],
+  "author": "Moosewave contributors"
+}

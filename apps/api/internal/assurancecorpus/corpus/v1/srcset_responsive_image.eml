@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <pw-srcset.v1@example.com>
+Subject: App update
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-srcset-v1"
+
+--pw-srcset-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Version 4 is out: https://app.example.com/whats-new
+--pw-srcset-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>App update</h1><img src="https://cdn.example.com/hero.png" srcset="https://cdn.example.com/hero-2x.png 2x" alt="The redesigned dashboard" width="600" height="320"><p>Version 4 is out.</p><p><a href="https://app.example.com/whats-new">See what changed</a></p></body></html>
+--pw-srcset-v1--

@@ -1,0 +1,537 @@
+/* Narrow-screen and preference adaptations for Gift history. */
+
+@media (max-width: 1180px) {
+  .ghs-hero {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-hero-copy {
+    padding: clamp(28px, 4vw, 44px);
+  }
+
+  .ghs-journey {
+    min-height: 0;
+    margin-top: 0;
+    padding: 22px;
+  }
+
+  .ghs-journey-track {
+    margin: 22px 0 16px;
+  }
+
+  .ghs-journey-track article {
+    min-height: 120px;
+  }
+
+  .ghs-summary,
+  .ghs-summary-skeleton {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ghs-summary > *:nth-child(4) {
+    border-left: 0;
+  }
+
+  .ghs-summary > *:nth-child(n + 4) {
+    border-top: 1px solid var(--ghs-line);
+  }
+
+  .ghs-control-grid {
+    grid-template-columns: minmax(260px, 1.4fr) repeat(2, minmax(170px, 0.8fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .ghs-card-grid,
+  .ghs-loading-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-control-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(150px, 0.7fr);
+  }
+
+  .ghs-search {
+    grid-column: 1 / -1;
+  }
+
+  .ghs-provenance-safe {
+    width: 100%;
+    margin-left: 0;
+    padding-top: 7px;
+    border-top: 1px solid var(--ghs-line);
+  }
+
+  .ghs-provenance > span + span.ghs-provenance-safe {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .ghs-summary-unavailable {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ghs-summary-unavailable > button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .ghs-hero-copy,
+  .ghs-journey,
+  .ghs-controls,
+  .ghs-records {
+    padding: 22px;
+  }
+
+  .ghs-hero h1 {
+    font-size: clamp(34px, 9vw, 48px);
+  }
+
+  .ghs-hero-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ghs-hero-facts > span {
+    padding: 11px 10px;
+    text-align: center;
+  }
+
+  .ghs-hero-facts > span + span {
+    border-top: 0;
+    border-left: 1px solid var(--ghs-line);
+  }
+
+  .ghs-journey-track {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-journey-track article {
+    display: grid;
+    min-height: 72px;
+    padding: 11px 12px;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ghs-journey-index {
+    grid-column: 1;
+  }
+
+  .ghs-journey-icon {
+    margin: 0;
+    grid-column: 2;
+  }
+
+  .ghs-journey-track article > div {
+    grid-column: 3;
+  }
+
+  .ghs-journey-connector {
+    width: 1px;
+    height: 14px;
+    justify-self: center;
+  }
+
+  .ghs-journey-connector::before,
+  .ghs-journey-connector::after {
+    top: auto;
+    left: -2px;
+  }
+
+  .ghs-journey-connector::before {
+    top: 0;
+  }
+
+  .ghs-journey-connector::after {
+    right: auto;
+    bottom: 0;
+  }
+
+  .ghs-journey-connector > span {
+    width: 1px;
+    height: 12px;
+    top: -14px;
+    left: 0;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--ghs-violet),
+      transparent
+    );
+    animation-name: ghs-signal-vertical;
+  }
+
+  @keyframes ghs-signal-vertical {
+    0% {
+      top: -14px;
+      opacity: 0;
+    }
+
+    18%,
+    72% {
+      opacity: 1;
+    }
+
+    100% {
+      top: calc(100% + 2px);
+      opacity: 0;
+    }
+  }
+
+  .ghs-summary,
+  .ghs-summary-skeleton {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ghs-summary > * {
+    border-top: 1px solid var(--ghs-line);
+  }
+
+  .ghs-summary > *:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  .ghs-summary > *:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .ghs-summary > *:nth-child(even) {
+    border-left: 1px solid var(--ghs-line);
+  }
+
+  .ghs-controls-heading,
+  .ghs-records-heading,
+  .ghs-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ghs-refresh {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ghs-retained-error,
+  .ghs-integrity {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ghs-retained-error .btn,
+  .ghs-integrity > button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .ghs-terminal {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: center;
+  }
+
+  .ghs-terminal-art {
+    min-height: 160px;
+  }
+
+  .ghs-terminal > div:last-child {
+    display: grid;
+    justify-items: center;
+  }
+
+  .ghs-pagination > div {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+
+  .ghs-detail-provenance,
+  .ghs-detail-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ghs-detail-facts,
+  .ghs-detail-evidence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-boundary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-detail-timeline > li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .ghs-refresh,
+  .ghs-summary-unavailable > button,
+  .ghs-retained-error .btn,
+  .ghs-integrity > button,
+  .ghs-terminal .btn,
+  .ghs-inspect,
+  .ghs-pagination .btn,
+  .ghs-detail-footer .btn,
+  .ghs-detail-shell .slideover-close,
+  .ghs-search > button {
+    min-height: 44px;
+  }
+
+  .ghs-search > button,
+  .ghs-detail-shell .slideover-close {
+    min-width: 44px;
+  }
+}
+
+@media (max-width: 470px) {
+  .ghs-page {
+    padding-bottom: calc(var(--pw-sp-4) + var(--pw-sp-1));
+  }
+
+  .ghs-hero-copy,
+  .ghs-journey,
+  .ghs-controls,
+  .ghs-records,
+  .ghs-detail-section {
+    padding: 18px;
+  }
+
+  .ghs-journey {
+    margin: 12px;
+  }
+
+  .ghs-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-summary-unavailable {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-summary-unavailable-icon {
+    display: none;
+  }
+
+  .ghs-summary-unavailable > button {
+    grid-column: 1;
+  }
+
+  .ghs-summary > * {
+    border-top: 1px solid var(--ghs-line);
+    border-left: 0;
+  }
+
+  .ghs-summary > *:first-child {
+    border-top: 0;
+  }
+
+  .ghs-summary > *:nth-child(even) {
+    border-left: 0;
+  }
+
+  .ghs-summary > button,
+  .ghs-summary > article {
+    min-height: 102px;
+  }
+
+  .ghs-provenance {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ghs-provenance > span + span {
+    padding-top: 7px;
+    padding-left: 0;
+    border-top: 1px solid var(--ghs-line);
+    border-left: 0;
+  }
+
+  .ghs-control-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-search {
+    grid-column: 1;
+  }
+
+  .ghs-card {
+    min-height: 345px;
+    padding: 16px;
+  }
+
+  .ghs-card-top {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ghs-card-top > .ghs-state {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .ghs-card-primary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-card-primary > div {
+    padding: 9px 0;
+  }
+
+  .ghs-card-primary > div + div {
+    border-top: 1px solid var(--ghs-line);
+    border-left: 0;
+  }
+
+  .ghs-card-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ghs-inspect {
+    min-height: 44px;
+    align-self: flex-start;
+  }
+
+  .ghs-lifecycle-track > span {
+    min-width: 38px;
+    font-size: var(--pw-text-label);
+  }
+
+  .ghs-pagination > div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ghs-pagination > div > span {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .ghs-detail-shell .slideover-body {
+    padding: 12px;
+  }
+
+  .ghs-detail-footer > span {
+    display: none;
+  }
+
+  .ghs-release-boundary {
+    align-items: start;
+  }
+}
+
+@media (max-width: 370px) {
+  .ghs-hero-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ghs-hero-facts > span {
+    text-align: left;
+  }
+
+  .ghs-hero-facts > span + span {
+    border-top: 1px solid var(--ghs-line);
+    border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghs-journey-connector > span,
+  .ghs-refresh:disabled svg,
+  .ghs-loading span,
+  .ghs-summary-skeleton > span::after,
+  .ghs-detail-provenance > span:first-child.is-reading > span {
+    animation: none;
+  }
+
+  .ghs-journey-connector > span {
+    top: 50%;
+    left: 50%;
+    opacity: 0.65;
+  }
+
+  .ghs-card,
+  .ghs-card::before,
+  .ghs-inspect svg,
+  .ghs-summary > button::after,
+  .ghs-search {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ghs-hero,
+  .ghs-journey,
+  .ghs-summary,
+  .ghs-summary-unavailable,
+  .ghs-provenance,
+  .ghs-controls,
+  .ghs-records,
+  .ghs-card,
+  .ghs-terminal,
+  .ghs-release-boundary,
+  .ghs-detail-section,
+  .ghs-detail-provenance,
+  .ghs-detail-issues,
+  .ghs-boundary-grid,
+  .ghs-retained-error,
+  .ghs-integrity {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .ghs-summary-unavailable-icon {
+    border-color: Highlight;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .ghs-status-chip,
+  .ghs-status-secondary,
+  .ghs-journey-live,
+  .ghs-state,
+  .ghs-evidence-pill {
+    border-color: Highlight;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .ghs-status-chip > span,
+  .ghs-journey-live > span,
+  .ghs-state > span,
+  .ghs-evidence-pill > i,
+  .ghs-lifecycle-track > span.is-current > i,
+  .ghs-lifecycle-track > span.is-complete > i,
+  .ghs-detail-timeline > li > span,
+  .ghs-provenance-dot {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+
+  .ghs-card::after,
+  .ghs-summary-mark,
+  .ghs-summary > button::after {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+
+  .ghs-card:hover {
+    border-color: Highlight;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .ghs-search,
+  .ghs-select,
+  .ghs-detail-facts,
+  .ghs-detail-evidence article {
+    border-color: CanvasText;
+    background: Field;
+  }
+
+  .ghs-summary > button.is-selected {
+    outline: 2px solid Highlight;
+    outline-offset: -3px;
+  }
+}

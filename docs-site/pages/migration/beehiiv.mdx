@@ -1,0 +1,95 @@
+---
+title: Migrate from Beehiiv
+---
+
+import { Callout } from "nextra/components";
+
+# Migrating from Beehiiv
+
+Moosewave's Beehiiv migration reads one publication through the Beehiiv API v2. It uses a dry run and verification report before commit. Live publication certification is still pending, so complete the final-delta and rebuild checks below before cutover.
+
+## Step 1 — Get an API key and publication ID
+
+In Beehiiv, go to **Settings → Integrations → API** and generate an API key. Moosewave validates that key against its Beehiiv workspace and the publications available to it.
+
+The key must include `identify:read`, `publications:read`, `subscriptions:read`, `newsletter_lists:read`, `segments:read`, `condition_sets:read`, `automations:read`, `posts:read`, and `custom_fields:read`. Migration uses those scopes for the workspace/publication binding, subscriber/list/segment/condition-set inventory, automation definitions/emails/journeys, posts, and custom-field schemas. Missing, denied, or incomplete required access fails the dry run rather than becoming a waivable warning or evidence that the inventory is empty. Tier, referral, poll, and post-template access can still vary by plan or permission and is reported as a review warning.
+
+If the workspace exposes one publication, Moosewave can select it. If it exposes more than one, supply the `pub_...` **Publication ID** explicitly. The migration flow does not yet provide a publication chooser.
+
+Paste the API key and, when required, Publication ID into **Migrate → Beehiiv** in Moosewave.
+
+## What the migration preserves
+
+| Beehiiv                                                                    | Moosewave                                                                     |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Cursor-paginated subscriptions                                             | Subscribers with source status and stable Beehiiv source IDs                 |
+| Custom-field values and definitions                                        | Subscriber values plus source-preserved IDs, kinds, names, and list options  |
+| Newsletter-list memberships                                                | `beehiiv:newsletter-list:...` membership tags and tag-backed segments        |
+| Newsletter-list definitions and subscription history                       | Read-only definitions, states, timestamps, and contact linkage               |
+| Premium tier/membership data                                               | Subscriber metadata and read-only source evidence; no Stripe billing objects |
+| Segment metadata and completed membership                                  | Source-preserved calculation state plus frozen tag-backed snapshot segments  |
+| Dynamic-content condition-set metadata                                     | Source archive plus explicit rule rebuild/retirement review                  |
+| Automation metadata, emails, journey history, and statistics               | `rebuild_review` evidence that is never activated automatically              |
+| Past sent `email`/`both` posts                                             | Campaign archive with the available HTML and aggregate statistics            |
+| Draft, scheduled, and web-only posts                                       | Read-only source archive for review                                          |
+| Accessible tiers, referral milestones, polls/responses, and post templates | Source-preserved records for manual rebuild or reference                     |
+
+<Callout type="warning">
+  Beehiiv's subscription creation timestamp and list membership are not portable
+  email-consent proof. Imported contacts retain unknown consent provenance until
+  you reconcile a reviewed consent source.
+</Callout>
+
+Final-delta subscriber writes are authoritative for source-owned fields and membership tags. Moosewave therefore requires `subscription_tier`, non-null premium-tier-name metadata, and non-null `custom_fields`, `newsletter_list_ids`, `tags`, and `subscription_premium_tiers` arrays. Explicit empty arrays are valid; omitted/null arrays, nameless or unkinded custom fields, duplicate items, and invalid tags fail closed before destination writes. Each custom-field item must include an explicit `value`: explicit JSON `null` means intentional removal, while an omitted value or a non-null value that conflicts with its documented `string`, `integer`, `boolean`, `date`, `datetime`, `list`, or `double` kind fails closed. Source custom-field names or raw tags that collide with Moosewave's control/membership namespaces are injectively escaped and retained in an original-to-destination ledger.
+
+## Segments and newsletter lists
+
+Beehiiv API v2 does not expose saved-segment predicates. Moosewave still preserves each accessible segment's stable ID, type, active/calculation state, result count, last-calculated time, and returned statistics. For a completed segment whose membership can be fully read, Moosewave captures the current members as a frozen tag-backed snapshot. Incomplete, unavailable, over-10,000-member, or account-wide over-250,000-evidence-link memberships remain fail-closed rebuild items. Recreate and test every predicate or dynamic membership rule that must continue changing after cutover.
+
+Moosewave also cursor-traverses active dynamic-content condition sets and writes a durable completion manifest even when none exist. Beehiiv exposes their metadata but not their saved predicate trees, so condition-set rules must be rebuilt or explicitly retired under the same post-delta audience-rules review. Before accepting a snapshot, Moosewave reconciles every snapshotted member ID and exact per-audience membership count against the final subscriber traversal.
+
+Newsletter-list memberships are preserved separately as tag-backed segments when Beehiiv returns them with subscriptions. Definitions and cursor-paginated active/pending/inactive/paused membership history, including subscribed/unsubscribed timestamps, are also retained as read-only source evidence. Moosewave writes one durable completion manifest for every discovery-bound list, including an empty history, so cutover coverage cannot confuse “no records” with “endpoint never traversed.”
+
+## Automations
+
+Beehiiv exposes automation metadata, trigger labels, email metadata/statistics, and subscriber journey history, but not a portable executable graph or message bodies. Moosewave requires requested automation stats to contain a documented `journeys` and/or aggregate `email` object. Journey `running`, `completed`, and `total` counts and core aggregate-email counters must be non-negative integers; optional rates must be finite numbers. Every documented core automation-email engagement counter is also required. Absent, unknown-only, incomplete, or malformed analytics fail closed. Moosewave preserves valid records as `rebuild_review` and does not create or activate a live automation from them. Separate completion manifests for each discovery-bound automation prove its email and journey inventories were traversed, including explicitly empty inventories. Journey history is limited by Beehiiv's offset endpoint to 10,000 rows per automation; a larger history fails closed.
+
+To prevent duplicate sends, inventory and pause/retire every running Beehiiv automation before destination activation, capture the final journey and subscriber-delta snapshot, complete shadow and rollback verification, and only then activate the tested Moosewave rebuild. Strict pilot acceptance requires post-final-delta evidence for that source-automation handoff.
+
+## Posts and other source evidence
+
+Only already-published, past posts with an `email` or `both` platform become campaign archive entries. Moosewave reads a lightweight 100-post inventory, then expands each applicable post individually. Every requested free/premium rendering member and every core email-stat counter must be present with the documented shape; omitted expansions fail closed, explicit empty renderings remain valid, and optional analytics are preserved from the raw response without invented zero values. Drafts, future scheduled posts, web-only posts, and other non-campaign posts stay in the read-only source archive.
+
+When the API permits access, Moosewave also source-preserves premium tiers, referral milestones, polls and responses, and post-template metadata. Publication websites/themes, capture widgets, Boosts, recommendation-network relationships, and ad-network settings/history require manual inventory and rebuild.
+
+For worker safety, Moosewave verifies at most 1,000,000 identity-bearing rows in one campaign or source-archive traversal. Larger histories stop as unsupported before Moosewave claims completeness; plan a scoped/manual archive handoff for an account above that ceiling.
+
+## Premium memberships and billing
+
+Premium tier names, membership details, and provider metadata can be preserved on subscribers and in the source archive. The Beehiiv adapter does not migrate Stripe customers, products, prices, subscriptions, renewals, or tenant-bound billing ownership. Plan billing continuity separately before cutover.
+
+## Final delta and cutover
+
+There is no live Beehiiv webhook bridge. Keep Beehiiv authoritative while reviewing the dry run, freeze relevant edits, and run a final full delta before cutover. Before any deletion reconciliation, the completed traversal must match the discovery-bound unique subscription-ID count; omitted cursor metadata, cursor cycles, duplicates, and inventory drift fail closed. The completed full subscriber traversal then disables same-job Beehiiv subscriber identities that were imported earlier but are now missing from the source snapshot. A merged contact can transfer ownership to a remaining tracked ID only under locked ledger proof.
+
+New subscriber ledgers retain bounded per-source projections. Before a destination request, Moosewave validates the aggregate (at most 32 identities and 2 MiB). If another Beehiiv publication identity still owns the same destination email, the final delta verifies that the exact tracked destination has not changed, then keeps and update-only rebuilds the subscriber from active projections: it removes only the retired identity's tags, fields, and list memberships; retains local/shared state and defensible consent; and transfers primary identity/status authority without carrying a retired source's suppression into a later A→B→C handoff. Non-owner, ambiguous legacy, over-bound, changed-destination, conflicting, and cross-provider states block before mutation. This shared-source cleanup also blocks ordinary stale-before-image rollback; it must receive projection-aware rollback support and live certification before that edge case can be self-serve.
+
+Each successful destination-writing Beehiiv run stores a bounded, versioned, non-reversible source fingerprint and rotates an opaque import epoch. It covers subscriber identity, email, status, fields, raw tags, newsletter-list and segment membership; list/segment definitions; automations; sent posts; and source-archive records such as automation emails/journeys and non-campaign posts. A credentialed shadow check fully retraverses these surfaces and compares per-component digests, so same-count edits, replacements, and deletions still require a new final delta. Every check first rotates a durable attempt token; history and pilot acceptance require the result to match that current token, the exact baseline digest, and the import epoch. A pre-delta ready result or an older attempt cannot pass because another replica's clock is ahead. A missing or invalid binding blocks cutover review.
+
+Shadow checks first rotate a durable opaque attempt token on the job, persist a fail-closed attempt-start record with that token, and only then read Beehiiv. The completed result carries the same token and is persisted after execution leases are released. A crash therefore leaves blocking evidence for the current attempt. Provider, persistence, or lease-release errors are recorded as `check_failed`; if either the token or start record cannot be saved, Moosewave does not begin the provider traversal. Pilot acceptance requires the result's exact attempt token, final-delta import epoch, and baseline fingerprint to match the current job. This logical binding remains safe when service replicas have skewed clocks, and a later delta clears the old attempt identity until a fresh shadow check completes.
+
+Strict pilot acceptance also requires exact durable coverage for newsletter-list definitions/history, condition sets, and automation definitions/email/journey inventories. After the latest successful final delta, attach separate operator evidence for (1) source-automation pause/retirement and destination activation ownership, (2) website/theme/capture-widget rebuild or retirement, (3) Boosts/recommendation-network rebuild or retirement, and (4) Ad Network exports and ownership. Evidence recorded before a newer delta becomes stale, and evidence cannot waive a missing archive record.
+
+The automated live-certification harness covers API-key lifecycle, publication scope, rate limits, final-delta evidence, review gates, rollback, and cleanup. A credentialed run against the target publication is still required before declaring that publication certified.
+
+## Troubleshooting
+
+- **Publication selection required**: the workspace contains multiple publications. Copy the intended `pub_...` ID and provide it explicitly; there is no chooser yet.
+- **Publication not available to this key**: confirm the publication ID belongs to the workspace returned for the API key.
+- **Missing source-archive records**: optional tier, referral, poll, or template endpoints can be unavailable because of plan or key permissions. Treat the resulting warning as a review item, not as proof that the source has zero records.
+- **Automation rebuild required**: use the preserved metadata, email inventory, and statistics to rebuild and test the automation manually.
+
+## Next steps
+
+- [Verification report](/migration/verification-report)
+- [Automation overview](/automation)

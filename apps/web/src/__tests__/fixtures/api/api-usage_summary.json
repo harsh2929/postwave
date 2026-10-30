@@ -1,0 +1,11 @@
+{
+  "active_keys": 0,
+  "avg_cost_cents_per_day": 0,
+  "avg_sends_per_day": 0,
+  "projected_30d_cost_cents": 0,
+  "projected_30d_sends": 0,
+  "since": "<timestamp>",
+  "total_cost_cents": 0,
+  "total_sends": 0,
+  "window_days": 30
+}

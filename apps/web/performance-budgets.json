@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "publicRoutes": [
+    "/",
+    "/pricing",
+    "/docs/getting-started",
+    "/status",
+    "/login"
+  ],
+  "routeGraph": {
+    "default": {
+      "maxRawKiB": 700,
+      "maxGzipKiB": 220,
+      "maxJsRequests": 24,
+      "maxCssRawKiB": 150,
+      "maxCssGzipKiB": 26,
+      "maxCssRequests": 3
+    },
+    "overrides": [
+      {
+        "name": "sequence editor",
+        "pattern": "^/\\(dashboard\\)/app/sequences/\\[id\\]/page$",
+        "maxRawKiB": 700,
+        "maxGzipKiB": 220,
+        "maxJsRequests": 24,
+        "maxCssRawKiB": 150,
+        "maxCssGzipKiB": 26,
+        "maxCssRequests": 3
+      },
+      {
+        "name": "dashboard",
+        "pattern": "^/\\(dashboard\\)/",
+        "maxRawKiB": 700,
+        "maxGzipKiB": 220,
+        "maxJsRequests": 24,
+        "maxCssRawKiB": 150,
+        "maxCssGzipKiB": 26,
+        "maxCssRequests": 3
+      }
+    ],
+    "forbiddenInitialModuleSignatures": [
+      {
+        "name": "Sentry browser SDK",
+        "markers": [
+          "BrowserApiErrors",
+          "GlobalHandlers",
+          "sentry_key"
+        ]
+      },
+      {
+        "name": "sanitize-html parser",
+        "markers": [
+          "parseStyleAttributes",
+          "disallowedTagsMode",
+          "allowProtocolRelative"
+        ]
+      }
+    ]
+  },
+  "lighthouse": {
+    "numberOfRuns": 3,
+    "desktop": {
+      "categories:accessibility": {
+        "minScore": 0.98
+      },
+      "categories:performance": {
+        "minScore": 0.9
+      },
+      "categories:best-practices": {
+        "minScore": 0.95
+      },
+      "categories:seo": {
+        "minScore": 0.95
+      },
+      "first-contentful-paint": {
+        "maxNumericValue": 1800
+      },
+      "largest-contentful-paint": {
+        "maxNumericValue": 2500
+      },
+      "cumulative-layout-shift": {
+        "maxNumericValue": 0.1
+      },
+      "total-blocking-time": {
+        "maxNumericValue": 200
+      },
+      "max-potential-fid": {
+        "maxNumericValue": 130
+      },
+      "speed-index": {
+        "maxNumericValue": 3000
+      },
+      "interactive": {
+        "maxNumericValue": 3500
+      },
+      "bootup-time": {
+        "maxNumericValue": 2000
+      },
+      "mainthread-work-breakdown": {
+        "maxNumericValue": 3000
+      },
+      "total-byte-weight": {
+        "maxNumericValue": 750000
+      }
+    },
+    "mobile": {
+      "categories:accessibility": {
+        "minScore": 0.98
+      },
+      "categories:performance": {
+        "minScore": 0.85
+      },
+      "categories:best-practices": {
+        "minScore": 0.95
+      },
+      "categories:seo": {
+        "minScore": 0.95
+      },
+      "first-contentful-paint": {
+        "maxNumericValue": 2000
+      },
+      "largest-contentful-paint": {
+        "maxNumericValue": 2500
+      },
+      "cumulative-layout-shift": {
+        "maxNumericValue": 0.1
+      },
+      "total-blocking-time": {
+        "maxNumericValue": 200
+      },
+      "max-potential-fid": {
+        "maxNumericValue": 160
+      },
+      "speed-index": {
+        "maxNumericValue": 3500
+      },
+      "interactive": {
+        "maxNumericValue": 4000
+      },
+      "bootup-time": {
+        "maxNumericValue": 2500
+      },
+      "mainthread-work-breakdown": {
+        "maxNumericValue": 3500
+      },
+      "total-byte-weight": {
+        "maxNumericValue": 750000
+      }
+    }
+  },
+  "browser": {
+    "navigationCycles": 2,
+    "desktop": {
+      "cpuSlowdown": 2,
+      "maxNavigationClickEventMs": 150,
+      "maxLongTaskTotalMs": 300,
+      "maxHeapMiB": 80,
+      "maxHeapGrowthMiB": 10,
+      "maxDomNodes": 3000
+    },
+    "mobile": {
+      "cpuSlowdown": 4,
+      "maxNavigationClickEventMs": 250,
+      "maxLongTaskTotalMs": 500,
+      "maxHeapMiB": 80,
+      "maxHeapGrowthMiB": 10,
+      "maxDomNodes": 3000
+    }
+  }
+}

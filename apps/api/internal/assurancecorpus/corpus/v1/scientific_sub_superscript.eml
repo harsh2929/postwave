@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <scientific-sub-superscript.v1@example.com>
+Subject: Lab results
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-subsup-v1"
+
+--pw-subsup-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+CO2 at 412 ppm, H2O content 3.1%. Report: https://lab.example.com/r/11
+--pw-subsup-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Lab results</h1><p>CO<sub>2</sub> at 412 ppm; H<sub>2</sub>O content 3.1%; area 12 m<sup>2</sup>.</p><p><a href="https://lab.example.com/r/11">Read the report</a></p></body></html>
+--pw-subsup-v1--

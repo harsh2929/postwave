@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Moosewave brand mark — used as the source for `pnpm tauri icon source.svg`
+  to generate every required icon size for macOS / Windows / Linux. The mark
+  is a stylized wave with a "P" wordmark on a dark slate square.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Moosewave">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#5eead4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded slate background. -->
+  <rect x="0" y="0" width="1024" height="1024" rx="220" ry="220" fill="url(#bg)"/>
+
+  <!-- Wave glyph: two flowing crests in brand teal. -->
+  <path
+    d="M128 656
+       C 256 528, 384 784, 512 656
+       S 768 528, 896 656"
+    fill="none"
+    stroke="url(#wave)"
+    stroke-width="56"
+    stroke-linecap="round"/>
+  <path
+    d="M128 768
+       C 256 640, 384 896, 512 768
+       S 768 640, 896 768"
+    fill="none"
+    stroke="url(#wave)"
+    stroke-width="40"
+    stroke-linecap="round"
+    opacity="0.55"/>
+
+  <!-- "P" wordmark. -->
+  <text
+    x="512"
+    y="460"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+    font-size="520"
+    font-weight="800"
+    fill="#2dd4bf"
+    text-anchor="middle"
+    dominant-baseline="middle">P</text>
+</svg>

@@ -1,0 +1,31 @@
+{
+  "capabilities": {
+    "google_ads": {
+      "configured": true,
+      "diagnostics": true
+    },
+    "linkedin": {
+      "configured": true,
+      "diagnostics": true
+    },
+    "meta": {
+      "configured": true,
+      "diagnostics": false
+    },
+    "snap": {
+      "configured": true,
+      "diagnostics": true
+    },
+    "tiktok": {
+      "configured": true,
+      "diagnostics": true
+    }
+  },
+  "providers": [
+    "meta",
+    "google_ads",
+    "tiktok",
+    "linkedin",
+    "snap"
+  ]
+}

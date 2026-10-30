@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <logo-plus-heading-no-image-meaning.v1@example.com>
+Subject: Account created
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-logo-v1"
+
+--pw-logo-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your account is ready: https://app.example.com/welcome
+--pw-logo-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><img src="https://cdn.example.com/wordmark.png" alt="Postwave" width="140" height="32"><h1>Account created</h1><p>Your account is ready to use.</p><p><a href="https://app.example.com/welcome">Open your account</a></p></body></html>
+--pw-logo-v1--

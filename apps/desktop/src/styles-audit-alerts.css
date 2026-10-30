@@ -1,0 +1,367 @@
+/* SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Audit Alerts v1 styles — composable alert rules over audit_log with
+ * bidirectional SOC ticketing (ServiceNow / Jira / PagerDuty).
+ *
+ * Kept in its own file (same isolation rationale as templates/settings/
+ * playground/account/inbound-routes v2 stylesheets) so a parallel edit
+ * to the main styles.css cannot merge-conflict these rules out. The
+ * tokens (--pw-*) are defined at the root in styles.css and resolve in
+ * both light and dark modes.
+ *
+ * Class inventory (kept in sync with:
+ *   - apps/desktop/src/pages/AuditAlerts.tsx
+ *   - apps/desktop/src/components/audit/AuditAlertRuleForm.tsx
+ *   - apps/desktop/src/components/audit/AuditAlertIncidents.tsx
+ *   - apps/desktop/src/components/audit/AuditAlertChannelConfig.tsx
+ * ):
+ *   .audit-alerts-page              page root
+ *   .audit-alerts-empty             empty / loading panel
+ *   .audit-alerts-table             rule list table
+ *   .audit-alert-rule-form          new-rule modal body
+ *   .audit-alert-rule-form-row      multi-col form row (grid)
+ *   .audit-alert-rule-form-actions  submit/cancel button bar
+ *   .audit-alert-operator           operator picker <fieldset>
+ *   .audit-alert-channel            channel picker <fieldset>
+ *   .audit-alert-channel-config     per-channel-kind body
+ *   .audit-alert-rule-on            green "enabled" pill
+ *   .audit-alert-rule-off           muted "disabled" pill
+ *   .audit-alert-rule-error         red error tag next to status
+ *   .audit-alert-incidents-empty    inline empty / loading panel
+ *   .audit-alert-incidents-error    inline error tint variant
+ *   .audit-alert-incidents-table    linked-incidents inner table
+ *   .audit-alert-status             status badge base
+ *   .audit-alert-status-open        red — fresh / unacknowledged
+ *   .audit-alert-status-progress    amber — in_progress
+ *   .audit-alert-status-resolved    green — resolved
+ *   .audit-alert-status-closed      muted — closed
+ *
+ * Forward-compatibility note: the sketch mentions
+ * audit-alerts-{grid,fieldset,actions,table-row,status-pill} as
+ * aliases. We emit those as alias selectors so a later refactor of the
+ * page that picks the prefix-uniform names can land without churn.
+ */
+
+/* --- page chrome --------------------------------------------------- */
+
+.audit-alerts-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.audit-alerts-empty {
+  padding: 24px 16px;
+  text-align: center;
+  background: var(--pw-bg-elev);
+  border: 1px dashed var(--pw-border);
+  border-radius: 8px;
+  color: var(--pw-fg-muted);
+  font-size: 13px;
+}
+
+.audit-alerts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.audit-alerts-table thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--pw-border);
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 60%, transparent);
+}
+.audit-alerts-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--pw-border-soft);
+  vertical-align: middle;
+  color: var(--pw-fg);
+}
+.audit-alerts-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.audit-alerts-table tbody tr:hover {
+  background: color-mix(in srgb, var(--pw-fg) 3%, transparent);
+}
+.audit-alerts-table code {
+  font-family: var(--pw-font-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--pw-fg) 6%, transparent);
+  color: var(--pw-fg);
+}
+.audit-alerts-table button {
+  font-size: 11px;
+  padding: 4px 8px;
+  margin-right: 4px;
+}
+
+/* alias — forward-compatible name (audit-alerts-table-row) */
+.audit-alerts-table-row {
+  /* delegate styling to audit-alerts-table tbody tr; this selector is
+   * here purely so future markup that uses the suffix doesn't render
+   * unstyled. */
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+
+/* --- rule form ----------------------------------------------------- */
+
+.audit-alert-rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.audit-alert-rule-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--pw-fg);
+}
+.audit-alert-rule-form label > span {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  letter-spacing: 0.02em;
+}
+.audit-alert-rule-form input[type="text"],
+.audit-alert-rule-form input[type="email"],
+.audit-alert-rule-form input[type="url"],
+.audit-alert-rule-form input[type="password"],
+.audit-alert-rule-form input[type="number"],
+.audit-alert-rule-form select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.audit-alert-rule-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.audit-alert-rule-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* --- operator + channel fieldsets ---------------------------------- */
+
+.audit-alert-operator,
+.audit-alert-channel {
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 40%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.audit-alert-operator legend,
+.audit-alert-channel legend {
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pw-fg-muted);
+}
+
+/* alias — forward-compatible name (audit-alerts-fieldset) */
+.audit-alerts-fieldset {
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 40%, transparent);
+}
+
+/* alias — forward-compatible name (audit-alerts-grid) for the
+ * multi-input rows used inside fieldsets. */
+.audit-alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+/* alias — forward-compatible name (audit-alerts-actions) for any
+ * future actions row that wants the same flex layout as
+ * .audit-alert-rule-form-actions. */
+.audit-alerts-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* --- per-channel-kind config body ---------------------------------- */
+
+.audit-alert-channel-config {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.audit-alert-channel-config label,
+.audit-alert-channel-config .audit-alert-secret-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--pw-fg);
+}
+.audit-alert-channel-config label > span,
+.audit-alert-channel-config .audit-alert-secret-field > span {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.audit-alert-channel-config input,
+.audit-alert-channel-config select {
+  width: 100%;
+  box-sizing: border-box;
+}
+.audit-alert-channel-config button {
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+/* --- enabled / disabled / error rule status ------------------------ */
+
+.audit-alert-rule-on,
+.audit-alert-rule-off,
+.audit-alert-rule-error {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.audit-alert-rule-on {
+  background: color-mix(in srgb, var(--pw-success) 18%, transparent);
+  color: var(--pw-success);
+}
+.audit-alert-rule-off {
+  background: color-mix(in srgb, var(--pw-fg-muted) 18%, transparent);
+  color: var(--pw-fg-muted);
+}
+.audit-alert-rule-error {
+  margin-left: 6px;
+  background: color-mix(in srgb, var(--pw-danger) 18%, transparent);
+  color: var(--pw-danger);
+  cursor: help;
+}
+
+/* --- linked-incidents inner table ---------------------------------- */
+
+.audit-alert-incidents-empty {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 40%, transparent);
+  border: 1px dashed var(--pw-border);
+  border-radius: 6px;
+}
+.audit-alert-incidents-error {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--pw-danger) 50%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-danger) 8%, transparent);
+  color: var(--pw-danger);
+}
+
+.audit-alert-incidents-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 30%, transparent);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+.audit-alert-incidents-table thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.audit-alert-incidents-table tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--pw-border-soft);
+  color: var(--pw-fg);
+}
+.audit-alert-incidents-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.audit-alert-incidents-table a {
+  color: var(--pw-info);
+  text-decoration: none;
+}
+.audit-alert-incidents-table a:hover {
+  text-decoration: underline;
+}
+
+/* --- soft-banded SOC incident status badge ------------------------- */
+
+.audit-alert-status {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--pw-fg-muted) 14%, transparent);
+  color: var(--pw-fg-muted);
+}
+.audit-alert-status-open {
+  background: color-mix(in srgb, var(--pw-danger) 18%, transparent);
+  color: var(--pw-danger);
+}
+.audit-alert-status-progress {
+  background: color-mix(
+    in srgb,
+    var(--pw-warning, var(--pw-accent)) 18%,
+    transparent
+  );
+  color: var(--pw-warning, var(--pw-accent));
+}
+.audit-alert-status-resolved {
+  background: color-mix(in srgb, var(--pw-success) 18%, transparent);
+  color: var(--pw-success);
+}
+.audit-alert-status-closed {
+  background: color-mix(in srgb, var(--pw-fg-muted) 14%, transparent);
+  color: var(--pw-fg-muted);
+}
+
+/* alias — forward-compatible name (audit-alerts-status-pill); applies
+ * the same base look as .audit-alert-status so future markup that
+ * picks the prefix-uniform name renders consistently. */
+.audit-alerts-status-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--pw-fg-muted) 14%, transparent);
+  color: var(--pw-fg-muted);
+}

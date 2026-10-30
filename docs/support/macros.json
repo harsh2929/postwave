@@ -1,0 +1,239 @@
+[
+  {
+    "id": "migration_in_progress",
+    "title": "Migration is taking longer than expected",
+    "body": "Hi {{name}},\n\nThanks for reaching out. Migration time depends on source inventory, pagination, archive depth, and provider throttling. Mailchimp documents a maximum of 10 simultaneously processing requests per user; it is not a 10-calls-per-second allowance.\n\nOpen https://app.moosewave.com/migrations/{{job_id}} for the authoritative status and per-resource counters. If the job is paused or failed, send us the displayed error and job ID. A resource warning or unchanged counter can mean the provider returned throttling or incomplete inventory, so we will inspect the durable cursor and source warning rather than guessing an ETA.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "migration",
+      "performance"
+    ]
+  },
+  {
+    "id": "migration_failed_oauth",
+    "title": "Migration failed — re-authentication needed",
+    "body": "Hi {{name}},\n\nYour migration job cannot use its saved {{source_platform}} source session. This can happen if:\n  • The provider grant was revoked or rotated on the source-platform side.\n  • Moosewave's encrypted saved-session retention ended before the job finished.\n  • The provider rejected the credential under its own account-security rules.\n\nFor Mailchimp, this date describes Moosewave's saved-session retention; it does not claim that Mailchimp's provider token has a fixed expiry.\n\nTo recover:\n  1. Visit https://app.moosewave.com/migrations/{{job_id}}.\n  2. Click \"Reconnect {{source_platform}}\" — this opens the OAuth flow again.\n  3. Confirm that the same migration job resumes from its durable cursor before committing or starting any other migration.\n\nIf you prefer a one-time CSV import, start it as a separate migration and review its dry-run rather than attaching the CSV to this OAuth job.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "migration",
+      "oauth",
+      "errors"
+    ]
+  },
+  {
+    "id": "migration_rollback_window",
+    "title": "How to roll back a completed migration",
+    "body": "Hi {{name}},\n\nThis migration is eligible for rollback until the `rollback_until` time shown at https://app.moosewave.com/migrations/{{job_id}}. Rollback uses the migration write ledger: records created by this job are removed, and pre-existing records updated by it are restored from recorded before-images.\n\nTo start it, open the job, choose \"Roll back this migration\", and monitor the rollback counters until the job reports `rolled_back` or a visible failure.\n\nRollback does not change the source ESP, unsend campaigns, remove DNS/provider configuration, cancel external subscriptions, or delete records created independently after the import. If the action is unavailable or a ledger item cannot be restored safely, reply with the job ID and displayed error instead of deleting records manually.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "migration",
+      "rollback"
+    ]
+  },
+  {
+    "id": "migration_data_loss_estimate",
+    "title": "Why does my dry-run show a non-zero data-loss percentage?",
+    "body": "Hi {{name}},\n\nThe {{loss_pct}}% data-loss estimate summarizes source information that was unsupported, partially translated, or preserved only for rebuild review. It is not a guarantee about subscriber completeness.\n\nPlease compare discovery totals with `subscribers_imported`, consent-known/unknown, duplicate merge conflicts, segment and automation warnings, and every `resource_completeness` row. For Mailchimp, Customer Journey graphs remain manual rebuild evidence because the public API does not provide a general graph export.\n\nIf a subscriber or resource count differs, stop before commit and send us the job ID plus the relevant warning. We will reconcile the source page/cursor and destination evidence rather than treating the percentage alone as approval.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "migration",
+      "verification"
+    ]
+  },
+  {
+    "id": "deliverability_dkim_failing",
+    "title": "DKIM is failing on my new sending domain",
+    "body": "Hi {{name}},\n\nDKIM authentication on `{{domain}}` is currently failing because the CNAME record we generated for you isn't propagating. This is the most common deliverability issue after a tier upgrade.\n\nThe record you need to add at your DNS provider:\n\n  Host:   {{dkim_selector}}._domainkey.{{domain}}\n  Type:   CNAME\n  Target: {{dkim_target}}\n  TTL:    Auto / 3600\n\nA few things to double-check:\n  • Some registrars (Squarespace, GoDaddy) silently strip the host suffix. The full host name MUST resolve to the target — paste the full string into a `dig CNAME {{dkim_selector}}._domainkey.{{domain}}` to confirm.\n  • CNAMEs cannot coexist with other records on the same hostname. If you also have a TXT record at that exact host, your provider will quietly ignore one of them.\n  • Propagation usually completes within 30 minutes but can take up to 48 hours on rare TLDs.\n\nOnce the record is live we'll auto-detect it within 5 minutes and your sending state will flip to \"verified\". Reply if you'd like me to take a look at your zone file directly.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "deliverability",
+      "dkim"
+    ]
+  },
+  {
+    "id": "deliverability_warmup_explained",
+    "title": "Why is my daily send cap so low right now?",
+    "body": "Hi {{name}},\n\nYour Sending tier is currently in IP warm-up — you're on day {{warmup_day}} of 30, with a cap of {{daily_cap}} sends today.\n\nWarm-up is non-negotiable for new sending IPs. Mailbox providers (Gmail, Outlook, Yahoo) judge the trustworthiness of an IP based on its sending history; sending 100,000 emails on day one from a brand-new IP is the fastest way to get every message routed straight to spam, possibly permanently.\n\nThe schedule we use is the canonical ESP ramp:\n  • Day 1:    50 sends\n  • Day 7:    10,000 sends\n  • Day 14:   250,000 sends\n  • Day 30:   2,000,000 sends (steady state)\n\nA few things you can do during warm-up:\n  • Send to your most engaged subscribers first. Opens and clicks are the strongest positive signals.\n  • Avoid heavy promotional copy in the first two weeks — softer, more conversational mail builds reputation faster.\n  • Don't pause the schedule. A consistent cadence matters more than volume.\n\nYou can see your current cap and remaining headroom at https://app.moosewave.com/sending. If you're approaching a one-time send that exceeds your cap, reply and we'll help you split it across days.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "deliverability",
+      "warmup",
+      "sending"
+    ]
+  },
+  {
+    "id": "deliverability_high_bounce_rate",
+    "title": "Your bounce rate is creeping up — here's what we're seeing",
+    "body": "Hi {{name}},\n\nWe noticed your hard-bounce rate hit {{bounce_pct}}% over the last 7 days, against a healthy threshold of 2% and an at-risk threshold of 5%. We wanted to flag it before it triggers an automatic sending pause.\n\nMost-likely causes (in order of frequency):\n  1. List-quality drift — addresses that were valid at signup but have since been abandoned.\n  2. Recently imported subscribers from an old list that wasn't validated before import.\n  3. A typo in an opt-in form (subscribers correcting `gmial.com` etc. on the next attempt).\n\nThe fastest way to bring the number down:\n  • Run a list-cleaning pass via the dashboard's Hygiene tab. We'll suppress confirmed-invalid addresses without affecting your subscriber count.\n  • Audit any recent CSV imports. If you imported from a list that's >12 months old, expect ~5–8% to bounce by default.\n  • Set up a re-engagement automation for subscribers who haven't opened in 6 months.\n\nIf bounces stay above 5% for another 48 hours we'll pause sending automatically and ping you. Don't wait for the auto-pause — better to act now.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "deliverability",
+      "bounce",
+      "list-hygiene"
+    ]
+  },
+  {
+    "id": "deliverability_spam_complaints",
+    "title": "Spam complaints — why they matter and what to do",
+    "body": "Hi {{name}},\n\nYour spam-complaint rate over the last 7 days is {{complaint_pct}}%. The industry threshold is 0.1%; once a sender crosses 0.3%, mailbox providers begin filtering aggressively. You're at risk.\n\nWhat counts as a complaint:\n  • Recipient clicks \"Report spam\" / \"This is junk\" in their inbox.\n  • The complaint flows back to us via Feedback Loops (FBLs) with the major ISPs.\n\nThings that cause spike:\n  • Low-engagement lists (subscribers who don't remember opting in).\n  • Confusing or absent unsubscribe links — when the unsubscribe is hard to find, complaints become the easy alternative.\n  • Sudden topic shifts — promoting a new offering to a list that signed up for a different topic.\n\nImmediate actions:\n  • Verify the unsubscribe link in your last few campaigns is prominent and one-click.\n  • Pause any promotional sends to subscribers who haven't engaged in 90+ days.\n  • Review the campaigns from the last 14 days for any unusual subject lines or sender names.\n\nWe've already added a List-Unsubscribe header to every send by default. If you'd like a deliverability strategist to look at your specific list, reply here and we'll set up a 30-min call.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "deliverability",
+      "complaints"
+    ]
+  },
+  {
+    "id": "deliverability_dedicated_ip_request",
+    "title": "When does a dedicated IP make sense?",
+    "body": "Hi {{name}},\n\nGreat question. The short answer: dedicated IPs are worth it once you're consistently sending 100k+ emails per month with a stable cadence.\n\nWhy:\n  • Below ~100k/month, a dedicated IP doesn't get enough \"signal\" for mailbox providers to build a reputation. You actually deliver better on a well-curated shared pool (which is what the Sending tier uses).\n  • Above ~100k/month, you start to want the isolation — your reputation no longer commingles with other senders, good or bad.\n  • Dedicated IPs require a full 30-day warm-up. Plan for it before any high-volume launches.\n\nThe Pro tier ($79/mo) includes one dedicated IP. If you're on Sending and want to upgrade, you can do it at https://app.moosewave.com/billing — provisioning takes about 2 minutes and we'll start the warm-up automatically.\n\nIf your volume is below 100k/month and you're seeing deliverability issues, the answer is almost always list quality, not the IP. Happy to dig into the specifics if you want.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "deliverability",
+      "dedicated-ip",
+      "billing"
+    ]
+  },
+  {
+    "id": "ai_voice_profile_quality",
+    "title": "How do I improve my voice-profile quality?",
+    "body": "Hi {{name}},\n\nThe voice profile uses your existing writing as the source material, so the quality of the profile is bounded by the quantity and consistency of what you upload. Here's how to get the most out of it.\n\nWhat works best:\n  • At least 25,000 words across 10+ pieces. More is better; we cap analysis at ~150,000 words for cost reasons.\n  • A mix of formats — newsletter issues + blog posts + social — gives us a richer fingerprint than any single source.\n  • Pieces from the last 18 months. Older writing can drag the profile in a stale direction.\n\nWhat hurts:\n  • Co-authored work (we'll learn the average voice, not yours).\n  • Heavily edited interview transcripts (sounds like the editor, not you).\n  • Boilerplate (footers, disclaimers, repeated CTAs) — we de-duplicate but a lot of it slips through.\n\nWhen you're ready to rebuild, click \"Rebuild Profile\" on the Voice page; the run takes 60–120 seconds. The improved profile only affects NEW sequences — anything you've already generated keeps its prior context.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "ai",
+      "voice",
+      "sequences"
+    ]
+  },
+  {
+    "id": "ai_low_fidelity_email",
+    "title": "Why was one of my generated emails flagged as low-fidelity?",
+    "body": "Hi {{name}},\n\nA voice-fidelity score below 60 means our embedding-based comparator detected meaningful drift between the generated email and the representative samples in your voice profile. We flag it so you can decide whether to ship as-is, regenerate, or hand-edit.\n\nCommon causes:\n  • The template you chose ({{template_name}}) calls for a register that's significantly more formal/casual than your usual writing.\n  • Topic mismatch — if your profile is built mostly on tech essays and the variables describe a wedding planner, the generator will reach for vocabulary you've never used.\n  • Length squeeze — when a template's word budget is tight, we drop sentence-level patterns first; that's where voice usually lives.\n\nThree options:\n  1. Hit \"Regenerate\" — the second pass uses a stronger voice-matching prompt.\n  2. Adjust the StyleControls (humor / directness / formality sliders) to bias toward your natural defaults.\n  3. Hand-edit the email; the saved version's score recomputes on save.\n\nWe never block low-score emails from sending. The flag exists to surface the question; you stay in charge of the call.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "ai",
+      "voice",
+      "sequences",
+      "quality"
+    ]
+  },
+  {
+    "id": "ai_template_request",
+    "title": "Can you add a template for my use case?",
+    "body": "Hi {{name}},\n\nThanks for the suggestion. Our template library is community-driven; new templates land based on:\n  • How many people request the same use case (we batch similar requests weekly).\n  • Whether we have a strong reference example to model the prompt on.\n  • The category coverage — we prioritize gaps over duplicates.\n\nIf you'd like to fast-track yours: reply with (a) a 1-paragraph description of the goal, (b) 1–2 examples of great emails that hit that goal (paste the body or link), and (c) the typical length of the sequence (3 emails? 7?). With those three pieces we can usually ship a draft template within a week.\n\nIn the meantime, you can clone the closest existing template and tweak the prompt — the \"Custom Template\" workflow under Voice → Templates supports this. The custom template stays private to your tenant.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "ai",
+      "templates",
+      "feature-request"
+    ]
+  },
+  {
+    "id": "forms_hosted_page_branding",
+    "title": "How do I customize my hosted form page?",
+    "body": "Hi {{name}},\n\nHosted form pages support several layers of customization, in order of effort:\n\n1. **Quick branding** (Studio tier and above): logo + colors + fonts via Forms → {{form_name}} → Appearance. Changes propagate within 60 seconds (we cache the page at the edge).\n\n2. **Custom domain**: point a CNAME from forms.{{your_domain}} to forms.postwave.app. The hosted page will respond on your domain with a free Cloudflare-issued cert. Setup is one DNS record + one click in our dashboard.\n\n3. **Full HTML override** (Pro tier): bring your own page template. We'll inject the form payload via a `data-postwave-form` attribute. The embed.js client handles submission, validation, and confirmation states for you.\n\n4. **Headless / API-only**: skip the hosted page entirely and POST to /api/public/forms/{{form_slug}}/submit. This is what you want if you're embedding the form into an existing app.\n\nAll four options are documented at https://docs.moosewave.com/forms/customization. Reply if you'd like a code review of your custom HTML before going live.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "forms",
+      "customization"
+    ]
+  },
+  {
+    "id": "forms_double_optin_disabled",
+    "title": "Should I disable double opt-in?",
+    "body": "Hi {{name}},\n\nShort answer: only if you're absolutely sure. The default is double opt-in for good reason.\n\nWhat double opt-in does:\n  • Sends a confirmation email after signup; the subscriber clicks a link to confirm.\n  • Filters out typo'd addresses, bots, and \"oh I didn't mean to\" signups before they become bounces or spam complaints.\n  • Required by law in several jurisdictions (Germany's UWG, Italy's Garante guidance, Canada's CASL for some scenarios).\n\nWhen single opt-in IS reasonable:\n  • You're importing from another platform where the subscribers already double-opted in. Use Moosewave's \"already confirmed\" flag during import — no need to re-confirm.\n  • You're running a co-reg / lead-gen funnel where the subscriber signed a separate, explicit consent on a third-party landing page.\n\nWhen single opt-in is dangerous:\n  • Public web forms with no captcha. Bots will pad your list with garbage and crater your deliverability within a week.\n  • Imports from purchased or scraped lists (don't do this, regardless of opt-in mode — your sending will not survive it).\n\nThe toggle is at Forms → {{form_name}} → Settings → Double opt-in. Flip it off only after you've thought through the above.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "forms",
+      "compliance",
+      "deliverability"
+    ]
+  },
+  {
+    "id": "billing_refund_request",
+    "title": "Refund request — Sending tier",
+    "body": "Hi {{name}},\n\nWe stand behind a 30-day no-questions refund on the Sending and Pro tiers. You're {{days_since_purchase}} days into your subscription, so {{eligibility_state}}.\n\nIf eligible, here's what happens next:\n  1. We process the refund to your original payment method within 1 business day; your bank usually shows it 3–5 business days later.\n  2. Your tenant downgrades to the Studio tier at the end of the current billing period — you keep the time you already paid for.\n  3. Subscribers, sequences, and forms are preserved. The only loss is access to managed sending; you can keep using the Studio tier with your own SMTP indefinitely.\n\nFor LTD purchases (Studio one-time), refunds follow the policy from the marketplace you bought through (typically 60 days).\n\nIf you'd like to talk through what's not working before pulling the trigger, reply with what you've been struggling with — sometimes it's a small fix, and we'd rather earn your subscription back than lose you.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "billing",
+      "refund"
+    ]
+  },
+  {
+    "id": "billing_dunning_card_failed",
+    "title": "We couldn't charge your card",
+    "body": "Hi {{name}},\n\nYour latest payment for the {{tier}} tier failed. Stripe will retry automatically:\n  • Attempt 2: in 24 hours\n  • Attempt 3: in 4 days\n  • Attempt 4: in 7 days\n\nIf all four fail, the subscription will cancel and your tenant downgrades to Studio. Subscribers and data are preserved; only the managed-sending features pause.\n\nMost-common causes:\n  • Card expired since signup.\n  • New issuing-bank fraud rules blocking recurring charges (very common with Apple Card and several EU challengers).\n  • Insufficient funds (we only charge once, no overdraft retries from us).\n\nYou can update your card at https://app.moosewave.com/billing — the change takes effect on the next retry. If it's a fraud-rule issue, your bank will usually approve future charges once you whitelist the merchant name (\"POSTWAVE\").\n\nReply if Stripe's retries don't sort it out and we'll dig in.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "billing",
+      "dunning"
+    ]
+  },
+  {
+    "id": "billing_invoice_download",
+    "title": "Where do I download my invoices?",
+    "body": "Hi {{name}},\n\nAll invoices live at https://app.moosewave.com/billing/invoices. Each row links to a PDF you can download or forward to your accounting system.\n\nA few things worth knowing:\n  • PDFs include your tax-relevant fields (VAT id if we have one on file, reverse-charge note for EU B2B).\n  • If you need to add or update a billing address / VAT id, edit it under Billing → Company details. Changes apply to the NEXT invoice; we don't reissue past invoices.\n  • Stripe-hosted invoices are also available — useful if your payable-team has a Stripe integration. Reply if you'd like the hosted-URL workflow enabled.\n\nFor Studio LTD purchases the receipt comes from the marketplace (AppSumo, Stacksocial, etc.) — we don't have a copy on our side.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "billing",
+      "invoices"
+    ]
+  },
+  {
+    "id": "billing_tier_comparison",
+    "title": "Which tier is right for me?",
+    "body": "Hi {{name}},\n\nThe quickest way to think about it:\n  • **Studio** ($349 LTD or included in some bundles): you have your own sender — Mailgun, AWS SES, Postmark, Resend, whatever — and you want Moosewave for the rest (segments, automations, AI sequences, voice profile, forms). No managed sending, no warm-up curve to worry about.\n  • **Sending** ($29/mo): you want us to handle deliverability end-to-end. We provision a Postmark stream per tenant, manage DKIM, run the warm-up. Up to ~250k sends/month comfortably on a shared IP pool.\n  • **Pro** ($79/mo): everything Sending has, plus a dedicated IP, higher monthly volume cap, and priority deliverability support. Worth it once you're consistently doing 100k+ sends/month.\n\nA few rules of thumb:\n  • If you're not sure: start on Sending. The upgrade to Pro is one click and inherits your warm-up state.\n  • If you already pay another ESP $50+/month and like them: stay on Studio.\n  • If you're under 5,000 subscribers and growing slowly: Studio with a free SMTP backend (Resend's free tier covers 3k sends/month) is the cheapest path.\n\nHappy to model out a recommendation if you reply with rough volumes and tooling.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "billing",
+      "tier",
+      "presales"
+    ]
+  },
+  {
+    "id": "selfhost_install_guide",
+    "title": "How do I self-host Moosewave?",
+    "body": "Hi {{name}},\n\nThanks for asking about independent operation. The authoritative source boundary is in `LICENSE-BOUNDARY.md`: `apps/`, `services/`, and `infra/` are AGPL-3.0-only; each `packages/*` root is MIT licensed; and Moosewave's tuned assets under `proprietary/` are separately controlled and excluded from public, customer, self-host, and corresponding-source artifacts. MIT-licensed placeholders are available under `proprietary-stubs/`.\n\nPostwave currently integrates with the separately running upstream Listmonk process over HTTP. There is no Moosewave Listmonk fork or submodule. The repository's Docker Compose files are development/test references, not a supported production installer or evidence of a self-hosted product edition.\n\nThe source licenses do not by themselves include installation assistance, updates, hosting, continuity, an SLA, or support. We can promise those only when they are listed in an executed commercial agreement. Before sending deployment instructions or an artifact, please let me confirm whether a reviewed distribution and support package exists for your use case.\n\nIf you need a supported arrangement, reply with your deployment, security, scale, and support requirements and I will route them for a written scope.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "self-host",
+      "licensing"
+    ]
+  },
+  {
+    "id": "selfhost_data_export",
+    "title": "Exporting all of my data for self-hosting / backup",
+    "body": "Hi {{name}},\n\nWhether you're self-hosting, backing up, or just want a copy on principle, the export is the same:\n\n1. Subscribers + custom fields → CSV via Subscribers → Export. One row per subscriber; custom fields become columns.\n2. Lists, segments, automations, templates → JSON bundle via Settings → Data Export. We email you a download link within 5 minutes; the link is valid for 24 hours.\n3. Campaign archive (rendered HTML + per-campaign stats) → JSON bundle via Settings → Data Export → Include archive. Larger lists take up to 30 minutes to generate.\n4. Voice profile + sequences → JSON via Voice → Export.\n\nWe never gate exports on subscription status. You can pull a full copy at any time, including after canceling.\n\nIf you're moving to another platform: many of the export formats are CSV/JSON-standard, so import is usually straightforward. If you're going to a platform we have a one-click reverse migration to (Mailchimp, ConvertKit, Beehiiv), reply and we'll set it up.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "self-host",
+      "gdpr",
+      "data-export"
+    ]
+  },
+  {
+    "id": "gdpr_data_subject_request",
+    "title": "Right to access / right to deletion request",
+    "body": "Hi {{name}},\n\nWe handle data-subject requests under GDPR Article 15 (access) and Article 17 (erasure) within 30 days as the statute requires. Most are processed within 5 business days.\n\nWe need a couple of things from you:\n  1. The email address(es) of the subject in question — these are the join key across our systems.\n  2. A short statement of the request (\"please send me a copy of the data\", \"please delete all data\").\n  3. Verification: if you're not a verified Moosewave admin for the tenant the data lives in, we'll ask the subject to confirm via email.\n\nWhat the access response includes:\n  • Profile, custom fields, list memberships.\n  • Email-engagement history (opens, clicks, bounces).\n  • Inbound form submissions (with IP and timestamp).\n  • Any unsubscribe / consent timestamps.\n\nWhat the deletion does:\n  • Hard-deletes subscriber rows in our primary database.\n  • Replaces engagement events with anonymized aggregates (we keep the count, lose the identity — required for our deliverability analytics).\n  • Adds the email to a suppression list so it can't be re-imported by mistake.\n  • Backups containing the data age out within 35 days; we'll skip restoring those rows if a restore happens during that window.\n\nReply with the request and the email(s) and we'll get it queued.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "gdpr",
+      "privacy"
+    ]
+  },
+  {
+    "id": "gdpr_dpa_request",
+    "title": "Data Processing Agreement (DPA)",
+    "body": "Hi {{name}},\n\nOur standard DPA is at https://moosewave.com/legal/dpa — it's pre-signed by us and structured around the Standard Contractual Clauses (SCCs) for international transfers.\n\nIf your privacy team needs to review or counter-sign:\n  • Download the PDF, sign on the customer line, email it back to dpa@moosewave.com.\n  • We countersign and return within 1 business day.\n  • The DPA references our TOM document (technical and organizational measures), which is at https://moosewave.com/legal/tom — also linked from Annex 2 of the DPA.\n\nIf you have a redline or your own DPA template you need us to sign instead, reply with the document and our legal counsel will turn it around within 5 business days. We tend to accept reasonable changes — happy to walk through any sticking points.\n\nA few highlights for the legal-curious:\n  • Sub-processors are listed at https://moosewave.com/legal/sub-processors with 30-day notification of changes.\n  • Primary data location: AWS us-west-2 (Oregon, United States). For EU/UK customers that is a third-country transfer, covered by the EU-US Data Privacy Framework where the recipient is certified and by the 2021 SCCs otherwise — the per-vendor basis is in the sub-processor table.\n  • Encryption at rest (AES-256-GCM, envelope-wrapped) and in transit (TLS 1.3) by default.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "gdpr",
+      "dpa",
+      "legal"
+    ]
+  },
+  {
+    "id": "abuse_compromised_account",
+    "title": "Suspected account compromise — what we need from you",
+    "body": "Hi {{name}},\n\nThanks for letting us know. Account compromises are time-sensitive — once we have the facts, we can act within minutes.\n\nWhat we need:\n  1. The tenant slug or admin email of the affected account.\n  2. Any timestamp(s) of suspicious activity (an unexpected campaign send, a new admin user, etc.).\n  3. Whether the original admin still has session access — if not, we have a separate account-recovery flow.\n\nWhat we'll do immediately:\n  • Force a password reset across every admin user on the tenant.\n  • Revoke every active session and API token.\n  • Pause all outbound sending until you confirm everything is clean.\n  • Run a forensic export of the audit log for the suspected window.\n\nWhat to do on your end:\n  • Rotate any third-party credentials (Mailchimp / ConvertKit OAuth, Stripe webhook secret, ANTHROPIC_API_KEY) that may have been exposed.\n  • Check authorized devices in your password manager.\n  • If credit-card data may have been exposed (it shouldn't be — we tokenize via Stripe), contact your bank.\n\nReply with the details and we'll start within minutes.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "abuse",
+      "security"
+    ]
+  },
+  {
+    "id": "abuse_unsolicited_email",
+    "title": "Someone reported receiving unsolicited email from a Moosewave sender",
+    "body": "Hi {{name}},\n\nThanks for the report. Unsolicited email from any Moosewave-hosted sender is a violation of our Acceptable Use Policy (https://moosewave.com/legal/aup); we take every complaint seriously.\n\nIf you can share:\n  1. The original email (full headers, please — our abuse triage needs the Authentication-Results and Received chain).\n  2. The address it was sent to.\n  3. Any context on how that address was acquired by the sender (you bought a product? you signed up for something else and got cross-sold?).\n\nWhat we do with the report:\n  • Identify the sending tenant from the X-PM-Message-Id header or DKIM signature.\n  • Pull the consent record for the recipient — if no double-opt-in record exists, we suspend sending and ask the tenant to remediate within 24 hours.\n  • Repeated or egregious violations result in account termination.\n\nWe'll follow up within 1 business day with confirmation of the action taken (with appropriate redactions to protect the tenant's confidentiality where the report turns out to be a misunderstanding).\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "abuse",
+      "security"
+    ]
+  },
+  {
+    "id": "bug_report_intake",
+    "title": "Thanks for the bug report — here's what we need",
+    "body": "Hi {{name}},\n\nThanks for taking the time to file this. To get to the bottom of it quickly, can you reply with:\n\n  • **What you did** — the click path or API call that triggered the issue.\n  • **What you expected** — the outcome you were going for.\n  • **What actually happened** — the error message, screenshot, or unexpected output.\n  • **When** — a timestamp (with timezone) so we can find your request in the logs.\n  • **Browser / OS** — if it's a UI issue.\n  • **Tenant slug or admin email** — so we can scope the search.\n\nIf you saw a request id in the response (a 16-character hex string usually shown in error toasts and HTTP headers as `X-Request-Id`), include that — it lets us pull every log line related to your specific request in seconds.\n\nIf the issue is reproducible on demand, even better — a tiny screen recording (Loom, CleanShot) saves a lot of back-and-forth.\n\nWe try to acknowledge bug reports within 4 business hours and ship fixes (or workarounds) within a week. Critical issues — anything affecting deliverability, billing, or data integrity — get triaged the same day.\n\n— {{agent_name}}, Moosewave",
+    "tags": [
+      "bug-report",
+      "support"
+    ]
+  }
+]

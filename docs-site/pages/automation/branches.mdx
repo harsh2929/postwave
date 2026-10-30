@@ -1,0 +1,69 @@
+---
+title: Branches
+---
+
+# Branches
+
+A `branch` node evaluates a condition against the subscriber and routes them down one of N edges. The condition is the same [segment AST](/migration#the-canonical-schema) used everywhere in Moosewave.
+
+## Shape
+
+```yaml
+type: branch
+config:
+  match: all          # 'all' (AND) or 'any' (OR)
+  conditions:
+    - field: "tags"
+      op:    "in"
+      value: ["paid"]
+    - field: "attributes.last_open_at"
+      op:    "gt"
+      value: "30d_ago"   # relative dates supported
+edges:
+  - { id: matched,   next: "node_send_paid_thanks" }
+  - { id: unmatched, next: "node_send_free_pitch" }
+```
+
+A branch always has exactly two edges (`matched` and `unmatched`). For 3+ way splits, chain branches.
+
+## Supported comparators
+
+| Op           | Meaning                                | Example value                        |
+| ------------ | -------------------------------------- | ------------------------------------ |
+| `eq`         | Equal                                  | `"alice"`, `42`, `true`              |
+| `neq`        | Not equal                              | same                                 |
+| `contains`   | String contains                        | `"newsletter"`                       |
+| `not_contains` | String does not contain              | `"unsubscribe"`                      |
+| `gt`         | Greater than                           | `100`, `"2026-01-01"`, `"30d_ago"`   |
+| `lt`         | Less than                              | same                                 |
+| `gte` / `lte` | Greater/less or equal                 | same                                 |
+| `in`         | Value is in a list                     | `["paid", "trial"]`                  |
+| `not_in`     | Value is not in a list                 | same                                 |
+| `exists`     | Attribute is present                   | (no value)                           |
+| `not_exists` | Attribute is absent                    | (no value)                           |
+
+## Supported fields
+
+- Top-level canonical: `email`, `status`, `first_name`, `last_name`, `subscribed_at`, `source`.
+- Tags: `tags` (list of strings) — pair with `in` / `not_in` / `contains`.
+- Custom attributes: `attributes.<name>` (any).
+- Engagement aggregates: `attributes.last_open_at`, `attributes.last_click_at`, `attributes.opens_30d`, `attributes.clicks_30d` (auto-maintained by Moosewave).
+
+## Relative dates
+
+Date comparisons accept relative tokens evaluated at run-time:
+
+- `now`
+- `Nd_ago`, `Nh_ago`, `Nm_ago` — N days/hours/minutes ago.
+- `Nd_from_now`, `Nh_from_now`.
+
+So `attributes.last_open_at gt 30d_ago` means "opened something in the last 30 days".
+
+## Evaluation timing
+
+Branches evaluate **at the moment the run reaches the branch node**, not at trigger time. So if a subscriber's tags change during a long `wait`, the branch sees the current tags.
+
+## Next steps
+
+- [Actions](/automation/actions) — what to do once you've routed.
+- [Triggers](/automation/triggers).

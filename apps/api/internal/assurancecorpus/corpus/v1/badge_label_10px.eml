@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <badge-label-10px.v1@example.com>
+Subject: Plan upgraded
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-badge-v1"
+
+--pw-badge-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+You are now on the Pro plan. Manage: https://app.example.com/plan
+--pw-badge-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Plan upgraded</h1><p><span style="font-size:10px;background-color:#eeeeee;color:#333333">PRO</span> You are now on the Pro plan.</p><p><a href="https://app.example.com/plan">Manage your plan</a></p></body></html>
+--pw-badge-v1--

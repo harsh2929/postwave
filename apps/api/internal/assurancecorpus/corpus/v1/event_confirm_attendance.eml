@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <event-confirm-attendance.v1@example.com>
+Subject: Confirm your attendance
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-event-v1"
+
+--pw-event-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Confirm your attendance by Friday: https://events.example.com/c/9
+--pw-event-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Confirm your attendance</h1><p>Please confirm by Friday so we can finalise numbers. Ignore this if you have already replied.</p><p><a href="https://events.example.com/c/9">Confirm attendance</a></p></body></html>
+--pw-event-v1--

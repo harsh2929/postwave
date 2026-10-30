@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <icon-list-all-decorative.v1@example.com>
+Subject: Getting started
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-icons-v1"
+
+--pw-icons-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three steps to set up: https://docs.example.com/start
+--pw-icons-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Getting started</h1><ul><li><img src="https://cdn.example.com/i1.png" alt="" aria-hidden="true" width="16" height="16"> Connect your domain</li><li><img src="https://cdn.example.com/i2.png" alt="" aria-hidden="true" width="16" height="16"> Import your list</li><li><img src="https://cdn.example.com/i3.png" alt="" aria-hidden="true" width="16" height="16"> Send a test</li></ul><p><a href="https://docs.example.com/start">Read the guide</a></p></body></html>
+--pw-icons-v1--

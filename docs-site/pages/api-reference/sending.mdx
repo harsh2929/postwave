@@ -1,0 +1,50 @@
+---
+title: Sending API
+---
+
+# Sending API
+
+For workspaces on the **Sending** tier add-on (BYO sender or Moosewave-provisioned dedicated IP).
+
+## Endpoints
+
+| Method | Path                            | Purpose                                       |
+| ------ | ------------------------------- | --------------------------------------------- |
+| POST   | `/api/v1/sending/provision`     | Request a new sending domain / IP.            |
+| GET    | `/api/v1/sending/state`         | Current provisioning + warmup state.          |
+| POST   | `/api/v1/sending/warmup:start`  | Begin the warmup ramp.                        |
+| POST   | `/api/v1/sending/warmup:pause`  | Pause warmup (e.g., during reputation event). |
+| POST   | `/api/v1/sending/warmup:resume` | Resume.                                       |
+| GET    | `/api/v1/sending/warmup/state`  | Current day, daily cap, engagement metrics.   |
+
+## Provision
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/sending/provision \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "domain": "send.yourdomain.com", "type": "dedicated_ip" }'
+```
+
+Response includes the DNS records you need to add (SPF include, DKIM CNAME, MX, return-path). See [account setup](/getting-started/account-setup).
+
+## State
+
+```json
+{
+  "domain": "send.yourdomain.com",
+  "ip": "203.0.113.42",
+  "verified": true,
+  "warmup": {
+    "active": true,
+    "day": 4,
+    "daily_cap": 500,
+    "sent_today": 287
+  },
+  "reputation": { "gmail_postmaster_grade": "Medium", "spamhaus": "clean" }
+}
+```
+
+## See also
+
+- [Improving placement](/deliverability/improving-placement) — warmup discipline.
+- [Deployment capability boundaries](/self-host/limits) — operator-owned dependencies and unsupported source-build responsibilities.

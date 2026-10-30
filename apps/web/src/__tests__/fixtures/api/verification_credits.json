@@ -1,0 +1,13 @@
+{
+  "balance": null,
+  "note": "No verification provider configured; local (free) checks only.",
+  "provider": null,
+  "totals": {
+    "cache_hits": 0,
+    "credits_saved": 0,
+    "credits_spent": 0,
+    "local_filtered": 0,
+    "verified": 0
+  },
+  "usage": []
+}

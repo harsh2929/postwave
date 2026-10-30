@@ -1,0 +1,264 @@
+{
+  "$comment": [
+    "One answer per (comparator, field, value, subscriber), executed by BOTH",
+    "segment engines: the SQL compiler in apps/api/internal/segments and the",
+    "in-memory evaluator in services/automation/internal/runtime.",
+    "",
+    "This file exists because the two engines answered the same user-visible",
+    "question differently. A flow branch reading `Tag contains vip` took the",
+    "false leg for a subscriber tagged `vip-gold`, while the identically-worded",
+    "segment matched them \u2014 the SQL side compiles `contains` to ILIKE '%vip%'",
+    "and the Go side compared tags for exact equality. Worse, the Go evaluator",
+    "recognised `eq`/`neq` while the SQL compiler emits `equals`/`not_equals`,",
+    "so a condition authored through the segment vocabulary fell through to a",
+    "silent `return false` and routed 100% of traffic down the false leg with",
+    "nothing reported.",
+    "",
+    "Two implementations validated on their own side are not one contract. A",
+    "row added here must be answered identically by both, or one of them fails.",
+    "",
+    "`skip_sql` marks rows the SQL engine cannot express against a real column",
+    "(tag-array semantics live in a different compiler path); those rows still",
+    "bind the Go evaluator. Nothing is skipped for the Go side."
+  ],
+  "subscribers": {
+    "vip_gold": {
+      "email": "Person@Example.Test",
+      "status": "enabled",
+      "tags": [
+        "vip-gold",
+        "newsletter"
+      ],
+      "custom_fields": {
+        "plan": "Pro",
+        "seats": 12
+      }
+    },
+    "plain": {
+      "email": "other@example.test",
+      "status": "enabled",
+      "tags": [
+        "newsletter"
+      ],
+      "custom_fields": {
+        "plan": "free",
+        "seats": 1
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "equals is the canonical spelling and both engines honour it",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "equals",
+      "value": "other@example.test",
+      "expected": true,
+      "why": "The Go evaluator recognised only `eq` and fell through to a silent false."
+    },
+    {
+      "name": "eq is accepted as an alias, not a second vocabulary",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "eq",
+      "value": "other@example.test",
+      "expected": true
+    },
+    {
+      "name": "not_equals is the canonical spelling",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "not_equals",
+      "value": "someone-else@example.test",
+      "expected": true
+    },
+    {
+      "name": "contains on a string is a substring match, not equality",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "contains",
+      "value": "example.test",
+      "expected": true
+    },
+    {
+      "name": "contains is case-insensitive, matching ILIKE",
+      "subscriber": "vip_gold",
+      "field": "email",
+      "comparator": "contains",
+      "value": "PERSON",
+      "expected": true,
+      "why": "SQL compiles to ILIKE; Go used strings.Contains, which is case-sensitive."
+    },
+    {
+      "name": "contains on a tag list matches a substring of any tag",
+      "subscriber": "vip_gold",
+      "field": "tags",
+      "comparator": "contains",
+      "value": "vip",
+      "expected": true,
+      "skip_sql": true,
+      "why": "The headline case. `vip-gold` matched the segment and failed the identically-worded flow branch."
+    },
+    {
+      "name": "contains on a tag list still does not match an unrelated tag",
+      "subscriber": "plain",
+      "field": "tags",
+      "comparator": "contains",
+      "value": "vip",
+      "expected": false,
+      "skip_sql": true
+    },
+    {
+      "name": "not_contains is the exact negation of contains",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "not_contains",
+      "value": "nowhere",
+      "expected": true
+    },
+    {
+      "name": "starts_with exists in both engines",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "starts_with",
+      "value": "other",
+      "expected": true,
+      "why": "The Go evaluator had no starts_with at all \u2014 it returned a silent false."
+    },
+    {
+      "name": "starts_with is anchored, not a substring",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "starts_with",
+      "value": "example",
+      "expected": false
+    },
+    {
+      "name": "ends_with exists in both engines",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "ends_with",
+      "value": "example.test",
+      "expected": true
+    },
+    {
+      "name": "is_not_null is the canonical spelling of exists",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "is_not_null",
+      "value": null,
+      "expected": true
+    },
+    {
+      "name": "is_null is the canonical spelling of not_exists",
+      "subscriber": "plain",
+      "field": "email",
+      "comparator": "is_null",
+      "value": null,
+      "expected": false
+    },
+    {
+      "name": "numeric gt compares numbers, not strings",
+      "subscriber": "vip_gold",
+      "field": "custom.seats",
+      "comparator": "gt",
+      "value": 9,
+      "expected": true,
+      "skip_sql": true,
+      "why": "String comparison would make 12 < 9."
+    },
+    {
+      "name": "numeric lte is inclusive",
+      "subscriber": "plain",
+      "field": "custom.seats",
+      "comparator": "lte",
+      "value": 1,
+      "expected": true,
+      "skip_sql": true
+    },
+    {
+      "name": "in matches when the value is one of the list",
+      "subscriber": "plain",
+      "field": "custom.plan",
+      "comparator": "in",
+      "value": [
+        "free",
+        "trial"
+      ],
+      "expected": true,
+      "why": "`in` is declared by the shared vocabulary and compiled by the SQL engine, but was missing from the flow evaluator's comparator map \u2014 so it fell through to a silent false and routed 100% of subscribers down the FALSE leg."
+    },
+    {
+      "name": "in does not match when the value is absent from the list",
+      "subscriber": "plain",
+      "field": "custom.plan",
+      "comparator": "in",
+      "value": [
+        "pro",
+        "enterprise"
+      ],
+      "expected": false,
+      "why": "The negative case, so a stub returning true for every `in` cannot pass."
+    },
+    {
+      "name": "not_in is the exact negation of in",
+      "subscriber": "plain",
+      "field": "custom.plan",
+      "comparator": "not_in",
+      "value": [
+        "pro",
+        "enterprise"
+      ],
+      "expected": true,
+      "why": "Paired with the case above; both engines must agree on the negation, not just the positive."
+    },
+    {
+      "name": "not_in does not match when the value IS in the list",
+      "subscriber": "plain",
+      "field": "custom.plan",
+      "comparator": "not_in",
+      "value": [
+        "free",
+        "trial"
+      ],
+      "expected": false,
+      "why": "Guards the negation against a stub that always returns true."
+    },
+    {
+      "name": "in over an empty list matches nobody",
+      "subscriber": "plain",
+      "field": "custom.plan",
+      "comparator": "in",
+      "value": [],
+      "expected": false,
+      "why": "SQL compiles `IN ()` to FALSE (compile.go). Membership of nothing is false, and an evaluator that treated an empty list as 'no filter' would match everybody."
+    },
+    {
+      "name": "not_in over an empty list matches everybody",
+      "subscriber": "plain",
+      "field": "custom.plan",
+      "comparator": "not_in",
+      "value": [],
+      "expected": true,
+      "why": "SQL compiles `NOT IN ()` to TRUE. The asymmetric half of the empty-list rule \u2014 the one an implementation is most likely to get backwards."
+    },
+    {
+      "name": "lt is strict at the boundary",
+      "subscriber": "plain",
+      "field": "custom.seats",
+      "comparator": "lt",
+      "value": 1,
+      "expected": false,
+      "why": "`lt` had no parity case at all. The boundary is where a `<` / `<=` mix-up shows, and nowhere else."
+    },
+    {
+      "name": "gte includes the boundary",
+      "subscriber": "plain",
+      "field": "custom.seats",
+      "comparator": "gte",
+      "value": 1,
+      "expected": true,
+      "why": "`gte` had no parity case. Same boundary, opposite inclusivity \u2014 together lt/gte pin both sides of it."
+    }
+  ]
+}

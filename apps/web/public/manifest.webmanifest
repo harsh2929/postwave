@@ -1,0 +1,106 @@
+{
+  "name": "Moosewave",
+  "short_name": "Moosewave",
+  "description": "Moosewave dashboard with safe offline reads and queued editorial updates.",
+  "id": "/app",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "background_color": "#FFFbee",
+  "theme_color": "#FFDF38",
+  "orientation": "any",
+  "categories": ["productivity", "business", "marketing"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/screenshot-wide.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Moosewave dashboard overview"
+    },
+    {
+      "src": "/icons/screenshot-narrow.svg",
+      "sizes": "750x1334",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Moosewave on mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New campaign",
+      "short_name": "Compose",
+      "description": "Open campaigns and draft a new send",
+      "url": "/app/campaigns?create=1",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Subscribers",
+      "short_name": "List",
+      "description": "Open the subscribers list",
+      "url": "/app/subscribers",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Inbox Reality",
+      "short_name": "Inbox",
+      "description": "View deliverability and inbox placement",
+      "url": "/app/inbox-reality",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

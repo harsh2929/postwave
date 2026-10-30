@@ -1,0 +1,8 @@
+.reviews-detail__trust-note,
+.reviews-detail__evidence-note,
+.reviews-detail__reply-provenance {
+  margin: 7px 0 0;
+  color: var(--pw-fg-subtle);
+  font-size: 10px;
+  line-height: 1.55;
+}

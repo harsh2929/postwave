@@ -1,0 +1,110 @@
+.git
+.github
+.turbo
+**/.turbo
+node_modules
+**/node_modules
+.pnpm-store
+**/.pnpm-store
+.venv
+**/.venv
+.mypy_cache
+**/.mypy_cache
+vendor
+**/vendor
+.terraform
+**/.terraform
+*.tfstate
+**/*.tfstate
+*.tfstate.*
+**/*.tfstate.*
+*.tfplan
+**/*.tfplan
+.next
+**/.next
+.next-*
+**/.next-*
+*.tsbuildinfo
+**/*.tsbuildinfo
+dist
+**/dist
+apps/product-video/out
+# The private Remotion authoring tool is not an input to any deployable
+# Moosewave image. Its large audio/still working set must never cross the Docker
+# context boundary used by the broad Go builder stages.
+apps/product-video/**
+storybook-static
+**/storybook-static
+coverage
+**/coverage
+playwright-report
+**/playwright-report
+test-results
+**/test-results
+blob-report
+**/blob-report
+audit-screenshots
+**/audit-screenshots
+.audit-screenshots
+**/.audit-screenshots
+.lighthouseci
+**/.lighthouseci
+.playwright-mcp
+**/.playwright-mcp
+*.mp4
+**/*.mp4
+apps/desktop/src-tauri/target
+# Host-architecture Go command outputs and Android native build state are
+# reproducible local artifacts, never container build inputs.
+apps/api/api
+apps/api/engagement-corpus
+**/.cxx
+infra/observability/image/collector/collector
+infra/observability/image/healthcheck/healthcheck
+apps/mobile/ios/Pods
+apps/mobile/ios/build
+apps/mobile/android/.gradle
+apps/mobile/android/build
+apps/mobile/android/app/build
+**/.expo
+**/DerivedData
+**/*.xcarchive
+*.log
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+*.pem
+**/*.pem
+*.key
+**/*.key
+*.tfvars
+**/*.tfvars
+**/.DS_Store
+**/__pycache__
+**/*.pyc
+tmp
+**/tmp
+
+# Operator/runtime data is never build input. These paths can contain tenant
+# PII, recovery material, or large downloaded corpora and must not be sent to
+# a Docker builder even on a developer workstation.
+backups/**
+data/**
+services/voice/internal/profile/tone_corpus/public/cache
+services/deliverability/internal/content/corpus/public/cache
+
+# This is an independent nested application and is not part of any Moosewave
+# image or the pnpm workspace.
+sites/**
+
+# Root-level browser downloads and local research material are never image
+# inputs, even when a developer has them beside the checkout.
+.serena/**
+downloads/**
+/*.html
+/*.pdf
+/*.mp3
+/*.mp4

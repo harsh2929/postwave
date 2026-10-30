@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <welcome-series-step-two.v1@example.com>
+Subject: Step two: import your list
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-welcome2-v1"
+
+--pw-welcome2-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Import your list: https://app.example.com/import
+--pw-welcome2-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Step two: import your list</h1><p>You have connected your domain. Next, import your contacts.</p><p><a href="https://app.example.com/import">Import contacts</a></p></body></html>
+--pw-welcome2-v1--

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <definition-list-glossary.v1@example.com>
+Subject: Three terms explained
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-dl-v1"
+
+--pw-dl-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three terms explained: https://docs.example.com/glossary
+--pw-dl-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Three terms explained</h1><dl><dt>Warm-up</dt><dd>Raising volume gradually.</dd><dt>Seed list</dt><dd>Controlled mailboxes used for placement.</dd></dl><p><a href="https://docs.example.com/glossary">Read the glossary</a></p></body></html>
+--pw-dl-v1--

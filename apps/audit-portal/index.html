@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Audit portal</title>
+    <style>
+      /*
+        --portal-* tokens = the canonical Moosewave palette (warm paper + ember),
+        NOT a hand-rolled gray/blue island. The hex values are generated from
+        @postwave/design-tokens `PORTAL_VAR_MAP` via toCssVars("light"/"dark",
+        …, "hex") and pinned byte-for-byte by the package's drift.test.ts, so
+        this embed can never drift off-brand (the last de-islanding, Phase 6).
+        `--portal-primary` is a runtime-overridable default — App.tsx replaces it
+        per tenant from branding.primary_color for white-label portals.
+      */
+      :root {
+        --portal-primary: #C8102E;
+        --portal-fg: #0F0F0F;
+        --portal-muted: #5C5C5C;
+        --portal-surface: #FFFFFF;
+        --portal-surface-2: #FDFCF8;
+        --portal-border: #E0DDD3;
+        --portal-danger: #D43C1F;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+      }
+      :root[data-theme="dark"] {
+        --portal-primary: #E55262;
+        --portal-fg: #F6F4ED;
+        --portal-muted: #B8B8B8;
+        --portal-surface: #1A1A1A;
+        --portal-surface-2: #0F0F0F;
+        --portal-border: #2E2E2E;
+        --portal-danger: #F0623D;
+        color-scheme: dark;
+      }
+      html,
+      body,
+      #root {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: var(--portal-surface-2);
+        color: var(--portal-fg);
+      }
+      * {
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

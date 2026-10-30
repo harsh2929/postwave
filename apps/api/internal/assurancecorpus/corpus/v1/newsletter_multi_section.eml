@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <newsletter-multi-section.v1@example.com>
+Subject: Digest 31
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-multi-v1"
+
+--pw-multi-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three sections this week: https://news.example.com/31
+--pw-multi-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Digest 31</h1><h2>Product</h2><p>Two shipped changes.</p><h2>Community</h2><p>A new guide.</p><h2>Roles</h2><p>Two openings.</p><p><a href="https://news.example.com/31">Read the digest</a></p></body></html>
+--pw-multi-v1--

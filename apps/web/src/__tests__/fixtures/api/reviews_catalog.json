@@ -1,0 +1,31 @@
+{
+  "authenticity": [
+    "verified_buyer",
+    "incentivized",
+    "featured",
+    "public_reply"
+  ],
+  "public_contract": "Public widgets expose approved reviews only and redact reviewer email/raw moderation metadata.",
+  "request_channels": [
+    "email",
+    "sms",
+    "customer_hub",
+    "api"
+  ],
+  "schema_version": "klv11.reviews.v1",
+  "statuses": [
+    "pending",
+    "approved",
+    "rejected",
+    "spam",
+    "archived"
+  ],
+  "widget_types": [
+    "star_rating",
+    "summary",
+    "product_reviews",
+    "featured_carousel",
+    "all_reviews",
+    "qna"
+  ]
+}

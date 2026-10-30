@@ -1,0 +1,64 @@
+---
+title: Seedlist
+---
+
+import { Callout } from 'nextra/components';
+
+# Seedlist
+
+A seedlist is a configured panel of controlled inboxes across providers. When controlled testing is enabled, Moosewave inspects where each test landed (Inbox / Promotions / Spam / Missing) and reports the observations returned by the deployment's active roster.
+
+## What Moosewave's seedlist measures
+
+Roster size and provider coverage are deployment configuration, not a fixed product claim. Each report names the controlled mailbox/provider profiles that actually produced an observation and keeps missing or unavailable profiles explicit. A configured poller classifies received mail into one of:
+
+- **Inbox** — primary tab / inbox folder.
+- **Promotions** — Gmail Promotions, Outlook Focused/Other split, etc.
+- **Spam** — junk folder.
+- **Missing** — never arrived (silent block).
+
+Results appear in **Deliverability → Seedlist** as observations arrive. A run can remain partial, fail, or report the controlled-observation adapter as unavailable; none of those states is displayed as a complete result.
+
+## Provider breakdown — how to read it
+
+Illustrative shape only — the percentages below are not production evidence:
+
+```text
+Overall:    Inbox 78%   Promotions 16%   Spam 4%   Missing 2%
+
+Gmail:      Inbox 50%   Promotions 50%   Spam 0%   Missing 0%
+Outlook:    Inbox 100%                                       
+Yahoo:      Inbox 75%                       Spam 25%         
+Apple:      Inbox 100%                                       
+Other:      Inbox 88%                       Spam 12%         
+```
+
+Reading patterns:
+
+- **Gmail Promotions ≠ failure.** Most marketing-style emails land in Promotions on Gmail. If your audience wants to receive your newsletter, they read Promotions. The signal to worry about is **Spam on Gmail** — that's a reputation problem.
+- **Outlook all-or-nothing.** Outlook tends to have less variability — a campaign either lands universally in Inbox or universally in Junk. A sudden drop is usually an SCL/Outlook reputation event, not a content event.
+- **Yahoo + AOL move together.** They share infrastructure; if one bins you, the other will too within 24 hours.
+- **Apple is generous** but has the strongest first-impression effect. Apple punishes early bounces hard.
+
+## Why it's not the only signal
+
+Seedlist accuracy has limits:
+
+- **A seed roster is not an audience sample.** Its size and provider mix are visible on the run receipt. It cannot establish the placement rate of a customer audience, and variance can be high.
+- **Seedlist mailboxes have no engagement history with you.** A real subscriber who's opened 12 of your last 15 sends has a vastly better placement profile than our seedlist mailbox does. Treat seedlist as a **floor**, not an estimate of average placement.
+- **Provider personalization.** Gmail's placement is partially per-recipient. Your seedlist Gmail might land in Spam while a recipient who marked you "Not spam" 3 months ago lands in Primary.
+
+<Callout type="info">
+Use seedlist as an **investigation signal**, not proof of future engagement. Compare like-for-like controlled profiles over time, then corroborate a placement change with authentication, reputation, content, and customer-event evidence.
+</Callout>
+
+## When the seedlist runs
+
+- **Manually** — an entitled workspace can request a controlled test when the deployment has a configured adapter and active roster.
+- **During assurance** — a run that requests controlled observations fails closed when no approved adapter is configured; predicted analysis does not stand in for the missing observation.
+- **Operational probes** — schedules and provider coverage are deployment-owned. Inspect the run receipt and current capability status rather than assuming a universal cadence.
+
+## Next steps
+
+- [Diagnostician](/deliverability/diagnostician) — when seedlist shows degradation, this is what tells you why.
+- [Improving placement](/deliverability/improving-placement) — the operational playbook.

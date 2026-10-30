@@ -1,0 +1,139 @@
+name: govulncheck
+
+# -----------------------------------------------------------------------------
+# Runs golang.org/x/vuln/cmd/govulncheck against every Go module in the repo.
+#
+# Why govulncheck and not just Trivy:
+#   Trivy scans the *image* and reports CVEs in shipped binaries / OS layers.
+#   govulncheck does call-graph analysis against the *source*, so it only
+#   flags CVEs we actually reach — far fewer false positives, and it catches
+#   findings before we ever build an image.
+#
+# Schedule:
+#   - PRs against main: fast feedback if a new dep brings a known CVE.
+#   - Push to main: refreshes baseline.
+#   - Daily cron 03:00 UTC: catches CVEs published after the last commit.
+#
+# Manual fix recipe — handling a govulncheck finding:
+#   1. Reproduce locally:
+#        go install golang.org/x/vuln/cmd/govulncheck@latest
+#        cd apps/api && govulncheck ./...
+#   2. Identify the vulnerable module + version from the output (the OSV ID
+#      links to https://pkg.go.dev/vuln/<id>).
+#   3. Bump the module:
+#        go get <module>@<fixed-version>
+#        go mod tidy
+#        go build ./...
+#   4. If the fixed version is not yet released:
+#      a. Check if the call graph confirms our code *actually reaches* the
+#         vulnerable symbol (govulncheck prints `Your code is affected` vs.
+#         `Your code does not appear to be affected`).
+#      b. If unreachable, document it with a one-line comment in
+#         apps/api/internal/<pkg>/<file>.go citing the OSV ID + reachability
+#         note. govulncheck has no .ignore file, so the suppression lives
+#         in code and re-evaluates with every scan.
+#   5. Re-run `govulncheck ./...` and confirm clean exit (status 0).
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.go"
+      - "**/go.mod"
+      - "**/go.sum"
+      - ".github/workflows/govulncheck.yml"
+  schedule:
+    # Daily 03:00 UTC, offset from Trivy's 02:00 to spread runner usage.
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: govulncheck-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: Discover Go modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.modules.outputs.modules }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Generate module matrix from the repository
+        id: modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          modules="$({
+            find . -name go.mod \
+              -not -path './.git/*' \
+              -not -path '*/node_modules/*' \
+              -not -path '*/vendor/*' \
+              -print
+          } | sed -e 's#^./##' -e 's#/go.mod$##' | LC_ALL=C sort | jq -Rsc 'split("\n") | map(select(length > 0))')"
+          if [ "$modules" = '[]' ]; then
+            echo 'No Go modules discovered' >&2
+            exit 1
+          fi
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+          echo "$modules" | jq .
+
+  scan:
+    name: govulncheck (${{ matrix.module }})
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Every matrix entry must be independently reproducible. In particular,
+      # sdk-go and tests/e2e intentionally are not members of go.work.
+      GOWORK: "off"
+      GOTOOLCHAIN: "local"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.discover.outputs.modules) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: true
+          cache-dependency-path: |
+            ${{ matrix.module }}/go.mod
+            ${{ matrix.module }}/go.sum
+
+      - name: Install govulncheck
+        # Pin to a known-good release; ./govulncheck@latest in CI causes
+        # nondeterministic failures when the tool itself ships a breaking
+        # change. Update this pin deliberately.
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
+
+      - name: Run govulncheck
+        env:
+          MODULE_DIR: ${{ matrix.module }}
+        # We don't `set -e` after the govulncheck call — its non-zero exit
+        # already fails the step. We capture stdout for the summary view so
+        # the run log shows the OSV ids at a glance.
+        run: |
+          set -eu
+          if [ ! -d "$MODULE_DIR" ]; then
+            echo "::warning::module $MODULE_DIR not found, skipping"
+            exit 0
+          fi
+          cd "$MODULE_DIR"
+          echo "::group::govulncheck $MODULE_DIR"
+          govulncheck -show traces ./...
+          echo "::endgroup::"

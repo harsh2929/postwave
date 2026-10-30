@@ -1,0 +1,132 @@
+---
+title: A/B Testing
+---
+
+# A/B Testing
+
+A/B testing in Moosewave is built around the same campaign object as a regular send. You define two or more variants, a winner metric, and an evaluation window; Moosewave handles deterministic recipient sampling, holds the result until the window closes, and emits a winner once a confidence floor is met.
+
+This page covers the schema, the sampling algorithm, the winner-decision rule, the UI walkthrough, the two MCP tools that drive it, and the pitfalls we have seen people hit.
+
+## Schema
+
+An A/B campaign is a regular `Campaign` row plus an `AbTest` sidecar. The sidecar has the shape below; field names match the API and the MCP tool input.
+
+```ts
+type AbTest = {
+  campaign_id: string;
+  variants: Variant[];           // 2..5 entries
+  segment_id: string;            // pool to sample from
+  winner_metric: "open_rate" | "click_rate" | "conversion_rate";
+  evaluation_window_hours: number; // 1..168
+  confidence_floor: number;       // default 0.95
+  send_remainder: "winner" | "split" | "off"; // default "winner"
+  state: "draft" | "running" | "evaluating" | "decided" | "sent" | "failed";
+};
+
+type Variant = {
+  id: string;                  // server-assigned
+  subject: string;
+  mjml: string;
+  weight: number;              // 0..1, sum across variants must equal 1.0 ± 1e-6
+};
+```
+
+The validator rejects weights that do not sum to 1, fewer than two variants, evaluation windows shorter than one hour, and any reference to a segment with fewer than 1,000 subscribers (because the test will never reach significance; see pitfalls).
+
+`send_remainder` controls what happens after the window closes. `winner` sends the winning variant to the rest of the segment; `split` honours the original weights for the remainder; `off` stops at the test cohort.
+
+## Recipient sampling is deterministic by hash
+
+Once an A/B campaign starts, every subscriber in the segment is assigned a variant by a stable hash so that a given subscriber sees the same variant on retry, on resume after pause, and on send-remainder if `send_remainder = winner`.
+
+```go
+// pseudo-Go; the actual code lives in services/automation/internal/ab.
+func variantFor(subscriberID, campaignID string, variants []Variant) Variant {
+    h := xxhash.Sum64String(subscriberID + ":" + campaignID)
+    bucket := float64(h) / float64(math.MaxUint64) // 0..1
+    cum := 0.0
+    for _, v := range variants {
+        cum += v.weight
+        if bucket <= cum {
+            return v
+        }
+    }
+    return variants[len(variants)-1]
+}
+```
+
+Two consequences:
+
+- **Resume safety.** If the worker fleet is restarted mid-send, no one gets a second copy. The hash is stable across runs.
+- **No selection bias.** The bucket is independent of any subscriber attribute. We do not, for example, sort by signup date and split, which would skew the variant assignment toward older or newer cohorts.
+
+The hash is salted with the `campaign_id`, so a subscriber who participates in two A/B tests is not always sorted into the same bucket.
+
+## Winner decision
+
+When the evaluation window closes, the worker computes per-variant metric rates and runs a two-proportion z-test on every pair. A variant wins if:
+
+1. Its observed rate is the highest, **and**
+2. The lower bound of the 95% confidence interval on its lift over the next-best variant is positive, **and**
+3. The minimum cell count is at least 200 sends per variant.
+
+If any condition fails, the test is marked `decided` with `winner_variant_id = null` and the system falls back to the variant configured as `default_on_inconclusive` (the first listed by default). The remainder send still goes out so the campaign is not dropped on the floor.
+
+The 95% floor is configurable per campaign via `confidence_floor`, but we do not let you set it below 0.90. Below that you are not really running a test.
+
+## UI walkthrough
+
+The composer flow lives at **Campaigns → New → A/B**. Five steps:
+
+1. **Define variants.** Each variant has its own subject and MJML; the editor lets you copy from one to another.
+2. **Pick a segment.** Same picker as a normal send. The footer shows the live count (see [Segments](/features/segments)) and warns if the segment is too small.
+3. **Set the winner metric and window.** Click rate and a 24-hour window are the defaults.
+4. **Schedule.** You can send now or schedule the start; the evaluation window starts once the test cohort is fully sent, not at schedule time.
+5. **Review.** The summary screen shows the per-variant predicted placement from the [Pre-Send Predictor](/deliverability/predictor).
+
+Once the test is running, the campaign detail page replaces the usual single-column metrics with a per-variant breakdown that updates every five minutes. The winner card appears once the window closes.
+
+## MCP tools
+
+The two A/B tools mirror the API one to one.
+
+### `campaign_create_ab`
+
+Creates an A/B campaign in `draft` state. You still need `campaign_send` to start the test.
+
+```json
+{
+  "name": "Issue 12 A/B",
+  "variants": [
+    { "subject": "We changed the pricing model", "mjml": "<mjml>...A...</mjml>", "weight": 0.5 },
+    { "subject": "New pricing, same plan", "mjml": "<mjml>...B...</mjml>", "weight": 0.5 }
+  ],
+  "segment_id": "seg_active_paid",
+  "winner_metric": "click_rate",
+  "evaluation_window_hours": 24
+}
+```
+
+### `campaign_ab_results`
+
+Returns the final state once the window has closed. While the test is running, it returns `evaluation_pending`.
+
+```json
+{
+  "winner_variant_id": "var_b",
+  "confidence": 0.97,
+  "per_variant": [
+    { "variant_id": "var_a", "sent": 4823, "opens": 1804, "clicks": 211, "conversions": 18 },
+    { "variant_id": "var_b", "sent": 4811, "opens": 1851, "clicks": 287, "conversions": 24 }
+  ]
+}
+```
+
+## Common pitfalls
+
+- **Small samples.** With a 5% click rate, you need roughly 4,000 sends per variant to detect a 1-percentage-point lift at 95% confidence. Below that, almost every test ends `decided` with no winner.
+- **Multiple comparisons.** Running five variants raises your chance of a false-positive winner, even at 95% per pair. The worker applies a Bonferroni correction once `len(variants) &gt; 2`. This is conservative; if you want lighter-touch correction, do two-variant tests.
+- **Evaluation window too short.** Open and click events arrive over hours, not seconds. A 1-hour window is allowed by the schema but rarely useful; 12 to 24 hours is the sweet spot.
+- **Subject vs body changes mixed.** If both the subject and the body differ, you cannot attribute a click-rate difference to either. Hold one variable constant per test.
+- **Stopping early.** The dashboard does not let you pick a winner before the window closes, on purpose. Stopping the moment a lead appears inflates your false-positive rate. If you really need to stop, pause the campaign and start a fresh one.

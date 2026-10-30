@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <thai-body-text.v1@example.com>
+Subject: ขอบคุณสำหรับคำสั่งซื้อ
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-thai-v1"
+
+--pw-thai-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ขอบคุณสำหรับคำสั่งซื้อ ดูรายละเอียด: https://shop.example.com/th/12
+--pw-thai-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>ขอบคุณสำหรับคำสั่งซื้อ</h1><p>เราจะจัดส่งภายในสามวัน</p><p><a href="https://shop.example.com/th/12">ดูคำสั่งซื้อ</a></p></body></html>
+--pw-thai-v1--

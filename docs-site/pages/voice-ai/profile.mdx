@@ -1,0 +1,124 @@
+---
+title: Voice profile
+---
+
+import { Callout } from 'nextra/components';
+
+# Voice profile
+
+A voice profile is the structured artifact built from your [sources](/voice-ai/sources). It's the *contract* that generation conditions on.
+
+## What's inside
+
+A profile has six sections:
+
+### 1. Stylistic
+
+Quantitative measurements over your source corpus:
+
+- **Sentence length**: median, p10, p90.
+- **Paragraph length** (in sentences): median, p10, p90.
+- **Average words per email** (or post-shaped unit).
+- **Reading level** (Flesch-Kincaid grade equivalent).
+- **Punctuation density**: em-dash use, parentheticals, ellipses.
+
+### 2. Vocabulary
+
+- **Recurring high-frequency words** — words you use more than baseline by ≥3×.
+- **Signature phrases** — n-grams (2–5 word) that appear in ≥10% of your samples.
+- **Avoided words** — common English words you use less than baseline by ≥3× (often a stronger voice signal than your favourites).
+- **Domain vocabulary** — terms specific to your newsletter's subject area.
+
+### 3. Structural
+
+- **Use of bold/italic**: rate per 100 words.
+- **Use of lists**: ordered vs unordered ratio.
+- **Use of subheaders**: per-piece average count, hierarchy depth.
+- **Link density**: links per 500 words.
+- **Use of pull-quotes / blockquotes**.
+
+### 4. Tonal
+
+A 5-dimensional vector inferred by an LLM judge over a sample of your content:
+
+- **Formal ↔ Casual**
+- **Warm ↔ Direct**
+- **Serious ↔ Playful**
+- **Concrete ↔ Abstract**
+- **Hedged ↔ Assertive**
+
+Each dimension is a single float -1.0 to +1.0 with a confidence interval.
+
+### 5. Persona
+
+- **Point of view**: 1st-person singular / editorial-we / 2nd-person-imperative / 3rd-person.
+- **Self-disclosure level**: low / medium / high.
+- **Expertise framing**: peer / teacher / guide / reporter.
+- **Humour register**: dry / warm / absurd / earnest / none.
+
+### 6. Representative samples
+
+3–5 short excerpts from your source corpus that the profile-builder selected as the most concentrated voice signals. These are passed verbatim into generation prompts as anchors.
+
+## JSON schema
+
+```json
+{
+  "id": "uuid",
+  "workspace_id": "uuid",
+  "built_at": "iso8601",
+  "source_summary": {
+    "campaigns": 28,
+    "tweets": 612,
+    "blog_posts": 14,
+    "podcast_episodes": 0,
+    "linkedin_posts": 0
+  },
+  "stylistic": {
+    "sentence_length": { "median": 14, "p10": 5, "p90": 31 },
+    "paragraph_length": { "median": 2, "p10": 1, "p90": 5 },
+    "words_per_email_median": 480,
+    "reading_grade": 8.2,
+    "punctuation": { "em_dash_per_1k_words": 4.1, "parens_per_1k_words": 6.3 }
+  },
+  "vocabulary": {
+    "recurring": ["honestly", "weirdly", "in practice"],
+    "signature_phrases": ["here's the thing", "one more thing"],
+    "avoided": ["leverage", "synergy", "utilize"],
+    "domain": ["cohort", "activation", "retention"]
+  },
+  "structural": { "bold_per_100w": 1.2, "lists_per_piece": 0.4, "subheaders_per_piece": 1.8 },
+  "tonal": {
+    "formal_casual": -0.6,
+    "warm_direct":  -0.2,
+    "serious_playful": 0.1,
+    "concrete_abstract": -0.4,
+    "hedged_assertive": 0.5
+  },
+  "persona": {
+    "pov": "first_person_singular",
+    "self_disclosure": "medium",
+    "expertise_framing": "peer",
+    "humour": "dry"
+  },
+  "representative_samples": ["...", "..."]
+}
+```
+
+## When to rebuild
+
+- **After a major writing-style shift** (you started writing more personal, you switched topics, you brought on a co-author).
+- **Quarterly** as a hygiene rebuild — slow drift accumulates.
+- **After ingesting a new source type** (e.g., you added podcast transcripts; rebuild to incorporate the new spoken cadence signals).
+
+Rebuilds are non-destructive — old profiles are versioned and you can roll generation back to a prior profile if a rebuild changed the voice unfavourably.
+
+<Callout type="warning">
+Rebuilds are not free of compute — they take 2–10 minutes depending on source volume. Don't rebuild reflexively after every new tweet.
+</Callout>
+
+## Next steps
+
+- [Templates](/voice-ai/templates) — the library you'll generate against.
+- [Generation](/voice-ai/generation) — how the profile is actually used.
+- [Fidelity scoring](/voice-ai/fidelity-scoring) — how we measure profile-match on output.

@@ -1,0 +1,8 @@
+{
+  "require_2fa_for_admins": false,
+  "require_2fa_for_all": false,
+  "allow_trusted_devices": true,
+  "sso_provider": null,
+  "sso_metadata_url": null,
+  "session_max_minutes": null
+}

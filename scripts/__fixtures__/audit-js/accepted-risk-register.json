@@ -1,0 +1,52 @@
+{
+  "$schema": "./schemas/dependency-risk-register.schema.json",
+  "schemaVersion": 1,
+  "policy": {
+    "ecosystem": "npm",
+    "scope": "production",
+    "minimumSeverity": "moderate",
+    "maximumAcceptanceDays": 45,
+    "maximumReviewAgeDays": 30
+  },
+  "acceptedRisks": [
+    {
+      "decision": "temporarily_accepted_until_stable_fix",
+      "registryAuditId": 1121799,
+      "advisory": "GHSA-45h5-66jx-r2wf",
+      "aliases": ["CVE-2025-67898"],
+      "module": "mjml",
+      "severity": "moderate",
+      "expectedLatestStableVersion": "4.18.0",
+      "expectedVulnerableVersions": "<5.0.0-alpha.9",
+      "expectedPatchedVersions": ">=5.0.0-alpha.9",
+      "expectedFindingVersions": ["4.18.0"],
+      "findingPaths": [
+        "apps__web>mjml",
+        "packages__claude-code-plugin>@postwave__cli>@postwave__email-react>mjml",
+        "packages__cli>@postwave__email-react>mjml",
+        "packages__email-react>mjml"
+      ],
+      "affectedImporters": [
+        "apps/web",
+        "packages/claude-code-plugin",
+        "packages/cli",
+        "packages/email-react"
+      ],
+      "ownerRole": "Security Engineering",
+      "acceptedOn": "2026-07-14",
+      "lastReviewedOn": "2026-07-14",
+      "expiresOn": "2026-08-13",
+      "rationale": "Fixture-only accepted risk used to prove exact advisory policy behavior without contacting a registry. It is not a live Moosewave exception and cannot affect the production gate.",
+      "upgradeTrigger": "Fixture policy must fail as soon as its range, path, identity, stable release history, review date, or expiry no longer matches the synthetic audit report.",
+      "upstreamUrl": "https://github.com/advisories/GHSA-45h5-66jx-r2wf",
+      "compensatingControls": [
+        {
+          "id": "fixture-compiler-boundary",
+          "description": "Synthetic control data exercises the required evidence and verification-command schema.",
+          "evidenceFiles": ["scripts/audit-js.test.mjs"],
+          "verificationCommands": ["pnpm test:audit-js"]
+        }
+      ]
+    }
+  ]
+}

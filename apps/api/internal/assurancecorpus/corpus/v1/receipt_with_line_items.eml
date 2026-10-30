@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <receipt-with-line-items.v1@example.com>
+Subject: Receipt 6002
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-lineitems-v1"
+
+--pw-lineitems-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Receipt 6002: two items, 37.00 USD. https://shop.example.com/r/6002
+--pw-lineitems-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Receipt 6002</h1><table><tr><th>Item</th><th>Price</th></tr><tr><td>Enamel mug</td><td>22.00</td></tr><tr><td>Cotton socks</td><td>15.00</td></tr></table><p>Total 37.00 USD</p><p><a href="https://shop.example.com/r/6002">View the receipt</a></p></body></html>
+--pw-lineitems-v1--

@@ -1,0 +1,2999 @@
+[
+  {
+    "name": "adaptCampaignTemplate",
+    "category": "campaigns",
+    "description": "Queue a durable, governed adaptation of a selected template or inspiration reference. Returns a design id immediately; poll getCampaignTemplateDesign, review its immutable revision and output_hash, then explicitly save or create a campaign.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "audience": {
+          "maxLength": 1500,
+          "type": "string"
+        },
+        "brand": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "content": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "cta": {
+          "maxLength": 1500,
+          "type": "string"
+        },
+        "fidelity": {
+          "enum": [
+            "close",
+            "balanced",
+            "inspired"
+          ],
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        },
+        "industry": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "instructions": {
+          "maxLength": 4000,
+          "type": "string"
+        },
+        "layout": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "type": "string"
+        },
+        "preview_text": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "reference_template_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2,
+          "type": "array"
+        },
+        "sections": {
+          "items": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "maxItems": 12,
+          "type": "array"
+        },
+        "style": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 998,
+          "type": "string"
+        },
+        "template_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "tone": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "variables": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "template_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "apply_subscriber_tag",
+    "category": "audience",
+    "description": "Attach a tag to a subscriber. The tag is referenced by name and created automatically if it does not exist; the subscriber is referenced by id or email. Idempotent — re-applying the same tag is a no-op. Write-tier.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:subscribers"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "subscriber_id": {
+          "description": "Subscriber UUID, email, or external_id.",
+          "type": "string"
+        },
+        "tag": {
+          "description": "Tag name (created if it doesn't exist).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subscriber_id",
+        "tag"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "archiveCampaignTemplate",
+    "category": "campaigns",
+    "description": "Safely archive an active tenant-owned editable template using its exact current etag. Content, lineage, and immutable history remain recoverable.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "if_match": {
+          "minLength": 2,
+          "type": "string"
+        },
+        "template_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id",
+        "if_match"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "archiveCampaignTemplateDesign",
+    "category": "campaigns",
+    "description": "Archive a completed, failed, or abandoned design job while retaining its immutable audit and revision history.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "design_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "design_id",
+        "idempotency_key"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "batch_record_subscriber_events",
+    "category": "audience",
+    "description": "Record up to 500 custom subscriber events in one call. Each item is applied in its own savepoint, so a bad row (e.g. unknown subscriber) is reported without failing the batch. Use when ingesting many product/behavior events at once. Write-tier.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:subscribers"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "events": {
+          "items": {
+            "properties": {
+              "event_name": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "occurred_at": {
+                "format": "date-time",
+                "type": "string"
+              },
+              "source_event_id": {
+                "description": "Optional idempotency key from the source system.",
+                "type": "string"
+              },
+              "subscriber_id": {
+                "description": "Subscriber UUID or email.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "subscriber_id",
+              "event_name"
+            ],
+            "type": "object"
+          },
+          "maxItems": 500,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "events"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "batch_upsert_subscriber_aliases",
+    "category": "audience",
+    "description": "Attach or refresh up to 500 non-contact identity aliases across subscribers with one exact subscriber_version per item. Each item commits independently with collision checks and audit/outbox evidence; partial success is reported. Do not batch sequential writes to the same subscriber unless each carries the preceding fresh revision.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:subscribers"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "aliases": {
+          "items": {
+            "properties": {
+              "alias_type": {
+                "enum": [
+                  "external_id",
+                  "anonymous_id",
+                  "device_token",
+                  "push_token",
+                  "custom"
+                ],
+                "type": "string"
+              },
+              "alias_value": {
+                "type": "string"
+              },
+              "confidence": {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              "source": {
+                "description": "Defaults to mcp.",
+                "type": "string"
+              },
+              "subscriber_id": {
+                "description": "Subscriber UUID or email.",
+                "type": "string"
+              },
+              "subscriber_version": {
+                "description": "Exact strong parent revision returned by getSubscriberProfile.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "subscriber_id",
+              "subscriber_version",
+              "alias_type",
+              "alias_value"
+            ],
+            "type": "object"
+          },
+          "maxItems": 500,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "aliases"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "campaign_devices",
+    "category": "analytics",
+    "description": "Device breakdown of opens/clicks for a campaign (e.g. Gmail/Apple/Outlook/mobile), most-active first.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "campaign_id": {
+          "description": "Campaign id (uuid).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "campaign_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "campaign_geography",
+    "category": "analytics",
+    "description": "Geographic breakdown of opens/clicks for a campaign by country, most-active first.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "campaign_id": {
+          "description": "Campaign id (uuid).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "campaign_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "campaign_link_report",
+    "category": "analytics",
+    "description": "Per-link click breakdown for a campaign: each clicked URL with total and unique click counts, most-clicked first. Use to find which links drove engagement.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "campaign_id": {
+          "description": "Campaign id (uuid).",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Max links to return. Defaults to 50, capped at 200.",
+          "maximum": 200,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "campaign_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "campaigns_compare",
+    "category": "analytics",
+    "description": "Compare 2–20 campaigns side by side: sent, delivered, unique opens/clicks, unsubscribes, and open/click rates per campaign (results follow the requested id order).",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": true,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "campaign_ids": {
+          "description": "Campaign ids (uuids) to compare.",
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 2,
+          "type": "array"
+        }
+      },
+      "required": [
+        "campaign_ids"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "clearRecentCampaignTemplates",
+    "category": "campaigns",
+    "description": "Idempotently clear one template or all of the authenticated user's recent-template history.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "template_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "compareCampaignTemplates",
+    "category": "campaigns",
+    "description": "Resolve two to four campaign-template IDs or slugs without persisting compare state. Available items retain relative request order; unavailable_identifiers reports missing, inaccessible, rejected, or archived selections in exact request order.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "templates": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 2,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "templates"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "createCampaignFromTemplate",
+    "category": "campaigns",
+    "description": "Create a draft campaign from an editable visual template (by id or slug), substituting content variables and recording template/reference lineage. Subscriber merge tags such as {{ first_name }} and the {{ unsubscribe_url }} link stay in the draft for per-recipient rendering; a first_name value sets the fallback for subscribers without one. brand_name, sender_name and reply_to_email come from workspace settings unless supplied (brand.name sets brand_name). Reference-only entries must be adapted or generated first.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "brand": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "content": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "list_id": {
+          "oneOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "pattern": "^0*[1-9][0-9]*$",
+              "type": "string"
+            }
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "preview_text": {
+          "type": "string"
+        },
+        "segment_id": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "template_id": {
+          "description": "Campaign-template UUID or slug.",
+          "type": "string"
+        },
+        "variables": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "createCampaignFromTemplateDesign",
+    "category": "campaigns",
+    "description": "Create one draft campaign from an exact reviewed design revision and output_hash, with optional safe variable and audience overrides. No caller HTML is accepted.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "design_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        },
+        "list_id": {
+          "oneOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "pattern": "^0*[1-9][0-9]*$",
+              "type": "string"
+            }
+          ]
+        },
+        "name": {
+          "maxLength": 200,
+          "type": "string"
+        },
+        "output_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "preview_text": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "segment_id": {
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 998,
+          "type": "string"
+        },
+        "variables": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "design_id",
+        "revision",
+        "output_hash"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "createCampaignTemplate",
+    "category": "campaigns",
+    "description": "Create a tenant-owned editable visual email template from complete HTML or MJML source. Governance, provenance, review, and generation-lineage fields remain server controlled.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "body_html": {
+          "maxLength": 1048576,
+          "type": "string"
+        },
+        "body_mjml": {
+          "maxLength": 1048576,
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "design_metadata": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "goal": {
+          "type": "string"
+        },
+        "industry": {
+          "type": "string"
+        },
+        "layout": {
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "preview_text": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "slug": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 998,
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "maxItems": 50,
+          "type": "array"
+        },
+        "thumbnail_url": {
+          "type": "string"
+        },
+        "variables": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "maxItems": 100,
+          "type": "array"
+        }
+      },
+      "required": [
+        "slug",
+        "name",
+        "subject"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "createCampaignTemplateCollection",
+    "category": "campaigns",
+    "description": "Idempotently create a user-private named collection containing up to 100 unique templates in order. Supply a caller-stable idempotency_key and reuse it only for an unchanged retry.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        "template_ids": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 100,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "name"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "createCampaignTemplateSavedSearch",
+    "category": "campaigns",
+    "description": "Idempotently save a named catalog filter; pagination positions and cursors are never persisted. Supply a caller-stable idempotency_key and reuse it only for an unchanged retry.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "filters": {
+          "additionalProperties": false,
+          "properties": {
+            "archived": {
+              "enum": [
+                "active",
+                "archived",
+                "all"
+              ],
+              "type": "string"
+            },
+            "category": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "favorited": {
+              "type": "boolean"
+            },
+            "featured": {
+              "type": "boolean"
+            },
+            "goal": {
+              "type": "string"
+            },
+            "industry": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "editable",
+                "reference"
+              ],
+              "type": "string"
+            },
+            "layout": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "provider": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "q": {
+              "maxLength": 500,
+              "type": "string"
+            },
+            "sort": {
+              "enum": [
+                "recommended",
+                "name",
+                "most_used"
+              ],
+              "type": "string"
+            },
+            "source": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "style": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "type": "object"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "name",
+        "filters"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "create_campaign",
+    "category": "campaigns",
+    "description": "Create a new draft email campaign. This authoring tool cannot schedule or send it. Returns the new campaign id; pass that id to send_campaign to queue it through the governed lifecycle. Requires name and subject; include body_html to make the campaign sendable. Write-tier.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "body_html": {
+          "description": "HTML body. Required before the campaign can be sent.",
+          "type": "string"
+        },
+        "from_name": {
+          "description": "Optional sender display name.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Internal campaign name.",
+          "type": "string"
+        },
+        "preview_text": {
+          "description": "Inbox preview / preheader text.",
+          "type": "string"
+        },
+        "reply_to": {
+          "description": "Optional reply-to email address.",
+          "type": "string"
+        },
+        "segment_id": {
+          "description": "Optional target segment id (uuid). Omit to target the whole audience.",
+          "type": "string"
+        },
+        "subject": {
+          "description": "Email subject line.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "subject"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "create_list",
+    "category": "audience",
+    "description": "Create a subscriber list. Returns the new list's id and name. Defaults: type=private, optin=single. Use a list to group subscribers as a campaign audience. Write-tier.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:subscribers"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "description": {
+          "description": "Optional description.",
+          "type": "string"
+        },
+        "name": {
+          "description": "List name.",
+          "type": "string"
+        },
+        "optin": {
+          "description": "single|double. Defaults to single.",
+          "enum": [
+            "single",
+            "double"
+          ],
+          "type": "string"
+        },
+        "tags": {
+          "description": "Optional organizational tags.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": {
+          "description": "private|public|temporary. Defaults to private.",
+          "enum": [
+            "private",
+            "public",
+            "temporary"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "create_tag",
+    "category": "audience",
+    "description": "Create a tenant tag (with optional color and description) for organizing subscribers. Returns the new tag id. Fails if a tag with the same name already exists. Write-tier. To attach a tag to a subscriber, use apply_subscriber_tag.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:subscribers"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "color": {
+          "description": "Optional display color, e.g. #2563eb.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Optional description.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Tag name (unique per tenant).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "deleteCampaignTemplateCollection",
+    "category": "campaigns",
+    "description": "Delete a personal collection only when if_match is its exact current etag. If the response is lost or uncertain, reconcile with get/list before deciding whether to retry; absence is success.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "collection_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "if_match": {
+          "description": "Exact strong etag returned by getCampaignTemplateCollection or the latest collection mutation. Pass it unchanged.",
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^\"campaign-template-collection:[^\"\\\\\\s,]+:v[1-9][0-9]*\"$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "collection_id",
+        "if_match"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "deleteCampaignTemplateSavedSearch",
+    "category": "campaigns",
+    "description": "Delete one personal saved search only when if_match is its exact current etag. If the response is lost or uncertain, reconcile with get/list before deciding whether to retry; absence is success.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "if_match": {
+          "description": "Exact strong etag returned by getCampaignTemplateSavedSearch or the latest saved-search mutation. Pass it unchanged.",
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^\"campaign-template-saved-search:[^\"\\\\\\s,]+:v[1-9][0-9]*\"$",
+          "type": "string"
+        },
+        "saved_search_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "saved_search_id",
+        "if_match"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "favoriteCampaignTemplate",
+    "category": "campaigns",
+    "description": "Idempotently favorite one visible campaign template for the authenticated user. API keys use their non-impersonable bound dashboard-user principal; legacy unbound keys fail closed.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "template_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "flow_run_steps",
+    "category": "automation",
+    "description": "Per-node attempts for one flow run, oldest first. Answers 'where did this run stop and why' — a node that failed then succeeded appears as two attempts, so a retry is visible rather than folded into one outcome.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "run_id": {
+          "description": "Flow run id (uuid).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "generateCampaignTemplate",
+    "category": "campaigns",
+    "description": "Queue a durable original email design from a brief and up to three governed references. Returns a design id immediately; poll getCampaignTemplateDesign, review its immutable revision and output_hash, then explicitly save or create a campaign.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "audience": {
+          "maxLength": 1500,
+          "type": "string"
+        },
+        "brand": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "brief": {
+          "maxLength": 8000,
+          "minLength": 1,
+          "type": "string"
+        },
+        "category": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "content": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "cta": {
+          "maxLength": 1500,
+          "type": "string"
+        },
+        "fidelity": {
+          "enum": [
+            "close",
+            "balanced",
+            "inspired"
+          ],
+          "type": "string"
+        },
+        "goal": {
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        },
+        "industry": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "newsletter",
+            "promo",
+            "announcement"
+          ],
+          "type": "string"
+        },
+        "layout": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "type": "string"
+        },
+        "preview_text": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "reference_template_ids": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 3,
+          "type": "array"
+        },
+        "sections": {
+          "items": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "maxItems": 12,
+          "type": "array"
+        },
+        "style": {
+          "maxLength": 120,
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 998,
+          "type": "string"
+        },
+        "tone": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "variables": {
+          "additionalProperties": true,
+          "type": "object"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "brief"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "getAudienceHeatmap",
+    "category": "analytics",
+    "description": "Returns a 7×24 open-rate heatmap (rows = day-of-week 0..6, cols = hour-of-day 0..23) over the last 90 days. Use to recommend a send time the LLM can defend with data.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": true,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "days": {
+          "description": "Window size in days. Defaults to 90, capped at 180.",
+          "maximum": 180,
+          "minimum": 7,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "getCampaignTemplate",
+    "category": "campaigns",
+    "description": "Fetch one visual template or design reference by id or slug, including bounded HTML/MJML, variables, variable_roles (which merge tags are filled per subscriber, from workspace settings, or at send time), visual taxonomy, thumbnail, provenance, review state, and generation lineage.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "template_id": {
+          "description": "Campaign-template UUID or slug, for example welcome-negative-promise.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "getCampaignTemplateCollection",
+    "category": "campaigns",
+    "description": "Get one personal collection with ordered template membership and compact favorite-aware metadata.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "collection_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "collection_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "getCampaignTemplateDesign",
+    "category": "campaigns",
+    "description": "Poll one durable design job. When ready it includes the immutable current revision, output_hash, validation checks, warnings, capabilities, and recommended next action.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "design_id": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "design_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "getCampaignTemplateRevision",
+    "category": "campaigns",
+    "description": "Fetch one immutable historical snapshot of a tenant-owned editable template by positive version.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "template_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "template_id",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "getCampaignTemplateSavedSearch",
+    "category": "campaigns",
+    "description": "Get one user-private saved campaign-template filter definition, its exact current etag, and authoritative obsolete_filters. Remove obsolete values by replacing filters through updateCampaignTemplateSavedSearch with this etag.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "saved_search_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "saved_search_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "getIssue",
+    "category": "campaigns",
+    "description": "Fetch a single campaign by id. Returns subject, body_html (truncated to 4 KiB), sent_at, recipient count, and the latest open / click counts. Use when the user references 'that campaign' or supplies a campaign id.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "id": {
+          "description": "Campaign id (uuid).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "getSegmentBestSendTime",
+    "category": "analytics",
+    "description": "Returns the best send hour (UTC) and day-of-week pattern for a given segment (or the whole tenant when segment_id is omitted). Backed by the send-time-optimization pipeline (last 90 days of engagement).",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": true,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "segment_id": {
+          "description": "Segment id (uuid). Omit to compute for the whole tenant.",
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "getStats",
+    "category": "analytics",
+    "description": "Tenant-wide stats over a rolling window (24h | 7d | 30d). Returns total sends, delivered, opens, clicks, unsubscribes, plus the open-rate and click-rate. Use as the first call when the user asks 'how are things going?'.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:reports"
+    ],
+    "write_tier": false,
+    "llm_output_safe": true,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "window": {
+          "description": "Rolling window: 24h | 7d | 30d. Defaults to 7d.",
+          "enum": [
+            "24h",
+            "7d",
+            "30d"
+          ],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "getSubscriberProfile",
+    "category": "audience",
+    "description": "Fetch one subscriber profile by id or email, including aliases, computed traits, lifecycle stage, and recent events. Use when an agent needs a complete customer/profile read before acting.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:subscribers"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "event_limit": {
+          "description": "Recent subscriber events to return. Defaults to 20, capped at 50.",
+          "maximum": 50,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "description": "Subscriber UUID or email address.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "listCampaignTemplateCollections",
+    "category": "campaigns",
+    "description": "List the authenticated user's named campaign-template collections.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "type": "object"
+    }
+  },
+  {
+    "name": "listCampaignTemplateDesignRevisions",
+    "category": "campaigns",
+    "description": "List immutable revision history for a durable design so an agent or human can compare, audit, and restore direction without losing prior outputs.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "design_id": {
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "design_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "listCampaignTemplateDesigns",
+    "category": "campaigns",
+    "description": "Recover active durable design jobs created by this exact tenant and actor, newest first. Results are compact summaries; fetch a selected design for its full request and latest immutable revision.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "cursor": {
+          "maxLength": 1024,
+          "type": "string"
+        },
+        "limit": {
+          "maximum": 50,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "listCampaignTemplateRevisions",
+    "category": "campaigns",
+    "description": "List immutable lifecycle snapshots for one tenant-owned editable template, newest first.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "page": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "per_page": {
+          "maximum": 50,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "template_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "listCampaignTemplateSavedSearches",
+    "category": "campaigns",
+    "description": "List the authenticated user's named campaign-template searches. Each response includes authoritative obsolete_filters for persisted taxonomy values that disappeared; this never relies on bounded facet frequency.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "type": "object"
+    }
+  },
+  {
+    "name": "listIssues",
+    "category": "campaigns",
+    "description": "List campaigns newest-first (by creation). Returns id, name, subject, status, sent_at, created_at, recipients, plus next_cursor when more rows remain. Pass cursor to page. Useful for 'what did we send last week?'.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "cursor": {
+          "description": "Opaque pagination cursor from a previous response's next_cursor.",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Max rows to return. Defaults to 20, capped at 100.",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "status": {
+          "description": "Optional status filter: draft|scheduled|sending|sent|paused.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "listRecentCampaignTemplates",
+    "category": "campaigns",
+    "description": "List the authenticated user's recent campaign templates, newest first.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "limit": {
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "recordRecentCampaignTemplate",
+    "category": "campaigns",
+    "description": "Record one authenticated-user catalog view; repeated views update a durable counter and timestamp.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "template_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "recordSubscriberEvent",
+    "category": "audience",
+    "description": "Record a custom event on a subscriber profile with optional metadata and source_event_id idempotency. Write-tier tool for agent-triggered profile activity.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:subscribers"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "event_name": {
+          "description": "Custom event name, e.g. product_viewed.",
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "source_event_id": {
+          "description": "Optional idempotency key from the source system.",
+          "type": "string"
+        },
+        "subscriber_id": {
+          "description": "Subscriber UUID or email.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subscriber_id",
+        "event_name"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "refineCampaignTemplateDesign",
+    "category": "campaigns",
+    "description": "Queue a refinement against an explicit base revision. The prior revision remains immutable and retrievable.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "base_revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "design_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        },
+        "instructions": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "design_id",
+        "base_revision",
+        "instructions"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "replaceCampaignTemplateCollectionItems",
+    "category": "campaigns",
+    "description": "Atomically replace a collection's ordered template membership only when if_match is its exact current etag; stale writes fail.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "collection_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "if_match": {
+          "description": "Exact strong etag returned by getCampaignTemplateCollection or the latest collection mutation. Pass it unchanged.",
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^\"campaign-template-collection:[^\"\\\\\\s,]+:v[1-9][0-9]*\"$",
+          "type": "string"
+        },
+        "template_ids": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 100,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "collection_id",
+        "if_match",
+        "template_ids"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "restoreCampaignTemplate",
+    "category": "campaigns",
+    "description": "Restore an archived tenant-owned editable template using its exact current etag, producing a fresh immutable revision.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "if_match": {
+          "minLength": 2,
+          "type": "string"
+        },
+        "template_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id",
+        "if_match"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "retryCampaignTemplateDesign",
+    "category": "campaigns",
+    "description": "Retry a failed durable design job using its stored normalized request; it never changes creative inputs silently.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "design_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "design_id",
+        "idempotency_key"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "runCampaignTemplateSavedSearch",
+    "category": "campaigns",
+    "description": "Run one saved search and continue through stable opaque cursors.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string"
+        },
+        "per_page": {
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "saved_search_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "saved_search_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "saveCampaignTemplateDesign",
+    "category": "campaigns",
+    "description": "Persist one exact immutable design revision after review. Requires its server-issued design_id, revision, and output_hash; caller-supplied HTML/MJML is deliberately not accepted.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "design_id": {
+          "format": "uuid",
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "Caller-stable key for this exact mutation. Reuse it only for an unchanged retry after a lost or uncertain response; use a new key when any input changes.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "type": "string"
+        },
+        "output_hash": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "preview_text": {
+          "maxLength": 500,
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "slug": {
+          "maxLength": 80,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 998,
+          "type": "string"
+        }
+      },
+      "required": [
+        "idempotency_key",
+        "design_id",
+        "revision",
+        "output_hash",
+        "slug"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "searchCampaignTemplates",
+    "category": "campaigns",
+    "description": "Search the visual email template and design-reference catalog. Returns compact paginated items plus goal/category/provider/industry/style/layout facets; use getCampaignTemplate for full content after selecting an id.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:campaigns"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "archived": {
+          "description": "Lifecycle filter; defaults to active.",
+          "enum": [
+            "active",
+            "archived",
+            "all"
+          ],
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "cursor": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "type": "string"
+        },
+        "favorited": {
+          "type": "boolean"
+        },
+        "featured": {
+          "type": "boolean"
+        },
+        "goal": {
+          "type": "string"
+        },
+        "industry": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "editable",
+            "reference"
+          ],
+          "type": "string"
+        },
+        "layout": {
+          "type": "string"
+        },
+        "page": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "per_page": {
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "query": {
+          "description": "Name, slug, subject, brand, description, or tag search.",
+          "type": "string"
+        },
+        "sort": {
+          "enum": [
+            "recommended",
+            "name",
+            "most_used"
+          ],
+          "type": "string"
+        },
+        "source": {
+          "description": "platform|mine|team|all, or a provider name.",
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  },
+  {
+    "name": "searchSubscribers",
+    "category": "audience",
+    "description": "Search subscribers by email/name substring (case-insensitive). Returns matching rows (id, email, name, status, created_at) plus next_cursor when more remain; pass cursor to page. PII-bearing — only call when the user asks for a specific subscriber.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "read:subscribers"
+    ],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "cursor": {
+          "description": "Opaque pagination cursor from a previous response's next_cursor.",
+          "type": "string"
+        },
+        "limit": {
+          "description": "Max rows to return. Defaults to 25, capped at 50.",
+          "maximum": 50,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "query": {
+          "description": "Substring to search (matches email or name).",
+          "minLength": 2,
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "send_campaign",
+    "category": "campaigns",
+    "description": "Queue an existing campaign for sending to its audience. Requires the write:campaigns AND send:transactional scopes. Runs the full send pipeline (compliance, suppression, holdout, frequency caps) and stays subject to the tenant's send-approval policy — when approval is required the response has approval_required=true and NO email goes out until a human approves. Otherwise returns recipients_queued. Irreversible once sent. Write-tier; consumes send budget.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns",
+      "send:transactional"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "charges_send": true,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    },
+    "input_schema": {
+      "properties": {
+        "campaign_id": {
+          "description": "Campaign id (uuid) to queue. Must be in draft, scheduled, or paused status with a subject and body_html.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "campaign_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "unfavoriteCampaignTemplate",
+    "category": "campaigns",
+    "description": "Idempotently remove one visible campaign template from the authenticated user's favorites. API keys use their non-impersonable bound dashboard-user principal; legacy unbound keys fail closed.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "template_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "updateCampaignTemplate",
+    "category": "campaigns",
+    "description": "Update an active tenant-owned editable template using the exact strong etag returned by getCampaignTemplate. Stale writes fail safely; reference designs are immutable and must use Make it mine.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "if_match": {
+          "description": "Exact strong etag from the current template.",
+          "minLength": 2,
+          "type": "string"
+        },
+        "patch": {
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "body_html": {
+              "type": "string"
+            },
+            "body_mjml": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "design_metadata": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "goal": {
+              "type": "string"
+            },
+            "industry": {
+              "type": "string"
+            },
+            "layout": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "preview_text": {
+              "type": "string"
+            },
+            "style": {
+              "type": "string"
+            },
+            "subject": {
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "thumbnail_url": {
+              "type": "string"
+            },
+            "variables": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "template_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id",
+        "if_match",
+        "patch"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "updateCampaignTemplateCollection",
+    "category": "campaigns",
+    "description": "Rename or update the description of one personal template collection only when if_match is its exact current etag; stale writes fail.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "required": [
+            "description"
+          ]
+        }
+      ],
+      "properties": {
+        "collection_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        "if_match": {
+          "description": "Exact strong etag returned by getCampaignTemplateCollection or the latest collection mutation. Pass it unchanged.",
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^\"campaign-template-collection:[^\"\\\\\\s,]+:v[1-9][0-9]*\"$",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "collection_id",
+        "if_match"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "updateCampaignTemplateSavedSearch",
+    "category": "campaigns",
+    "description": "Rename or replace the filters of one personal saved campaign-template search only when if_match is its exact current etag; stale writes fail. This is the safe cleanup path for values reported in obsolete_filters: remove them from the full filters object and submit the latest etag.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "name"
+          ]
+        },
+        {
+          "required": [
+            "filters"
+          ]
+        }
+      ],
+      "properties": {
+        "filters": {
+          "additionalProperties": false,
+          "properties": {
+            "archived": {
+              "enum": [
+                "active",
+                "archived",
+                "all"
+              ],
+              "type": "string"
+            },
+            "category": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "favorited": {
+              "type": "boolean"
+            },
+            "featured": {
+              "type": "boolean"
+            },
+            "goal": {
+              "type": "string"
+            },
+            "industry": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "editable",
+                "reference"
+              ],
+              "type": "string"
+            },
+            "layout": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "provider": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "q": {
+              "maxLength": 500,
+              "type": "string"
+            },
+            "sort": {
+              "enum": [
+                "recommended",
+                "name",
+                "most_used"
+              ],
+              "type": "string"
+            },
+            "source": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "style": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "tags": {
+              "items": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "type": "object"
+        },
+        "if_match": {
+          "description": "Exact strong etag returned by getCampaignTemplateSavedSearch or the latest saved-search mutation. Pass it unchanged.",
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^\"campaign-template-saved-search:[^\"\\\\\\s,]+:v[1-9][0-9]*\"$",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        },
+        "saved_search_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "saved_search_id",
+        "if_match"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "upload_asset",
+    "category": "content",
+    "description": "Upload an image to the tenant's asset library, supplied as base64 (a data: URI is accepted). PNG/JPEG/GIF/WebP only, max ~10 MiB; the actual type is sniffed from the bytes. Returns the stored asset's id and public URL — use that URL in campaign HTML. Write-tier.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:campaigns"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "content_base64": {
+          "description": "Base64-encoded image bytes (a data:image/...;base64, prefix is accepted). Decodes to ≤10 MiB; PNG/JPEG/GIF/WebP only.",
+          "type": "string"
+        },
+        "filename": {
+          "description": "Optional filename; a default is derived from the sniffed image type when omitted.",
+          "type": "string"
+        },
+        "mime": {
+          "description": "Optional declared MIME (image/png|image/jpeg|image/gif|image/webp); the sniffed type wins.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "content_base64"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "upsertSubscriberAlias",
+    "category": "audience",
+    "description": "Attach or refresh a non-contact identity alias on a subscriber using the exact subscriber_version returned by getSubscriberProfile. Email and phone require their verified contact workflows. A collision never reassigns another profile's identifier.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [
+      "write:subscribers"
+    ],
+    "write_tier": true,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {
+        "alias_type": {
+          "enum": [
+            "external_id",
+            "anonymous_id",
+            "device_token",
+            "push_token",
+            "custom"
+          ],
+          "type": "string"
+        },
+        "alias_value": {
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "type": "number"
+        },
+        "source": {
+          "description": "Defaults to mcp.",
+          "type": "string"
+        },
+        "subscriber_id": {
+          "description": "Subscriber UUID or email.",
+          "type": "string"
+        },
+        "subscriber_version": {
+          "description": "Exact strong parent revision returned by getSubscriberProfile; wildcard and stale values are rejected.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subscriber_id",
+        "subscriber_version",
+        "alias_type",
+        "alias_value"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "name": "whoami",
+    "category": "developer",
+    "description": "Return the calling agent's own identity and limits: tenant, granted scopes, sandbox flag, whether MCP write-tier is enabled, and remaining send/cost budget. Call this first to learn what you are allowed to do before attempting an action.",
+    "surfaces": [
+      "agent",
+      "mcp"
+    ],
+    "required_scopes": [],
+    "write_tier": false,
+    "llm_output_safe": false,
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    },
+    "input_schema": {
+      "properties": {},
+      "type": "object"
+    }
+  }
+]

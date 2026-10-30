@@ -1,0 +1,43 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values.
+
+# --- Hetzner Cloud ----------------------------------------------------------
+hcloud_token = "REPLACE_ME_HCLOUD_PAT"
+
+# --- Cloudflare -------------------------------------------------------------
+cloudflare_api_token  = "REPLACE_ME_CF_API_TOKEN"
+cloudflare_account_id = "REPLACE_ME_CF_ACCOUNT_ID"
+cloudflare_zone_id    = "REPLACE_ME_CF_ZONE_ID"
+
+# --- DNS / domain -----------------------------------------------------------
+domain      = "moosewave.com"
+environment = "prod"   # one of: dev, staging, prod
+region      = "nbg1"   # nbg1 = Nuremberg, fsn1 = Falkenstein, hel1 = Helsinki
+
+# --- SSH --------------------------------------------------------------------
+# Names of SSH keys uploaded to Hetzner with label `managed_by=terraform`.
+ssh_keys = ["ops-laptop-ed25519"]
+
+# Public operator office/VPN CIDRs allowed to SSH to the bastion.
+# Example single-host IPv4 CIDR: "203.0.113.10/32".
+operator_ssh_cidrs = ["REPLACE_ME_OPERATOR_PUBLIC_CIDR"]
+
+# Terraform Docker provider SSH hardening. Keep strict checking enabled and
+# pre-populate known_hosts before deploys, e.g. with ssh-keyscan.
+docker_ssh_strict_host_key_checking = "yes"
+docker_ssh_known_hosts_file         = "~/.ssh/known_hosts"
+
+# --- Capacity ---------------------------------------------------------------
+# Keep at 1 until you add a load balancer / traffic manager.
+app_node_count = 1
+
+# --- Database choice -------------------------------------------------------
+# true  = use Neon (managed Postgres) — production default.
+# false = provision a Hetzner CCX33 Postgres node alongside the app nodes.
+use_neon = true
+
+# --- R2 buckets -------------------------------------------------------------
+r2_bucket_names = {
+  media         = "postwave-media"
+  backups       = "postwave-backups"
+  dmarc_reports = "postwave-dmarc"
+}

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <logo-linked-to-home.v1@example.com>
+Subject: Receipt 8891
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-logolink-v1"
+
+--pw-logolink-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Receipt 8891 - 32.00 USD. https://shop.example.com/r/8891
+--pw-logolink-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><a href="https://shop.example.com"><img src="https://cdn.example.com/logo.png" alt="Postwave home" width="120" height="36"></a><h1>Receipt 8891</h1><p>32.00 USD paid on 9 August.</p><p><a href="https://shop.example.com/r/8891">View the receipt</a></p></body></html>
+--pw-logolink-v1--

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <aria-label-icon-button.v1@example.com>
+Subject: Confirm your email
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-arialabel-v1"
+
+--pw-arialabel-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Confirm your address: https://app.example.com/confirm/9
+--pw-arialabel-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Confirm your email</h1><p><a href="https://app.example.com/confirm/9" role="button" aria-label="Confirm your email address">Confirm</a></p><img src="https://cdn.example.com/logo.png" alt="Postwave" width="120" height="40"></body></html>
+--pw-arialabel-v1--

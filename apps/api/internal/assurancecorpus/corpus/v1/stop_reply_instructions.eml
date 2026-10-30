@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <stop-reply-instructions.v1@example.com>
+Subject: Delivery update
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-stop-v1"
+
+--pw-stop-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your parcel arrives Tuesday. Reply STOP to end these alerts.
+Track it: https://ship.example.com/track/99
+--pw-stop-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Delivery update</h1><p>Your parcel arrives Tuesday.</p><p>Reply STOP to end these alerts.</p><p><a href="https://ship.example.com/track/99">Track your parcel</a></p></body></html>
+--pw-stop-v1--

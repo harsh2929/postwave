@@ -1,0 +1,50 @@
+[
+  {
+    "id": "govet-shadow",
+    "linter": "govet",
+    "messagePattern": "^shadow: declaration of ",
+    "owner": "API Platform",
+    "rationale": "Legacy shadow declarations require package-by-package control-flow review; new or moved declarations are prohibited by the exact ratchet. Re-reviewed 2026-09-12 after three weeks without CI (2026-08-21 to 2026-09-12): the shadow sites that entered in that window are err/ctx/tx re-declarations inside their own if/for blocks, the same shape as the 2026-07-20 set; each is frozen at its exact location and burned down per package.",
+    "expiresOn": "2026-12-11"
+  },
+  {
+    "id": "staticcheck-error-string-style",
+    "linter": "staticcheck",
+    "messagePattern": "^ST1005:",
+    "owner": "API Platform",
+    "rationale": "Capitalised or punctuated error strings entered while CI was offline; every one is client-visible text that tests assert on, so they are corrected per package with their tests rather than rewritten blind.",
+    "expiresOn": "2026-12-11"
+  },
+  {
+    "id": "staticcheck-style-modernization",
+    "linter": "staticcheck",
+    "messagePattern": "^(QF1\\d{3}|ST1\\d{3}|S1\\d{3}):",
+    "owner": "API Platform",
+    "rationale": "Remaining Staticcheck diagnostics are style and modernization suggestions scheduled for bounded package-level cleanups; re-reviewed 2026-09-12 with the sites that entered while CI was offline.",
+    "expiresOn": "2026-12-11"
+  },
+  {
+    "id": "gocritic-control-flow-style",
+    "linter": "gocritic",
+    "messagePattern": "^(ifElseChain|singleCaseSwitch|captLocal|offBy1|mapKey):",
+    "owner": "API Platform",
+    "rationale": "Legacy if/switch shape suggestions are behavior-neutral style debt that will be reduced during focused package passes; re-reviewed 2026-09-12 with the sites that entered while CI was offline (mapKey sites are test fixtures with whitespace-bearing keys, offBy1 sites were read and are bounds-safe).",
+    "expiresOn": "2026-12-11"
+  },
+  {
+    "id": "gocritic-append-alias-review",
+    "linter": "gocritic",
+    "messagePattern": "^appendAssign:",
+    "owner": "API Platform",
+    "rationale": "These append results intentionally flow into a different owner or returned value and need domain review before a change; re-reviewed 2026-09-12 with the sites that entered while CI was offline.",
+    "expiresOn": "2026-12-11"
+  },
+  {
+    "id": "unused-domain-scaffolding",
+    "linter": "unused",
+    "messagePattern": " is unused$",
+    "owner": "Product Engineering",
+    "rationale": "Legacy feature scaffolding needs domain-owner confirmation before deletion or wiring; no new or relocated dead code is accepted beyond the exact set frozen here. Re-reviewed 2026-09-12 with the symbols that entered while CI was offline.",
+    "expiresOn": "2026-12-11"
+  }
+]

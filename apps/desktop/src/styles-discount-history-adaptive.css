@@ -1,0 +1,139 @@
+/* Narrow-screen and user-preference adaptations for Discount history. */
+
+@media (max-width: 470px) {
+  .dhs-page {
+    padding-bottom: var(--pw-sp-5);
+  }
+
+  .dhs-hero-copy,
+  .dhs-flow,
+  .dhs-controls {
+    padding: 20px;
+  }
+
+  .dhs-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .dhs-summary-cell + .dhs-summary-cell {
+    border-top: 1px solid var(--dhs-line);
+    border-left: 0;
+  }
+
+  .dhs-summary-cell {
+    min-height: 96px;
+  }
+
+  .dhs-filter-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dhs-filter-group > button {
+    justify-content: space-between;
+  }
+
+  .dhs-record {
+    grid-template-columns: 1fr;
+  }
+
+  .dhs-record-primary,
+  .dhs-record-state {
+    grid-column: 1;
+  }
+
+  .dhs-drawer .slideover-body {
+    padding: 12px;
+  }
+
+  .dhs-verdict,
+  .dhs-drawer-section {
+    padding: 16px;
+  }
+
+  .dhs-drawer-footer > span {
+    display: none;
+  }
+
+  .dhs-drawer-footer {
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dhs-flow-connector.is-recorded > span,
+  .dhs-refresh[aria-disabled="true"] svg,
+  .dhs-loading span,
+  .dhs-timeline-loading span {
+    animation: none;
+  }
+
+  .dhs-flow-connector.is-recorded > span {
+    left: 50%;
+    opacity: 0.65;
+  }
+
+  .dhs-record,
+  .dhs-record::before,
+  button.dhs-summary-cell::after,
+  .dhs-search {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .dhs-hero,
+  .dhs-flow,
+  .dhs-summary,
+  .dhs-controls,
+  .dhs-list-shell,
+  .dhs-terminal,
+  .dhs-release-boundary,
+  .dhs-verdict,
+  .dhs-drawer-section,
+  .dhs-integrity,
+  .dhs-boundary-grid {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .dhs-status-chip,
+  .dhs-status-secondary,
+  .dhs-flow-status,
+  .dhs-state,
+  .dhs-filter-group > button[aria-pressed="true"] {
+    border-color: Highlight;
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .dhs-status-chip > span,
+  .dhs-state > span,
+  .dhs-recorded-dot,
+  .dhs-timeline-mark,
+  .dhs-usage-track > span {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+
+  .dhs-record::before,
+  button.dhs-summary-cell::after {
+    background: Highlight;
+  }
+
+  .dhs-search:focus-within,
+  .dhs-page button:focus-visible,
+  .dhs-page select:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+.dhs-page button:focus-visible,
+.dhs-page select:focus-visible,
+.dhs-page input:focus-visible,
+.dhs-drawer button:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}

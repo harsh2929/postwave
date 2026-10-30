@@ -1,0 +1,11 @@
+{
+  "id": "stub-dmarc-missing",
+  "input": {
+    "subject": "May newsletter",
+    "signals": ["dmarc_missing", "bounce_rate_high"]
+  },
+  "expected": {
+    "risks": ["authentication", "list_quality"],
+    "minimum_confidence": 0.5
+  }
+}

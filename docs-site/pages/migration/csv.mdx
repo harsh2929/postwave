@@ -1,0 +1,67 @@
+---
+title: CSV migration
+---
+
+import { Callout } from 'nextra/components';
+
+# CSV migration
+
+The universal fallback. If your ESP isn't listed — or you just have a spreadsheet of subscribers from a giveaway, an event, a podcast — drop a CSV and Moosewave imports it.
+
+## Upload
+
+From **Migrate → CSV**, drag a `.csv` file (up to 200 MB; ~3M rows). Moosewave runs **column auto-detection** on the first 100 rows.
+
+<Callout type="info">
+</Callout>
+
+## Column auto-detection
+
+Moosewave looks for these columns by header name (case-insensitive, common synonyms):
+
+| Canonical field   | Recognised headers                                                      |
+| ----------------- | ----------------------------------------------------------------------- |
+| `email`           | `email`, `email_address`, `e-mail`, `address`                           |
+| `first_name`      | `first_name`, `firstname`, `first`, `fname`, `given_name`               |
+| `last_name`       | `last_name`, `lastname`, `last`, `lname`, `family_name`, `surname`      |
+| `subscribed_at`   | `subscribed_at`, `created_at`, `date`, `signup_date`, `opt_in_date`     |
+| `status`          | `status`, `state`, `subscribed`                                          |
+| `tags`            | `tags`, `labels` (comma-separated within a cell)                        |
+| `source`          | `source`, `referrer`, `signup_source`                                   |
+
+Anything else becomes a custom attribute on `attributes.*` (header name lower-snake-cased).
+
+You can override any auto-detected mapping in the column mapper UI before running the dry-run.
+
+## Supported formats
+
+- **Encoding**: UTF-8 (with or without BOM), UTF-16 LE, ISO-8859-1, Windows-1252. Auto-detected.
+- **Delimiter**: `,`, `;`, `\t` (tab). Auto-detected.
+- **Quoting**: RFC 4180 quoted fields with embedded commas, quotes, and newlines.
+- **Date formats**: ISO 8601 (`2024-01-15T10:00:00Z`), US (`MM/DD/YYYY`), UK/EU (`DD/MM/YYYY`), epoch seconds, epoch milliseconds. Per-column override available.
+
+## Common pitfalls
+
+<Callout type="warning">
+**Excel re-encoding.** Opening and saving a UTF-8 CSV in Excel often re-encodes to Windows-1252, breaking accented characters and emoji. If your CSV came from a non-English source, prefer LibreOffice or open the original export untouched.
+</Callout>
+
+- **Quoted fields with newlines**: supported, but only when properly RFC 4180-quoted. If your export breaks rows on every newline (including embedded), the row count will be inflated and emails will appear truncated.
+- **Trailing whitespace** in email addresses: stripped automatically.
+- **Mixed status values**: if your `status` column uses non-standard tokens (e.g., `active`, `paused`, `bounced_hard`), map them in the mapper UI; unmapped values default to `subscribed`.
+- **Duplicate emails**: deduped on commit. Last-seen row wins for attributes; tags are unioned across duplicates.
+
+## Dry-run output
+
+The CSV dry-run reports:
+
+- Row count
+- Detected columns and their canonical mappings
+- Number of rows with invalid emails (skipped)
+- Number of duplicate emails (will be deduped)
+- Estimated final subscriber count
+
+## Next steps
+
+- [Verification report](/migration/verification-report)
+- For ongoing imports (e.g., daily CSV from a CRM), see the [Subscribers API](/api-reference/subscribers) — POST batches programmatically.

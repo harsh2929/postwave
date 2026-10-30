@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <shipping-delay-apology.v1@example.com>
+Subject: A delay on order 6001
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-delay-v1"
+
+--pw-delay-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Order 6001 is delayed by two days. https://ship.example.com/6001
+--pw-delay-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>A delay on order 6001</h1><p>Your order will arrive two days later than estimated. No action is needed.</p><p><a href="https://ship.example.com/6001">Track your order</a></p></body></html>
+--pw-delay-v1--

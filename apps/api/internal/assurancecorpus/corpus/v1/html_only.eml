@@ -1,0 +1,11 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <html-only.v1@example.com>
+Subject: HTML-only synthetic fixture
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><h1>HTML-only fixture</h1>=
+<p>The reviewed semantic text alternative is absent.</p></body></html>

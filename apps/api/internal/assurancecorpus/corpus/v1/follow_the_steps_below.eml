@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <follow-the-steps-below.v1@example.com>
+Subject: Finish setting up
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-steps-v1"
+
+--pw-steps-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Follow the steps below to finish setting up.
+Start: https://app.example.com/setup
+--pw-steps-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Finish setting up</h1><p>Follow the steps below to finish setting up your workspace.</p><ol><li>Verify your domain</li><li>Invite your team</li><li>Send a test</li></ol><p><a href="https://app.example.com/setup">Continue setup</a></p></body></html>
+--pw-steps-v1--

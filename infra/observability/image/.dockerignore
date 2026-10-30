@@ -1,0 +1,15 @@
+# The Dockerfile COPYs `collector/` and `healthcheck/` wholesale into the build
+# stage and compiles them there for linux/scratch. Anything already built on the
+# developer's machine is dead weight in the context: a Mach-O arm64 binary that
+# cannot run in the image, shipped to the daemon on every build.
+#
+# For the collector that is 227MB of upload per build. Both are also gitignored,
+# but .gitignore does not govern the Docker build context — an untracked file in
+# the directory is still sent.
+collector/collector
+healthcheck/healthcheck
+
+# Go build/test detritus that likewise has no place in the context.
+**/*.test
+**/*.out
+**/.DS_Store

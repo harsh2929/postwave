@@ -1,0 +1,4 @@
+Email,First Name,Subscribed,User Id,Created At
+ada@example.com,Ada,true,0001,2024-01-01
+optout@example.com,Opt Out,false,0002,2024-01-01
+unknown@example.com,Unknown,,0003,2024-01-01

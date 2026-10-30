@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <visible-preview-line.v1@example.com>
+Subject: Weekly digest
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-preview-v1"
+
+--pw-preview-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This week: three product updates and a customer story.
+Read it: https://news.example.com/digest/8
+--pw-preview-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><p>This week: three product updates and a customer story.</p><h1>Weekly digest</h1><p><a href="https://news.example.com/digest/8">Read the digest</a></p></body></html>
+--pw-preview-v1--

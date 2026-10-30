@@ -1,0 +1,332 @@
+---
+title: Developer Marketplace API
+---
+
+# Developer Marketplace API
+
+The Developer Marketplace API lets partners build public OAuth apps for
+Moosewave workspaces. It covers app registration, listing review, test
+accounts, partner profile certification, app webhooks, scoped installs, and
+the OAuth authorization-code runtime used by public marketplace apps.
+
+## Endpoint Map
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/developer-marketplace/catalog` | Read marketplace vocabularies: app types, distributions, scopes, webhook topics, listing categories, review states, and API revision policy. |
+| POST | `/api/v1/developer-marketplace/apps/validate` | Validate an app manifest before create or update. |
+| GET | `/api/v1/developer-marketplace/apps` | List owned marketplace apps, optionally filtered by status. |
+| POST | `/api/v1/developer-marketplace/apps` | Create a marketplace app draft. |
+| GET | `/api/v1/developer-marketplace/apps/{id}` | Read one owned marketplace app. |
+| PATCH | `/api/v1/developer-marketplace/apps/{id}` | Update an owned marketplace app draft. |
+| POST | `/api/v1/developer-marketplace/apps/{id}/submit-review` | Submit the app itself for OAuth/runtime review. |
+| GET | `/api/v1/developer-marketplace/apps/{id}/monitoring` | Check owned-app readiness, listing state, OAuth clients, installs, webhooks, tokens, test accounts, and API revision warnings. |
+| GET | `/api/v1/developer-marketplace/apps/{id}/oauth-clients` | List OAuth clients for an app. |
+| POST | `/api/v1/developer-marketplace/apps/{id}/oauth-clients` | Create an OAuth client and return its plaintext secret once. |
+| DELETE | `/api/v1/developer-marketplace/apps/{id}/oauth-clients/{client_id}` | Revoke an OAuth client. |
+| GET | `/api/v1/developer-marketplace/apps/{id}/test-accounts` | List app test accounts. |
+| POST | `/api/v1/developer-marketplace/apps/{id}/test-accounts` | Create or register a test account for review. |
+| GET | `/api/v1/developer-marketplace/listings` | List published listings plus the authenticated tenant's own drafts. |
+| PUT | `/api/v1/developer-marketplace/apps/{id}/listing` | Create or update an app listing draft. |
+| POST | `/api/v1/developer-marketplace/apps/{id}/listing/submit-review` | Submit the app listing draft for marketplace review. |
+| GET | `/api/v1/developer-marketplace/installations` | List app installations for the authenticated tenant. |
+| POST | `/api/v1/developer-marketplace/apps/{id}/installations` | Install an app for the authenticated tenant with scoped grants. |
+| DELETE | `/api/v1/developer-marketplace/installations/{installation_id}` | Revoke an app installation. |
+| GET | `/api/v1/developer-marketplace/apps/{id}/webhook-subscriptions` | List app webhook subscriptions. |
+| POST | `/api/v1/developer-marketplace/apps/{id}/webhook-subscriptions` | Create an app webhook subscription. |
+| GET | `/api/v1/developer-marketplace/partner-profiles` | List certified public partner profiles plus the authenticated tenant's own profile. |
+| PUT | `/api/v1/developer-marketplace/partner-profile` | Create or update the authenticated tenant's partner profile draft. |
+| POST | `/api/v1/developer-marketplace/partner-profile/submit-review` | Submit the partner profile for certification review. |
+| GET | `/api/v1/developer-marketplace/audit-logs` | Read the marketplace audit ledger, optionally scoped to an app. |
+| GET | `/api/v1/developer-marketplace/review/queue` | Reviewer-only cross-tenant queue for submitted apps, listings, and partner profiles. |
+| POST | `/api/v1/developer-marketplace/review/apps/{id}/decision` | Reviewer-only app approval or rejection. |
+| POST | `/api/v1/developer-marketplace/review/apps/{id}/listing/decision` | Reviewer-only listing approval/publication or rejection. |
+| POST | `/api/v1/developer-marketplace/review/partner-profiles/{tenant_id}/decision` | Reviewer-only partner profile certification or rejection. |
+| POST | `/api/v1/developer-marketplace/oauth/authorize` | Install a public app for the authenticated tenant and create a short-lived authorization code. |
+| POST | `/api/v1/developer-marketplace/oauth/token` | Exchange an authorization code for a bearer access token. |
+| POST | `/api/v1/developer-marketplace/oauth/revoke` | Revoke a marketplace access token. |
+
+`authorize` requires tenant authentication and admin scope. `token` and
+`revoke` are public OAuth endpoints: they authenticate the app with
+`client_id` and `client_secret` instead of a Moosewave API key.
+
+## App Registration
+
+Create apps as drafts, validate them before review, and keep credentials in
+dedicated OAuth clients:
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/apps/validate" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Example Sync",
+    "slug": "example-sync",
+    "app_type": "oauth",
+    "requested_scopes": ["profiles:read", "events:write"],
+    "redirect_uris": ["https://partner.example/oauth/callback"]
+  }'
+```
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/apps" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Example Sync",
+    "slug": "example-sync",
+    "app_type": "oauth",
+    "requested_scopes": ["profiles:read", "events:write"],
+    "redirect_uris": ["https://partner.example/oauth/callback"]
+  }'
+```
+
+`POST /apps/{id}/submit-review` reviews the OAuth/runtime app separately from
+the public marketplace listing. Monitoring shows both app and listing blockers.
+
+## OAuth Clients And Test Accounts
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/apps/$APP_ID/oauth-clients" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Production",
+    "redirect_uris": ["https://partner.example/oauth/callback"]
+  }'
+```
+
+OAuth client secrets are returned once. Store them in your vault and rotate by
+creating a new client, updating the app, then revoking the old client.
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/apps/$APP_ID/test-accounts" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "label": "Reviewer sandbox",
+    "login_url": "https://partner.example/login",
+    "notes": "Use the seeded demo store."
+  }'
+```
+
+## Installs And App Webhooks
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/apps/$APP_ID/installations" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scopes": ["profiles:read", "events:write"],
+    "metadata": {"workspace": "acme-prod"}
+  }'
+```
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/apps/$APP_ID/webhook-subscriptions" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://partner.example/postwave/webhook",
+    "events": ["subscriber.created", "campaign.sent"]
+  }'
+```
+
+## App Monitoring
+
+```bash
+curl "https://api.moosewave.com/api/v1/developer-marketplace/apps/$APP_ID/monitoring" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+```
+
+Use monitoring before submitting or re-submitting an app. The report returns
+`ready`, `status`, `checks`, `blockers`, `warnings`, aggregate counts for OAuth
+clients, installs, app webhooks, access tokens, and test accounts, plus API
+revision warnings. It is aggregate-only and does not expose installer tenant
+identities or raw secrets.
+
+After an app, listing, and partner profile are approved, `published`
+marketplace listings appear in `/api/v1/integrations/catalog` as `partner`
+tiles. Static Moosewave catalog entries win on slug collisions, so partner apps
+cannot overwrite native support claims.
+
+## Listing Review
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/apps/$APP_ID/listing/submit-review" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+```
+
+`PUT /api/v1/developer-marketplace/apps/{id}/listing` is the partner-facing
+draft editor. Partner writes cannot set `status=published` or
+`review_state=approved`; those are marketplace review-owned states. Submitting
+the listing sets `review_state=submitted` and keeps the tile out of the public
+integrations catalog until review publishes it as `status=published` and
+`review_state=approved`.
+
+## Partner Profiles
+
+```bash
+curl -X PUT "https://api.moosewave.com/api/v1/developer-marketplace/partner-profile" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "organization_name": "Example Agency",
+    "profile_type": "agency",
+    "regions": ["US", "CA"],
+    "verticals": ["ecommerce"],
+    "services": ["migration", "implementation"],
+    "listing_url": "https://example.com/postwave-partner",
+    "contact_email": "partners@example.com"
+  }'
+```
+
+Partner profile writes are draft-owned. Tenant admins cannot self-certify a
+profile or grant premier/elite levels through `PUT`; certification and partner
+levels are review-owned states. Submit the saved profile when it is ready:
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/partner-profile/submit-review" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+```
+
+Public partner catalog tiles require an approved app, a published listing, and
+a certified partner profile. This keeps the `partner` badge honest and prevents
+draft partner organizations from surfacing as public integration coverage.
+
+## Review Queue
+
+```bash
+curl "https://api.moosewave.com/api/v1/developer-marketplace/review/queue?state=pending&kind=all&limit=100" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "X-Postwave-Review-Secret: $POSTWAVE_REVIEW_SECRET"
+```
+
+The review queue is an operator-only aggregate over submitted apps, submitted
+listings, and partner profiles across tenants. It requires
+`X-Postwave-Review-Secret` and uses a read-only RLS reviewer scope. The default
+query is `state=pending`, `kind=all`, `limit=100`; `kind=partner_profile`
+focuses certification requests, `state=resolved` includes approved/rejected
+review items, and `state=all` combines both. Mutations still use the
+tenant-scoped decision routes below.
+
+## Review Decisions
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/review/apps/$APP_ID/decision" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "X-Postwave-Review-Secret: $POSTWAVE_REVIEW_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "decision": "approve",
+    "notes": "OAuth client, docs, and test account verified."
+  }'
+```
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/review/apps/$APP_ID/listing/decision" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "X-Postwave-Review-Secret: $POSTWAVE_REVIEW_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "decision": "approve",
+    "partner_level": "certified",
+    "notes": "Listing copy, support URL, and category verified."
+  }'
+```
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/developer-marketplace/review/partner-profiles/$TENANT_ID/decision" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "X-Postwave-Review-Secret: $POSTWAVE_REVIEW_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "decision": "approve",
+    "partner_level": "premier",
+    "notes": "Partner proof, support route, and implementation portfolio verified."
+  }'
+```
+
+Review decision routes require admin authentication plus
+`X-Postwave-Review-Secret`, configured server-side as
+`DEVELOPER_MARKETPLACE_REVIEW_SECRET`. App approval sets `status=approved`;
+listing approval sets `status=published` and `review_state=approved`.
+Partner profile approval sets `status=certified` and the chosen
+`certification_level`; rejection returns the profile to draft/registered.
+Listing rejection keeps listings hidden as `status=draft` and
+`review_state=rejected`. Every decision writes the developer marketplace audit
+ledger.
+
+## Authorization Code
+
+```bash
+curl "https://api.moosewave.com/api/v1/developer-marketplace/oauth/authorize" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "response_type": "code",
+    "client_id": "pw_oac_123",
+    "redirect_uri": "https://partner.example/oauth/callback",
+    "scope": "profiles:read events:write",
+    "state": "st_abc123",
+    "code_challenge": "S256_CHALLENGE",
+    "code_challenge_method": "S256"
+  }'
+```
+
+The response includes `code`, `redirect_url`, `installation_id`,
+`granted_scopes`, and `expires_at`. Redirect URIs must match exactly and PKCE
+must use `S256`.
+
+## Token Exchange
+
+```bash
+curl "https://api.moosewave.com/api/v1/developer-marketplace/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "code=$POSTWAVE_CODE" \
+  -d "redirect_uri=https://partner.example/oauth/callback" \
+  -d "client_id=$POSTWAVE_CLIENT_ID" \
+  -d "client_secret=$POSTWAVE_CLIENT_SECRET" \
+  -d "code_verifier=$PKCE_VERIFIER"
+```
+
+Authorization codes are single-use and expire after 10 minutes. Access tokens
+expire after 90 days. Raw codes, secrets, and tokens are not stored; runtime
+lookup tables keep SHA-256 hashes only.
+
+Use the returned access token as a normal scoped API bearer credential:
+
+```bash
+curl "https://api.moosewave.com/api/v1/subscribers" \
+  -H "Authorization: Bearer $POSTWAVE_ACCESS_TOKEN"
+```
+
+The token establishes the installing tenant, partner-app actor, and granted
+API scopes. Revoked installations, suspended apps, expired tokens, and revoked
+tokens fail closed.
+
+## Revocation
+
+```bash
+curl "https://api.moosewave.com/api/v1/developer-marketplace/oauth/revoke" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "pw_at_abc123",
+    "client_id": "pw_oac_123",
+    "client_secret": "pw_oas_secret"
+  }'
+```
+
+Revocation is idempotent and returns `revoked` or `not_found`. Supplying
+`client_id` is optional, but when present it must be paired with
+`client_secret`.
+
+## Integration Parity Role
+
+This runtime is the foundation for partner-built catalog entries. A catalog
+tile can be labelled `partner` when a reviewed marketplace app owns part of
+the auth or sync runtime. It should still only be labelled `native` when
+Moosewave owns auth, sync, health, lifecycle actions, monitoring, and support.

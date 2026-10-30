@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <nested-list-many-links.v1@example.com>
+Subject: Release notes
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-release-v1"
+
+--pw-release-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three changes shipped. Full notes: https://docs.example.com/releases/9
+--pw-release-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Release notes</h1><ul><li><a href="https://docs.example.com/a">Faster imports</a></li><li><a href="https://docs.example.com/b">New filters</a></li><li><a href="https://docs.example.com/c">Bug fixes</a></li></ul><p><a href="https://docs.example.com/releases/9">Read the full notes</a></p></body></html>
+--pw-release-v1--

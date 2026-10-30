@@ -1,0 +1,447 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/* Root container — sits above all app content but below dialog/modal stacks.
+ *
+ * Spotlight accent, backdrop opacity/blur, durations and easings are injected
+ * as CSS custom properties from TourOverlay (sourced from @postwave/design-tokens
+ * `motion`), since CSS modules can't import TS. The values below are FALLBACKS
+ * for the unlikely case the vars aren't set (e.g. SSR snapshot). */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+
+.dismissLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+
+/* Clip the glass itself so highlighted content keeps its original sharpness
+ * and colors. A separate transparent layer preserves modal click handling. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--pw-backdrop-tint-light, rgba(253, 252, 248, 0.58));
+  backdrop-filter: blur(var(--pw-backdrop-blur, 14px))
+    saturate(var(--pw-backdrop-saturation, 1.35));
+  -webkit-backdrop-filter: blur(var(--pw-backdrop-blur, 14px))
+    saturate(var(--pw-backdrop-saturation, 1.35));
+  pointer-events: none;
+  transition: clip-path var(--pw-travel-ms, 320ms)
+    var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+  animation: tour-backdrop-in var(--pw-exit-ms, 200ms)
+    var(--pw-ease-decelerate, ease-out);
+}
+
+:global(html.dark) .backdrop {
+  background: var(--pw-backdrop-tint-dark, rgba(26, 26, 26, 0.58));
+}
+
+/* Outline that follows the target — pulses softly.
+ * Accent color + travel duration + easing come from injected token vars. */
+.spotlightOutline {
+  position: absolute;
+  border-radius: var(--pw-spot-radius, 12px);
+  border: var(--pw-spot-ring-width, 2px) solid var(--pw-spot-accent, #c8102e);
+  box-shadow:
+    0 0 0 var(--pw-spot-ring-blur, 4px)
+      var(--pw-spot-accent-glow, rgba(200, 16, 46, 0.18)),
+    0 8px 32px rgba(15, 23, 42, 0.45);
+  pointer-events: none;
+  transition:
+    top var(--pw-travel-ms, 320ms)
+      var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
+    left var(--pw-travel-ms, 320ms)
+      var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
+    width var(--pw-travel-ms, 320ms)
+      var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
+    height var(--pw-travel-ms, 320ms)
+      var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+  animation:
+    tour-spotlight-in var(--pw-travel-ms, 320ms)
+      var(--pw-ease-decelerate, ease-out),
+    tour-pulse-ring var(--pw-pulse-ms, 1600ms)
+      var(--pw-ease-standard, ease-in-out) var(--pw-travel-ms, 320ms) infinite;
+}
+
+.tooltip {
+  position: absolute;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  width: min(320px, calc(100vw - 32px));
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  background: #fdfcf8;
+  color: #1a1a1a;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 15, 15, 0.08);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 24px 60px rgba(15, 23, 42, 0.45),
+    0 4px 12px rgba(15, 23, 42, 0.18);
+  padding: 0;
+  animation: tour-tooltip-in var(--pw-tooltip-ms, 240ms)
+    var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+  transition:
+    top var(--pw-travel-ms, 320ms)
+      var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1)),
+    left var(--pw-travel-ms, 320ms)
+      var(--pw-ease-standard, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.tooltipScroller {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 18px 0;
+  scrollbar-gutter: stable;
+}
+
+/* Follow the app theme class (next-themes), not the OS preference — the
+   dashboard toggle drives html.dark; marketing/docs stay light (no class). */
+:global(html.dark) .tooltip {
+  background: #1a1a1a;
+  color: #f2f0ea;
+  border-color: rgba(242, 240, 234, 0.1);
+}
+
+.tooltipHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.tooltipBadge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  width: 24px;
+  border-radius: 999px;
+  background: #c8102e;
+  color: #fdfcf8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  margin-top: 2px;
+}
+
+.tooltipTitle {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  margin: 0;
+  flex: 1;
+}
+
+.tooltipBody {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #5c5c5c;
+  margin: 0 0 14px;
+}
+
+:global(html.dark) .tooltipBody {
+  color: #b8b8b8;
+}
+
+.tooltipFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: none;
+  margin: 0 18px;
+  padding: 10px 0 14px;
+  border-top: 1px solid rgba(15, 15, 15, 0.06);
+}
+
+:global(html.dark) .tooltipFooter {
+  border-top-color: rgba(242, 240, 234, 0.08);
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  height: 6px;
+  width: 6px;
+  border-radius: 999px;
+  background: rgba(15, 15, 15, 0.18);
+  transition: all 200ms ease-out;
+}
+
+.dotActive {
+  background: #c8102e;
+  width: 18px;
+}
+
+.dotPast {
+  background: rgba(200, 16, 46, 0.5);
+}
+
+:global(html.dark) .dot {
+  background: rgba(242, 240, 234, 0.2);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition:
+    background 160ms ease-out,
+    color 160ms ease-out,
+    transform 120ms ease-out;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #5c5c5c;
+  min-height: 44px;
+}
+
+.btn:hover {
+  background: rgba(15, 15, 15, 0.05);
+  color: #1a1a1a;
+}
+
+.btn:focus-visible {
+  outline: 2px solid #c8102e;
+  outline-offset: 2px;
+}
+
+:global(html.dark) .btn {
+  color: #b8b8b8;
+}
+:global(html.dark) .btn:hover {
+  background: rgba(242, 240, 234, 0.08);
+  color: #fdfcf8;
+}
+
+.btnPrimary {
+  background: #c8102e;
+  color: #fdfcf8;
+  box-shadow: 0 2px 0 0 #7a081b;
+}
+
+.btnPrimary:hover {
+  background: #9f0c24;
+  color: #fdfcf8;
+}
+
+.btnPrimary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 0 #7a081b;
+}
+
+/* Light and dark values both meet the WCAG AA contrast floor at this size. */
+.skip {
+  font-size: 11.5px;
+  color: #6b6b6b;
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.skip:focus-visible {
+  outline: 2px solid #c8102e;
+  outline-offset: 2px;
+}
+
+:global(html.dark) .skip {
+  color: #8a8a8a;
+}
+
+.skip:hover {
+  color: #1a1a1a;
+}
+
+:global(html.dark) .skip:hover {
+  color: #fdfcf8;
+}
+
+/* Arrow notch — purely decorative, follows placement direction. */
+.arrow {
+  position: absolute;
+  height: 12px;
+  width: 12px;
+  background: #fdfcf8;
+  transform: rotate(45deg);
+  border: 1px solid rgba(15, 15, 15, 0.08);
+}
+
+:global(html.dark) .arrow {
+  background: #1a1a1a;
+  border-color: rgba(242, 240, 234, 0.1);
+}
+
+.arrowTop {
+  bottom: -7px;
+  left: 50%;
+  margin-left: -6px;
+  border-top: none;
+  border-left: none;
+}
+
+.arrowBottom {
+  top: -7px;
+  left: 50%;
+  margin-left: -6px;
+  border-bottom: none;
+  border-right: none;
+}
+
+.arrowLeft {
+  right: -7px;
+  top: 50%;
+  margin-top: -6px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.arrowRight {
+  left: -7px;
+  top: 50%;
+  margin-top: -6px;
+  border-right: none;
+  border-top: none;
+}
+
+/* Confetti burst on completion. */
+.confettiLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  overflow: hidden;
+}
+
+.confetti {
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  border-radius: 1px;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  transform-origin: center;
+}
+
+/* Animations */
+@keyframes tour-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tour-spotlight-in {
+  from {
+    transform: scale(0.94);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes tour-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tour-pulse-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 var(--pw-spot-ring-blur, 4px)
+        var(--pw-spot-accent-glow, rgba(200, 16, 46, 0.18)),
+      0 8px 32px rgba(15, 23, 42, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 var(--pw-spot-ring-glow, 8px)
+        var(--pw-spot-accent-glow-soft, rgba(200, 16, 46, 0.08)),
+      0 8px 32px rgba(15, 23, 42, 0.45);
+  }
+}
+
+@keyframes tour-confetti-fly {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg) scale(0.4);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--pw-confetti-x), var(--pw-confetti-y))
+      rotate(var(--pw-confetti-r)) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .spotlightOutline,
+  .tooltip,
+  .confetti {
+    animation: none !important;
+    transition: none !important;
+  }
+  .spotlightOutline {
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .tooltipFooter {
+    align-items: stretch;
+  }
+
+  .dots,
+  .actions {
+    width: 100%;
+  }
+
+  .dots {
+    justify-content: center;
+  }
+
+  .actions {
+    justify-content: flex-end;
+  }
+}

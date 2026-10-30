@@ -1,0 +1,22 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-invalid.v1@example.com>
+Subject: Invalid JSON-LD synthetic fixture
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-json-invalid-v1"
+
+--pw-json-invalid-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+The synthetic briefing starts at 13:00 UTC.
+--pw-json-invalid-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><head><script type=3D"application/ld+json">=
+{"@context":"https://schema.org","@type":"Event","name":}=
+</script></head><body><h1>Synthetic briefing</h1>=
+<p>Starts at 13:00 UTC.</p></body></html>
+--pw-json-invalid-v1--

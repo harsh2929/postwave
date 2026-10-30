@@ -1,0 +1,82 @@
+---
+title: API overview
+---
+
+# Moosewave API
+
+REST + JSON. Versioned by URL path. Authentication is bearer-token. Tenants are scoped explicitly per request.
+
+## Base URL
+
+```
+https://api.moosewave.com/v1
+```
+
+No regional endpoint or residency commitment is documented until it is backed
+by a deployed, certified regional stack and approved customer terms.
+
+An independently operated source build chooses its own base URL. Moosewave does
+not currently provide a supported self-host distribution; see
+[Source and independent operation](/self-host).
+
+## Authentication
+
+Every request must carry an API key as a Bearer token:
+
+```http
+Authorization: Bearer pk_live_<your-key>
+```
+
+See [Authentication](/api-reference/authentication) for key creation, rotation, and scopes.
+
+## Tenant scoping
+
+Moosewave is multi-tenant. Two ways to identify your tenant:
+
+- **Today** — `X-Tenant-ID: <workspace-uuid>` header. API keys are workspace-scoped, but the header makes routing explicit and tolerates future key types.
+- **Future (in development)** — Clerk-issued JWTs in the `Authorization` header carry tenant claims; the `X-Tenant-ID` header becomes optional.
+
+## Versioning
+
+Major version in URL (`/v1`). Breaking changes ship as a new major. Within a major, additive changes are non-breaking and ship continuously.
+
+Deprecated endpoints are kept alive for at least **12 months** after a successor ships.
+
+## Error format
+
+All errors return a structured envelope:
+
+```json
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Field 'email' must be a valid RFC 5322 address",
+    "field": "email",
+    "request_id": "req_01HK..."
+  }
+}
+```
+
+Common codes documented in [Errors](/api-reference/errors).
+
+## Rate limits
+
+See [Rate limits](/api-reference/rate-limits) for per-key quotas and 429-handling guidance.
+
+## Quick example
+
+```bash
+curl https://api.moosewave.com/api/v1/subscribers \
+  -H "Authorization: Bearer pk_live_..." \
+  -H "X-Tenant-ID: ws_01HK..."
+```
+
+## SDKs
+
+Official SDKs:
+
+- **Node.js / TypeScript** — `@postwave/sdk`.
+- **Python** — `postwave`.
+- **Go** — `github.com/postwave/postwave-go`.
+
+The full type-safe surface is auto-generated from the [OpenAPI spec](/api-reference/openapi).

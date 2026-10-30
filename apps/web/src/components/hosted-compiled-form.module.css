@@ -1,0 +1,133 @@
+.root :global(.postwave-form) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1rem;
+}
+.root :global(.pw-heading) {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.375rem;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.root :global(.pw-text) {
+  margin: -0.25rem 0 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.root :global(.pw-field) {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.375rem;
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.root :global(.pw-field) :where(input, select, textarea) {
+  min-height: 2.75rem;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid hsl(var(--input));
+  border-radius: 0.5rem;
+  background: hsl(var(--background));
+  padding: 0.625rem 0.75rem;
+  color: hsl(var(--foreground));
+  font: inherit;
+  font-weight: 400;
+}
+.root :global(.pw-field) textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+.root
+  :where(
+    :global(.pw-field) input,
+    :global(.pw-field) select,
+    :global(.pw-field) textarea,
+    input[type="checkbox"],
+    input[type="radio"],
+    :global(.pw-submit)
+  ):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.root
+  :where(:global(.pw-checkbox), :global(.pw-radio), :global(.pw-scale-opt)) {
+  display: inline-flex;
+  min-height: 2.75rem;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.5rem;
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+}
+.root :where(input[type="checkbox"], input[type="radio"]) {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  accent-color: hsl(var(--primary));
+}
+.root :global(.pw-fieldset) {
+  min-width: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem 0.625rem;
+}
+.root :global(.pw-fieldset) legend {
+  max-width: 100%;
+  padding: 0 0.25rem;
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.root :global(.pw-scale) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+}
+.root :global(.pw-scale) legend {
+  width: 100%;
+}
+.root :global(.pw-step-break) {
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
+}
+.root :global(.pw-field-error) {
+  margin: -0.5rem 0 0;
+  color: hsl(var(--destructive));
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.root :global(.pw-submit) {
+  display: inline-flex;
+  min-height: 2.75rem;
+  width: 100%;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.5rem;
+  background: hsl(var(--primary));
+  padding: 0.625rem 1rem;
+  color: hsl(var(--primary-foreground));
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+.root :global(.pw-submit):hover {
+  background: hsl(var(--primary) / 0.9);
+}
+.root :global(.pw-submit):active {
+  transform: scale(0.99);
+}
+@media (prefers-reduced-motion: reduce) {
+  .root :global(.pw-submit) {
+    transition: none;
+  }
+}

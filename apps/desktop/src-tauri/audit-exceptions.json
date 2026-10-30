@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "scanner": {
+    "name": "cargo-audit",
+    "version": "0.22.2",
+    "deny": "warnings"
+  },
+  "owner": "Desktop Platform and Security Engineering",
+  "acceptedOn": "2026-09-12",
+  "lastReviewedOn": "2026-09-12",
+  "expiresOn": "2026-10-12",
+  "supportedTargets": [
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc"
+  ],
+  "evidenceTarget": "x86_64-unknown-linux-gnu",
+  "requiredPatch": {
+    "package": "tauri-utils",
+    "version": "2.9.3",
+    "source": "git+https://github.com/tauri-apps/tauri?rev=dd725f4b13c30a86b398ccc59eb498f151f461c5#dd725f4b13c30a86b398ccc59eb498f151f461c5",
+    "upstreamCommit": "https://github.com/tauri-apps/tauri/commit/dd725f4b13c30a86b398ccc59eb498f151f461c5",
+    "replacementDependency": {
+      "package": "urlpattern",
+      "version": "0.6.0"
+    },
+    "removedPackages": [
+      "unic-char-property",
+      "unic-char-range",
+      "unic-common",
+      "unic-ucd-ident",
+      "unic-ucd-version"
+    ]
+  },
+  "exceptions": [
+    {
+      "advisoryId": "RUSTSEC-2024-0436",
+      "kind": "unmaintained",
+      "package": "paste",
+      "version": "1.0.15",
+      "checksum": "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "advisoryDate": "2024-10-07",
+      "advisoryUrl": "https://github.com/dtolnay/paste",
+      "rationale": "paste is pulled by if-watch's rtnetlink implementation only on Linux; filtered Cargo metadata proves the proc macro is absent from every supported macOS and Windows release graph.",
+      "removalTrigger": "Remove when if-watch no longer records paste through its Linux netlink backend, or reject before adding Linux support."
+    },
+    {
+      "advisoryId": "RUSTSEC-2024-0370",
+      "kind": "unmaintained",
+      "package": "proc-macro-error",
+      "version": "1.0.4",
+      "checksum": "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "advisoryDate": "2024-09-01",
+      "advisoryUrl": "https://gitlab.com/CreepySkeleton/proc-macro-error/-/issues/20",
+      "rationale": "proc-macro-error is pulled by the GTK3 macro stack only on Linux; filtered Cargo metadata proves the build-time crate is absent from every supported macOS and Windows release graph.",
+      "removalTrigger": "Remove when Tauri no longer records the GTK3 macro stack, or reject the exception before adding any Linux release target."
+    },
+    {
+      "advisoryId": "RUSTSEC-2024-0429",
+      "kind": "unsound",
+      "package": "glib",
+      "version": "0.18.5",
+      "checksum": "233daaf6e83ae6a12a52055f568f9d7cf4671dabb78ff9560ab6da230ce00ee5",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "advisoryDate": "2024-03-30",
+      "advisoryUrl": "https://github.com/gtk-rs/gtk-rs-core/pull/1343",
+      "rationale": "The unsound glib API is present only through Tauri's GTK3 Linux backend in the shared lockfile; filtered Cargo metadata proves glib is absent from every supported macOS and Windows release graph.",
+      "removalTrigger": "Remove as soon as Tauri leaves glib 0.18, and reject this exception before adding any Linux release target."
+    }
+  ]
+}

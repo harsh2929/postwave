@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <copyright-line.v1@example.com>
+Subject: Release notes
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-copy-v1"
+
+--pw-copy-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Version 5 is out: https://docs.example.com/v5
+(c) 2026 Postwave Ltd
+--pw-copy-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Release notes</h1><p>Version 5 is out.</p><p><a href="https://docs.example.com/v5">Read the notes</a></p><p style="font-size:11px;color:#888888">&copy; 2026 Postwave Ltd. All rights reserved.</p></body></html>
+--pw-copy-v1--

@@ -1,0 +1,719 @@
+.automations-page {
+  --automations-accent: var(--pw-accent);
+  --automations-accent-soft: color-mix(
+    in srgb,
+    var(--automations-accent) 12%,
+    transparent
+  );
+  --automations-success: var(--pw-success);
+  --automations-warning: var(--pw-warning);
+  --automations-danger: var(--pw-danger);
+}
+
+.automations-readiness {
+  position: relative;
+  overflow: hidden;
+  margin: 18px 0 22px;
+  padding: clamp(18px, 2.5vw, 28px);
+  border: 1px solid
+    color-mix(in srgb, var(--automations-accent) 28%, var(--pw-border));
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      circle at 92% 0%,
+      color-mix(in srgb, var(--automations-accent) 18%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pw-bg-elev) 94%, var(--automations-accent)),
+      var(--pw-bg-elev)
+    );
+  box-shadow: var(--pw-shadow-card);
+}
+
+.automations-readiness__intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+  gap: clamp(18px, 4vw, 42px);
+  align-items: start;
+}
+
+.automations-readiness__intro h2,
+.automations-card-heading h3 {
+  margin: 7px 0 6px;
+}
+
+.automations-readiness__intro p,
+.automations-card-heading p {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--pw-text-muted);
+  line-height: 1.55;
+}
+
+.automations-readiness__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: 1px solid
+    color-mix(in srgb, var(--automations-warning) 46%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--automations-warning) 12%, transparent);
+  color: color-mix(in srgb, var(--automations-warning) 78%, var(--pw-text));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.automations-readiness__badge::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.automations-readiness__boundary {
+  display: grid;
+  gap: 5px;
+  padding: 14px 16px;
+  border: 1px solid var(--pw-border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--pw-bg) 68%, transparent);
+  font-size: 13px;
+}
+
+.automations-readiness__stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.automations-readiness__stages li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  min-height: 96px;
+  padding: 13px;
+  border: 1px solid var(--pw-border);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--pw-bg-elev) 86%, transparent);
+}
+
+.automations-readiness__stages li[data-tone="available"] {
+  border-color: color-mix(
+    in srgb,
+    var(--automations-success) 45%,
+    var(--pw-border)
+  );
+}
+
+.automations-readiness__stages li[data-tone="limited"] {
+  border-color: color-mix(
+    in srgb,
+    var(--automations-warning) 45%,
+    var(--pw-border)
+  );
+}
+
+.automations-readiness__stages li[data-tone="blocked"] {
+  border-color: color-mix(
+    in srgb,
+    var(--automations-danger) 36%,
+    var(--pw-border)
+  );
+}
+
+.automations-readiness__stages li > div {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+}
+
+.automations-readiness__stages strong {
+  font-size: 13px;
+}
+
+.automations-readiness__stages li > div > span {
+  color: var(--pw-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.automations-readiness__step {
+  color: var(--pw-text-muted);
+  font: 700 10px/1.5 var(--pw-font-mono);
+}
+
+.automations-jump-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.automations-jump-nav a {
+  padding: 7px 11px;
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  color: var(--pw-text-muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.automations-jump-nav a:hover,
+.automations-jump-nav a:focus-visible {
+  border-color: color-mix(
+    in srgb,
+    var(--automations-accent) 58%,
+    var(--pw-border)
+  );
+  color: var(--pw-text);
+}
+
+.automations-sections {
+  display: grid;
+  gap: 34px;
+}
+
+.automations-surface {
+  min-width: 0;
+  scroll-margin-top: 24px;
+}
+
+.automations-toolbar,
+.automations-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.automations-row-actions {
+  min-width: max-content;
+}
+
+.automations-boundary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin: 0 0 16px;
+  border: 1px solid var(--pw-border);
+  border-radius: 11px;
+  background: var(--pw-border);
+}
+
+.automations-boundary > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  background: color-mix(
+    in srgb,
+    var(--pw-bg-elev) 96%,
+    var(--automations-success)
+  );
+}
+
+.automations-boundary > div[data-blocked="true"] {
+  background: color-mix(
+    in srgb,
+    var(--pw-bg-elev) 96%,
+    var(--automations-danger)
+  );
+}
+
+.automations-boundary strong {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.automations-boundary__label {
+  color: var(--pw-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.automations-loading,
+.automations-load-error,
+.automations-inline-empty {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 70px;
+  padding: 15px;
+  border: 1px dashed var(--pw-border);
+  border-radius: 11px;
+  color: var(--pw-text-muted);
+  font-size: 13px;
+}
+
+.automations-load-error,
+.automations-inline-empty {
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.automations-load-error {
+  border-style: solid;
+  border-color: color-mix(
+    in srgb,
+    var(--automations-danger) 45%,
+    var(--pw-border)
+  );
+}
+
+.automations-load-error strong,
+.automations-inline-empty strong {
+  color: var(--pw-text);
+}
+
+.automations-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--pw-border);
+  border-top-color: var(--automations-accent);
+  border-radius: 50%;
+  animation: automations-spin 800ms linear infinite;
+}
+
+@keyframes automations-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.automations-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--pw-border);
+  border-radius: 11px;
+}
+
+.automations-table-scroll:focus-visible {
+  outline: 2px solid var(--automations-accent);
+  outline-offset: 2px;
+}
+
+.automations-pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: var(--pw-text-muted);
+  font-size: 11px;
+}
+
+.automations-table-scroll .data-table {
+  width: 100%;
+  min-width: 780px;
+  margin: 0;
+}
+
+.automations-name-button {
+  max-width: 280px;
+  overflow: hidden;
+  font-weight: 650;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.automations-card,
+.automations-definition-list {
+  padding: clamp(14px, 2vw, 20px);
+  border: 1px solid var(--pw-border);
+  border-radius: 13px;
+  background: var(--pw-bg-elev);
+}
+
+.automations-definition-list {
+  margin-top: 16px;
+}
+
+.automations-form-grid,
+.automations-lookup-grid,
+.automations-override-grid {
+  display: grid;
+  gap: 12px;
+  align-items: end;
+}
+
+.automations-form-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.automations-form-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.automations-lookup-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.automations-override-grid {
+  grid-template-columns: minmax(150px, 0.65fr) minmax(220px, 1.35fr) auto;
+}
+
+.automations-field-action {
+  padding-bottom: 12px;
+}
+
+.automations-resolved-panel,
+.automations-override-editor {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pw-border);
+}
+
+.automations-resolved-panel__heading,
+.automations-card-heading,
+.automations-channel-card > div:first-child,
+.automations-tab-heading {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.automations-resolved-panel__heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.automations-override-editor > div:first-child p,
+.automations-tab-heading p {
+  margin: 3px 0 0;
+  color: var(--pw-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.automations-footnote {
+  margin: 10px 0 0;
+  color: var(--pw-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.automations-summary-strip,
+.automations-definition-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+  background: var(--pw-border);
+}
+
+.automations-definition-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.automations-summary-strip > div,
+.automations-definition-grid > div {
+  min-width: 0;
+  padding: 11px 12px;
+  background: var(--pw-bg-elev);
+}
+
+.automations-summary-strip dt,
+.automations-definition-grid dt {
+  color: var(--pw-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.automations-summary-strip dd,
+.automations-definition-grid dd {
+  overflow-wrap: anywhere;
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+.automations-runtime-note,
+.automations-editor-boundary {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border-left: 3px solid var(--automations-warning);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--automations-warning) 9%, transparent);
+  font-size: 12px;
+}
+
+.automations-runtime-note span,
+.automations-editor-boundary span {
+  color: var(--pw-text-muted);
+  line-height: 1.5;
+}
+
+.automations-runtime-note.is-blocked {
+  border-left-color: var(--automations-danger);
+  background: color-mix(in srgb, var(--automations-danger) 8%, transparent);
+}
+
+.automations-detail-tabs {
+  margin-bottom: 12px;
+}
+
+.automations-tab-heading {
+  margin-bottom: 10px;
+}
+
+.automations-card-heading {
+  margin-bottom: 14px;
+}
+
+.automations-card-heading__meta {
+  flex: none;
+  color: var(--pw-text-muted);
+  font-size: 11px;
+}
+
+.automations-channel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 9px;
+}
+
+.automations-channel-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--pw-bg) 45%, var(--pw-bg-elev));
+}
+
+.automations-channel-card p,
+.automations-channel-card small {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--pw-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.automations-channel-card small {
+  padding-top: 5px;
+  border-top: 1px solid var(--pw-border);
+}
+
+.automations-chip-row {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.automations-chip-row > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.automations-responsive-table td small {
+  display: block;
+  margin-top: 3px;
+  color: var(--pw-text-muted);
+}
+
+@media (max-width: 980px) {
+  .automations-readiness__stages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .automations-summary-strip,
+  .automations-definition-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .automations-form-grid--three,
+  .automations-override-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .automations-readiness__intro,
+  .automations-boundary,
+  .automations-lookup-grid,
+  .automations-form-grid--two,
+  .automations-form-grid--three,
+  .automations-override-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .automations-toolbar {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .automations-field-action {
+    padding-bottom: 0;
+  }
+
+  .automations-responsive-table,
+  .automations-responsive-table tbody,
+  .automations-responsive-table tr,
+  .automations-responsive-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .automations-table-scroll .automations-responsive-table {
+    min-width: 0;
+  }
+
+  .automations-responsive-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .automations-responsive-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .automations-responsive-table tr {
+    overflow: hidden;
+    border: 1px solid var(--pw-border);
+    border-radius: 9px;
+    background: var(--pw-bg-elev);
+  }
+
+  .automations-responsive-table td {
+    display: grid;
+    grid-template-columns: minmax(105px, 0.42fr) minmax(0, 0.58fr);
+    gap: 10px;
+    align-items: start;
+    padding: 9px 11px;
+    border-bottom: 1px solid var(--pw-border);
+    text-align: left;
+    white-space: normal;
+  }
+
+  .automations-responsive-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .automations-responsive-table td::before {
+    color: var(--pw-text-muted);
+    content: attr(data-label);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .automations-row-actions,
+  .automations-name-button {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 540px) {
+  .automations-readiness__stages,
+  .automations-summary-strip,
+  .automations-definition-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .automations-resolved-panel__heading,
+  .automations-card-heading,
+  .automations-tab-heading,
+  .automations-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .automations-spinner {
+    animation: none;
+    border-top-color: var(--pw-border);
+  }
+}
+
+@media (forced-colors: active) {
+  .automations-readiness,
+  .automations-readiness__boundary,
+  .automations-readiness__stages li,
+  .automations-boundary,
+  .automations-card,
+  .automations-definition-list,
+  .automations-channel-card,
+  .automations-table-scroll,
+  .automations-inline-empty,
+  .automations-load-error,
+  .automations-runtime-note,
+  .automations-editor-boundary {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+
+  .automations-readiness__badge,
+  .automations-readiness__step,
+  .automations-boundary__label,
+  .automations-runtime-note strong,
+  .automations-editor-boundary strong {
+    color: CanvasText;
+  }
+
+  .automations-readiness__stages li[data-tone="available"] {
+    border-color: LinkText;
+  }
+
+  .automations-readiness__stages li[data-tone="limited"],
+  .automations-readiness__stages li[data-tone="blocked"],
+  .automations-boundary > div[data-blocked="true"] {
+    border-color: Mark;
+  }
+
+  .automations-jump-nav a,
+  .automations-page button,
+  .automations-page .link-button {
+    border-color: ButtonText;
+    color: LinkText;
+  }
+
+  .automations-page :focus-visible,
+  .automations-table-scroll:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .automations-spinner {
+    border-color: CanvasText;
+    border-top-color: Highlight;
+  }
+}

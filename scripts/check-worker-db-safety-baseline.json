@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "generated_for_audit": "2026-07-15",
+  "scope": "all-numbered-migration-sources",
+  "review": {
+    "owner": "database-platform-and-security",
+    "review_by": "2026-09-30",
+    "expires_if": "A client or production target can release without applying the repair migration, or the effective-schema verifier reports any unsafe public tenant-policy cast."
+  },
+  "expected_findings": 36,
+  "expected_occurrences": 148,
+  "repair": {
+    "path": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+    "source_sha256": "f4050959dc8db975028218a4c6cbf95ef694b7c488858669ae8e8489fd700bad",
+    "obligation": "zero-unsafe-public-policy-casts"
+  },
+  "effective_schema": {
+    "verifier": "scripts/lint-migrations-schema.py",
+    "obligation": "zero-unsafe-public-policy-casts"
+  },
+  "findings": [
+    {
+      "path": "infra/migrations/0059_tags.sql",
+      "source_sha256": "fb4207250530535eccd07b9ca4c6ecf3acf004c51d944b1c429d5ae2492128d0",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0060_suppressions.sql",
+      "source_sha256": "f93f469f6cb73a1159eb5969574289e91ea6c77f8b0031501e98017b7f2f0df0",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0063_assets.sql",
+      "source_sha256": "b52cadccf19d4b40aa075f657707d6859309078e5113354d34b5ac5afc580da4",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0064_inbound_webhooks.sql",
+      "source_sha256": "eed9c14c67154e7ae71a89f5dc6de7f326d1104889da880f9e0553d5d644967d",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0065_product_events.sql",
+      "source_sha256": "e69bd28e900ccc1612edb01863e58347777a63e2304c513aa572136017a64a8d",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0066_inbound_email.sql",
+      "source_sha256": "dabcd5be167e6c4f9e56a7a95cb6211b25fc2ec06e21400010eb845f382c3512",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0067_dmarc_reports.sql",
+      "source_sha256": "61b856838367273d779a91534738bfd87f1e89212012042028c60ad7be9a6732",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0068_sending_domain.sql",
+      "source_sha256": "9694d9173e9fced84bcd1904e9ae3bf6d021d447bfc61cb869e7b1d528df21ed",
+      "occurrences": 6,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0070_custom_domains.sql",
+      "source_sha256": "615daaad30ca6533b08b9c1bd18e1451d16ba600344077706dde65c51ab9067c",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0071_archive.sql",
+      "source_sha256": "5b64dd1178b7304df21de7c796feeddf95a7772d34a3d60eff70963be696575e",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0072_referrals.sql",
+      "source_sha256": "151d28492a30685237cc804a02d54e57b33e661a6b516c37ba5a16a9bd662f7c",
+      "occurrences": 6,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0073_discounts.sql",
+      "source_sha256": "9bdd3939f72f8b95d6ad81b7208e14c9a9621bb5b015303846a1cf8b6af6ad0f",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0074_gift_subscriptions.sql",
+      "source_sha256": "6c07b90bb16c3958ba2c7bf51cbfbeccbb15eeb3ea580b9d8fc4313406902499",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0075_founding_member.sql",
+      "source_sha256": "8875cd29f341c8db3687d62f101a94aa2143b176ab5a5aae32255f382b39b67f",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0077_send_domain_rls_fixup.sql",
+      "source_sha256": "6529a3ef87c09882f17a9c5e8a456bce43ba97638e3dc9393eb87f6fe2572a53",
+      "occurrences": 6,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0078_audience_rls_fixup.sql",
+      "source_sha256": "aa908defb2f15578ac406d119bfc7a7622753b3fd5dfb9776355e868f7010586",
+      "occurrences": 8,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0079_remaining_rls_fixup.sql",
+      "source_sha256": "ce03bb0406d768a8c413e7d33d98f9d477ec1e3946332ff7a22b33d07f477d7f",
+      "occurrences": 24,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0080_slack_workspace_connections.sql",
+      "source_sha256": "9f26214e03f19e3b90ac85821eb8a124e91e762d5d8f9b90b7db7e0a3c340691",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0081_subscriber_suppressions.sql",
+      "source_sha256": "2bb4cd25f9f8341651edca9993c0dee9862f6b832814bd15f48cef55f2d1bf3a",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0082_quota_and_metadata.sql",
+      "source_sha256": "aa38e4a61083e365d182ecf6c6423294a20daa8a548c242688522c17e9465126",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0084_workspace_settings.sql",
+      "source_sha256": "d857599459ece43aaf5bf336fc8b860aef050a679b2698688d3ae3bfe22b385d",
+      "occurrences": 6,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0086_dmarc_reports.sql",
+      "source_sha256": "8d4dce5e2564de6e358f3b3a8a5861d67a2f30cdc545ae77a395c8c2c515b972",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0087_campaign_replies.sql",
+      "source_sha256": "4a095afdba0111a0d7157a4d58f70b79e66c364fd270470ddbef681f210a4246",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0088_outbound_webhooks.sql",
+      "source_sha256": "adde0c2aa57faa4db8a85eb030390aac5b7d72e8d87647bfdd43a4cf25eaeca8",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0090_inbound_triggers.sql",
+      "source_sha256": "f9fcac8ab28751c2569acc4ae03d20d97b999a3be469d00286f14e1369f463e9",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0108_inbox_reality_tests.sql",
+      "source_sha256": "61f31b6813124fd19ac86023af6c8abb2f36d4d28f45f0609a6a658db63dc0b0",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0109_tenant_keys.sql",
+      "source_sha256": "17647575915370c1b3b80bf9c61eddba194d02a4fc3ff1953f045ffcd35886cd",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0111_sunset_policies.sql",
+      "source_sha256": "2332d1056cf5944defff95ca2066781986ed856c3c10cc6d2bc73baff2be8cef",
+      "occurrences": 6,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0112_blocklist_observations.sql",
+      "source_sha256": "f370b81053357126feaba869c785da09c03081f6da2be1fa80615959b81fbe93",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0113_blocklist_suppressions.sql",
+      "source_sha256": "59d2f87d2713f6a7d47e936a90fbbcb8cae2b58c18b3faefac501e7288408a2f",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0114_dedicated_ip_assignments.sql",
+      "source_sha256": "666ee5fac8fb6f26584da1b64d991f6018a57a7f2c890166e355d5e1a65d628b",
+      "occurrences": 4,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0119_event_log.sql",
+      "source_sha256": "cfc3fc96fac4297f22824bf8c92df599914d4311e0a796233a875ba471393334",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0122_scim_provisioning.sql",
+      "source_sha256": "9b9cf4e745345143bcb45670c422244481c5ec794cd76275e7cb07dcc2bdfc35",
+      "occurrences": 10,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0123_audit_sinks_and_merkle.sql",
+      "source_sha256": "4237f7b7b8222656b1dfee6cb7b72e1d9632818ab3558c9bff6ae4e05c93d656",
+      "occurrences": 6,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0124_hipaa_compliance.sql",
+      "source_sha256": "0dd0c5ab8391a813e1c1f92453da53c40942ea5a1a7db6210f64ca3d779dfbbd",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    },
+    {
+      "path": "infra/migrations/0125_inbound_routes.sql",
+      "source_sha256": "41f7eed9ead59c531578ddd2441dfbb20c6a97023db2d676ccc32458f8bb6aba",
+      "occurrences": 2,
+      "disposition": "forward-repaired",
+      "repair_migration": "infra/migrations/1735_null_safe_legacy_tenant_policies.sql",
+      "effective_schema_obligation": "zero-unsafe-public-policy-casts"
+    }
+  ],
+  "notes": [
+    "Applied historical migrations remain byte-for-byte immutable; this ledger is not permission to edit them.",
+    "Every reviewed source checksum and occurrence count is exact, and any additional direct cast is unreviewed and fails closed.",
+    "The repair is accepted only while its exact source hash, catalog rewrite semantics, postcondition, review date, and live effective-schema assertion all remain present."
+  ]
+}

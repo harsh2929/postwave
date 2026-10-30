@@ -1,0 +1,128 @@
+---
+title: Migrations API
+---
+
+# Migrations API
+
+Migration routes are tenant-admin operations under `/api/v1/migrations`. The gateway derives tenant context from the authenticated principal; callers must not rely on supplying a trusted tenant header themselves.
+
+## Core endpoints
+
+| Method | Path                                                       | Purpose                                                               |
+| ------ | ---------------------------------------------------------- | --------------------------------------------------------------------- |
+| GET    | `/api/v1/migrations`                                       | List recent tenant jobs                                               |
+| GET    | `/api/v1/migrations/sources`                               | List registered adapters and runtime capabilities                     |
+| POST   | `/api/v1/migrations/{source}/oauth/start`                  | Start OAuth for an OAuth-capable source                               |
+| GET    | `/api/v1/migrations/{source}/oauth/callback`               | Consume the provider code/state and create or reconnect the bound job |
+| POST   | `/api/v1/migrations/{source}/credentials`                  | Create a job for an API-credential source                             |
+| PUT    | `/api/v1/migrations/{source}/uploads/{upload_id}`          | Write one resumable file chunk                                        |
+| GET    | `/api/v1/migrations/{source}/uploads/{upload_id}`          | Read upload offset                                                    |
+| POST   | `/api/v1/migrations/{source}/uploads/{upload_id}/complete` | Validate the upload and create a job                                  |
+| POST   | `/api/v1/migrations/{source}/discover`                     | Run synchronous source discovery                                      |
+| POST   | `/api/v1/migrations/{source}/dry-run`                      | Start a dry-run                                                       |
+| POST   | `/api/v1/migrations/{source}/commit`                       | Start commit                                                          |
+| GET    | `/api/v1/migrations/{job_id}`                              | Read status, scope, progress, and report                              |
+| DELETE | `/api/v1/migrations/{job_id}`                              | Request cancellation                                                  |
+| POST   | `/api/v1/migrations/{job_id}/resume`                       | Resume an eligible cancelled job                                      |
+| GET    | `/api/v1/migrations/{job_id}/events`                       | Stream snapshot/progress/done events                                  |
+| GET    | `/api/v1/migrations/{job_id}/verification`                 | Read the verification report                                          |
+| POST   | `/api/v1/migrations/{job_id}/rollback`                     | Start an eligible rollback                                            |
+| GET    | `/api/v1/migrations/{job_id}/rollback-status`              | Poll rollback counters                                                |
+
+Controlled-cutover adapters also expose delta import, shadow check/monitor, source-event monitor, pilot-acceptance, cutover-evidence, rollback-rehearsal, automation-rebuild, and audit endpoints. Read the runtime source capability and source-specific operator guide before using them.
+
+## Mailchimp OAuth and same-job reconnect
+
+Start a new OAuth flow:
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/migrations/mailchimp/oauth/start \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+```
+
+Open the returned `authorize_url`. The callback returns `job_id` and `account_id` after validating the tenant-bound, expiring, single-use state.
+
+To replace the encrypted OAuth session on an existing Mailchimp job, bind the start request to that job:
+
+```bash
+curl -X POST 'https://api.moosewave.com/api/v1/migrations/mailchimp/oauth/start?job_id='$JOB_ID \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+```
+
+The callback must return the same `job_id`; it does not create a replacement migration.
+
+## Discovery and explicit Mailchimp audience scope
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/migrations/mailchimp/discover \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"job_id":"'$JOB_ID'"}'
+```
+
+Discovery includes an `audiences` array when the adapter exposes selectable audiences. Submit at least one returned ID for a scoped discovery preview and for dry-run. Dry-run persists the authoritative reviewed selection; commit must repeat that exact scope or it fails closed and requires another dry-run:
+
+```json
+{
+  "job_id": "9f8b2c1a4e6d0a7b9f8b2c1a4e6d0a7b",
+  "selected_audience_ids": ["audience_a", "audience_b"]
+}
+```
+
+For Mailchimp, that selection scopes audience-bound members and merge data, groups/interests, segments, signup-form and audience-schema evidence, list-triggered Classic Automations, campaigns, and reports. Templates, landing pages, and ecommerce evidence are account-wide; other source-archive guidance is account-global or non-detected. Inspect every completeness row before commit.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/migrations/mailchimp/discover \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @scope.json
+
+curl -X POST https://api.moosewave.com/api/v1/migrations/mailchimp/dry-run \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @scope.json
+
+curl -X POST https://api.moosewave.com/api/v1/migrations/mailchimp/commit \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d @scope.json
+```
+
+The commit endpoint fails closed unless the migration service is configured with `LISTMONK_TENANT_MODE=dedicated` and `LISTMONK_DEDICATED_TENANT_ID` exactly equal to the authenticated tenant ID.
+
+## Job status
+
+```json
+{
+  "id": "9f8b2c1a4e6d0a7b9f8b2c1a4e6d0a7b",
+  "source": "mailchimp",
+  "status": "importing",
+  "progress": {
+    "subscribers_done": 5400,
+    "subscribers_total": 12450,
+    "templates_done": 12,
+    "templates_total": 14,
+    "source_archive_done": 3,
+    "source_archive_total": 7
+  },
+  "selected_audience_ids": ["audience_a"],
+  "source_session_expires_at": "2026-08-14T10:00:00Z"
+}
+```
+
+Statuses are `pending`, `authenticating`, `discovering`, `dry_run`, `awaiting_confirmation`, `importing`, `rolling_back`, `completed`, `failed`, and `rolled_back`.
+
+## Verification and rollback
+
+```bash
+curl https://api.moosewave.com/api/v1/migrations/$JOB_ID/verification \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+
+curl -X POST https://api.moosewave.com/api/v1/migrations/$JOB_ID/rollback \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+
+curl https://api.moosewave.com/api/v1/migrations/$JOB_ID/rollback-status \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY"
+```
+
+See [Verification report](/migration/verification-report) for the exact report shape and [Rollback](/migration/rollback) for the ledger-based reversal boundary.

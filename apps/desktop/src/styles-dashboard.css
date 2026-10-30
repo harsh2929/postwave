@@ -1,0 +1,1213 @@
+/* Dashboard route styles. Imported from the lazy Dashboard page so these
+   route-owned rules travel with that chunk instead of the global base CSS. */
+
+.pw-dashboard {
+  container: dashboard / inline-size;
+  min-width: 0;
+}
+
+.dash-hero {
+  position: relative;
+  display: grid;
+  gap: var(--pw-sp-2);
+  padding: clamp(20px, 2.4vw, 28px);
+  margin-bottom: var(--pw-sp-4);
+  overflow: clip;
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 18%, var(--pw-border));
+  border-radius: var(--pw-radius-lg);
+  background: color-mix(in srgb, var(--pw-accent) 3%, var(--pw-bg-elev));
+  box-shadow: var(--pw-elev-1);
+}
+.dash-hero::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  content: "";
+  background: color-mix(in srgb, var(--pw-accent) 72%, transparent);
+}
+.dash-hero-copy {
+  max-width: 700px;
+}
+.dash-hero-eyebrow,
+.dash-section-eyebrow,
+.dash-toolbar-label {
+  color: var(--pw-fg-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.dash-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.dash-hero-eyebrow-mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--pw-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pw-accent) 13%, transparent);
+}
+.dash-hero-title {
+  margin: 0;
+  color: var(--pw-fg);
+  font-size: clamp(28px, 3vw, 34px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+.dash-hero-subtitle {
+  max-width: 62ch;
+  margin: 8px 0 0;
+  color: var(--pw-fg-muted);
+  font-size: 14px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.dash-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--pw-sp-4);
+  min-width: 0;
+  padding-top: var(--pw-sp-4);
+  border-top: 1px solid var(--pw-border-soft);
+}
+.dash-toolbar-range {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+}
+.dash-toolbar-end,
+.dash-toolbar-actions,
+.dash-toolbar-live {
+  display: flex;
+  align-items: center;
+}
+.dash-toolbar-end {
+  justify-content: flex-end;
+  gap: var(--pw-sp-3);
+  min-width: 0;
+}
+.dash-toolbar-actions {
+  gap: var(--pw-sp-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.dash-toolbar-live {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: 999px;
+  color: var(--pw-fg-muted);
+  background: color-mix(in srgb, var(--pw-bg-elev) 72%, transparent);
+  white-space: nowrap;
+}
+.dash-toolbar-button {
+  min-height: 36px;
+  gap: 7px;
+  white-space: nowrap;
+}
+.dash-toolbar-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  min-width: 0;
+}
+.dash-toolbar-feedback {
+  max-width: 24ch;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.dash-drag-help,
+.dash-anomaly-reason {
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: normal;
+  text-wrap: pretty;
+}
+.dash-drag-help {
+  max-width: 12ch;
+}
+.dash-anomaly-reason {
+  flex: 1 1 100%;
+  margin-top: 2px;
+}
+
+/* Dashboard uses the shared segmented-control markup without loading the
+   lazy Assets stylesheet that also defines it. Keep its range targets fully
+   sized on a cold dashboard route instead of relying on cross-route CSS. */
+.dash-toolbar .lib-segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev);
+}
+.dash-toolbar .lib-segmented button {
+  min-width: 44px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 0;
+  color: var(--pw-fg-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 650;
+  transition:
+    color 100ms ease,
+    background 100ms ease;
+}
+.dash-toolbar .lib-segmented button.is-active {
+  color: var(--pw-accent-fg);
+  background: var(--pw-accent);
+}
+
+.dash-layout-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-4);
+  margin-bottom: var(--pw-sp-4);
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 34%, var(--pw-border));
+  border-radius: var(--pw-radius-md);
+  background: color-mix(in srgb, var(--pw-accent) 6%, var(--pw-bg-elev));
+}
+.dash-layout-mode.is-failed {
+  border-color: color-mix(in srgb, var(--pw-danger) 36%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-danger) 6%, var(--pw-bg-elev));
+}
+.dash-layout-mode > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.dash-layout-mode > div span,
+.dash-layout-save-state {
+  color: var(--pw-fg-muted);
+}
+.dash-layout-save-state {
+  flex: none;
+  font-size: 12px;
+}
+
+.dash-load-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--pw-sp-4);
+  min-height: 238px;
+  padding: 32px 20px;
+  text-align: center;
+}
+.dash-load-error > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.dash-load-error > div span {
+  color: var(--pw-fg-muted);
+}
+.dash-refresh-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-3);
+  padding: 10px 14px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--pw-warning) 30%, var(--pw-border-soft));
+  color: var(--pw-fg-muted);
+  background: color-mix(in srgb, var(--pw-warning) 6%, var(--pw-bg-elev));
+  font-size: 12px;
+  line-height: 1.4;
+}
+.dash-refresh-warning strong {
+  color: var(--pw-fg);
+}
+
+.dash-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--pw-sp-4);
+  margin-bottom: var(--pw-sp-6);
+}
+.dash-overview-grid:not(:has(.dash-onboarding-region > *)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.dash-primary {
+  min-width: 0;
+  overflow: clip;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  background: var(--pw-bg-elev);
+  box-shadow: var(--pw-elev-1);
+}
+.dash-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--pw-sp-4);
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.dash-section-title {
+  margin: 3px 0 0;
+  color: var(--pw-fg);
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+.dash-section-context {
+  max-width: 52ch;
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: right;
+  text-wrap: pretty;
+}
+.pw-dashboard .dash-primary .stat-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+.pw-dashboard .dash-primary .dash-stat-card {
+  min-height: 146px;
+  padding: 18px 20px 14px;
+  border: 0;
+  border-right: 1px solid var(--pw-border-soft);
+  border-bottom: 1px solid var(--pw-border-soft);
+  border-radius: 0;
+  box-shadow: none;
+}
+.pw-dashboard .dash-primary .dash-stat-card:nth-child(2n) {
+  border-right: 0;
+}
+.pw-dashboard .dash-primary .dash-stat-card:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+.pw-dashboard .dash-primary .dash-stat-card.is-clickable:hover {
+  transform: none;
+  border-color: var(--pw-border-soft);
+  background: color-mix(in srgb, var(--pw-accent) 3%, var(--pw-bg-elev));
+  box-shadow: none;
+}
+.dash-onboarding-region {
+  min-width: 0;
+}
+.dash-onboarding-region:empty {
+  display: none;
+}
+.dash-onboarding-region .checklist {
+  height: 100%;
+  margin-bottom: 0;
+}
+
+/* Cross-device resume card (components/dashboard/ResumeCard.tsx). It is a
+   sibling of the checklist inside this region, and the rule above gives the
+   checklist `height: 100%` — so the region needs to be a column that accounts
+   for both, or the card pushes the checklist out of the region by its own
+   height. */
+.dash-onboarding-region:has(.resume-card) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+.dash-onboarding-region:has(.resume-card) .checklist {
+  height: auto;
+  flex: 1 1 auto;
+}
+.resume-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  width: 100%;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--pw-bg-elev);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast, 120ms) ease,
+    background var(--motion-fast, 120ms) ease;
+}
+.resume-card:hover {
+  border-color: var(--pw-accent);
+  background: var(--pw-bg-elev-2);
+}
+.resume-card:focus-visible {
+  outline: 2px solid var(--pw-accent);
+  outline-offset: 2px;
+}
+.resume-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.resume-card__title {
+  font-size: var(--text-sm, 13px);
+  font-weight: 500;
+}
+.resume-card__meta {
+  font-size: var(--text-xs, 12px);
+  color: var(--pw-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resume-card__chevron {
+  flex: 0 0 auto;
+  color: var(--pw-fg-muted);
+  transition: transform var(--motion-fast, 120ms) ease;
+}
+.resume-card:hover .resume-card__chevron {
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .resume-card,
+  .resume-card__chevron {
+    transition: none;
+  }
+  .resume-card:hover .resume-card__chevron {
+    transform: none;
+  }
+}
+.dash-overview-grid:has(.checklist-compact-expanded) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.dash-onboarding-region:has(.checklist-compact-expanded) {
+  grid-column: 1 / -1;
+}
+
+.dash-stat-card {
+  position: relative;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    border-color 120ms ease;
+}
+.pw-dashboard .dash-stat-card .stat-label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  color: var(--pw-fg-subtle);
+  font-size: 11px;
+  line-height: 1.35;
+}
+.pw-dashboard .dash-stat-card .stat-value {
+  margin-top: 2px;
+  font-size: clamp(27px, 3cqi, 32px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+.pw-dashboard .dash-stat-card .stat-delta {
+  min-height: 18px;
+  font-size: 12px;
+}
+.pw-dashboard .dash-stat-card .stat-evidence-status {
+  max-width: 26ch;
+  min-height: 18px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.pw-dashboard .dash-stat-card .stat-delta.is-positive {
+  color: var(--pw-success);
+}
+.pw-dashboard .dash-stat-card .stat-delta.is-negative {
+  color: var(--pw-danger);
+}
+.pw-dashboard .dash-stat-card .stat-delta.is-neutral {
+  color: var(--pw-fg-subtle);
+}
+.stat-delta-context {
+  margin-left: 2px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  font-weight: 450;
+}
+.dash-ask-why {
+  min-height: 28px;
+  margin-left: auto;
+  padding: 0 8px;
+  font-size: 11px;
+  letter-spacing: normal;
+  text-transform: none;
+  vertical-align: middle;
+}
+.dash-stat-skeleton-label,
+.dash-stat-skeleton-delta {
+  height: 11px;
+}
+.dash-stat-skeleton-label {
+  width: 42%;
+}
+.dash-stat-skeleton-value {
+  width: 58%;
+  height: 30px;
+  margin-top: 8px;
+}
+.dash-stat-skeleton-delta {
+  width: 34%;
+  margin-top: 5px;
+}
+.dash-stat-skeleton-chart {
+  width: 100%;
+  height: 30px;
+  margin-top: 9px;
+}
+.dash-stat-card.is-clickable {
+  cursor: default;
+}
+.dash-stat-card.is-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--pw-shadow-tile-hover);
+  border-color: var(--pw-fg-subtle);
+}
+.stat-card-open:focus-visible {
+  outline: 2px solid var(--pw-accent);
+  outline-offset: 2px;
+}
+.stat-card-open {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.stat-card-open:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dash-stat-card.has-anomaly {
+  border-color: color-mix(in srgb, var(--pw-danger) 35%, var(--pw-border));
+}
+
+.dash-anomaly-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pw-danger) 14%, transparent);
+  color: var(--pw-danger);
+}
+
+.dash-data-freshness,
+.dash-polling-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.dash-receipt-time {
+  padding-left: 8px;
+  border-left: 1px solid var(--pw-border-soft);
+  color: var(--pw-fg-subtle);
+}
+.dash-polling-indicator {
+  color: var(--pw-fg-muted);
+}
+.dash-polling-dot {
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--pw-fg-subtle);
+  border-radius: 999px;
+  background: transparent;
+}
+
+.dash-layout-editor {
+  display: grid;
+  gap: var(--pw-sp-3);
+}
+.dash-layout-editor-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-4);
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 34%, var(--pw-border));
+  border-radius: var(--pw-radius-md);
+  background: color-mix(in srgb, var(--pw-accent) 6%, var(--pw-bg-elev));
+}
+.dash-layout-editor-intro > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+}
+.dash-layout-editor-intro span:not(.dash-layout-editor-count) {
+  color: var(--pw-fg-muted);
+  line-height: 1.4;
+}
+.dash-layout-editor-count {
+  flex: none;
+  color: var(--pw-fg-subtle);
+  font-size: 12px;
+}
+.dash-layout-section {
+  min-width: 0;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--pw-accent) 30%, var(--pw-border));
+  border-radius: var(--pw-radius-lg);
+  background: color-mix(in srgb, var(--pw-bg-elev) 86%, transparent);
+}
+.dash-layout-section-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  margin-bottom: 9px;
+  padding: 0 2px;
+}
+.dash-layout-section-index {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  color: var(--pw-fg-subtle);
+  background: var(--pw-bg-elev);
+  font-size: 11px;
+}
+.dash-layout-section-label {
+  font-size: 13px;
+  font-weight: 650;
+}
+.dash-layout-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-layout-section-actions .btn {
+  min-height: 30px;
+}
+.dash-layout-section-preview {
+  min-width: 0;
+  overflow: clip;
+  border-radius: var(--pw-radius-md);
+}
+.dash-layout-section-preview > :last-child {
+  margin-bottom: 0;
+}
+
+.dash-sparkline {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.dash-empty-card {
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-6);
+  margin-bottom: var(--pw-sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-3);
+}
+.dash-empty-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dash-empty-step {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-3);
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: 12px 16px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition:
+    border-color 80ms,
+    background 80ms;
+}
+.dash-empty-step:hover {
+  border-color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 4%, transparent);
+}
+.dash-empty-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--pw-accent);
+  color: var(--pw-accent-fg);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.dash-empty-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.dash-empty-step-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+.dash-empty-step-hint {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.dash-empty-step-go {
+  color: var(--pw-fg-subtle);
+  font-size: 18px;
+}
+
+.dash-forecast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: var(--pw-sp-3);
+  background: color-mix(in srgb, var(--pw-accent) 6%, var(--pw-bg-elev));
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 22%, var(--pw-border));
+  border-radius: var(--pw-radius-md);
+  font-size: 12px;
+  color: var(--pw-fg);
+}
+.dash-forecast-arrow {
+  color: var(--pw-accent);
+  font-weight: 600;
+}
+
+.dash-anomalies {
+  display: flex;
+  flex-direction: column;
+}
+.dash-anomalies-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 100px;
+  gap: var(--pw-sp-2);
+  align-items: center;
+  padding: 8px var(--pw-sp-3);
+  border-top: 1px solid var(--pw-border-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+.dash-anomalies-row:hover {
+  background: var(--pw-bg);
+}
+.dash-anomalies-metric {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--pw-danger);
+}
+.dash-anomalies-when {
+  text-align: right;
+  color: var(--pw-fg-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-drag-handle {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  cursor: grab;
+  color: var(--pw-fg-subtle);
+  opacity: 0;
+  transition: opacity 120ms;
+  user-select: none;
+}
+.dash-drag-handle .btn {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+}
+.dash-drag-handle .btn:focus-visible {
+  outline: 2px solid var(--pw-accent);
+  outline-offset: 2px;
+  border-color: var(--pw-accent);
+  background: var(--pw-accent);
+  box-shadow: var(--pw-focus-ring);
+  color: var(--pw-accent-fg);
+}
+.dash-stat-card:hover .dash-drag-handle,
+.dash-stat-card:focus-within .dash-drag-handle,
+.dash-drag-handle:focus-within {
+  opacity: 1;
+}
+.dash-stat-card.is-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+.dash-stat-card.is-drop-target {
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 2px var(--pw-selection-ring) inset;
+}
+
+.dash-benchmark-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 90px;
+  gap: var(--pw-sp-2);
+  align-items: center;
+  padding: 8px 0;
+  font-size: 12px;
+}
+.dash-benchmark-row + .dash-benchmark-row {
+  border-top: 1px solid var(--pw-border-soft);
+}
+.dash-benchmark-label {
+  color: var(--pw-fg-subtle);
+}
+.dash-benchmark-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--pw-fg-subtle) 16%, transparent);
+  overflow: hidden;
+}
+.dash-benchmark-bar-self {
+  position: absolute;
+  inset: 0;
+  background: var(--pw-accent);
+  border-radius: 3px;
+}
+.dash-benchmark-bar-bench {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--pw-fg);
+}
+.dash-benchmark-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dash-benchmark-note {
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  margin-top: 4px;
+}
+
+/* The CLV bundle is deferred until its section nears the viewport. Preserve
+   scroll geometry before activation, then show an informative module-loading
+   state instead of a featureless skeleton slab. */
+.dash-lazy-section {
+  min-height: 180px;
+}
+.dash-lazy-section.is-ready {
+  min-height: 0;
+}
+.dash-deferred-card {
+  display: grid;
+  min-height: 180px;
+  grid-template-columns: minmax(190px, 0.72fr) minmax(260px, 1.28fr);
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+}
+.dash-deferred-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+.dash-deferred-eyebrow {
+  color: var(--pw-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.065em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.dash-deferred-copy strong {
+  color: var(--pw-fg);
+  font-size: 15px;
+  line-height: 1.35;
+}
+.dash-deferred-copy > span:last-child {
+  color: var(--pw-fg-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.dash-deferred-preview {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.dash-deferred-preview .skel {
+  height: 52px;
+}
+.dash-deferred-preview .dash-deferred-preview-wide {
+  height: 34px;
+  grid-column: 1 / -1;
+}
+
+/* Compact dashboard setup guide. The full checklist remains available inline
+   through the disclosure, but no longer owns the first viewport. */
+.checklist-compact {
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-content: start;
+  gap: 16px;
+  padding: 20px;
+}
+.checklist-compact-content {
+  min-width: 0;
+  padding-right: 20px;
+}
+.checklist-load-error {
+  align-items: center;
+  padding-block: 22px;
+}
+.checklist-state-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--pw-warning, var(--pw-accent)) 32%,
+      var(--pw-border)
+    );
+  border-radius: 50%;
+  background: color-mix(
+    in srgb,
+    var(--pw-warning, var(--pw-accent)) 11%,
+    transparent
+  );
+  color: var(--pw-warning, var(--pw-accent));
+}
+.checklist-state-content {
+  min-width: 0;
+}
+.checklist-state-content .checklist-title {
+  margin-top: 4px;
+}
+.checklist-state-copy {
+  max-width: 54ch;
+  margin: 7px 0 0;
+  color: var(--pw-fg-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.checklist-state-action {
+  margin-top: 14px;
+}
+.checklist-data-notice {
+  display: flex;
+  min-width: 0;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-top: 10px;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 76%, transparent);
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.checklist-data-notice > span:not(.checklist-data-notice-dot) {
+  min-width: 0;
+  flex: 1;
+}
+.checklist-data-notice.is-warning {
+  border-color: color-mix(
+    in srgb,
+    var(--pw-warning, var(--pw-accent)) 28%,
+    var(--pw-border)
+  );
+  color: var(--pw-fg-muted);
+}
+.checklist-data-notice.is-warning > svg {
+  flex: none;
+  color: var(--pw-warning, var(--pw-accent));
+}
+.checklist-data-notice .btn {
+  flex: none;
+}
+.checklist-data-notice-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--pw-accent);
+  animation: checklist-refresh-pulse 1.8s ease-in-out infinite;
+}
+.checklist-eyebrow,
+.checklist-compact-next-label {
+  color: var(--pw-fg-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.065em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+.checklist-compact .checklist-title {
+  margin: 3px 0 0;
+  font-size: 16px;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.checklist-compact-next {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pw-border-soft);
+}
+.checklist-compact-next-label {
+  color: var(--pw-accent);
+}
+.checklist-compact-next-title {
+  margin-top: 5px;
+  color: var(--pw-fg);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.checklist-compact-next-description {
+  display: -webkit-box;
+  margin: 5px 0 0;
+  overflow: hidden;
+  color: var(--pw-fg-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-wrap: pretty;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.checklist-compact-actions {
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 14px;
+}
+.checklist-compact-actions .btn {
+  justify-content: center;
+  min-height: 34px;
+}
+.checklist-compact-loading {
+  display: grid;
+  gap: 9px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pw-border-soft);
+}
+.checklist-compact-skeleton-title {
+  width: 68%;
+  height: 14px;
+}
+.checklist-compact-skeleton-copy {
+  width: 100%;
+  height: 38px;
+}
+.checklist-compact-skeleton-action {
+  width: 72%;
+  height: 34px;
+}
+.checklist-compact-expanded {
+  margin-bottom: 0;
+}
+
+@keyframes checklist-refresh-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.88);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@container dashboard (min-width: 1000px) {
+  .dash-overview-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 300px);
+    align-items: start;
+  }
+}
+
+@container dashboard (min-width: 1260px) {
+  .pw-dashboard .dash-primary .stat-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .pw-dashboard .dash-primary .dash-stat-card {
+    min-height: 176px;
+    border-right: 1px solid var(--pw-border-soft);
+    border-bottom: 0;
+  }
+  .pw-dashboard .dash-primary .dash-sparkline {
+    margin-top: auto;
+  }
+  .pw-dashboard .dash-primary .dash-stat-card:last-child {
+    border-right: 0;
+  }
+}
+
+@container dashboard (max-width: 820px) {
+  .dash-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .dash-toolbar-end {
+    justify-content: space-between;
+  }
+  .dash-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .dash-section-context {
+    max-width: 64ch;
+    text-align: left;
+  }
+  .checklist-compact-actions {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+
+@container dashboard (max-width: 560px) {
+  .dash-hero {
+    padding: 18px;
+  }
+  .dash-toolbar-end,
+  .dash-toolbar-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .dash-toolbar-live,
+  .dash-toolbar-actions > *,
+  .dash-toolbar-button {
+    width: 100%;
+    justify-content: center;
+  }
+  .dash-layout-mode,
+  .dash-refresh-warning,
+  .dash-layout-editor-intro,
+  .dash-layout-section-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .pw-dashboard .dash-primary .stat-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pw-dashboard .dash-primary .dash-stat-card,
+  .pw-dashboard .dash-primary .dash-stat-card:nth-child(2n),
+  .pw-dashboard .dash-primary .dash-stat-card:nth-last-child(-n + 2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--pw-border-soft);
+  }
+  .pw-dashboard .dash-primary .dash-stat-card:last-child {
+    border-bottom: 0;
+  }
+  .dash-deferred-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .dash-deferred-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dash-deferred-preview .skel:nth-child(3) {
+    display: none;
+  }
+  .checklist-compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .checklist-load-error .checklist-state-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .checklist-compact .checklist-ring {
+    width: 48px;
+    height: 48px;
+  }
+  .dash-layout-section-actions {
+    align-self: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-stat-card,
+  .dash-toolbar .lib-segmented button,
+  .checklist-step-chevron,
+  .checklist-ring-fill,
+  .checklist-data-notice-dot {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .dash-drag-handle .btn:focus-visible {
+    forced-color-adjust: none;
+    outline: 2px solid CanvasText;
+    border-color: Highlight;
+    background: Highlight;
+    box-shadow: 0 0 0 4px Canvas;
+    color: HighlightText;
+  }
+  .checklist-state-icon,
+  .checklist-data-notice {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  .checklist-data-notice-dot {
+    background: Highlight;
+  }
+}

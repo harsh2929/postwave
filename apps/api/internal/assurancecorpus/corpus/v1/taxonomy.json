@@ -1,0 +1,185 @@
+{
+  "schema_version": "postwave.assurance-expected-finding-taxonomy.v1",
+  "taxonomy_version": "2026-08-09.1",
+  "detector_catalog_version": "postwave.campaign-checks.deterministic.v2",
+  "findings": [
+    {
+      "code": "COMPILER_PREHEADER_MISSING",
+      "features": [
+        "F11"
+      ],
+      "dimension": "representation.parity",
+      "expectation": "The compiler-owned hidden preheader must remain present and exact when the immutable compiler receipt declares it."
+    },
+    {
+      "code": "FACT_MEANING_IMAGE_ONLY",
+      "features": [
+        "F09",
+        "F10"
+      ],
+      "dimension": "image_meaning",
+      "expectation": "A critical Fact Contract value cannot exist only as image pixels or image metadata."
+    },
+    {
+      "code": "FACT_REPRESENTATION_DIVERGENCE",
+      "features": [
+        "F10"
+      ],
+      "dimension": "representation.parity",
+      "expectation": "The semantic plain-text and visible-HTML projections must not contradict the same fact."
+    },
+    {
+      "code": "FACT_STRUCTURED_DATA_CONTRADICTION",
+      "features": [
+        "F10"
+      ],
+      "dimension": "structured_data",
+      "expectation": "Structured data must not contradict a visible Fact Contract value."
+    },
+    {
+      "code": "HIDDEN_PROMPT_MANIPULATION",
+      "features": [
+        "F11"
+      ],
+      "dimension": "hidden_content",
+      "expectation": "Instruction-like content hidden from a normal reader is a high-confidence manipulation signal."
+    },
+    {
+      "code": "HIDDEN_TEXT_DETECTED",
+      "features": [
+        "F11"
+      ],
+      "dimension": "hidden_content",
+      "expectation": "Non-allowlisted hidden text must be surfaced without claiming complete client-side computed-style coverage."
+    },
+    {
+      "code": "IMAGE_ALT_MISSING",
+      "features": [
+        "F09"
+      ],
+      "dimension": "accessibility",
+      "expectation": "An image without an explicit semantic or decorative alt decision must be reported."
+    },
+    {
+      "code": "INFORMATIVE_IMAGE_ALT_EMPTY",
+      "features": [
+        "F09"
+      ],
+      "dimension": "accessibility",
+      "expectation": "An informative image cannot use an empty alt value."
+    },
+    {
+      "code": "MIME_ALTERNATIVE_INVALID",
+      "features": [
+        "F07"
+      ],
+      "dimension": "mime",
+      "expectation": "Certified semantic delivery requires one valid multipart/alternative container."
+    },
+    {
+      "code": "MIME_MESSAGE_INVALID",
+      "features": [
+        "F07"
+      ],
+      "dimension": "mime",
+      "expectation": "Unparseable RFC 5322 message bytes must fail closed."
+    },
+    {
+      "code": "MIME_PART_INVALID",
+      "features": [
+        "F07"
+      ],
+      "dimension": "mime",
+      "expectation": "Malformed multipart boundaries or parts must fail closed."
+    },
+    {
+      "code": "PLAIN_TEXT_REPRESENTATION_MISSING",
+      "features": [
+        "F07"
+      ],
+      "dimension": "representation.parity",
+      "expectation": "A certified semantic artifact must contain its reviewed text/plain projection."
+    },
+    {
+      "code": "PREHEADER_PROVENANCE_INVALID",
+      "features": [
+        "F11"
+      ],
+      "dimension": "hidden_content",
+      "expectation": "A hidden preheader is allowlisted only when its exact marker, shape, text, position, and compiler receipt agree."
+    },
+    {
+      "code": "PRIMARY_ACTION_IMAGE_ONLY",
+      "features": [
+        "F09",
+        "F10"
+      ],
+      "dimension": "primary_action",
+      "expectation": "The primary action must be recoverable as live semantic text and a real destination, not only image pixels."
+    },
+    {
+      "code": "PRIMARY_ACTION_RECOVERY_FAILED",
+      "features": [
+        "F10"
+      ],
+      "dimension": "primary_action",
+      "expectation": "The declared primary action must be recoverable without allowing footer, legal, or unsubscribe links to win."
+    },
+    {
+      "code": "PRIMARY_ACTION_SCHEMA_CONTRADICTION",
+      "features": [
+        "F10"
+      ],
+      "dimension": "structured_data",
+      "expectation": "A structured-data action must not disagree with the visible primary action."
+    },
+    {
+      "code": "STRUCTURED_DATA_INVALID",
+      "features": [
+        "F10"
+      ],
+      "dimension": "structured_data",
+      "expectation": "Malformed or nonconforming JSON-LD must not be treated as usable structured evidence."
+    },
+    {
+      "code": "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+      "features": [
+        "F10"
+      ],
+      "dimension": "structured_data",
+      "expectation": "Structured data must declare a schema.org context and a root type inside the frozen provider registry; anything else is rejected rather than passed through."
+    },
+    {
+      "code": "TEXT_OBFUSCATION_CONTROL",
+      "features": [
+        "F11"
+      ],
+      "dimension": "hidden_content",
+      "expectation": "Zero-width and bidirectional controls that can alter or conceal meaning must be surfaced."
+    },
+    {
+      "code": "TINY_TEXT_DETECTED",
+      "features": [
+        "F11"
+      ],
+      "dimension": "hidden_content",
+      "expectation": "Non-allowlisted text rendered at tiny dimensions must be surfaced as a manipulation or legibility signal."
+    },
+    {
+      "code": "UNDECLARED_STRUCTURED_DATA",
+      "features": [
+        "F10"
+      ],
+      "dimension": "structured_data",
+      "expectation": "HTML must not carry JSON-LD that is absent from the compiler's certified structured-data projection."
+    },
+    {
+      "code": "VISIBLE_PROMPT_MANIPULATION_PATTERN",
+      "features": [
+        "F11"
+      ],
+      "dimension": "hidden_content",
+      "expectation": "Visible instruction-like content is a review signal; visibility alone must not promote it to a hidden-content blocker."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <do-not-reply-notice.v1@example.com>
+Subject: Password changed
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-noreply-v1"
+
+--pw-noreply-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your password was changed. Do not reply to this message.
+Not you? Secure your account: https://app.example.com/security
+--pw-noreply-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Password changed</h1><p>Your password was changed on 9 August.</p><p>Do not reply to this message; this mailbox is not monitored.</p><p><a href="https://app.example.com/security">Secure your account</a></p></body></html>
+--pw-noreply-v1--

@@ -1,0 +1,16 @@
+node_modules/
+build/
+*.log
+.DS_Store
+
+# Zapier CLI state. We ship .zapierapprc as an empty placeholder; operators
+# run `zapier register` (or `zapier link`) to populate it locally. The
+# resulting populated file is per-operator state, but since it contains the
+# Zapier app id (not a secret) it's safe to commit if the team wants to share
+# the dev app. Default here is to keep the placeholder under version control.
+# Uncomment the next line if you'd rather treat it as ignored:
+# .zapierapprc
+
+# zapier-platform-cli build output
+.zapier/
+zapier-build.zip

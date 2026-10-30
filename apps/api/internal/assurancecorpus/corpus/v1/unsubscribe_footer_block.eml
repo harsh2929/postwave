@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <unsubscribe-footer-block.v1@example.com>
+Subject: Weekly roundup
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-unsubfoot-v1"
+
+--pw-unsubfoot-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This week: https://news.example.com/roundup
+Unsubscribe: https://news.example.com/u/3
+--pw-unsubfoot-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Weekly roundup</h1><p>Five links this week.</p><p><a href="https://news.example.com/roundup">Read the roundup</a></p><p style="font-size:11px;color:#999999">You are receiving this because you subscribed. <a href="https://news.example.com/u/3">Unsubscribe</a> or <a href="https://news.example.com/prefs">update preferences</a>.</p></body></html>
+--pw-unsubfoot-v1--

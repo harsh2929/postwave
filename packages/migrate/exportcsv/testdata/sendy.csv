@@ -1,0 +1,4 @@
+Name,Email,Status,GDPR
+Ada,ada@example.com,Subscribed,Yes
+Spam,spam@example.com,Marked as spam,Yes
+Unknown,unknown@example.com,Unconfirmed,Yes

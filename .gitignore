@@ -1,0 +1,155 @@
+# Node
+node_modules/
+.pnpm-store/
+.next/
+.next-*/
+.next-*.tsconfig.json
+.turbo/
+dist/
+build/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.pyc
+
+# Go
+bin/
+vendor/
+*.exe
+*.test
+*.out
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+.env.mvp
+infra/mvp/.env.mvp
+*.pem
+# The PUBLIC expo-updates code-signing certificate ships inside the binary and must reach the EAS worker (eas-cli cannot see a child .gitignore's exception); private keys stay ignored.
+!apps/mobile/certs/postwave-updates.pem
+*.key
+*.tfvars
+!*.tfvars.example
+
+# Terraform
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+infra/terraform/backend.hcl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local backup / pre-update artifacts may contain tenant data.
+backups/
+
+# Runtime asset store (subscriber import CSVs, etc.) — produced by
+# operator imports, not source. Contents are tenant-owned PII.
+/data/
+
+# Coverage
+coverage/
+*.coverprofile
+playwright-report/
+test-results/
+performance-results/
+
+# Voice tone-corpus public dataset cache (operator-downloaded, ~500MB combined)
+services/voice/internal/profile/tone_corpus/public/cache/
+
+# Deliverability public spam corpora cache (operator-downloaded, multi-GB with TREC)
+services/deliverability/internal/content/corpus/public/cache/
+
+# Compiled binaries from cmd/ tools (committed accidentally in af906d4)
+/calibrate
+/tone_calibrate
+/tone-corpus-download
+/spam-corpus-download
+services/voice/tone_calibrate
+services/voice/tone-corpus-download
+# Built from apps/api/cmd/engagement-corpus. Same class as the entries above and
+# below — a host-architecture binary with its source in the tree — but it had no
+# rule, so 21MB of Mach-O arm64 was committed.
+apps/api/engagement-corpus
+# OpenTelemetry collector binary — compiled from the Go source in the same dir
+# (build artifact, 200MB+; exceeds GitHub's 100MB per-file limit).
+infra/observability/image/collector/collector
+# Its sibling, produced the same way from healthcheck/main.go. This rule was
+# missing, and the 8MB Mach-O arm64 binary was committed as a result — a
+# host-architecture build artifact tracked in a repo whose Dockerfile builds it
+# from source for linux/scratch. It is small enough to slip past the file-size
+# limit that caught the collector, which is exactly why it needs the rule.
+infra/observability/image/healthcheck/healthcheck
+.claude/
+.serena/
+
+# Personal research/download artifacts are not source inputs. Keeping these
+# ignored also keeps credentials, local paths, and large media out of release
+# candidate scans and accidental commits.
+/downloads/
+/*.html
+/*.pdf
+/*.mp3
+/*.mp4
+
+# Local verification artifacts (Playwright MCP page snapshots, ad-hoc
+# screenshots saved at repo root by browser-driven verification flows,
+# ephemeral workflow scripts, the compiled api binary).
+.playwright-mcp/
+.audit-screenshots/
+.audit-mobile-*/
+.e2e-review/
+.lighthouseci/
+.tmp-workflows/
+.tmp/
+.tmp_audit/
+.tmp-settings-snap.txt
+/apiplayground-*.yml
+/api
+/apps/api/api
+/*.png
+
+# Click-through test outputs (regenerable)
+audit-screenshots/
+apps/desktop/tests/visual/__report__/
+.superpowers/
+
+# Standalone marketing site with its own git repo (see sites/moosewave/README.md)
+/sites/
+
+# Built by `go build ./scripts/gen-go-schemas.go` during local iteration.
+packages/openapi/gen-go-schemas
+
+
+# Public-source export: private/runtime material must never be committed.
+/proprietary/
+/output/
+/data/
+/.audit-*/
+/.playwright-mcp/
+/.env*
+!/.env.local.example
+!/.env.production.template
+**/.env*
+!**/.env.example
+!**/.env.local.example
+!**/.env.production.template
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.sqlite
+*.sqlite3
+*.har
+*.tfstate*

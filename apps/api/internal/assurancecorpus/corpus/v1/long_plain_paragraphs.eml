@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <long-plain-paragraphs.v1@example.com>
+Subject: Security notice
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-security-v1"
+
+--pw-security-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We rotated the signing keys used for webhook delivery on 8 August 2026. No action is needed unless you pinned a key fingerprint. Details: https://docs.example.com/security/rotation
+--pw-security-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Security notice</h1><p>We rotated the signing keys used for webhook delivery on 8 August 2026.</p><p>No action is needed unless you pinned a key fingerprint.</p><p><a href="https://docs.example.com/security/rotation">Read the details</a></p></body></html>
+--pw-security-v1--

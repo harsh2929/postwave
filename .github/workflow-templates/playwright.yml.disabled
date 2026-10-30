@@ -1,0 +1,152 @@
+name: playwright
+
+# This workflow does NOT consume untrusted PR-body/title/comment fields in run:
+# blocks. The only github.* expressions used are github.ref (safe — symbolic ref)
+# and matrix.project/browser (safe — defined in this file).
+
+on:
+  pull_request:
+    paths:
+      - 'tests/playwright/**'
+      - 'apps/**'
+      - 'services/**'
+      - 'packages/**'
+      - 'infra/docker-compose*.yml'
+      - '.github/workflows/playwright.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: playwright-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    name: Playwright (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: chromium-desktop
+            browser: chromium
+          - project: chromium-mobile
+            browser: chromium
+          - project: chromium-tablet
+            browser: chromium
+          - project: firefox-desktop
+            browser: firefox
+          - project: webkit-desktop
+            browser: webkit
+          - project: webkit-mobile
+            browser: webkit
+    env:
+      POSTWAVE_E2E_URL: http://localhost:3000
+      POSTWAVE_LOCAL_AUTH_BYPASS: '1'
+      POSTWAVE_DEV_TENANT_SLUG_HEADER: '1'
+      PROJECT: ${{ matrix.project }}
+      BROWSER: ${{ matrix.browser }}
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '20'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web workspace dependencies
+        run: pnpm --filter '@postwave/web^...' --if-present run build
+
+      - name: Boot API docker-compose stack
+        working-directory: infra
+        env:
+          POSTWAVE_LOCAL_AUTH_BYPASS: '1'
+          POSTWAVE_DEV_TENANT_SLUG_HEADER: '1'
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.full.yml up -d --wait api
+          docker compose -f docker-compose.yml -f docker-compose.full.yml ps
+
+      - name: Start web development server
+        env:
+          API_URL: http://127.0.0.1:8080
+          POSTWAVE_API_URL: http://127.0.0.1:8080
+        run: |
+          nohup pnpm --filter @postwave/web dev > "$RUNNER_TEMP/postwave-web.log" 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/postwave-web.pid"
+
+      - name: Wait for web app
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/healthz > /dev/null \
+              && curl -fsS http://localhost:3000/api/v1/healthz > /dev/null; then
+              echo "Web and proxied API are healthy"
+              exit 0
+            fi
+            echo "Waiting for stack ($i/60)..."
+            sleep 2
+          done
+          echo "Stack failed to become healthy"
+          cat "$RUNNER_TEMP/postwave-web.log"
+          docker compose -f infra/docker-compose.yml -f infra/docker-compose.full.yml logs --tail=200
+          exit 1
+
+      - name: Seed sample data
+        run: |
+          curl -fsS -X POST \
+            -H 'Content-Type: application/json' \
+            -H 'X-Tenant-Slug: demo' \
+            http://localhost:3000/api/v1/onboarding/sample-data \
+            -d '{"reset": true}'
+
+      - name: Install Playwright deps
+        working-directory: tests/playwright
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps "$BROWSER"
+
+      - name: Run Playwright
+        working-directory: tests/playwright
+        run: pnpm exec playwright test --project="$PROJECT"
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: tests/playwright/playwright-report
+          retention-days: 14
+
+      - name: Upload traces and screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: playwright-traces-${{ matrix.project }}
+          path: tests/playwright/test-results
+          retention-days: 14
+
+      - name: Dump docker-compose logs on failure
+        if: failure()
+        run: |
+          cat "$RUNNER_TEMP/postwave-web.log" || true
+          docker compose -f infra/docker-compose.yml -f infra/docker-compose.full.yml logs --tail=500
+
+      - name: Tear down stack
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/postwave-web.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/postwave-web.pid")" || true
+          fi
+          docker compose -f infra/docker-compose.yml -f infra/docker-compose.full.yml down -v

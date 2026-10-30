@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <quota-warning-80-percent.v1@example.com>
+Subject: You are at 80% of your quota
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-quota-v1"
+
+--pw-quota-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+You have used 80% of your monthly sends. https://app.example.com/usage
+--pw-quota-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>You are at 80% of your quota</h1><p>You have used 8,000 of 10,000 sends. No action is required yet.</p><p><a href="https://app.example.com/usage">See usage</a></p></body></html>
+--pw-quota-v1--

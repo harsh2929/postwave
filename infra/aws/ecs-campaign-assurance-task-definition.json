@@ -1,0 +1,426 @@
+{
+  "_comment": "Canonical digest-pinned ECS Fargate task for the Campaign Assurance data plane. It is intentionally separate from postwave-api. Five disjoint Unix-socket volumes prevent peer discovery across boundaries: worker-to-model, model-to-provider, worker-to-image-broker, image-broker-to-OCR, and image-broker-to-scanner. Only worker/image-broker receive DATABASE_URL; only provider-gateway receives the dedicated Gemini key; model/OCR/scanner scrub ECS task-role discovery variables before exec and enforce process-local network denial. Replace every placeholder and register only after migrations, exact image identity, OCR/ClamAV identity, S3 versioning/KMS, and live provider probes pass.",
+  "family": "postwave-campaign-assurance",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "4096",
+  "memory": "8192",
+  "executionRoleArn": "arn:aws:iam::<account>:role/postwave-ecs-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::<account>:role/postwave-campaign-assurance-task-role",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "ephemeralStorage": { "sizeInGiB": 30 },
+  "volumes": [
+    { "name": "model-worker-socket" },
+    { "name": "model-provider-socket" },
+    { "name": "image-worker-socket" },
+    { "name": "image-ocr-socket" },
+    { "name": "image-scanner-socket" },
+    { "name": "worker-tmp" },
+    { "name": "image-broker-tmp" },
+    { "name": "model-sandbox-tmp" },
+    { "name": "provider-gateway-tmp" },
+    { "name": "ocr-tmp" },
+    { "name": "scanner-tmp" }
+  ],
+  "containerDefinitions": [
+    {
+      "name": "assurance-socket-init",
+      "image": "<account>.dkr.ecr.us-west-2.amazonaws.com/postwave-campaign-assurance@<core-image-digest>",
+      "essential": false,
+      "user": "0:0",
+      "entryPoint": ["/bin/sh", "-ec"],
+      "command": [
+        "unset AWS_CONTAINER_CREDENTIALS_RELATIVE_URI AWS_CONTAINER_CREDENTIALS_FULL_URI AWS_WEB_IDENTITY_TOKEN_FILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN; for path in /run/postwave/model-worker /run/postwave/model-provider /run/postwave/image-worker /run/postwave/image-ocr /run/postwave/image-scanner; do chmod 0700 \"$path\"; chown 10001:10001 \"$path\"; done"
+      ],
+      "mountPoints": [
+        { "sourceVolume": "model-worker-socket", "containerPath": "/run/postwave/model-worker", "readOnly": false },
+        { "sourceVolume": "model-provider-socket", "containerPath": "/run/postwave/model-provider", "readOnly": false },
+        { "sourceVolume": "image-worker-socket", "containerPath": "/run/postwave/image-worker", "readOnly": false },
+        { "sourceVolume": "image-ocr-socket", "containerPath": "/run/postwave/image-ocr", "readOnly": false },
+        { "sourceVolume": "image-scanner-socket", "containerPath": "/run/postwave/image-scanner", "readOnly": false }
+      ],
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "initProcessEnabled": false,
+        "capabilities": {
+          "drop": [
+            "AUDIT_WRITE",
+            "DAC_OVERRIDE",
+            "FOWNER",
+            "FSETID",
+            "KILL",
+            "MKNOD",
+            "NET_BIND_SERVICE",
+            "NET_RAW",
+            "SETFCAP",
+            "SETGID",
+            "SETPCAP",
+            "SETUID",
+            "SYS_CHROOT"
+          ]
+        }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-campaign-assurance",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "socket-init"
+        }
+      }
+    },
+    {
+      "name": "assurance-provider-gateway",
+      "image": "<account>.dkr.ecr.us-west-2.amazonaws.com/postwave-campaign-assurance@<core-image-digest>",
+      "essential": true,
+      "user": "10001:10001",
+      "entryPoint": ["/bin/sh", "-ec"],
+      "command": [
+        "unset AWS_CONTAINER_CREDENTIALS_RELATIVE_URI AWS_CONTAINER_CREDENTIALS_FULL_URI AWS_WEB_IDENTITY_TOKEN_FILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN; exec campaign-assurance-provider-gateway"
+      ],
+      "dependsOn": [
+        { "containerName": "assurance-socket-init", "condition": "SUCCESS" }
+      ],
+      "mountPoints": [
+        { "sourceVolume": "model-provider-socket", "containerPath": "/run/postwave/model-provider", "readOnly": false },
+        { "sourceVolume": "provider-gateway-tmp", "containerPath": "/tmp", "readOnly": false }
+      ],
+      "environment": [
+        { "name": "HOME", "value": "/tmp" },
+        { "name": "POSTWAVE_ENV", "value": "production" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_PROVIDER_GATEWAY_SOCKET", "value": "/run/postwave/model-provider/provider.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_SANDBOX_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_PROVIDER_GATEWAY_TIMEOUT", "value": "60s" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_PROVIDER_GATEWAY_CONCURRENCY", "value": "4" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_PRICING_VERSION", "value": "<reviewed-gemini-pricing-version>" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_INPUT_MICROUSD_PER_MILLION_TOKENS", "value": "<positive-integer>" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_OUTPUT_MICROUSD_PER_MILLION_TOKENS", "value": "<positive-integer>" }
+      ],
+      "secrets": [
+        {
+          "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/campaign-assurance-gemini-api-key-XXXXXX"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "test -S /run/postwave/model-provider/provider.sock || exit 1"],
+        "interval": 15,
+        "timeout": 3,
+        "retries": 5,
+        "startPeriod": 20
+      },
+      "memory": 512,
+      "cpu": 384,
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "initProcessEnabled": true,
+        "capabilities": { "drop": ["ALL"] }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-campaign-assurance",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "provider-gateway"
+        }
+      }
+    },
+    {
+      "name": "assurance-model-sandbox",
+      "image": "<account>.dkr.ecr.us-west-2.amazonaws.com/postwave-campaign-assurance@<core-image-digest>",
+      "essential": true,
+      "user": "10001:10001",
+      "entryPoint": ["/bin/sh", "-ec"],
+      "command": [
+        "unset AWS_CONTAINER_CREDENTIALS_RELATIVE_URI AWS_CONTAINER_CREDENTIALS_FULL_URI AWS_WEB_IDENTITY_TOKEN_FILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN; exec campaign-assurance-model-sandbox"
+      ],
+      "dependsOn": [
+        { "containerName": "assurance-socket-init", "condition": "SUCCESS" },
+        { "containerName": "assurance-provider-gateway", "condition": "HEALTHY" }
+      ],
+      "mountPoints": [
+        { "sourceVolume": "model-worker-socket", "containerPath": "/run/postwave/model-worker", "readOnly": false },
+        { "sourceVolume": "model-provider-socket", "containerPath": "/run/postwave/model-provider", "readOnly": false },
+        { "sourceVolume": "model-sandbox-tmp", "containerPath": "/tmp", "readOnly": false }
+      ],
+      "environment": [
+        { "name": "HOME", "value": "/tmp" },
+        { "name": "POSTWAVE_ENV", "value": "production" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_SANDBOX_SOCKET", "value": "/run/postwave/model-worker/model.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_PROVIDER_GATEWAY_SOCKET", "value": "/run/postwave/model-provider/provider.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_SANDBOX_CLIENT_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_PROVIDER_GATEWAY_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_SANDBOX_TIMEOUT", "value": "65s" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_SANDBOX_CONCURRENCY", "value": "4" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_PRICING_VERSION", "value": "<reviewed-gemini-pricing-version>" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_INPUT_MICROUSD_PER_MILLION_TOKENS", "value": "<positive-integer>" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_OUTPUT_MICROUSD_PER_MILLION_TOKENS", "value": "<positive-integer>" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "test -S /run/postwave/model-worker/model.sock || exit 1"],
+        "interval": 15,
+        "timeout": 3,
+        "retries": 5,
+        "startPeriod": 20
+      },
+      "memory": 512,
+      "cpu": 384,
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "initProcessEnabled": true,
+        "capabilities": { "drop": ["ALL"] }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-campaign-assurance",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "model-sandbox"
+        }
+      }
+    },
+    {
+      "name": "assurance-ocr-sandbox",
+      "image": "<account>.dkr.ecr.us-west-2.amazonaws.com/postwave-campaign-assurance-image-services@<image-services-image-digest>",
+      "essential": true,
+      "user": "10001:10001",
+      "entryPoint": ["/bin/sh", "-ec"],
+      "command": [
+        "unset AWS_CONTAINER_CREDENTIALS_RELATIVE_URI AWS_CONTAINER_CREDENTIALS_FULL_URI AWS_WEB_IDENTITY_TOKEN_FILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN; exec campaign-assurance-ocr-sandbox"
+      ],
+      "dependsOn": [
+        { "containerName": "assurance-socket-init", "condition": "SUCCESS" }
+      ],
+      "mountPoints": [
+        { "sourceVolume": "image-ocr-socket", "containerPath": "/run/postwave/image-ocr", "readOnly": false },
+        { "sourceVolume": "ocr-tmp", "containerPath": "/tmp", "readOnly": false }
+      ],
+      "environment": [
+        { "name": "HOME", "value": "/tmp" },
+        { "name": "POSTWAVE_ENV", "value": "production" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_UNIX_SOCKET", "value": "/run/postwave/image-ocr/ocr.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_ENGINE", "value": "tesseract" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_VERSION", "value": "<exact-tesseract-semver>-eng.sha256.<eng-traineddata-sha256>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_CLIENT_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_CONCURRENCY", "value": "2" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_IPC_TIMEOUT", "value": "8s" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "test -S /run/postwave/image-ocr/ocr.sock || exit 1"],
+        "interval": 15,
+        "timeout": 3,
+        "retries": 5,
+        "startPeriod": 30
+      },
+      "memory": 1024,
+      "cpu": 640,
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "initProcessEnabled": true,
+        "capabilities": { "drop": ["ALL"] }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-campaign-assurance",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "ocr-sandbox"
+        }
+      }
+    },
+    {
+      "name": "assurance-content-scanner",
+      "image": "<account>.dkr.ecr.us-west-2.amazonaws.com/postwave-campaign-assurance-image-services@<image-services-image-digest>",
+      "essential": true,
+      "user": "10001:10001",
+      "entryPoint": ["/bin/sh", "-ec"],
+      "command": [
+        "unset AWS_CONTAINER_CREDENTIALS_RELATIVE_URI AWS_CONTAINER_CREDENTIALS_FULL_URI AWS_WEB_IDENTITY_TOKEN_FILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN; exec campaign-assurance-content-scanner"
+      ],
+      "dependsOn": [
+        { "containerName": "assurance-socket-init", "condition": "SUCCESS" }
+      ],
+      "mountPoints": [
+        { "sourceVolume": "image-scanner-socket", "containerPath": "/run/postwave/image-scanner", "readOnly": false },
+        { "sourceVolume": "scanner-tmp", "containerPath": "/tmp", "readOnly": false }
+      ],
+      "environment": [
+        { "name": "HOME", "value": "/tmp" },
+        { "name": "POSTWAVE_ENV", "value": "production" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_UNIX_SOCKET", "value": "/run/postwave/image-scanner/scanner.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_ENGINE", "value": "clamav" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_VERSION", "value": "<exact-clamav-engine-and-signature-database-version>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_CLIENT_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_CONCURRENCY", "value": "2" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_IPC_TIMEOUT", "value": "8s" }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "test -S /run/postwave/image-scanner/scanner.sock || exit 1"],
+        "interval": 15,
+        "timeout": 3,
+        "retries": 5,
+        "startPeriod": 45
+      },
+      "memory": 2048,
+      "cpu": 768,
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "initProcessEnabled": true,
+        "capabilities": { "drop": ["ALL"] }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-campaign-assurance",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "content-scanner"
+        }
+      }
+    },
+    {
+      "name": "assurance-image-broker",
+      "image": "<account>.dkr.ecr.us-west-2.amazonaws.com/postwave-campaign-assurance@<core-image-digest>",
+      "essential": true,
+      "user": "10001:10001",
+      "command": ["campaign-assurance-image-broker"],
+      "dependsOn": [
+        { "containerName": "assurance-socket-init", "condition": "SUCCESS" },
+        { "containerName": "assurance-ocr-sandbox", "condition": "HEALTHY" },
+        { "containerName": "assurance-content-scanner", "condition": "HEALTHY" }
+      ],
+      "mountPoints": [
+        { "sourceVolume": "image-worker-socket", "containerPath": "/run/postwave/image-worker", "readOnly": false },
+        { "sourceVolume": "image-ocr-socket", "containerPath": "/run/postwave/image-ocr", "readOnly": true },
+        { "sourceVolume": "image-scanner-socket", "containerPath": "/run/postwave/image-scanner", "readOnly": true },
+        { "sourceVolume": "image-broker-tmp", "containerPath": "/tmp", "readOnly": false }
+      ],
+      "environment": [
+        { "name": "HOME", "value": "/tmp" },
+        { "name": "AWS_REGION", "value": "us-west-2" },
+        { "name": "POSTWAVE_ENV", "value": "production" },
+        { "name": "POSTWAVE_ENABLE_CAMPAIGN_ASSURANCE_IMAGE_BROKER", "value": "true" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_ALLOWED_HOSTS", "value": "<reviewed-exact-image-hosts>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_UNIX_SOCKET", "value": "/run/postwave/image-ocr/ocr.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_ENGINE", "value": "tesseract" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_VERSION", "value": "<exact-tesseract-semver>-eng.sha256.<eng-traineddata-sha256>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_UNIX_SOCKET", "value": "/run/postwave/image-scanner/scanner.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_ENGINE", "value": "clamav" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_SCANNER_VERSION", "value": "<exact-clamav-engine-and-signature-database-version>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_EVIDENCE_BUCKET", "value": "<campaign-assurance-image-evidence-bucket-name>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_EVIDENCE_PREFIX", "value": "campaign-assurance/image-evidence/v1" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_EVIDENCE_KMS_KEY_ID", "value": "arn:aws:kms:us-west-2:<account>:key/<campaign-assurance-evidence-cmk-uuid>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_EVIDENCE_RETENTION", "value": "720h" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_OCR_CACHE_RETENTION", "value": "336h" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_IPC_TIMEOUT", "value": "8s" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_UNIX_SOCKET", "value": "/run/postwave/image-worker/broker.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_DEPLOYMENT_IDENTITY", "value": "postwave.campaign-image-broker.production.v1" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SERVER_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SERVER_GID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SOCKET_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SOCKET_GID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SOCKET_MODE", "value": "0600" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_ALLOWED_CLIENT_PEERS", "value": "10001:10001" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/db-dsn-XXXXXX"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "test -S /run/postwave/image-worker/broker.sock || exit 1"],
+        "interval": 15,
+        "timeout": 3,
+        "retries": 5,
+        "startPeriod": 45
+      },
+      "memory": 1536,
+      "cpu": 768,
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "initProcessEnabled": true,
+        "capabilities": { "drop": ["ALL"] }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-campaign-assurance",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "image-broker"
+        }
+      }
+    },
+    {
+      "name": "assurance-worker",
+      "image": "<account>.dkr.ecr.us-west-2.amazonaws.com/postwave-campaign-assurance@<core-image-digest>",
+      "essential": true,
+      "user": "10001:10001",
+      "command": ["campaign-assurance-worker"],
+      "dependsOn": [
+        { "containerName": "assurance-socket-init", "condition": "SUCCESS" },
+        { "containerName": "assurance-model-sandbox", "condition": "HEALTHY" },
+        { "containerName": "assurance-image-broker", "condition": "HEALTHY" }
+      ],
+      "mountPoints": [
+        { "sourceVolume": "model-worker-socket", "containerPath": "/run/postwave/model-worker", "readOnly": true },
+        { "sourceVolume": "image-worker-socket", "containerPath": "/run/postwave/image-worker", "readOnly": true },
+        { "sourceVolume": "worker-tmp", "containerPath": "/tmp", "readOnly": false }
+      ],
+      "environment": [
+        { "name": "HOME", "value": "/tmp" },
+        { "name": "AWS_REGION", "value": "us-west-2" },
+        { "name": "POSTWAVE_ENV", "value": "production" },
+        { "name": "POSTWAVE_ENABLE_CAMPAIGN_ASSURANCE_RUNTIME", "value": "true" },
+        { "name": "POSTWAVE_ENABLE_CAMPAIGN_ASSURANCE_MODELED", "value": "true" },
+        { "name": "POSTWAVE_ENABLE_CAMPAIGN_ASSURANCE_IMAGE_BROKER", "value": "true" },
+        { "name": "POSTWAVE_UPLOADS_BUCKET", "value": "<uploads-bucket-name>" },
+        { "name": "POSTWAVE_S3_KMS_KEY_ID", "value": "arn:aws:kms:us-west-2:<account>:key/<s3-uploads-cmk-uuid>" },
+        { "name": "POSTWAVE_KMS_KEY_ID", "value": "arn:aws:kms:us-west-2:<account>:key/<app-data-cmk-uuid>" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_SANDBOX_SOCKET", "value": "/run/postwave/model-worker/model.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_SANDBOX_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_MODEL_TIMEOUT", "value": "75s" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_PRICING_VERSION", "value": "<reviewed-gemini-pricing-version>" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_INPUT_MICROUSD_PER_MILLION_TOKENS", "value": "<positive-integer>" },
+        { "name": "POSTWAVE_CAMPAIGN_ASSURANCE_GEMINI_OUTPUT_MICROUSD_PER_MILLION_TOKENS", "value": "<positive-integer>" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_UNIX_SOCKET", "value": "/run/postwave/image-worker/broker.sock" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_DEPLOYMENT_IDENTITY", "value": "postwave.campaign-image-broker.production.v1" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SERVER_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SERVER_GID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SOCKET_UID", "value": "10001" },
+        { "name": "POSTWAVE_CAMPAIGN_IMAGE_BROKER_SOCKET_GID", "value": "10001" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/db-dsn-XXXXXX"
+        }
+      ],
+      "memory": 1536,
+      "cpu": 1024,
+      "readonlyRootFilesystem": true,
+      "linuxParameters": {
+        "initProcessEnabled": true,
+        "capabilities": { "drop": ["ALL"] }
+      },
+      "ulimits": [
+        { "name": "nofile", "softLimit": 8192, "hardLimit": 8192 }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-campaign-assurance",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "worker"
+        }
+      }
+    }
+  ],
+  "tags": [
+    { "key": "Service", "value": "postwave-campaign-assurance" },
+    { "key": "Environment", "value": "prod" },
+    { "key": "ManagedBy", "value": "ecs-campaign-assurance-task-definition.json" }
+  ]
+}

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <plain-text-heavy-announcement.v1@example.com>
+Subject: An update on pricing
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-pricing-v1"
+
+--pw-pricing-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We are changing our pricing on 1 October. Full details: https://www.example.com/pricing-2026
+--pw-pricing-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>An update on pricing</h1><p>From 1 October, the Starter plan moves from 12.00 to 14.00 USD per month. Existing customers keep current pricing until their next renewal. Nothing changes for annual plans purchased before that date.</p><p><a href="https://www.example.com/pricing-2026">Read the full details</a></p></body></html>
+--pw-pricing-v1--

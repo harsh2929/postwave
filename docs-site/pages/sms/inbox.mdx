@@ -1,0 +1,104 @@
+---
+title: Two-way SMS inbox
+---
+
+# Two-way SMS inbox
+
+The inbox presents tenant-bound retained SMS records to an exact administrator.
+It is a bounded evidence view, not proof of complete provider history or of every
+automated compliance response.
+
+> **HOLD / NO-GO:** reply dispatch returns
+> `sms_reply_dispatch_release_held`; HELP/custom outbound auto-replies return
+> `sms_auto_reply_dispatch_release_held`; hosted provider callbacks return
+> `sms_provider_callback_release_held`.
+
+## Endpoints
+
+| Method | Path                                                        | Purpose                                       |
+| ------ | ----------------------------------------------------------- | --------------------------------------------- |
+| GET    | `/api/v1/sms/conversations`                                 | List a strict, bounded conversation page.      |
+| GET    | `/api/v1/sms/conversations/{phone}/messages`                | List retained message records for one phone.   |
+| GET    | `/api/v1/sms/conversations/{phone}/context`                 | Load tenant/identity/consent evidence.          |
+| POST   | `/api/v1/sms/conversations/{phone}/reply`                   | Structurally held; no provider dispatch.        |
+| POST   | `/api/v1/sms/conversations/{phone}/mark-read`               | Mark exact decoded inbound message IDs read.   |
+
+`{phone}` is a US/Canada canonical `+1` number and is direct personal data.
+Never copy a conversation URL into telemetry or logs. Search text remains out
+of durable URL/history state.
+
+## Listing conversations
+
+The list supports server-bound filters and opaque cursor pagination. The
+response includes a created-at insertion cutoff. That cutoff prevents a later
+page from adding newer inserts, but it is **not** a repeatable MVCC snapshot:
+mutable status, deletion, and late commits can still change what exists.
+
+- Filters and sort values are query-bound.
+- `cursor` is opaque, signed, and bound to the same filter/sort identity.
+- `oldest_unread` is based on the earliest decoded unread inbound record.
+- A refresh replaces the loaded page and invalidates the prior cursor; clients
+  must never merge pages from two created-at boundaries.
+
+```bash
+curl "https://api.moosewave.com/api/v1/sms/conversations?filter=unread&limit=50" \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+Use only fictional `202-555-01xx` numbers in fixtures and screenshots.
+
+## Read boundary
+
+After the first message page strictly decodes, the client may submit the unique
+inbound message UUIDs actually loaded. It must not mark in parallel with the
+read or use an open-ended “all through now” boundary: a later inbound remains
+unread. A failed receipt write stays visible as an unread-sync warning.
+
+## Reply hold
+
+There is no supported reply example while dispatch is held. The source contract
+requires one durable idempotency key, exact sender/list/body intent recovery,
+and no automatic replay. An unknown or reconciliation-required outcome must
+retain the draft and same-key hold indefinitely; row presence alone is not a
+terminal provider result.
+
+Even after reply release, consent, suppression, sender readiness, budget
+reservation, provider receipt persistence, and recipient-local quiet-hour
+evaluation must all succeed. A context badge is not sufficient authority.
+
+## Keyword auto-responses
+
+Exact administrators can inspect retained `reply_only` and `opt_out` records.
+New mutable rules are limited to custom `opt_out` with the fixed response copy
+`You are unsubscribed from SMS marketing messages from this sender.` POST must
+send explicit `action=opt_out` and exactly one response-body alias containing
+that copy. First-party UIs keep legacy `reply_only` rows display/delete-only;
+the API permits mutation only through an atomic PATCH that supplies explicit
+`opt_out`, the fixed copy, and exact `expected_updated_at` together. An enabled
+custom opt-out rule is evaluated only on the verified inbound processing path.
+Hosted callbacks and custom or HELP outbound effects are structurally held, so
+a stored rule is not proof that a carrier message arrived or an instant reply
+was sent. STOP/carrier/complaint suppressions remain authoritative and locked.
+
+| Method | Path                                          | Scope          | Purpose                |
+| ------ | --------------------------------------------- | -------------- | ---------------------- |
+| GET    | `/api/v1/sms/keyword-responses`               | exact `admin` | List the complete bounded tenant inventory. |
+| POST   | `/api/v1/sms/keyword-responses`               | exact `admin` | Create one custom opt-out rule. |
+| PATCH  | `/api/v1/sms/keyword-responses/{id}`          | exact `admin` | Update with exact `expected_updated_at`. |
+| DELETE | `/api/v1/sms/keyword-responses/{id}`          | exact `admin` | Delete with exact `expected_updated_at`. |
+
+## Message evidence limits
+
+Bodies render as untrusted text with direction isolation. A legacy body outside
+the inbox contract is not silently truncated; the row carries an explicit
+omission reason and renders an unavailable-evidence state. Provider error text
+is not a trusted accessible label or tooltip.
+
+Hosted inbound/status callback effects are not available while
+`sms_provider_callback_release_held` is current. Checked-in receiver code and a
+configured URL are not live callback evidence.
+
+## See also
+
+- [Broadcasts & campaigns](/sms/broadcasts).
+- [Compliance](/sms/compliance) — STOP/HELP and consent.

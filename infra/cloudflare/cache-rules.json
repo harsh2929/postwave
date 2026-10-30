@@ -1,0 +1,40 @@
+{
+  "description": "Cache rules: short-cache hosted form GETs, never-cache authenticated API.",
+  "rules": [
+    {
+      "id": "cache_public_form_get",
+      "description": "Cache hosted-form HTML for 60s.",
+      "expression": "(http.request.method eq \"GET\") and (http.request.uri.path matches \"^/api/public/forms/[^/]+$\")",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": true,
+        "edge_ttl": {
+          "mode": "override_origin",
+          "default": 60
+        },
+        "browser_ttl": {
+          "mode": "override_origin",
+          "default": 0
+        }
+      }
+    },
+    {
+      "id": "bypass_authenticated_api",
+      "description": "Never cache /api/v1/* — these are tenant-scoped and authenticated.",
+      "expression": "(http.request.uri.path matches \"^/api/v1/\")",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": false
+      }
+    },
+    {
+      "id": "bypass_billing_webhooks",
+      "description": "Never cache Dodo Payments or compatibility Stripe billing webhooks.",
+      "expression": "(http.request.uri.path in {\"/api/public/dodo/webhook\" \"/api/public/stripe/webhook\"})",
+      "action": "set_cache_settings",
+      "action_parameters": {
+        "cache": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+/*
+ * Draft checkpoint banner (ECO-03) — the visible half of cross-device draft
+ * continuity inside the campaign slide-over.
+ *
+ * Its own file rather than a `.notice` reuse: the three states carry different
+ * meanings (a conflict is not an error, an offer is not a warning) and the
+ * shared inline-notice primitive is danger-tinted for all of them. Tokens only;
+ * scripts/css-token-reference-contract.test.mjs fails on an undefined --pw-*.
+ */
+
+.draft-checkpoint-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-2);
+  margin: var(--pw-sp-3) 0;
+}
+
+.draft-checkpoint {
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  font-size: 12px;
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev);
+}
+
+.draft-checkpoint--offer {
+  background: color-mix(in srgb, var(--pw-info) 8%, transparent);
+  border-color: color-mix(in srgb, var(--pw-info) 30%, transparent);
+}
+
+.draft-checkpoint--conflict {
+  background: color-mix(in srgb, var(--pw-warning) 8%, transparent);
+  border-color: color-mix(in srgb, var(--pw-warning) 30%, transparent);
+}
+
+.draft-checkpoint--refusal {
+  background: color-mix(in srgb, var(--pw-danger) 8%, transparent);
+  border-color: color-mix(in srgb, var(--pw-danger) 25%, transparent);
+}
+
+.draft-checkpoint-title {
+  margin: 0;
+  font-weight: 600;
+  line-height: var(--pw-leading-snug);
+}
+
+.draft-checkpoint-body {
+  margin: var(--pw-sp-1) 0 0;
+  color: var(--pw-fg-muted);
+  line-height: var(--pw-leading-normal);
+}
+
+.draft-checkpoint-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+  margin-top: var(--pw-sp-2);
+}

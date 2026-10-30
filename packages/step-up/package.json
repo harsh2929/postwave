@@ -1,0 +1,26 @@
+{
+  "name": "@postwave/step-up",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "The client half of apps/api/internal/stepup: challenge detection + the one-prompt-at-a-time broker, shared by Moosewave web/desktop/mobile so the step-up protocol cannot drift between clients. Dependency-free and DOM-light so React Native can consume it.",
+  "author": "Moosewave",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "files": [
+    "dist"
+  ]
+}

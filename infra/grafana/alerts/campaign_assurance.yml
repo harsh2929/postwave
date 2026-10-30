@@ -1,0 +1,100 @@
+# Campaign Assurance alerting.
+#
+# Assurance gates dispatch. Its failure modes are therefore asymmetric: a run
+# that STOPS is worse than a run that says no, because a blocked send is a
+# working system and a stuck run is a campaign that silently never leaves.
+#
+# The scrape-success rule comes first on purpose. Every other rule here is a
+# threshold on a gauge, and a gauge that stops being collected reads as zero —
+# which looks like perfect health. If the aggregate cannot be read, none of the
+# numbers below mean anything.
+groups:
+  - name: postwave-campaign-assurance
+    interval: 1m
+    rules:
+      - alert: CampaignAssuranceSLOScrapeFailing
+        expr: postwave_campaign_assurance_slo_scrape_success == 0
+        for: 5m
+        labels:
+          severity: page
+          service: campaign-assurance
+        annotations:
+          summary: "Campaign Assurance SLO aggregate cannot be read"
+          description: "The content-free SLO aggregate has failed to read for 5 minutes. Treat every other Campaign Assurance panel as unknown rather than healthy: an uncollected gauge renders as zero, which is indistinguishable from nothing being wrong. Check the ops definer role's grants and database reachability."
+
+      - alert: CampaignAssuranceRunsOrphaned
+        expr: postwave_campaign_assurance_orphaned_queued_runs > 0
+        for: 10m
+        labels:
+          severity: page
+          service: campaign-assurance
+        annotations:
+          summary: "Queued Campaign Assurance runs have no command"
+          description: "A run has been eligible for at least five minutes with no unfinished command, so nothing will ever pick it up. The campaign it gates cannot be sent and no error is surfaced to its owner. Check the command queue writer and the orchestrator."
+
+      - alert: CampaignAssuranceLeasesExpired
+        expr: postwave_campaign_assurance_expired_running_leases > 0
+        for: 10m
+        labels:
+          severity: page
+          service: campaign-assurance
+        annotations:
+          summary: "Campaign Assurance worker leases are expiring"
+          description: "A run is marked running while its worker lease has expired — the worker died mid-run or stopped heartbeating. Retries are bounded, so repeated expiry burns a run's attempts and lands it in failed."
+
+      - alert: CampaignAssuranceCommandBacklogAging
+        expr: postwave_campaign_assurance_oldest_ready_command_age_seconds > 900
+        for: 10m
+        labels:
+          severity: warning
+          service: campaign-assurance
+        annotations:
+          summary: "Campaign Assurance commands are waiting too long"
+          description: "The oldest deliverable command has waited over 15 minutes. Assurance sits in the pre-send path, so this is queue latency a sender feels directly as a campaign that will not go out."
+
+      # Deliberately NOT paging. A rise in blocked runs usually means assurance
+      # is doing its job against a batch of bad campaigns; it becomes an
+      # engineering question only if a deploy made the checks wrong. Waking
+      # someone for a working gate teaches them to ignore the gate.
+      - alert: CampaignAssuranceBlockRateElevated
+        expr: >
+          postwave_campaign_assurance_blocked_runs_24h > 20
+          and
+          postwave_campaign_assurance_blocked_runs_24h
+            > 0.5 * sum(postwave_campaign_assurance_terminal_runs_24h)
+        for: 30m
+        labels:
+          severity: warning
+          service: campaign-assurance
+        annotations:
+          summary: "Most Campaign Assurance runs are blocking sends"
+          description: "Over half of terminal runs in 24h ended in a block, on meaningful volume. Usually the senders' problem, not ours — but confirm no analyzer or Fact Contract change made the checks wrong before telling customers to fix their campaigns."
+
+      # An incomplete run is NOT a pass: required evidence was unavailable.
+      # Sustained incompleteness means the assurance verdict is unreliable, and
+      # an unreliable verdict is worse than an outage because it still renders.
+      - alert: CampaignAssuranceIncompleteRuns
+        expr: >
+          sum(postwave_campaign_assurance_terminal_runs_24h{state="incomplete"})
+            > 0.2 * sum(postwave_campaign_assurance_terminal_runs_24h)
+        for: 30m
+        labels:
+          severity: warning
+          service: campaign-assurance
+        annotations:
+          summary: "Campaign Assurance runs are finishing without complete evidence"
+          description: "Over a fifth of terminal runs in 24h ended incomplete. These are not passes — required evidence could not be gathered. Check the model provider, the image broker, and OCR/scanner sockets before trusting any recent receipt."
+
+      - alert: CampaignAssuranceGateEvaluationSlow
+        expr: >
+          histogram_quantile(
+            0.99,
+            sum by (le, surface) (rate(postwave_campaign_assurance_gate_duration_seconds_bucket[10m]))
+          ) > 1
+        for: 15m
+        labels:
+          severity: warning
+          service: campaign-assurance
+        annotations:
+          summary: "Campaign Assurance gate evaluation is slow"
+          description: "p99 gate evaluation exceeds one second. The gate is consulted on the send path and is supposed to read a cached receipt, so this is latency added to every queue attempt on the affected surface."

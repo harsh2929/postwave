@@ -1,0 +1,15 @@
+go 1.26.0
+
+toolchain go1.26.8
+
+use (
+	./apps/api
+	./packages/kms
+	./packages/migrate
+	./packages/runtime
+	./packages/secrets
+	./services/automation
+	./services/deliverability
+	./services/migration
+	./services/voice
+)

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <small-element-terms.v1@example.com>
+Subject: Bundle offer
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-small-v1"
+
+--pw-small-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three months for the price of two. https://shop.example.com/bundle
+--pw-small-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Bundle offer</h1><p>Three months for the price of two.</p><p><small>Offer applies to new annual plans only and ends 30 September.</small></p><p><a href="https://shop.example.com/bundle">See the bundle</a></p></body></html>
+--pw-small-v1--

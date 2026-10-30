@@ -1,0 +1,49 @@
+# Spectral ruleset for the Moosewave OpenAPI spec.
+#
+# The default OAS preset catches structural drift (missing $refs, bad
+# format strings, illegal enums). On top of that we enforce a small set
+# of project conventions via custom rules — necessary because Spectral
+# 6.x removed the `operation-summary` and `operation-tags` rules from
+# the OAS preset (they used to ship as built-ins; now you define them
+# yourself).
+#
+# Keep this ruleset short on purpose: a chatty linter gets ignored.
+
+extends:
+  - "spectral:oas"
+
+rules:
+  # `operation-operationId` is still in the OAS preset; bump severity.
+  operation-operationId: error
+  operation-operationId-valid-in-url: error
+  operation-description: error
+  operation-tag-defined: error
+
+  # Custom rules for the bits the OAS preset no longer ships. JSONPath
+  # `$.paths[*][get,post,put,patch,delete]` selects every operation
+  # object regardless of HTTP verb.
+  postwave-operation-summary:
+    description: Every operation must have a summary so the viewer (Scalar / Swagger UI) renders a useful card title.
+    given: "$.paths[*][get,post,put,patch,delete]"
+    severity: error
+    then:
+      field: summary
+      function: truthy
+
+  postwave-operation-tags:
+    description: Every operation must have at least one tag so the viewer can group it under the right section.
+    given: "$.paths[*][get,post,put,patch,delete]"
+    severity: error
+    then:
+      field: tags
+      function: truthy
+
+  # Tighten common gotchas to error severity so they fail CI.
+  no-$ref-siblings: error
+  oas3-unused-component: warn
+
+  # Disabling: contact-properties used to be built-in but was dropped
+  # in Spectral 6.x. We don't need it because contact info is a
+  # marketing concern, not a contract concern. We don't add it back
+  # as a custom rule.
+  # description-duplication and contact-properties are no-ops here.

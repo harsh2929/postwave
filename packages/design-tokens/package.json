@@ -1,0 +1,35 @@
+{
+  "name": "@postwave/design-tokens",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Single source of truth for the Moosewave brand (ember on warm-paper, Inter + Fraunces) — canonical color/typography/radius tokens consumed by web, desktop, mobile, and email, with a CI drift guard.",
+  "keywords": ["postwave", "design-tokens", "brand", "theme"],
+  "author": "Moosewave",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/design-tokens"
+  },
+  "bugs": {
+    "url": "https://github.com/harsh2929/postwave/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "user_id": "<uuid>",
+  "tenant_id": "<uuid>",
+  "email_on_send_complete": true,
+  "email_on_approval_request": true,
+  "email_on_bounce_alert": true,
+  "email_on_deliverability_alert": true,
+  "digest_frequency": "weekly",
+  "email_on_usage_alert": true,
+  "inapp_on_send_complete": true,
+  "inapp_on_approval_request": true,
+  "inapp_on_bounce_alert": true,
+  "inapp_on_deliverability_alert": true,
+  "inapp_on_usage_alert": true,
+  "webhook_on_send_complete": false,
+  "webhook_on_approval_request": false,
+  "webhook_on_bounce_alert": false,
+  "webhook_on_deliverability_alert": false,
+  "webhook_on_usage_alert": false,
+  "notification_webhook_url": "",
+  "notification_webhook_kind": "slack",
+  "updated_at": "<timestamp>"
+}

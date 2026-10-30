@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <alt-duplicates-adjacent-heading.v1@example.com>
+Subject: Summer menu
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-altdup-v1"
+
+--pw-altdup-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The summer menu is live: https://www.example.com/menu
+--pw-altdup-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><img src="https://cdn.example.com/menu.jpg" alt="Summer menu" width="600" height="300"><h1>Summer menu</h1><p>Twelve new dishes.</p><p><a href="https://www.example.com/menu">See the menu</a></p></body></html>
+--pw-altdup-v1--

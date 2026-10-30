@@ -1,0 +1,272 @@
+name: Trivy Container Scan
+
+# -----------------------------------------------------------------------------
+# Builds every published image locally, then scans it with Aqua Trivy. This
+# includes the API, all four Go services, the database migrator, web, and the
+# observability collector. It fails the PR on any HIGH or CRITICAL CVE that has
+# a fix available (UNFIXED vulns are reported but not blocking, since we cannot
+# remediate them upstream).
+#
+# Why local build instead of pulling ghcr.io tags:
+#   PRs need to scan the image *as it would be built from the PR's source*,
+#   not the last image pushed from main. The docker-push.yml workflow only
+#   runs on main, so on a PR there is no image in GHCR yet.
+#
+# Schedule:
+#   - PRs against main: blocks merge on new HIGH/CRITICAL fixable findings.
+#   - Push to main: re-scans so the Security tab reflects the actual shipped
+#     image (the PR-time image may have drifted vs. merged base).
+#   - Daily cron 02:00 UTC: re-scans the latest main image so newly disclosed
+#     CVEs surface even on weeks with no merges.
+#
+# Manual fix recipe — handling a Trivy finding:
+#   1. Reproduce locally:
+#        docker build -f Dockerfile.go --build-arg SERVICE_PATH=apps/api -t pw-api:scan .
+#        trivy image --severity HIGH,CRITICAL --ignore-unfixed pw-api:scan
+#      (install Trivy: brew install aquasecurity/trivy/trivy)
+#   2. If the CVE is in an OS package: bump the base image FROM line.
+#   3. If it's in a Go module: cd apps/api && go get <module>@<fixed-version>
+#      && go mod tidy && go build ./...
+#   4. If it's in an npm package (web): cd apps/web && pnpm up <pkg>@<fixed>
+#   5. If the CVE is genuinely not applicable (e.g. CVE-2024-XXXX in a
+#      transitive lib we don't load), add it to .trivyignore at the repo
+#      root with a comment explaining why and a re-evaluation date.
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "Dockerfile.go"
+      - ".dockerignore"
+      - "apps/api/**"
+      - "apps/audit-portal/**"
+      - "apps/ops/**"
+      - "apps/web/**"
+      - "services/**"
+      - "packages/**"
+      - "patches/**"
+      - "infra/migrations/**"
+      - "infra/observability/image/**"
+      - "infra/aws/observability-image-lock.json"
+      - "infra/aws/campaign-assurance-image-lock.json"
+      - "infra/aws/observability-stack.yaml"
+      - "scripts/check-observability-collector.sh"
+      - "scripts/check-security-scan-coverage.mjs"
+      - "scripts/release/verify-web-image.sh"
+      - "scripts/release/verify-campaign-assurance-image.sh"
+      - "scripts/release/build-migration-manifest.sh"
+      - "scripts/release/run-migrator.sh"
+      - "scripts/release/verify-migration-state.go"
+      - "go.mod"
+      - "go.sum"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - ".github/workflows/trivy.yml"
+      - ".github/workflows/docker-push.yml"
+  schedule:
+    # Daily at 02:00 UTC — catches CVEs disclosed after the last PR.
+    - cron: "0 2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  # Upload SARIF to the Security tab.
+  security-events: write
+  actions: read
+
+concurrency:
+  group: trivy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan-image:
+    name: Scan ${{ matrix.image.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: api
+            dockerfile: Dockerfile.go
+            context: .
+            target: ordinary-service
+            build_args: |
+              SERVICE_PATH=apps/api
+          - name: campaign-assurance
+            dockerfile: Dockerfile.go
+            context: .
+            target: campaign-assurance-core
+            build_args: |
+              SERVICE_PATH=apps/api
+          - name: campaign-assurance-image-services
+            dockerfile: Dockerfile.go
+            context: .
+            target: campaign-image-services
+            build_args: |
+              SERVICE_PATH=apps/api
+          - name: automation
+            dockerfile: Dockerfile.go
+            context: .
+            target: ordinary-service
+            build_args: |
+              SERVICE_PATH=services/automation
+          - name: deliverability
+            dockerfile: Dockerfile.go
+            context: .
+            target: ordinary-service
+            build_args: |
+              SERVICE_PATH=services/deliverability
+          - name: migration
+            dockerfile: Dockerfile.go
+            context: .
+            target: ordinary-service
+            build_args: |
+              SERVICE_PATH=services/migration
+          - name: voice
+            dockerfile: Dockerfile.go
+            context: .
+            target: ordinary-service
+            build_args: |
+              SERVICE_PATH=services/voice
+          - name: db-migrator
+            dockerfile: infra/migrations/Dockerfile
+            context: .
+            build_args: ""
+          - name: web
+            dockerfile: apps/web/Dockerfile
+            # The web Dockerfile copies pnpm-lock.yaml, pnpm-workspace.yaml,
+            # turbo.json, and patches/ from the repo root so the build
+            # context must be the repo root, not apps/web.
+            context: .
+            build_args: |
+              POSTWAVE_RELEASE=0123456789abcdef0123456789abcdef01234567
+              NEXT_PUBLIC_POSTWAVE_RELEASE=0123456789abcdef0123456789abcdef01234567
+              NEXT_PUBLIC_SITE_URL=https://moosewave.com
+              NEXT_PUBLIC_APP_URL=https://app.moosewave.com
+              NEXT_PUBLIC_DOCS_URL=https://docs.moosewave.com
+              NEXT_PUBLIC_FORMS_ORIGIN=https://forms.moosewave.com
+              NEXT_PUBLIC_POSTWAVE_ASSETS_BASE_URL=https://assets.moosewave.com
+              NEXT_PUBLIC_POSTWAVE_UPLOAD_ORIGIN=https://postwave-uploads-scan.s3.us-west-2.amazonaws.com
+              NEXT_PUBLIC_WEB_VITALS_ENDPOINT=https://api.moosewave.com/api/internal/web-vitals
+              # Non-published scan fixture. The publisher uses the reviewed
+              # repository variable and its build fails closed when absent.
+              NEXT_PUBLIC_POSTWAVE_CONSENT_SITE_KEY=pwk_0123456789abcdef0123456789abcdef0123456789abcdef
+              NEXT_PUBLIC_POSTWAVE_API_BASE_URL=https://api.moosewave.com
+              NEXT_PUBLIC_POSTHOG_HOST=https://eu.posthog.com
+          # Scan-only images: the internal ops console and the standalone
+          # audit-portal SPA are built and shipped from this repo but are not
+          # published to GHCR (they have no ECR repo and no ecr-bridge entry).
+          # They still carry a Node/nginx runtime and a node_modules tree, so a
+          # newly disclosed HIGH/CRITICAL must block the merge here exactly as
+          # it does for the web image.
+          - name: ops
+            dockerfile: apps/ops/Dockerfile
+            # The ops Dockerfile copies the workspace lockfile and turbo.json
+            # from the repo root, so the context must be the repo root.
+            context: .
+            build_args: ""
+          - name: audit-portal
+            dockerfile: apps/audit-portal/Dockerfile
+            context: .
+            build_args: ""
+          - name: observability-collector
+            dockerfile: infra/observability/image/Dockerfile
+            context: infra/observability/image
+            build_args: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Validate published-image and dependency scan inventory
+        run: node scripts/check-security-scan-coverage.mjs
+
+      - name: Validate Campaign Assurance image lock
+        id: assurance_image_lock
+        run: |
+          set -euo pipefail
+          jq -e '
+            .schemaVersion == "postwave.campaign-assurance-image-lock.v1" and
+            (.clamav.dailyDatabaseRevision | type) == "number" and
+            .clamav.dailyDatabaseRevision > 0
+          ' infra/aws/campaign-assurance-image-lock.json >/dev/null
+          revision="$(jq -r '.clamav.dailyDatabaseRevision' infra/aws/campaign-assurance-image-lock.json)"
+          printf '%s' "$revision" | grep -Eq '^[0-9]+$'
+          echo "clamav_database_revision=${revision}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      # Build the image locally so the scan reflects PR source.
+      # `load: true` keeps the image in the local docker daemon for Trivy.
+      - name: Build image (${{ matrix.image.name }})
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          target: ${{ matrix.image.target }}
+          push: false
+          load: true
+          tags: pw-${{ matrix.image.name }}:scan
+          build-args: |
+            CLAMAV_DATABASE_REFRESH=${{ github.sha }}
+            CLAMAV_DATABASE_VERSION=${{ steps.assurance_image_lock.outputs.clamav_database_revision }}
+            ${{ matrix.image.build_args }}
+          cache-from: type=gha,scope=trivy-${{ matrix.image.name }}
+          cache-to: type=gha,scope=trivy-${{ matrix.image.name }},mode=max
+
+      - name: Verify collector hardened startup contract
+        if: ${{ matrix.image.name == 'observability-collector' }}
+        env:
+          POSTWAVE_COLLECTOR_IMAGE: pw-observability-collector:scan
+        run: bash scripts/check-observability-collector.sh
+
+      - name: Verify standalone web runtime artifact
+        if: ${{ matrix.image.name == 'web' }}
+        run: bash scripts/release/verify-web-image.sh pw-web:scan
+
+      # Two-pass scan:
+      #   Pass 1 (SARIF): always run, uploads results to Security tab, never
+      #     fails the job — keeps the dashboard accurate.
+      #   Pass 2 (table + exit-code=1): fails the job on HIGH/CRITICAL fixable
+      #     vulns. Two passes is documented Trivy practice because the action
+      #     can't both upload SARIF *and* fail on threshold reliably in v0.
+      - name: Run Trivy (SARIF upload, non-blocking)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: pw-${{ matrix.image.name }}:scan
+          format: sarif
+          output: trivy-${{ matrix.image.name }}.sarif
+          severity: "CRITICAL,HIGH,MEDIUM"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          exit-code: "0"
+          trivyignores: ".trivyignore"
+          version: v0.74.0
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        with:
+          sarif_file: trivy-${{ matrix.image.name }}.sarif
+          category: trivy-${{ matrix.image.name }}
+
+      - name: Run Trivy (block PR on HIGH/CRITICAL fixable)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: pw-${{ matrix.image.name }}:scan
+          format: table
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          # exit-code=1 turns any matching CVE into a failed step → failed PR.
+          exit-code: "1"
+          trivyignores: ".trivyignore"
+          version: v0.74.0

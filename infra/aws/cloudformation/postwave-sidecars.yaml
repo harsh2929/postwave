@@ -1,0 +1,958 @@
+# postwave-sidecars.yaml
+#
+# Independent CloudFormation module for the four Moosewave sidecar
+# services: voice (8083), automation (8084), deliverability (8082),
+# and migration (8081). Companion to postwave-stack.yaml, which owns
+# the API task definition + ALB.
+#
+# Why a separate file (not inline in postwave-stack.yaml):
+#   - The sidecar lifecycle is independent of the API (we can roll
+#     forward the API without rolling the sidecars, and vice-versa).
+#   - postwave-stack.yaml is the security-reviewed parent module;
+#     pulling sidecar wiring into its own module keeps its lifecycle
+#     and audit surface independent.
+#   - Allows the GHCR -> ECR bridge in .github/workflows/ecr-bridge.yml
+#     to push four extra repos without forcing a full-stack update;
+#     this module can be deployed (or updated) on its own once the
+#     parent stack has stood up.
+#
+# Pattern mirrors ApiTaskDefinition in postwave-stack.yaml: ARM64
+# Fargate, shared task + execution roles passed in as parameters,
+# secrets pulled from Secrets Manager. Smaller default footprint
+# (512/1024) than the API since these are single-purpose; automation
+# is bumped to 1024/2048 because it runs Asynq workers in-process
+# alongside the HTTP surface.
+#
+# No LoadBalancers wiring -- sidecars are reached by the API over ECS
+# Service Discovery / Cloud Map. The parent stack owns the namespace;
+# this module owns the four discovery services and registrations.
+# DesiredCount is forced to zero during bootstrap. The runbook enables the
+# four services only after the digest-pinned migrator exits zero and every
+# runtime secret/dependency is ready.
+# MinimumHealthyPercent=0 lets a single-task service roll cleanly.
+#
+# ORDER OF OPERATIONS (critical):
+#   1. Deploy postwave-stack.yaml first (API + RDS + ECS cluster + the
+#      EcsTaskSecurityGroup the sidecars depend on).
+#   2. Resolve and verify the immutable ECR digest for each sidecar.
+#   3. Deploy this stack with DeploySidecarServices=false.
+#   4. Run the one-shot database migrator and populate all external secrets.
+#   5. Update this stack with DeploySidecarServices=true.
+#
+# Deploy:
+#   aws cloudformation deploy \
+#     --template-file infra/aws/cloudformation/postwave-sidecars.yaml \
+#     --stack-name postwave-sidecars-prod \
+#     --capabilities CAPABILITY_IAM \
+#     --parameter-overrides \
+#         VoiceImageDigest=sha256:<64-hex> \
+#         AutomationImageDigest=sha256:<64-hex> \
+#         DeliverabilityImageDigest=sha256:<64-hex> \
+#         MigrationImageDigest=sha256:<64-hex> \
+#         DeploySidecarServices=false \
+#         VpcId=vpc-xxx \
+#         PrivateSubnetIds=subnet-aaa,subnet-bbb \
+#         EcsClusterName=postwave-prod \
+#         ServiceDiscoveryNamespaceId=ns-xxxxxxxxxxxxxxxx \
+#         EcsApiSecurityGroupId=sg-xxx \
+#         RdsSecurityGroupId=sg-yyy \
+#         TaskRoleArn=arn:aws:iam::...:role/postwave-prod-task \
+#         TaskExecutionRoleArn=arn:aws:iam::...:role/postwave-prod-task-exec \
+#         DbDsnSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/db-dsn-... \
+#         RedisUrlSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/redis-url-... \
+#         InternalApiTokenSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/internal-api-token-... \
+#         MetricsTokenSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/metrics-token-... \
+#         GeminiApiKeySecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/gemini-api-key-... \
+#         OpenAiApiKeySecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/openai-api-key-... \
+#         HctiUserIdSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/hcti-user-id-... \
+#         HctiApiKeySecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/hcti-api-key-... \
+#         SeedlistRegistrySecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/seedlist-registry-json-... \
+#         SeedlistVendorApiKeySecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/seedlist-vendor-api-key-... \
+#         ListmonkAdminPasswordSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/listmonk-admin-password-... \
+#         MigrationSessionKekSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/migration-session-kek-... \
+#         MigrationStripeSecretKeyArn=arn:aws:secretsmanager:...:secret:postwave/prod/migration-stripe-secret-key-... \
+#         MailchimpClientIdSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/migration-mailchimp-client-id-... \
+#         MailchimpClientSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/migration-mailchimp-client-secret-... \
+#         ConvertKitClientIdSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/migration-convertkit-client-id-... \
+#         ConvertKitClientSecretArn=arn:aws:secretsmanager:...:secret:postwave/prod/migration-convertkit-client-secret-... \
+#         MigrationOAuthRedirectUri=https://app.example.com/app/migrations/oauth/callback?source={source} \
+#     --region us-west-2
+#
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Moosewave sidecar services -- ECS Fargate task definitions + services
+  for voice (8083), automation (8084), deliverability (8082), and
+  migration (8081). Designed to deploy as a sibling stack to
+  postwave-stack.yaml.
+
+Parameters:
+  TenantEmailRoutesSecretArn:
+    Type: String
+    Default: ""
+    Description: Shared LISTMONK_TENANT_ROUTES JSON secret used by migration, API and automation; one dedicated instance per tenant.
+  MigrationUploadFileSystemId:
+    Type: String
+    Default: ""
+    AllowedPattern: '^$|^fs-[0-9a-f]+$'
+  MigrationUploadAccessPointId:
+    Type: String
+    Default: ""
+    AllowedPattern: '^$|^fsap-[0-9a-f]+$'
+  VoiceImageDigest:
+    Type: String
+    Description: >
+      Immutable ECR manifest-list digest for postwave-voice.
+    AllowedPattern: "^sha256:[0-9a-f]{64}$"
+
+  AutomationImageDigest:
+    Type: String
+    Description: Immutable ECR manifest-list digest for postwave-automation.
+    AllowedPattern: "^sha256:[0-9a-f]{64}$"
+
+  DeliverabilityImageDigest:
+    Type: String
+    Description: Immutable ECR manifest-list digest for postwave-deliverability.
+    AllowedPattern: "^sha256:[0-9a-f]{64}$"
+
+  MigrationImageDigest:
+    Type: String
+    Description: Immutable ECR manifest-list digest for postwave-migration.
+    AllowedPattern: "^sha256:[0-9a-f]{64}$"
+
+  DeploySidecarServices:
+    Type: String
+    Default: "false"
+    AllowedValues: ["false", "true"]
+    Description: >
+      Bootstrap safety gate. Keep false until the one-shot migrator exits zero
+      and Redis/Listmonk plus every external secret are production-ready.
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID (same as the parent stack).
+
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnets across at least two AZs. Same set as the parent stack.
+
+  EcsClusterName:
+    Type: String
+    Description: >
+      Name of the ECS cluster from the parent stack (output
+      `EcsClusterName`). Sidecars join the same cluster as the API so
+      one Container Insights dashboard covers the whole fleet.
+
+  ServiceDiscoveryNamespaceId:
+    Type: String
+    MinLength: 1
+    Description: Cloud Map private DNS namespace ID output by the parent stack.
+
+  EcsApiSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: >
+      Security group ID of the API ECS tasks. Sidecars create their own
+      SG which permits ingress from this SG on the sidecar HTTP ports
+      (8081-8084).
+
+  RdsSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: >
+      RDS security group ID from the parent stack. This stack adds an
+      ingress rule allowing the sidecar SG to reach Postgres on 5432.
+
+  TaskRoleArn:
+    Type: String
+    Description: ECS task role ARN (same as the parent stack).
+
+  TaskExecutionRoleArn:
+    Type: String
+    Description: ECS task execution role ARN (same as the parent stack).
+
+  DbDsnSecretArn:
+    Type: String
+    Description: >
+      ARN of the existing postwave/prod/db-dsn secret created exactly once
+      by the bootstrap. Sidecars consume the same DATABASE_URL as the API.
+
+  RedisUrlSecretArn:
+    Type: String
+    Description: Existing postwave/prod/redis-url secret ARN.
+
+  InternalApiTokenSecretArn:
+    Type: String
+    Description: Existing postwave/prod/internal-api-token secret ARN.
+
+  MetricsTokenSecretArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:postwave/prod/metrics-token-[A-Za-z0-9]+$"
+    Description: >
+      Existing postwave/prod/metrics-token secret ARN. Used only by the
+      authenticated /metrics scrape path.
+
+  GeminiApiKeySecretArn:
+    Type: String
+    Description: Existing postwave/prod/gemini-api-key secret ARN.
+
+  OpenAiApiKeySecretArn:
+    Type: String
+    Description: Existing postwave/prod/openai-api-key secret ARN.
+
+  HctiUserIdSecretArn:
+    Type: String
+    Description: Existing postwave/prod/hcti-user-id secret ARN.
+
+  HctiApiKeySecretArn:
+    Type: String
+    Description: Existing postwave/prod/hcti-api-key secret ARN.
+
+  SeedlistRegistrySecretArn:
+    Type: String
+    Description: Existing postwave/prod/seedlist-registry-json secret ARN.
+
+  SeedlistVendorApiKeySecretArn:
+    Type: String
+    Description: Existing postwave/prod/seedlist-vendor-api-key secret ARN.
+
+  ListmonkAdminPasswordSecretArn:
+    Type: String
+    Description: Existing postwave/prod/listmonk-admin-password secret ARN.
+
+  MigrationSessionKekSecretArn:
+    Type: String
+    Description: Existing postwave/prod/migration-session-kek secret ARN.
+
+  MigrationStripeSecretKeyArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:postwave/prod/migration-stripe-secret-key-[A-Za-z0-9]+$"
+    Description: >
+      Existing postwave/prod/migration-stripe-secret-key ARN. This must contain
+      a live restricted Stripe key with connected-account Subscriptions: Read
+      and Customers: Read only. It must have no billing-session or write grants.
+
+  MailchimpClientIdSecretArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:postwave/prod/migration-mailchimp-client-id-[A-Za-z0-9]+$"
+    Description: Existing postwave/prod/migration-mailchimp-client-id secret ARN.
+
+  MailchimpClientSecretArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:postwave/prod/migration-mailchimp-client-secret-[A-Za-z0-9]+$"
+    Description: Existing postwave/prod/migration-mailchimp-client-secret secret ARN.
+
+  ConvertKitClientIdSecretArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:postwave/prod/migration-convertkit-client-id-[A-Za-z0-9]+$"
+    Description: Existing postwave/prod/migration-convertkit-client-id secret ARN.
+
+  ConvertKitClientSecretArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:postwave/prod/migration-convertkit-client-secret-[A-Za-z0-9]+$"
+    Description: Existing postwave/prod/migration-convertkit-client-secret secret ARN.
+
+  MigrationOAuthRedirectUri:
+    Type: String
+    AllowedPattern: '^https://[^\s]+/app/migrations/oauth/callback\?source=\{source\}$'
+    Description: >
+      Public web callback template. The migration service substitutes the
+      canonical source name for {source}; register each resulting URI with its
+      corresponding provider.
+
+  ActiveCampaignAllowedAPIHosts:
+    Type: String
+    Default: ""
+    Description: >
+      Optional comma-separated exact DNS hostnames from ActiveCampaign's
+      Developer tab when an account API URL is outside the built-in
+      api-us1.com and activehosted.com domains. Do not include schemes, ports,
+      paths, wildcards, IPs, localhost, whitespace, or empty entries.
+
+  ListmonkInternalUrl:
+    Type: String
+    Description: >
+      Private URL of the separately deployed Listmonk service. It must be
+      resolvable and reachable from the sidecar security group before rollout.
+
+  ListmonkAdminUser:
+    Type: String
+    MinLength: 1
+    Description: Rotated Listmonk admin/API username used by internal services.
+
+  ListmonkTenantMode:
+    Type: String
+    Default: shared
+    AllowedValues: [shared, dedicated]
+    Description: >
+      Migration subscriber isolation mode. Keep shared for the multi-tenant
+      platform (every subscriber-capable migration commit then fails closed).
+      Use dedicated only when ListmonkInternalUrl names an instance isolated
+      to exactly one Moosewave tenant and set ListmonkDedicatedTenantId to that
+      tenant UUID.
+
+  ListmonkDedicatedTenantId:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    Description: >
+      Exact Moosewave tenant UUID bound to a dedicated Listmonk instance. Empty
+      in shared mode; a dedicated migration commit validates an exact match.
+
+  SeedlistVendorApiUrl:
+    Type: String
+    MinLength: 1
+    AllowedPattern: "^https://.+$"
+    Description: HTTPS endpoint for the production seed-list vendor/proxy.
+
+Rules:
+  MigrationUploadStorageRequiresBothIdentifiers:
+    Assertions:
+      - Assert: !Or
+          - !And
+            - !Equals [!Ref MigrationUploadFileSystemId, ""]
+            - !Equals [!Ref MigrationUploadAccessPointId, ""]
+          - !And
+            - !Not [!Equals [!Ref MigrationUploadFileSystemId, ""]]
+            - !Not [!Equals [!Ref MigrationUploadAccessPointId, ""]]
+        AssertDescription: Supply both the EFS filesystem and access point, or neither.
+
+Conditions:
+  SidecarServicesEnabled: !Equals [!Ref DeploySidecarServices, "true"]
+  HasTenantEmailRoutes: !Not [!Equals [!Ref TenantEmailRoutesSecretArn, ""]]
+  HasMigrationUploadStorage: !And
+    - !Not [!Equals [!Ref MigrationUploadFileSystemId, ""]]
+    - !Not [!Equals [!Ref MigrationUploadAccessPointId, ""]]
+
+Resources:
+  # -------------------------------------------------------------------
+  # Security group for the sidecar tasks
+  # -------------------------------------------------------------------
+  # Sidecars are NOT internet-facing; the API talks to them over the
+  # private VPC. This SG accepts traffic only from the API task SG.
+  # -------------------------------------------------------------------
+
+  EcsSidecarSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: >
+        Moosewave sidecar tasks (voice 8083 / automation 8084 /
+        deliverability 8082 / migration 8081). Ingress from API task
+        SG only.
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8081
+          ToPort: 8084
+          SourceSecurityGroupId: !Ref EcsApiSecurityGroupId
+          Description: Sidecar HTTP ports (8081-8084) from API tasks
+
+  # Allow sidecar SG -> RDS on 5432. Implemented as a separate
+  # SecurityGroupIngress resource (not inline on RdsSecurityGroup)
+  # because RdsSecurityGroup lives in the parent stack.
+  RdsIngressFromSidecars:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref RdsSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref EcsSidecarSecurityGroup
+      Description: Postgres from postwave sidecar tasks
+
+  ApiIngressFromSidecars:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EcsApiSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 8080
+      ToPort: 8080
+      SourceSecurityGroupId: !Ref EcsSidecarSecurityGroup
+      Description: Moosewave API from private sidecar tasks
+
+  VoiceDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: voice
+      DnsConfig:
+        NamespaceId: !Ref ServiceDiscoveryNamespaceId
+        RoutingPolicy: MULTIVALUE
+        DnsRecords: [{ Type: A, TTL: 10 }]
+      HealthCheckCustomConfig: { FailureThreshold: 1 }
+
+  AutomationDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: automation
+      DnsConfig:
+        NamespaceId: !Ref ServiceDiscoveryNamespaceId
+        RoutingPolicy: MULTIVALUE
+        DnsRecords: [{ Type: A, TTL: 10 }]
+      HealthCheckCustomConfig: { FailureThreshold: 1 }
+
+  DeliverabilityDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: deliverability
+      DnsConfig:
+        NamespaceId: !Ref ServiceDiscoveryNamespaceId
+        RoutingPolicy: MULTIVALUE
+        DnsRecords: [{ Type: A, TTL: 10 }]
+      HealthCheckCustomConfig: { FailureThreshold: 1 }
+
+  MigrationDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: migration
+      DnsConfig:
+        NamespaceId: !Ref ServiceDiscoveryNamespaceId
+        RoutingPolicy: MULTIVALUE
+        DnsRecords: [{ Type: A, TTL: 10 }]
+      HealthCheckCustomConfig: { FailureThreshold: 1 }
+
+  # -------------------------------------------------------------------
+  # Sidecar secrets are created exactly once by the bootstrap runbook and
+  # supplied as parameters. This stack never creates duplicate named secrets.
+  # -------------------------------------------------------------------
+  # REDIS_URL backs automation's wait-node scheduler (Asynq) and is
+  # used as transient state by voice/deliverability/migration.
+  # POSTWAVE_INTERNAL_API_TOKEN gates sidecar-only HTTP routes; API +
+  # all four sidecars consume the same value. Rotate everywhere
+  # together.
+  # -------------------------------------------------------------------
+
+  # -------------------------------------------------------------------
+  # Voice service (port 8083)
+  # -------------------------------------------------------------------
+
+  VoiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-voice
+      RetentionInDays: 90
+
+  AutomationLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-automation
+      RetentionInDays: 90
+
+  DeliverabilityLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-deliverability
+      RetentionInDays: 90
+
+  MigrationLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-migration
+      RetentionInDays: 90
+
+  VoiceTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: postwave-voice
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !Ref TaskExecutionRoleArn
+      TaskRoleArn: !Ref TaskRoleArn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      Volumes:
+        - Name: postwave-voice-tmp
+      ContainerDefinitions:
+        - Name: postwave-voice
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/postwave-voice@${VoiceImageDigest}"
+          Essential: true
+          ReadonlyRootFilesystem: true
+          PortMappings:
+            - ContainerPort: 8083
+              Protocol: tcp
+          MountPoints:
+            - SourceVolume: postwave-voice-tmp
+              ContainerPath: /tmp
+              ReadOnly: false
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: POSTWAVE_ENV
+              Value: production
+            - Name: PORT
+              Value: "8083"
+            - Name: LOG_LEVEL
+              Value: info
+            - Name: LISTMONK_URL
+              Value: !Ref ListmonkInternalUrl
+            - Name: LISTMONK_ADMIN_USER
+              Value: !Ref ListmonkAdminUser
+            - Name: VOICE_PROMPTS_PATH
+              Value: /etc/postwave/proprietary/prompts/voice
+            - Name: VOICE_TEMPLATES_PATH
+              Value: /etc/postwave/proprietary/templates/voice-templates
+          Secrets:
+            - Name: DATABASE_URL
+              ValueFrom: !Ref DbDsnSecretArn
+            - Name: REDIS_URL
+              ValueFrom: !Ref RedisUrlSecretArn
+            - Name: POSTWAVE_INTERNAL_API_TOKEN
+              ValueFrom: !Ref InternalApiTokenSecretArn
+            - Name: METRICS_TOKEN
+              ValueFrom: !Ref MetricsTokenSecretArn
+            - Name: GEMINI_API_KEY
+              ValueFrom: !Ref GeminiApiKeySecretArn
+            - Name: OPENAI_API_KEY
+              ValueFrom: !Ref OpenAiApiKeySecretArn
+            - Name: LISTMONK_ADMIN_PASSWORD
+              ValueFrom: !Ref ListmonkAdminPasswordSecretArn
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - "wget -qO- http://localhost:8083/health || exit 1"
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref VoiceLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: voice
+
+  VoiceService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsClusterName
+      ServiceName: postwave-voice
+      TaskDefinition: !Ref VoiceTaskDefinition
+      DesiredCount: !If [SidecarServicesEnabled, 1, 0]
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref EcsSidecarSecurityGroup
+          AssignPublicIp: DISABLED
+      ServiceRegistries:
+        - RegistryArn: !GetAtt VoiceDiscoveryService.Arn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 0
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+  # -------------------------------------------------------------------
+  # Automation service (port 8084) -- 1024/2048 because Asynq workers
+  # run in-process alongside the HTTP surface.
+  # -------------------------------------------------------------------
+
+  AutomationTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: postwave-automation
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: "1024"
+      Memory: "2048"
+      ExecutionRoleArn: !Ref TaskExecutionRoleArn
+      TaskRoleArn: !Ref TaskRoleArn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      Volumes:
+        - Name: postwave-automation-tmp
+      ContainerDefinitions:
+        - Name: postwave-automation
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/postwave-automation@${AutomationImageDigest}"
+          Essential: true
+          ReadonlyRootFilesystem: true
+          PortMappings:
+            - ContainerPort: 8084
+              Protocol: tcp
+          MountPoints:
+            - SourceVolume: postwave-automation-tmp
+              ContainerPath: /tmp
+              ReadOnly: false
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: POSTWAVE_ENV
+              Value: production
+            - Name: PORT
+              Value: "8084"
+            - Name: LOG_LEVEL
+              Value: info
+            - Name: LISTMONK_URL
+              Value: !Ref ListmonkInternalUrl
+            - Name: LISTMONK_ADMIN_USER
+              Value: !Ref ListmonkAdminUser
+          Secrets:
+            - !If
+              - HasTenantEmailRoutes
+              - Name: LISTMONK_TENANT_ROUTES
+                ValueFrom: !Ref TenantEmailRoutesSecretArn
+              - !Ref AWS::NoValue
+            - Name: DATABASE_URL
+              ValueFrom: !Ref DbDsnSecretArn
+            - Name: REDIS_URL
+              ValueFrom: !Ref RedisUrlSecretArn
+            - Name: POSTWAVE_INTERNAL_API_TOKEN
+              ValueFrom: !Ref InternalApiTokenSecretArn
+            - Name: METRICS_TOKEN
+              ValueFrom: !Ref MetricsTokenSecretArn
+            - Name: LISTMONK_ADMIN_PASSWORD
+              ValueFrom: !Ref ListmonkAdminPasswordSecretArn
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - "wget -qO- http://localhost:8084/health || exit 1"
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref AutomationLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: automation
+
+  AutomationService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsClusterName
+      ServiceName: postwave-automation
+      TaskDefinition: !Ref AutomationTaskDefinition
+      DesiredCount: !If [SidecarServicesEnabled, 1, 0]
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref EcsSidecarSecurityGroup
+          AssignPublicIp: DISABLED
+      ServiceRegistries:
+        - RegistryArn: !GetAtt AutomationDiscoveryService.Arn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 0
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+  # -------------------------------------------------------------------
+  # Deliverability service (port 8082)
+  # -------------------------------------------------------------------
+
+  DeliverabilityTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: postwave-deliverability
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !Ref TaskExecutionRoleArn
+      TaskRoleArn: !Ref TaskRoleArn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      Volumes:
+        - Name: postwave-deliverability-tmp
+      ContainerDefinitions:
+        - Name: postwave-deliverability
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/postwave-deliverability@${DeliverabilityImageDigest}"
+          Essential: true
+          ReadonlyRootFilesystem: true
+          PortMappings:
+            - ContainerPort: 8082
+              Protocol: tcp
+          MountPoints:
+            - SourceVolume: postwave-deliverability-tmp
+              ContainerPath: /tmp
+              ReadOnly: false
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: POSTWAVE_ENV
+              Value: production
+            - Name: PORT
+              Value: "8082"
+            - Name: LOG_LEVEL
+              Value: info
+            - Name: LISTMONK_URL
+              Value: !Ref ListmonkInternalUrl
+            - Name: LISTMONK_ADMIN_USER
+              Value: !Ref ListmonkAdminUser
+            - Name: DIAGNOSTICIAN_PROMPTS_PATH
+              Value: /etc/postwave/proprietary/prompts/diagnostician
+            - Name: DIAGNOSTICIAN_EVAL_CASES_PATH
+              Value: /etc/postwave/proprietary/eval/diagnostician-cases
+            - Name: SEEDLIST_CONNECTOR
+              Value: vendor
+            - Name: SEEDLIST_VENDOR_API_URL
+              Value: !Ref SeedlistVendorApiUrl
+          Secrets:
+            - Name: DATABASE_URL
+              ValueFrom: !Ref DbDsnSecretArn
+            - Name: REDIS_URL
+              ValueFrom: !Ref RedisUrlSecretArn
+            - Name: POSTWAVE_INTERNAL_API_TOKEN
+              ValueFrom: !Ref InternalApiTokenSecretArn
+            - Name: METRICS_TOKEN
+              ValueFrom: !Ref MetricsTokenSecretArn
+            - Name: GEMINI_API_KEY
+              ValueFrom: !Ref GeminiApiKeySecretArn
+            - Name: HCTI_USER_ID
+              ValueFrom: !Ref HctiUserIdSecretArn
+            - Name: HCTI_API_KEY
+              ValueFrom: !Ref HctiApiKeySecretArn
+            - Name: POSTWAVE_SEEDLIST_IMAP_JSON
+              ValueFrom: !Ref SeedlistRegistrySecretArn
+            - Name: SEEDLIST_VENDOR_API_KEY
+              ValueFrom: !Ref SeedlistVendorApiKeySecretArn
+            - Name: LISTMONK_ADMIN_PASSWORD
+              ValueFrom: !Ref ListmonkAdminPasswordSecretArn
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - "wget -qO- http://localhost:8082/health || exit 1"
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref DeliverabilityLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: deliverability
+
+  DeliverabilityService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsClusterName
+      ServiceName: postwave-deliverability
+      TaskDefinition: !Ref DeliverabilityTaskDefinition
+      DesiredCount: !If [SidecarServicesEnabled, 1, 0]
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref EcsSidecarSecurityGroup
+          AssignPublicIp: DISABLED
+      ServiceRegistries:
+        - RegistryArn: !GetAtt DeliverabilityDiscoveryService.Arn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 0
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+  # -------------------------------------------------------------------
+  # Migration service (port 8081)
+  # -------------------------------------------------------------------
+  # Migration runs long-batched ingest jobs; uses the shared DATABASE_URL
+  # for now. Operators may swap to a direct-DB-DSN secret later if/when
+  # RDS Proxy is introduced and proxy transaction-pinning becomes a
+  # bottleneck for 10k-row batch inserts.
+  # -------------------------------------------------------------------
+
+  MigrationTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: postwave-migration
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !Ref TaskExecutionRoleArn
+      TaskRoleArn: !Ref TaskRoleArn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      Volumes:
+        - Name: postwave-migration-tmp
+        - !If
+          - HasMigrationUploadStorage
+          - Name: migration-uploads
+            EFSVolumeConfiguration:
+              FilesystemId: !Ref MigrationUploadFileSystemId
+              TransitEncryption: ENABLED
+              AuthorizationConfig:
+                AccessPointId: !Ref MigrationUploadAccessPointId
+                IAM: ENABLED
+          - !Ref AWS::NoValue
+      ContainerDefinitions:
+        - Name: postwave-migration
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/postwave-migration@${MigrationImageDigest}"
+          Essential: true
+          ReadonlyRootFilesystem: true
+          PortMappings:
+            - ContainerPort: 8081
+              Protocol: tcp
+          MountPoints:
+            - SourceVolume: postwave-migration-tmp
+              ContainerPath: /tmp
+              ReadOnly: false
+            - !If
+              - HasMigrationUploadStorage
+              - SourceVolume: migration-uploads
+                ContainerPath: /var/lib/postwave/migration-uploads
+                ReadOnly: false
+              - !Ref AWS::NoValue
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: POSTWAVE_ENV
+              Value: production
+            - Name: PORT
+              Value: "8081"
+            - Name: LOG_LEVEL
+              Value: info
+            - Name: LISTMONK_URL
+              Value: !Ref ListmonkInternalUrl
+            - Name: LISTMONK_ADMIN_USER
+              Value: !Ref ListmonkAdminUser
+            - Name: LISTMONK_TENANT_MODE
+              Value: !Ref ListmonkTenantMode
+            - Name: LISTMONK_DEDICATED_TENANT_ID
+              Value: !Ref ListmonkDedicatedTenantId
+            - Name: OAUTH_REDIRECT_URI
+              Value: !Ref MigrationOAuthRedirectUri
+            - Name: ACTIVECAMPAIGN_ALLOWED_API_HOSTS
+              Value: !Ref ActiveCampaignAllowedAPIHosts
+            - !If
+              - HasMigrationUploadStorage
+              - Name: POSTWAVE_MIGRATION_UPLOAD_BACKEND
+                Value: efs
+              - !Ref AWS::NoValue
+            - !If
+              - HasMigrationUploadStorage
+              - Name: POSTWAVE_MIGRATION_UPLOAD_DIR
+                Value: /var/lib/postwave/migration-uploads
+              - !Ref AWS::NoValue
+          Secrets:
+            - !If
+              - HasTenantEmailRoutes
+              - Name: LISTMONK_TENANT_ROUTES
+                ValueFrom: !Ref TenantEmailRoutesSecretArn
+              - !Ref AWS::NoValue
+            - Name: DATABASE_URL
+              ValueFrom: !Ref DbDsnSecretArn
+            - Name: REDIS_URL
+              ValueFrom: !Ref RedisUrlSecretArn
+            - Name: POSTWAVE_INTERNAL_API_TOKEN
+              ValueFrom: !Ref InternalApiTokenSecretArn
+            - Name: METRICS_TOKEN
+              ValueFrom: !Ref MetricsTokenSecretArn
+            - Name: POSTWAVE_MIGRATION_SESSION_KEK
+              ValueFrom: !Ref MigrationSessionKekSecretArn
+            - Name: MAILCHIMP_CLIENT_ID
+              ValueFrom: !Ref MailchimpClientIdSecretArn
+            - Name: MAILCHIMP_CLIENT_SECRET
+              ValueFrom: !Ref MailchimpClientSecretArn
+            - Name: CONVERTKIT_CLIENT_ID
+              ValueFrom: !Ref ConvertKitClientIdSecretArn
+            - Name: CONVERTKIT_CLIENT_SECRET
+              ValueFrom: !Ref ConvertKitClientSecretArn
+            - Name: STRIPE_SECRET_KEY
+              ValueFrom: !Ref MigrationStripeSecretKeyArn
+            - Name: LISTMONK_ADMIN_PASSWORD
+              ValueFrom: !Ref ListmonkAdminPasswordSecretArn
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - "wget -qO- http://localhost:8081/health || exit 1"
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref MigrationLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: migration
+
+  MigrationService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref EcsClusterName
+      ServiceName: postwave-migration
+      TaskDefinition: !Ref MigrationTaskDefinition
+      DesiredCount: !If [SidecarServicesEnabled, 1, 0]
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref EcsSidecarSecurityGroup
+          AssignPublicIp: DISABLED
+      ServiceRegistries:
+        - RegistryArn: !GetAtt MigrationDiscoveryService.Arn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 0
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+Outputs:
+  EcsSidecarSecurityGroupId:
+    Description: Security group attached to all four sidecar services.
+    Value: !Ref EcsSidecarSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-EcsSidecarSecurityGroupId"
+
+  VoiceServiceName:
+    Description: ECS service name for postwave-voice (port 8083).
+    Value: !Ref VoiceService
+    Export:
+      Name: !Sub "${AWS::StackName}-VoiceServiceName"
+
+  AutomationServiceName:
+    Description: ECS service name for postwave-automation (port 8084).
+    Value: !Ref AutomationService
+    Export:
+      Name: !Sub "${AWS::StackName}-AutomationServiceName"
+
+  DeliverabilityServiceName:
+    Description: ECS service name for postwave-deliverability (port 8082).
+    Value: !Ref DeliverabilityService
+    Export:
+      Name: !Sub "${AWS::StackName}-DeliverabilityServiceName"
+
+  MigrationServiceName:
+    Description: ECS service name for postwave-migration (port 8081).
+    Value: !Ref MigrationService
+    Export:
+      Name: !Sub "${AWS::StackName}-MigrationServiceName"
+
+  RedisUrlSecretArnOutput:
+    Description: ARN of the externally owned Redis URL secret.
+    Value: !Ref RedisUrlSecretArn
+    Export:
+      Name: !Sub "${AWS::StackName}-RedisUrlSecretArn"
+
+  InternalApiTokenSecretArnOutput:
+    Description: ARN of the externally owned internal API token secret.
+    Value: !Ref InternalApiTokenSecretArn
+    Export:
+      Name: !Sub "${AWS::StackName}-InternalApiTokenSecretArn"

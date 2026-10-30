@@ -1,0 +1,52 @@
+---
+title: Inbox Reality API
+---
+
+# Inbox Reality API
+
+Programmatic access to the [Inbox Reality](/deliverability) deliverability stack — campaign reports, reputation, predictor.
+
+## Endpoints
+
+| Method | Path                                                    | Purpose                                     |
+| ------ | ------------------------------------------------------- | ------------------------------------------- |
+| GET    | `/api/v1/deliverability/health`                             | Current SPF/DKIM/DMARC/BIMI status + DNSBL listings. |
+| GET    | `/api/v1/deliverability/seedlist/{campaign_id}`             | Seedlist results for a campaign.            |
+| POST   | `/api/v1/deliverability/seedlist:run`                       | Manually trigger a seedlist run on a draft. |
+| POST   | `/api/v1/deliverability/predictor`                          | Run [Pre-Send Predictor](/deliverability/predictor) on a draft. |
+| GET    | `/api/v1/deliverability/diagnostician`                      | Latest [Diagnostician](/deliverability/diagnostician) output. |
+| GET    | `/api/v1/campaigns/{id}/report`                             | Full campaign report (sends, opens, clicks, bounces, complaints). |
+| GET    | `/api/v1/deliverability/reputation`                         | IP and domain reputation snapshot.          |
+
+## Health
+
+```bash
+curl https://api.moosewave.com/api/v1/deliverability/health \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+```json
+{
+  "spf":   { "status": "green", "lookups": 6, "policy": "-all" },
+  "dkim":  { "status": "green", "key_length": 2048, "selector": "postwave" },
+  "dmarc": { "status": "green", "policy": "quarantine", "alignment_pct": 99.4 },
+  "bimi":  { "status": "yellow", "reason": "Eligible but no logo published" },
+  "dnsbl": { "listings": [] }
+}
+```
+
+## Pre-Send Predictor
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/deliverability/predictor \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "campaign_id": "cmp_01HK..." }'
+```
+
+Returns the 3-stack-bar prediction (inbox / promotions / spam %) plus the four component scores.
+
+## See also
+
+- [Inbox Reality overview](/deliverability)
+- [Predictor formula](/deliverability/predictor)
+- [Diagnostician constraints](/deliverability/diagnostician)

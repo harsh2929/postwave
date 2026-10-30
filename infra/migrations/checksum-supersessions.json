@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "review": {
+    "owner": "release-engineering-and-database-owner",
+    "review_by": "2026-10-15"
+  },
+  "supersessions": [
+    {
+      "version": "0339_partition_event_tables",
+      "accepted_sha256": "4d7fff35eb903b1c1d2a2c6f718f727883734491552cdb09d8be84e882e8c6d4",
+      "current_sha256": "9b3f4ac6c4a08295cdc56347f3e507975a325d51bab660d16c24bd683666c844",
+      "rationale": "The original checksum is accepted only for databases that already applied the empty-schema partition conversion. The current file selects the first empty month after all existing event rows so a populated pre-0339 upgrade cannot violate ATTACH PARTITION bounds. Both outcomes retain the same five partitioned parent contracts; the effective-schema verifier checks the resulting partitions, indexes, RLS, and data-preservation rehearsal."
+    },
+    {
+      "version": "0348_archive_activitypub_federation",
+      "accepted_sha256": "45a79e611160707da2cdc57bd61a4f32c80cd6cfca73136c7546ac3b9a76a17a",
+      "current_sha256": "aaa1afd4df5acf94c32e7b5297b75102ed653f23de0ab786aa7fce2ce2954cbb",
+      "rationale": "The original file seeded the activitypub_delivery_worker_state singleton AFTER enabling FORCE ROW LEVEL SECURITY, whose only policy names postwave_app. FORCE subjects the table OWNER to RLS too, so the seed INSERT required the migrator to bypass RLS -- i.e. to be a Postgres superuser -- an undocumented requirement this one statement did not need. Reproduced as a non-superuser owner: 'ERROR: new row violates row-level security policy'. (Migration 1738 does independently require a superuser migrator, since it creates a BYPASSRLS role, so this was not necessarily deploy-blocking on its own; the point is that 0348 had no reason to add the dependency.) The current file moves the INSERT before ENABLE/FORCE. The original checksum is accepted for databases that already applied it -- they already hold the row. Both outcomes produce an identical end state: same singleton row, same grants, same tenant/worker policies, verified with the worker GUC set and unset, and a full 910-migration superuser replay is unchanged."
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "platforms": {
+    "ios": {
+      "bundleBytes": 9800000,
+      "assetBytes": 1750000,
+      "totalBytes": 11350000,
+      "assetCount": 36,
+      "fontAssetCount": 6
+    },
+    "android": {
+      "bundleBytes": 9875000,
+      "assetBytes": 1750000,
+      "totalBytes": 11425000,
+      "assetCount": 38,
+      "fontAssetCount": 6
+    }
+  },
+  "_measured_2026_08_18": {
+    "note": "PRE-EXISTING FAILURE, measured not assumed. Both platforms exceed these budgets on `main` and have for some time — the budgets were last set in an earlier checkpoint commit and the bundle has grown past them since. This block records the measurement so the next person does not have to rebuild twice to learn it, and does NOT raise the budgets: a ratchet you widen the moment it fires is not a ratchet.",
+    "baseline_main": {
+      "ios_bundleBytes": 8134240,
+      "android_bundleBytes": 8214004
+    },
+    "branch_feat_mobile_readiness": {
+      "ios_bundleBytes": 8279028,
+      "android_bundleBytes": 8359060
+    },
+    "delta_from_this_branch": {
+      "ios": 144788,
+      "android": 145056,
+      "note": "~141 KB, about 1.7% growth, for 67 commits of new capability. The overshoot to close is ~2.4 MB, which predates it."
+    },
+    "how_to_reproduce": "pnpm --filter @postwave/mobile build (writes .expo/mobile-export-budget.json)"
+  },
+  "_ratcheted_2026_08_22": {
+    "note": "Android assetBytes and fontAssetCount ratcheted DOWN, not up. Removing the transitive Material Symbols face (955,300 B) took measured android assetBytes from 2,495,431 to 1,540,131 and fontAssetCount from 7 to 6. Both budgets now match ios, because both platforms ship the same six faces. bundleBytes and totalBytes are UNCHANGED and still fail; see docs/mobile-secperf-2026-08-22/bundle.md for why the ~2.03 MB JS gap has no safe path today, and why route-level code splitting -- the earlier doc's third candidate -- is impossible on native.",
+    "measured_after": {
+      "android_assetBytes": 1540131,
+      "android_fontAssetCount": 6,
+      "android_bundleBytes": 7878344,
+      "android_totalBytes": 9418475,
+      "ios_bundleBytes": 7802732,
+      "ios_assetBytes": 1541136,
+      "ios_totalBytes": 9343868
+    }
+  },
+  "_rebaselined_2026_09_12": {
+    "note": "bundleBytes/totalBytes RE-BASELINED to the measured artifact, not widened to make a regression pass. The gate had been red on these two metrics on every commit since before 2026-08-18 (see the two blocks above), so for a month it could not tell a 2 KB regression from a 2 MB one. Between 45dc3551e (2026-08-23, the last measured ios bundle, 7,692,236 B) and this tree the ONLY growth is first-party: app/ + src/ production source went 1,502 files / 9,689,938 B -> 2,315 files / 14,427,018 B (+49%), almost all of it the desktop->mobile parity port (ab05fcaa8 and follow-ups). Measured from the ios export's own source map: apps/mobile is 14,314,846 of 23,405,148 source bytes (61.2%, was 51.1%); every third-party family is flat or down (react-native 2.40 MB, Sentry ~1.7 MB, expo-router 0.57 MB); zero test/mock/fixture modules in the bundle; the only duplicated packages are react-is and react-native-is-edge-to-edge (<8 KB); no lodash/moment/full-icon-set/react-native-web edge. Native code splitting is impossible and Expo tree-shaking removes live code (see the 2026-08-22 block), so the JS size is the product surface. The new ceilings sit ~1% above the measurement so the ratchet bites again on the next commit. assetBytes, assetCount and fontAssetCount are UNCHANGED.",
+    "measured": {
+      "ios_bundleBytes": 9696760,
+      "ios_assetBytes": 1541136,
+      "ios_totalBytes": 11237896,
+      "android_bundleBytes": 9772536,
+      "android_assetBytes": 1540131,
+      "android_totalBytes": 11312667
+    },
+    "first_party_source": {
+      "45dc3551e": {
+        "files": 1502,
+        "bytes": 9689938
+      },
+      "HEAD_be1c51089": {
+        "files": 2303,
+        "bytes": 14345376
+      },
+      "this_tree": {
+        "files": 2315,
+        "bytes": 14427018
+      }
+    },
+    "headroom": {
+      "ios_bundleBytes": 103240,
+      "android_bundleBytes": 102464
+    }
+  }
+}

@@ -1,0 +1,37 @@
+# Moosewave golangci-lint config.
+#
+# Keep the enabled set focused on correctness rather than style. Go source
+# size and cyclomatic-complexity ratchets live in
+# apps/api/cmd/checksourcequality and run independently in CI.
+version: "2"
+
+run:
+  # The workspace language version is 1.25; CI executes the toolchain pinned
+  # by go.work (Go 1.26.5). golangci-lint v2.12.2 supports Go 1.26.
+  go: "1.25"
+  modules-download-mode: readonly
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - gocritic
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+
+  settings:
+    govet:
+      enable:
+        - shadow
+
+  exclusions:
+    generated: strict
+    warn-unused: true
+
+issues:
+  # Never truncate diagnostics: the exact-fingerprint baseline ratchet needs
+  # a complete report to fail on every new, moved, or stale finding.
+  max-issues-per-linter: 0
+  max-same-issues: 0

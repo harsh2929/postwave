@@ -1,0 +1,19 @@
+{
+  "counts": {
+    "campaigns": 3,
+    "lists": 0,
+    "segments": 0,
+    "sequences": 1,
+    "subscribers": 50
+  },
+  "kept_segments": [
+    {
+      "campaigns": [
+        "Campaign for the sample audience"
+      ],
+      "id": "1c821638-d29e-4d8c-9c1f-c74d6c5f585f",
+      "name": "Sample · enabled subscribers"
+    }
+  ],
+  "removed": true
+}

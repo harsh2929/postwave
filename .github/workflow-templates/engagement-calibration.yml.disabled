@@ -1,0 +1,184 @@
+# Engagement-classifier calibration (PRD F01).
+#
+# The classifier decides whether an open or a click came from a person or a
+# machine, and every downstream number — human-engaged reach, the surfacing
+# score, A/B winner selection — inherits that decision. An accuracy claim nobody
+# re-measures is a claim that was true once.
+#
+# WHY THIS JOB FAILS RATHER THAN SKIPS WHEN NO CORPUS IS CONFIGURED
+#
+# engagement-calibrate exits 4 for `insufficient_corpus`, and this workflow
+# treats that as a FAILURE, not a skip. A green tick beside the word
+# "calibration" that ran against no labeled data asserts the classifier is
+# accurate on the strength of having measured nothing. That is the same failure
+# the product itself refuses elsewhere: an unmeasured summary reports
+# SUMMARY_STABILITY_NOT_ASSESSED rather than a pass, and an unclassified event
+# lands in `unknown` rather than in `human`.
+#
+# The corpus is deliberately NOT committed as part of building this job. It
+# requires real labeled examples and a reviewed deployment-prevalence figure;
+# inventing either would produce confident, wrong accuracy bounds, which is
+# precisely the harm the classifier exists to prevent. To turn this job green,
+# supply real data (see "Required configuration" below).
+#
+# Scheduled rather than per-PR: it needs a database and a corpus, and it
+# measures a property of the classifier that changes when the registry changes,
+# not one that changes with every commit.
+
+name: Engagement classifier calibration
+
+on:
+  schedule:
+    # Nightly, offset from the other nightly jobs so they do not contend.
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+    inputs:
+      persist:
+        description: "Persist the hash-addressed append-only calibration receipt"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engagement-calibration
+  cancel-in-progress: false
+
+jobs:
+  calibrate:
+    name: Measure classifier accuracy against the labeled corpus
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: public-local-demo-only
+          POSTGRES_DB: postwave
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:public-local-demo-only@localhost:5432/postwave?sslmode=disable
+      # Required configuration. These are deployment facts, not defaults, and the
+      # tool refuses to run without them — an adjusted-precision figure computed
+      # from a guessed prevalence would be arithmetic dressed as measurement.
+      POSTWAVE_CALIBRATION_CORPUS_DIRS: ${{ vars.POSTWAVE_CALIBRATION_CORPUS_DIRS }}
+      POSTWAVE_CALIBRATION_REGISTRY_VERSION: ${{ vars.POSTWAVE_CALIBRATION_REGISTRY_VERSION }}
+      POSTWAVE_CALIBRATION_ASSUMED_MACHINE_PREVALENCE: ${{ vars.POSTWAVE_CALIBRATION_ASSUMED_MACHINE_PREVALENCE }}
+      POSTWAVE_CALIBRATION_PREVALENCE_EVIDENCE_SHA256: ${{ vars.POSTWAVE_CALIBRATION_PREVALENCE_EVIDENCE_SHA256 }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
+
+      - name: Apply migrations
+        working-directory: apps/api
+        run: |
+          set -euo pipefail
+          # A glob expands in sorted order, which is the apply order.
+          for file in ../../infra/migrations/*.sql; do
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$file"
+          done
+
+      - name: Build the calibration tool
+        working-directory: apps/api
+        run: go build -o /tmp/engagement-calibrate ./cmd/engagement-calibrate
+
+      - name: Run calibration
+        id: calibrate
+        working-directory: apps/api
+        env:
+          # Passed through the environment rather than interpolated into the
+          # script body. It is a constrained `choice` input today, but a `${{ }}`
+          # expansion inside `run:` is textual substitution into the shell — the
+          # habit is what keeps the next input, which may not be constrained,
+          # from becoming a command-injection site.
+          CALIBRATION_PERSIST: ${{ github.event.inputs.persist || 'false' }}
+        run: |
+          set -uo pipefail
+
+          # The absence of configuration is REPORTED, never treated as a pass.
+          # The single-quoted lines in this block are Markdown for the step
+          # summary; their backticks and dollar signs are content, not shell.
+          # shellcheck disable=SC1003,SC2016
+          if [ -z "${POSTWAVE_CALIBRATION_CORPUS_DIRS:-}" ]; then
+            {
+              echo "### Engagement calibration: NOT MEASURED"
+              echo
+              echo "No calibration corpus is configured, so the classifier's accuracy"
+              echo "bounds were not measured. This is reported as a failure on purpose:"
+              echo "a green calibration job that ran against no labeled data would assert"
+              echo "an accuracy claim nothing verified."
+              echo
+              echo "To measure it, set these repository variables:"
+              echo '- `POSTWAVE_CALIBRATION_CORPUS_DIRS` — space-separated corpus directories, each containing a manifest.json'
+              echo '- `POSTWAVE_CALIBRATION_REGISTRY_VERSION` — the exact immutable registry version under test'
+              echo '- `POSTWAVE_CALIBRATION_ASSUMED_MACHINE_PREVALENCE` — the reviewed deployment machine-event prevalence'
+              echo '- `POSTWAVE_CALIBRATION_PREVALENCE_EVIDENCE_SHA256` — SHA-256 of the reviewed prevalence evidence manifest'
+              echo
+              echo "The corpus must hold REAL labeled examples. Synthetic labels would"
+              echo "produce confident, wrong bounds — the exact failure the classifier exists to prevent."
+              echo
+              echo "To produce candidates for review, run \`apps/api/cmd/engagement-corpus\`:"
+              echo '```'
+              echo 'go run ./cmd/engagement-corpus --tenant <uuid> \'
+              echo '  --since 2026-01-01T00:00:00Z --until 2026-02-01T00:00:00Z \'
+              echo '  --out corpus/human --name human-review --kind labeled_human'
+              echo '```'
+              echo "It extracts real observations and deliberately does NOT read the"
+              echo "classifier's verdict, so the labels cannot be circular. Corpus kinds are"
+              echo "single-class: keep the rows that genuinely are that class and delete the rest."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "engagement calibration: no corpus configured; accuracy was not measured" >&2
+            exit 4
+          fi
+
+          args=(--registry-version "$POSTWAVE_CALIBRATION_REGISTRY_VERSION")
+          for dir in $POSTWAVE_CALIBRATION_CORPUS_DIRS; do
+            args+=(--corpus "$dir")
+          done
+          args+=(--assumed-machine-prevalence "$POSTWAVE_CALIBRATION_ASSUMED_MACHINE_PREVALENCE")
+          args+=(--prevalence-evidence-sha256 "$POSTWAVE_CALIBRATION_PREVALENCE_EVIDENCE_SHA256")
+          if [ "$CALIBRATION_PERSIST" = "true" ]; then
+            args+=(--persist)
+          fi
+
+          set +e
+          /tmp/engagement-calibrate "${args[@]}" | tee /tmp/calibration-report.json
+          status=${PIPESTATUS[0]}
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+          # Each exit code means a different thing and is reported as itself. A
+          # workflow that collapsed them would make "the classifier regressed"
+          # indistinguishable from "the tool could not run".
+          case "$status" in
+            0) echo "### Engagement calibration: PASS" >> "$GITHUB_STEP_SUMMARY" ;;
+            3) echo "### Engagement calibration: FAIL — the classifier did not meet its accuracy policy" >> "$GITHUB_STEP_SUMMARY" ;;
+            4) echo "### Engagement calibration: NOT MEASURED — insufficient corpus" >> "$GITHUB_STEP_SUMMARY" ;;
+            *) echo "### Engagement calibration: ERROR (exit $status)" >> "$GITHUB_STEP_SUMMARY" ;;
+          esac
+          exit "$status"
+
+      - name: Upload the calibration report
+        # Always, including on failure: the report is the evidence for WHY the
+        # bound was missed, and it is most wanted exactly when the job is red.
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: engagement-calibration-report
+          path: /tmp/calibration-report.json
+          if-no-files-found: ignore

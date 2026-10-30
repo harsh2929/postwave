@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <high-contrast-grey-on-light.v1@example.com>
+Subject: Payment received
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-contrast-v1"
+
+--pw-contrast-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Payment received: 60.00 USD. https://billing.example.com/p/5
+--pw-contrast-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body style="background-color:#f7f7f7"><h1 style="color:#1a1a1a">Payment received</h1><p style="color:#333333">60.00 USD received on 9 August.</p><p><a href="https://billing.example.com/p/5" style="color:#0b5cd5">View the payment</a></p></body></html>
+--pw-contrast-v1--

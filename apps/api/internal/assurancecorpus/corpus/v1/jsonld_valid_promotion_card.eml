@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-valid-promotion-card.v1@example.com>
+Subject: New arrivals
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ldpromo-v1"
+
+--pw-ldpromo-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+New arrivals are live. https://shop.example.com/new
+--pw-ldpromo-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"PromotionCard","description":"New arrivals","url":"https://shop.example.com/new"}</script></head><body><h1>New arrivals</h1><p>Thirty new pieces are live.</p><p><a href="https://shop.example.com/new">Browse new arrivals</a></p></body></html>
+--pw-ldpromo-v1--

@@ -1,0 +1,37 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values.
+
+# --- Region / environment ---------------------------------------------------
+# Must be the region the reply domain's MX points at, and the region the SES
+# sending identity lives in (infra/aws/ses-domain-setup.md fixes that at
+# us-west-2).
+region      = "us-west-2"
+environment = "prod" # one of: dev, staging, prod
+
+# --- Reply domain -----------------------------------------------------------
+# Must equal POSTWAVE_REPLIES_ENVELOPE_DOMAIN in the API task definition, or the
+# tenant slug in replies-<slug>@<domain> is never extracted and every inbound
+# reply falls through to the subscriber-email lookup.
+reply_domain = "reply.moosewave.com"
+
+# --- Retention --------------------------------------------------------------
+# Inbound mail is personal data. 7–90 days; the durable record is the bounded
+# snippet on campaign_replies, not the S3 object.
+inbound_mail_retention_days = 30
+
+# --- Notification -----------------------------------------------------------
+# The API Gateway stage that injects X-Postwave-SES-Inbound-Secret, NOT the API
+# origin: SNS cannot attach a custom header, and the SES receiver rejects an
+# unsigned delivery. Leave empty on the first apply.
+inbound_notification_endpoint = ""
+
+# --- Worker read grant ------------------------------------------------------
+# ECS task role the API runs as. Empty leaves the policy unattached and outputs
+# its ARN instead.
+worker_role_name = ""
+
+# --- Activation -------------------------------------------------------------
+# DESTRUCTIVE. One active receipt rule set per account per region: true
+# deactivates whatever holds the slot today. Confirm with
+#   aws ses describe-active-receipt-rule-set --region us-west-2
+# before flipping.
+activate_receipt_rule_set = false

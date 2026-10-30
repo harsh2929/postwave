@@ -1,0 +1,74 @@
+---
+title: Errors
+---
+
+# Errors
+
+All non-2xx responses use a single envelope.
+
+## Envelope
+
+```json
+{
+  "error": {
+    "code":       "<machine-readable code>",
+    "message":    "<human-readable description>",
+    "field":      "<optional: field that caused a validation error>",
+    "request_id": "req_01HK..."
+  }
+}
+```
+
+`request_id` should be included in support tickets — it's the join key into our logs.
+
+## Common codes
+
+| HTTP | Code                    | Meaning                                                    |
+| ---- | ----------------------- | ---------------------------------------------------------- |
+| 400  | `validation_error`      | Request body / query params failed validation.             |
+| 400  | `invalid_json`          | Body wasn't parseable JSON.                                |
+| 401  | `unauthenticated`       | Missing / malformed bearer token.                          |
+| 401  | `invalid_api_key`       | Bearer token not recognised or revoked.                    |
+| 403  | `forbidden`             | Authenticated but lacks the required scope.                |
+| 403  | `tenant_mismatch`       | Resource belongs to a different workspace than the key.    |
+| 404  | `not_found`             | Resource does not exist (or is not visible to the caller). |
+| 409  | `conflict`              | E.g., duplicate email on a unique-email subscriber create. |
+| 422  | `unprocessable`         | Semantically invalid (e.g., committing a stale migration). |
+| 429  | `rate_limited`          | See [Rate limits](/api-reference/rate-limits).                       |
+| 500  | `internal`              | Server bug. Please report with `request_id`.               |
+| 502  | `upstream_unavailable`  | A downstream provider (SES, Stripe) is failing. Retry.     |
+| 503  | `maintenance`           | Brief planned maintenance. `Retry-After` provided.         |
+
+## Validation errors — fine-grained
+
+When a request fails validation in multiple places, the response uses an extended shape:
+
+```json
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Multiple fields failed validation",
+    "fields": [
+      { "path": "email",      "code": "invalid_format" },
+      { "path": "tags[2]",    "code": "exceeds_max_length" }
+    ],
+    "request_id": "req_..."
+  }
+}
+```
+
+## Idempotency
+
+Endpoints that mutate state accept an `Idempotency-Key` header. Re-submitting the same key within 24h returns the original result without re-executing. Best practice for retries on flaky networks.
+
+```http
+POST /api/v1/campaigns
+Idempotency-Key: launch-2026-04-30-abc123
+```
+
+## Troubleshooting
+
+- **`401 invalid_api_key`** — most often: extra whitespace in the key, or the key was revoked. Check **Settings → API keys**.
+- **`403 tenant_mismatch`** — you're hitting the right endpoint but with a key from a different workspace. Verify `X-Tenant-ID` matches.
+- **`409 conflict` on subscriber create** — the email already exists. Use `PATCH /api/v1/subscribers/{id}` to update, or `POST /api/v1/subscribers:upsert`.
+- **`422 unprocessable` on migration commit** — the dry-run is older than 7 days, or someone else has committed in the meantime. Re-run dry-run.

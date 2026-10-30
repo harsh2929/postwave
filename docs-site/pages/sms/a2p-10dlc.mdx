@@ -1,0 +1,66 @@
+---
+title: A2P / 10DLC registration
+---
+
+import { Callout } from 'nextra/components';
+
+# A2P / 10DLC registration
+
+US carriers require application-to-person traffic over standard 10-digit long
+codes to have external brand and campaign approval. Moosewave contains sender
+and registration draft/status fields, but does not currently drive provider
+registration.
+
+<Callout type="warning">
+**HOLD / NO-GO.** Brand submit, campaign submit, and poll return
+`sms_a2p_registration_release_held` before a provider request or callback is
+made. The same structural hold applies even when a retained sender row says
+`approved`; provider-console state and a configured-looking record are not
+hosted activation evidence.
+</Callout>
+
+An attempted sender/registration evidence mutation without the backend's exact
+authority is rejected as `sms_registration_evidence_authority_required`.
+Client-entered provider identifiers or approval labels are not acceptable
+substitutes for provider-bound evidence.
+
+## Endpoints
+
+All registration routes are admin-scoped and operate on a specific sender id.
+
+| Method | Path                                                       | Purpose                                       |
+| ------ | ---------------------------------------------------------- | --------------------------------------------- |
+| POST   | `/api/v1/sms/senders/{id}/a2p/brand/submit`                | Held; zero provider effect.                    |
+| POST   | `/api/v1/sms/senders/{id}/a2p/campaign/submit`             | Held; zero provider effect.                    |
+| POST   | `/api/v1/sms/senders/{id}/a2p/poll`                        | Held; zero provider poll.                      |
+| GET    | `/api/v1/sms/senders/{id}/pilot-certification`             | Source/readiness evidence, not approval.       |
+| GET    | `/api/v1/sms/senders/pilot-certifications`                 | Bounded source evidence, not activation.       |
+
+## External operator flow
+
+Provider-console applications, profiles, messaging services, number assignment,
+toll-free verification, brand/campaign submission, carrier review, and status
+reconciliation remain operator-owned. Do not copy customer legal-entity or
+provider-secret data into Moosewave merely because draft fields exist.
+
+There is intentionally no runnable Moosewave submit or poll example while the
+effect is held.
+
+## Pilot certification
+
+Retained readiness/certification projections can help enumerate missing source
+evidence. They are not approval to pilot. Hosted SMS also needs tenant-owned
+provider credential resolution, exact provider-account ownership, public-edge
+callback proof, durable financial/provider reconciliation, deployed migration
+evidence, and manual acceptance.
+
+## Regions
+
+The source launch boundary is US/Canada `+1` only. A regions response does not
+promise international reach. MMS remains `sms_mms_readiness_release_held`.
+
+## See also
+
+- [SMS overview](/sms) — sender draft and source-evidence boundary.
+- [Compliance](/sms/compliance) — bounded consent evidence, not dispatch or
+  provider-approval authority.

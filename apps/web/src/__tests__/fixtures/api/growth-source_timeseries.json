@@ -1,0 +1,155 @@
+{
+  "points": [
+    {
+      "date": "2026-07-25",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-07-26",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-07-27",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-07-28",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-07-29",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-07-30",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-07-31",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-01",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-02",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-03",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-04",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-05",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-06",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-07",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-08",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-09",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-10",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-11",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-12",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-13",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-14",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-15",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-16",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-17",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-18",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-19",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-20",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-21",
+      "consent_source": "",
+      "count": 0
+    },
+    {
+      "date": "2026-08-22",
+      "consent_source": "double_optin",
+      "count": 12
+    },
+    {
+      "date": "2026-08-23",
+      "consent_source": "",
+      "count": 0
+    }
+  ],
+  "window_days": 30
+}

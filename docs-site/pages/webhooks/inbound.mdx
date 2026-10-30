@@ -1,0 +1,141 @@
+---
+title: Inbound webhooks
+---
+
+import { Callout } from 'nextra/components';
+
+# Inbound webhooks
+
+Inbound webhooks let another system submit authenticated JSON to Moosewave.
+Create an endpoint through `POST /api/v1/inbound-webhooks`; the response
+returns a public slug and an `iwh_*` signing secret exactly once.
+
+The sender posts to:
+
+```text
+POST https://api.moosewave.com/api/public/inbound/<slug>
+```
+
+## Required sender contract
+
+Every request must use a JSON media type and include:
+
+| Header | Requirement |
+| --- | --- |
+| `X-Postwave-Timestamp` | Current Unix seconds, within ±5 minutes. |
+| `X-Postwave-Signature` | `v2=<hex HMAC-SHA256>` over the canonical frame below. |
+| `X-Postwave-Event-Id` | Stable provider delivery identity, at most 512 bytes. |
+
+For common providers, `X-Event-Id`, `X-GitHub-Delivery`,
+`X-Linear-Delivery`, or `X-Stripe-Event-Id` can supply the event identity.
+Moosewave trims surrounding whitespace from the timestamp and the selected
+event-id header before verification. The normalized event-id value is
+authenticated by the signature, so changing it invalidates the request.
+
+The v2 signed bytes are exactly:
+
+```text
+v2:<timestampByteLen>:<timestamp>:<eventIdByteLen>:<eventId>:<rawBody>
+```
+
+Lengths are decimal UTF-8 byte lengths of the normalized timestamp and event
+id. This length-delimited frame is unambiguous even when an event id contains
+punctuation or non-ASCII text. Send both headers without surrounding
+whitespace so the transmitted and signed values are visibly identical.
+
+```js
+const timestamp = Math.floor(Date.now() / 1000).toString();
+const eventId = providerDeliveryId;
+const body = JSON.stringify({ email: "ada@example.com", event: "lead.created" });
+const prefix =
+  `v2:${Buffer.byteLength(timestamp)}:${timestamp}:` +
+  `${Buffer.byteLength(eventId)}:${eventId}:`;
+const signature = crypto
+  .createHmac("sha256", process.env.POSTWAVE_INBOUND_SECRET)
+  .update(Buffer.concat([Buffer.from(prefix, "utf8"), Buffer.from(body, "utf8")]))
+  .digest("hex");
+
+await fetch(`https://api.moosewave.com/api/public/inbound/${slug}`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-Postwave-Timestamp": timestamp,
+    "X-Postwave-Signature": `v2=${signature}`,
+    "X-Postwave-Event-Id": eventId,
+  },
+  body,
+});
+```
+
+<Callout type="warning">
+Sign the normalized event identity and the exact body bytes you send. Moosewave
+verifies authentication before parsing JSON or applying an optional JQ
+transform.
+</Callout>
+
+Raw-hex v1 signatures over `timestamp + "." + rawBody` are disabled by
+default. Self-hosted operators can temporarily opt into that legacy format
+with `POSTWAVE_ALLOW_LEGACY_INBOUND_SIGNATURE_V1=true` only as a migration
+bridge. It does not authenticate the event id and should be removed as soon as
+all senders emit v2.
+
+## Durable acceptance
+
+A `202` response means the authenticated event and all matching trigger or
+automation intents were committed together. Actions execute asynchronously
+with leases and stable idempotency identities.
+
+- An exact sender retry returns `202` with `duplicate: true`; completed
+  actions are not repeated and unfinished work is safely nudged.
+- Reusing the same event identity for different processed bytes returns
+  `409 event_id_conflict`.
+- Invalid signatures are rejected and are not persisted.
+
+This is at-least-once action delivery. Downstream actions receive stable
+idempotency identities so transport retries do not create duplicate logical
+operations.
+
+## Transforms and triggers
+
+An endpoint can apply a constrained JQ transform before event persistence and
+matching. Preview it with:
+
+```text
+POST /api/v1/inbound-webhooks/transform/preview
+```
+
+Triggers support the operators `equals`, `contains`, `exists`, and `regex`
+and the actions `add_to_sequence`, `add_tag`, `remove_tag`, and
+`start_automation`.
+
+## Event history and replay
+
+List retained events with:
+
+```text
+GET /api/v1/inbound-webhooks/{id}/events?limit=50&cursor=...
+```
+
+Stored request headers are deliberately restricted: selected diagnostic
+values are retained, provider identities are fingerprinted, and credential
+headers are redacted before storage.
+
+Manual replay:
+
+```bash
+curl -X POST \
+  "https://api.moosewave.com/api/v1/inbound-webhooks/$WEBHOOK_ID/events/$EVENT_ID/replay" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Idempotency-Key: reprocess-provider-event-42"
+```
+
+Replay queues a durable new action attempt and returns `202` with a stable
+`replay_id`, including when no trigger currently matches. The original event
+history remains intact. Events whose payload has aged out return `422
+payload_not_retained`.
+
+## Rotation
+
+`POST /api/v1/inbound-webhooks/{id}/rotate` returns a new signing secret once.
+The prior secret remains valid for a 24-hour grace window, allowing a sender
+configuration rollout without dropped events.

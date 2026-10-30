@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-valid-event-reservation.v1@example.com>
+Subject: Your seat is confirmed
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ldevent-v1"
+
+--pw-ldevent-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your seat for the workshop on 20 August is confirmed. https://events.example.com/r/7
+--pw-ldevent-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"EventReservation","reservationNumber":"R-7","url":"https://events.example.com/r/7"}</script></head><body><h1>Your seat is confirmed</h1><p>Workshop on 20 August, reservation R-7.</p><p><a href="https://events.example.com/r/7">View your reservation</a></p></body></html>
+--pw-ldevent-v1--

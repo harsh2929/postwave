@@ -1,0 +1,42 @@
+.pw-windowed-list {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  contain: strict;
+}
+
+.pw-windowed-list:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: -2px;
+}
+
+.pw-windowed-list__spacer {
+  width: 1px;
+  pointer-events: none;
+}
+
+.pw-windowed-list__item {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  contain: layout paint style;
+}
+
+.pw-windowed-list__empty {
+  padding: var(--pw-sp-6);
+  color: var(--pw-fg-muted);
+  text-align: center;
+}
+
+@media (forced-colors: active) {
+  .pw-windowed-list:focus-visible {
+    outline-color: Highlight;
+  }
+}

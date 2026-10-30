@@ -1,0 +1,269 @@
+name: Desktop CI
+
+# -----------------------------------------------------------------------------
+# Pull-request CI for the Moosewave desktop app (Tauri 2).
+#
+# Goal: fast feedback on PRs that touch apps/desktop/. We deliberately do NOT
+# bundle (no .dmg / .msi produced) and do NOT cross-compile — we only verify
+# that:
+#   - The Rust side compiles, passes clippy, and is rustfmt-clean.
+#   - The TypeScript side compiles (tsc --noEmit).
+#   - `tauri build --no-bundle` succeeds end-to-end (catches Vite + Rust
+#     integration issues that pure compile-only checks miss).
+#
+# We run on macos-14 only — desktop-release.yml is the place for the full
+# matrix. macos-14 covers the more interesting failure modes (codesign hooks,
+# build.rs invocations on Apple Silicon) and saves ~50% of CI minutes vs
+# running both platforms on every PR.
+# -----------------------------------------------------------------------------
+
+on:
+  pull_request:
+    paths:
+      # Fire when the desktop app or its workspace-local runtime
+      # dependencies change. Avoid burning macOS minutes on unrelated
+      # apps/api or apps/web PRs, but do not miss shared package drift.
+      - "apps/desktop/**"
+      - "packages/nav/**"
+      - "packages/notifications/**"
+      - "packages/onboarding-schema/**"
+      - "packages/query-contract/**"
+      - "packages/telemetry/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/desktop-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-check:
+    name: Desktop — compile, clippy, fmt, tsc
+    runs-on: macos-14
+    # Sentry source-map upload runs after the Vite build emits .map
+    # files alongside the .js bundles. Variables are read by
+    # @sentry/cli's `releases files upload-sourcemaps` invocation
+    # below. Forks / PRs without SENTRY_AUTH_TOKEN skip the upload
+    # cleanly (the gate is `if: env.SENTRY_AUTH_TOKEN != ''`).
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: postwave-desktop
+      POSTWAVE_RELEASE: ${{ github.sha }}
+      SENTRY_RELEASE: ${{ github.sha }}
+      # Normal Vite builds are map-free. Opt in only when this job can upload
+      # the maps, then remove them before the runner is discarded.
+      POSTWAVE_GENERATE_SOURCEMAPS: ${{ secrets.SENTRY_AUTH_TOKEN != '' && '1' || '0' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Setup Rust toolchain
+        # rustfmt + clippy come pre-installed on the dtolnay action's
+        # `stable` channel. No `targets:` needed — `--no-bundle` builds
+        # for the host triple only.
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: 1.94.0
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry & build
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: macos-14-cargo-ci-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            macos-14-cargo-ci-
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build desktop workspace dependencies
+        run: pnpm --filter 'postwave-desktop-shell^...' --if-present run build
+
+      - name: Validate desktop icon matrix
+        # Every configured desktop/mobile bundle icon must exist, have the
+        # expected dimensions, and be regenerated from the canonical source.
+        run: pnpm --dir apps/desktop check:icons
+
+      - name: Lint (Stylelint + ESLint)
+        # Cheapest signal: catches hardcoded color literals (which bypass
+        # the design-system tokens and break theme support), JSX accessibility
+        # regressions, and real bug rules such as rules-of-hooks.
+        run: pnpm --filter postwave-desktop-shell run lint
+
+      - name: Rust formatting check
+        # `--check` makes rustfmt fail (non-zero exit) on any diff. We use
+        # this as a gate — if you skipped pre-commit, CI catches it.
+        run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check
+
+      - name: Rust clippy
+        # `-D warnings` promotes every clippy warning to an error. Cheap
+        # way to keep the codebase warning-free without per-warning bikeshed.
+        run: cargo clippy --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
+      - name: Rust dependency audit
+        # Runs an unsuppressed `--deny warnings` scan, requires exact and
+        # unexpired fingerprints for lockfile-only findings, and proves each
+        # accepted package is absent from every supported release graph.
+        run: pnpm --dir apps/desktop check:rust-dependencies
+
+      - name: TypeScript typecheck
+        # `--noEmit` = type check only, no .js output. The frontend shell
+        # gets bundled via Vite anyway; we just want type safety here.
+        run: pnpm --filter postwave-desktop-shell exec tsc --noEmit
+
+      - name: Unit tests and full-source coverage ratchets (Vitest)
+        run: pnpm --filter postwave-desktop-shell run test:coverage
+
+      - name: Desktop performance contract tests
+        run: pnpm --dir apps/desktop run test:performance-contracts
+
+      - name: Tauri build (no bundle)
+        # `--no-bundle` skips the .dmg/.msi step. We get full Rust+Vite
+        # compile coverage in ~3-4 min instead of ~12-15. Bundle smoke
+        # tests live in desktop-release.yml.
+        run: pnpm --filter postwave-desktop-shell exec tauri build --no-bundle
+
+      - name: Bundle-size lazy-load guard (@sentry/react)
+        # Verifies the lazy-load invariant for @sentry/react: it must NOT
+        # live in the critical-path entry chunk referenced by
+        # dist/index.html. The script
+        # (apps/desktop/scripts/check-bundle-size.mjs) probes the entry
+        # chunk + every modulepreload chunk for the @sentry markers
+        # (`@sentry/react`, `__SENTRY__`) and fails if any are present.
+        # It also asserts a separate lazy chunk exists carrying the
+        # Sentry runtime, so the dynamic import resolves when DSN is set
+        # at build time. Adds ~3s to the job and pays for itself by
+        # catching any future regression that re-introduces a top-level
+        # @sentry/react import (which would silently swell the cold-start
+        # bundle by ~77KB raw / ~26KB gzip).
+        run: pnpm --filter postwave-desktop-shell run check:bundle-size
+
+      - name: Source-size guard
+        # Keeps the existing large-file debt from silently growing while
+        # route/API/CSS extraction continues incrementally.
+        run: pnpm --filter postwave-desktop-shell run check:source-size
+
+      - name: Upload desktop source maps to Sentry
+        # Only runs when the auth token is set — forks / dependabot
+        # PRs without the secret pass through silently. The Vite
+        # job opts into hidden .map files only when this step can run.
+        # release=<sha> matches what the
+        # web build uploads, so cross-surface release filters in the
+        # Sentry UI work without extra mapping.
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          if ! find apps/desktop/dist -type f -name '*.map' -print -quit | grep -q .; then
+            echo "::error::desktop source-map opt-in produced no files"
+            exit 1
+          fi
+          sentry_cli() { npx --yes @sentry/cli@3.6.0 "$@"; }
+          if ! sentry_cli releases new "$POSTWAVE_RELEASE"; then
+            sentry_cli releases info "$POSTWAVE_RELEASE" >/dev/null
+          fi
+          # Sentry's '~/' prefix is its own host wildcard, not a shell tilde.
+          # shellcheck disable=SC2088
+          sentry_cli releases files "$POSTWAVE_RELEASE" \
+            upload-sourcemaps ./apps/desktop/dist \
+            --url-prefix '~/' \
+            --rewrite
+          sentry_cli releases finalize "$POSTWAVE_RELEASE"
+          find apps/desktop/dist -type f -name '*.map' -delete
+          if find apps/desktop/dist -type f -name '*.map' -print -quit | grep -q .; then
+            echo "::error::desktop dist still contains source maps"
+            exit 1
+          fi
+
+  renderer-quality:
+    name: Desktop — production renderer accessibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build desktop workspace dependencies
+        run: pnpm --filter 'postwave-desktop-shell^...' --if-present run build
+
+      - name: Typecheck renderer quality gates
+        # Playwright transpiles TypeScript without checking types. Keep the
+        # quality harness itself under strict TypeScript so broken assertions
+        # cannot silently weaken production-readiness evidence.
+        run: pnpm --dir apps/desktop run typecheck:renderer-tests
+
+      - name: Install Chromium runtime
+        run: pnpm --dir apps/desktop exec playwright install --with-deps chromium
+
+      - name: WCAG, dialog, reduced-motion, and forced-colors gate
+        # test:a11y builds optimized production chunks, serves them with Vite
+        # preview, and exercises populated lazy routes rather than only static
+        # component markup.
+        run: pnpm --dir apps/desktop run test:a11y
+
+      - name: Production renderer route, populated-data, and interaction gate
+        # These are assertion-bearing production-build sweeps, not a screenshot
+        # collector: every route, populated card/table branch, named interaction,
+        # modal submit/error path, and shell-scroll invariant must stay crash-free.
+        run: pnpm --dir apps/desktop run test:renderer
+
+      - name: Production renderer startup and retained-heap budgets
+        # Measures the optimized renderer with Tauri/API boundaries stubbed.
+        # This catches source-side regressions but does not replace the signed,
+        # installed macOS/Windows evidence required by the release contract.
+        run: pnpm --dir apps/desktop run test:performance
+
+      - name: Retain renderer performance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: desktop-renderer-performance-${{ github.run_id }}
+          path: |
+            apps/desktop/test-results/performance
+            apps/desktop/playwright-report
+          if-no-files-found: warn
+          retention-days: 14

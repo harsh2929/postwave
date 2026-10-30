@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <invoice-overdue-notice.v1@example.com>
+Subject: Invoice 6003 is overdue
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-overdue-v1"
+
+--pw-overdue-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Invoice 6003 is 7 days overdue. Pay: https://billing.example.com/6003
+--pw-overdue-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Invoice 6003 is overdue</h1><p>This invoice was due on 2 August. Please pay to avoid service interruption.</p><p><a href="https://billing.example.com/6003">Pay the invoice</a></p></body></html>
+--pw-overdue-v1--

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <abandoned-cart-urgency.v1@example.com>
+Subject: You left something
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-cart-v1"
+
+--pw-cart-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your basket is waiting. Checkout: https://shop.example.com/cart
+--pw-cart-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>You left something</h1><p>Your basket is saved for 48 hours.</p><p><a href="https://shop.example.com/cart">Return to your basket</a></p></body></html>
+--pw-cart-v1--

@@ -1,0 +1,58 @@
+{
+  "component": "Moosewave minimal OpenTelemetry Collector",
+  "release": "v0.156.0-postwave.1",
+  "upstreamRelease": "v0.156.0",
+  "upstreamManifestCommit": "aa158b23c8f89d795b21a05a49b3978565dfebd4",
+  "upstreamManifest": "https://github.com/open-telemetry/opentelemetry-collector-releases/blob/aa158b23c8f89d795b21a05a49b3978565dfebd4/distributions/otelcol-contrib/manifest.yaml",
+  "collectorBuilderModule": "go.opentelemetry.io/collector/cmd/builder@v0.156.0",
+  "builderImage": "golang:1.26.8-alpine3.23@sha256:33ce311e5eecedee48ec1b84419c1306e9fbd71009f0d5c3f2a6904b579c1ecc",
+  "scannerImage": "aquasec/trivy@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969",
+  "moduleProxy": "https://proxy.golang.org",
+  "buildContext": "infra/observability/image",
+  "builderManifest": "infra/observability/image/builder-config.yaml",
+  "generatedSource": "infra/observability/image/collector",
+  "runtimeBase": "scratch",
+  "deploymentRepository": "postwave-observability-collector",
+  "deploymentDigestSource": "signed, attested, multi-architecture release image built from buildContext",
+  "components": {
+    "extensions": [
+      "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension@v0.156.0",
+      "github.com/open-telemetry/opentelemetry-collector-contrib/extension/sigv4authextension@v0.156.0"
+    ],
+    "exporters": [
+      "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter@v0.156.0"
+    ],
+    "processors": [
+      "go.opentelemetry.io/collector/processor/batchprocessor@v0.156.0",
+      "go.opentelemetry.io/collector/processor/memorylimiterprocessor@v0.156.0"
+    ],
+    "receivers": [
+      "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver@v0.156.0"
+    ],
+    "providers": [
+      "go.opentelemetry.io/collector/confmap/provider/envprovider@v1.62.0"
+    ]
+  },
+  "sourceChecksums": {
+    "builder-config.yaml": "2b677947d6bfbe6357362675621829c0bdc40014ce4b5121805d697b552422bc",
+    "collector/components.go": "147bc35e60a62bf4a9d3a9411dc68626b6b469bd29d18647538b3752aee38be7",
+    "collector/go.mod": "b20e15b8ac4918afdc256aa706c5f4c7b63206e90576b9b18383dd9f157da126",
+    "collector/go.sum": "8e015c997bd4f98887ddf31f1feb8f25222ff05e4389040a0d4423cd0e64ab09",
+    "collector/main.go": "fc626a9852a37f151c7f39e0f64070864cd8a131982198bfa9c37a1d610143f5",
+    "collector/main_others.go": "0cd81e903710b93f8d16d205678aaeed914f334aaf63a2fda77eae845c7e5bd7",
+    "collector/main_windows.go": "249718736c2335cf30ac6d60ccc038c7a346a5fc593509109400c234f41b9110",
+    "healthcheck/go.mod": "269def5a1626ad3d6487a89b731268795f194b05a923bfa9bfae90f56508a0d4",
+    "healthcheck/main.go": "a8298cced6d31a77332784101f54ff352f351314dd0a0c1c30dc7deaaa40a9fb"
+  },
+  "verifiedAt": "2026-07-14T00:00:00Z",
+  "verification": [
+    "only the components required by the production metrics pipeline are compiled",
+    "checked-in generated source and its complete module graph are SHA-256 locked",
+    "all Go modules are version-pinned, fetched only through the public Go module proxy, and verified through the public Go checksum database",
+    "the collector and health probe are compiled with the pinned Go 1.26.8 builder",
+    "the scratch runtime contains only both binaries and the public CA bundle",
+    "the embedded production configuration reaches ready state as uid 10001 with a read-only root filesystem",
+    "the /healthcheck binary returns success only for HTTP 200 from the collector health extension",
+    "release promotion requires zero fix-available HIGH or CRITICAL vulnerabilities, a multi-architecture SBOM/provenance attestation, and Moosewave keyless signing"
+  ]
+}

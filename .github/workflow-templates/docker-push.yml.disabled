@@ -1,0 +1,338 @@
+name: Docker Push
+
+# -----------------------------------------------------------------------------
+# Builds and pushes the five Moosewave Go-service images, two role-separated
+# Campaign Assurance images, standalone web image, immutable database migrator,
+# and minimal observability collector to GHCR.
+#
+# Why separate jobs (not a single matrix step):
+#   GitHub Actions matrix gives per-service logs, retry, and timing in the
+#   UI — easier to reason about than a single shell loop.
+#
+# Tags pushed:
+#   - :latest                  - moves to the head-of-main image
+#   - :main                    - explicit main-branch alias (some operators
+#                                pin to a branch tag in dev)
+#   - :sha-<github.sha>        - immutable per-commit reference for
+#                                rollback. CloudFormation / ECS task defs
+#                                should pin to this, never :latest.
+#
+# Auth: GITHUB_TOKEN with `packages: write` is enough for ghcr.io/<owner>.
+# No extra org-level secret is required.
+#
+# Hard rules honored:
+#   - No untrusted github.event.* values are interpolated into run: blocks.
+#     The only dynamic values are github.sha, github.ref_name, and
+#     github.repository_owner - all repo-controlled.
+#   - Concurrency: a fast follow-up push to main cancels the prior build
+#     so we never publish a stale :latest.
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  # Required to push to ghcr.io/<owner>/<repo>. Default token has read-only
+  # `packages` scope; bumping it here is the documented pattern for GHCR.
+  packages: write
+  # Required for cosign keyless signing via GitHub OIDC. The job below
+  # exchanges this short-lived token for a Sigstore Fulcio certificate
+  # tied to the workflow identity, so consumers can verify provenance
+  # without us managing a long-lived signing key. No new secrets.
+  id-token: write
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-push:
+    name: Build and push image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # service       = image name suffix (postwave-<service>)
+        # service_path  = build-arg SERVICE_PATH passed to Dockerfile.go
+        include:
+          - service: api
+            service_path: ./apps/api
+            dockerfile: Dockerfile.go
+            target: ordinary-service
+            service_port: "8080"
+            healthcheck_path: /api/ready
+          - service: campaign-assurance
+            service_path: ./apps/api
+            dockerfile: Dockerfile.go
+            target: campaign-assurance-core
+            service_port: ""
+            healthcheck_path: ""
+          - service: campaign-assurance-image-services
+            service_path: ./apps/api
+            dockerfile: Dockerfile.go
+            target: campaign-image-services
+            service_port: ""
+            healthcheck_path: ""
+          - service: voice
+            service_path: ./services/voice
+            dockerfile: Dockerfile.go
+            target: ordinary-service
+            service_port: "8083"
+            healthcheck_path: /health
+          - service: automation
+            service_path: ./services/automation
+            dockerfile: Dockerfile.go
+            target: ordinary-service
+            service_port: "8084"
+            healthcheck_path: /health
+          - service: deliverability
+            service_path: ./services/deliverability
+            dockerfile: Dockerfile.go
+            target: ordinary-service
+            service_port: "8082"
+            healthcheck_path: /health
+          - service: migration
+            service_path: ./services/migration
+            dockerfile: Dockerfile.go
+            target: ordinary-service
+            service_port: "8081"
+            healthcheck_path: /health
+          - service: db-migrator
+            service_path: ./apps/api/cmd/migrate
+            dockerfile: infra/migrations/Dockerfile
+            service_port: ""
+            healthcheck_path: ""
+          - service: web
+            service_path: ""
+            dockerfile: apps/web/Dockerfile
+            context: .
+            service_port: "3000"
+            healthcheck_path: /healthz
+            build_args: |
+              POSTWAVE_RELEASE=${{ github.sha }}
+              NEXT_PUBLIC_POSTWAVE_RELEASE=${{ github.sha }}
+              NEXT_PUBLIC_SITE_URL=https://moosewave.com
+              NEXT_PUBLIC_APP_URL=https://app.moosewave.com
+              NEXT_PUBLIC_DOCS_URL=https://docs.moosewave.com
+              NEXT_PUBLIC_FORMS_ORIGIN=https://forms.moosewave.com
+              NEXT_PUBLIC_POSTWAVE_ASSETS_BASE_URL=${{ vars.POSTWAVE_WEB_ASSETS_BASE_URL }}
+              NEXT_PUBLIC_POSTWAVE_UPLOAD_ORIGIN=${{ vars.POSTWAVE_WEB_UPLOAD_ORIGIN }}
+              NEXT_PUBLIC_WEB_VITALS_ENDPOINT=https://api.moosewave.com/api/internal/web-vitals
+              NEXT_PUBLIC_POSTWAVE_CONSENT_SITE_KEY=${{ vars.POSTWAVE_WEB_CONSENT_SITE_KEY }}
+              NEXT_PUBLIC_POSTWAVE_API_BASE_URL=https://api.moosewave.com
+              NEXT_PUBLIC_POSTHOG_KEY=${{ vars.POSTWAVE_WEB_POSTHOG_KEY }}
+              NEXT_PUBLIC_POSTHOG_HOST=https://eu.posthog.com
+              NEXT_PUBLIC_SENTRY_DSN_WEB=${{ vars.POSTWAVE_WEB_SENTRY_DSN }}
+              NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ vars.POSTWAVE_WEB_VAPID_PUBLIC_KEY }}
+          - service: observability-collector
+            service_path: ""
+            dockerfile: infra/observability/image/Dockerfile
+            context: infra/observability/image
+            service_port: ""
+            healthcheck_path: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: Validate Campaign Assurance image lock
+        id: assurance_image_lock
+        run: |
+          set -euo pipefail
+          jq -e '
+            .schemaVersion == "postwave.campaign-assurance-image-lock.v1" and
+            (.reviewedAt | fromdateiso8601) > 0 and
+            .clamav.engineVersion == "1.4.4-r0" and
+            (.clamav.dailyDatabaseRevision | type) == "number" and
+            .clamav.dailyDatabaseRevision > 0 and
+            .tesseract.engineVersion == "5.5.1-r0" and
+            .tesseract.englishDataVersion == "5.5.1-r0" and
+            .tesseract.trainedDataPath == "/usr/share/tessdata/eng.traineddata"
+          ' infra/aws/campaign-assurance-image-lock.json >/dev/null
+          revision="$(jq -r '.clamav.dailyDatabaseRevision' infra/aws/campaign-assurance-image-lock.json)"
+          printf '%s' "$revision" | grep -Eq '^[0-9]+$'
+          echo "clamav_database_revision=${revision}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        # The release index includes ARM64 for production Fargate and amd64 for
+        # operator tooling. Register both emulators before Buildx so every RUN
+        # layer and the hardened startup gate exercise the target architecture.
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+        with:
+          platforms: amd64,arm64
+
+      - name: Set up Docker Buildx
+        # Buildx is required for the BuildKit cache-mount features used in
+        # Dockerfile.go. The setup action also configures multi-arch
+        # emulation if we ever switch to arm64.
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Lowercase repository owner
+        # ghcr.io image paths are case-sensitive and must be lowercase.
+        # github.repository_owner can be mixed-case; normalize once to
+        # avoid subtle 401s on push.
+        id: repo
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          OWNER_LC="$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "owner_lc=$OWNER_LC" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        # docker/metadata-action emits a comma-separated list usable
+        # directly as the `tags:` input on build-push-action. We declare
+        # :latest, :main, and :sha-<sha> explicitly to be unambiguous in
+        # the workflow log.
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner_lc }}/postwave-${{ matrix.service }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=main
+            type=sha,format=long
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: ${{ matrix.context || '.' }}
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          push: true
+          # Production ECS is ARM64 while local/operator consumers commonly
+          # use amd64. Publish one signed multi-platform index so promotion
+          # never substitutes architecture-specific bytes.
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            SERVICE_PATH=${{ matrix.service_path }}
+            SERVICE_PORT=${{ matrix.service_port }}
+            HEALTHCHECK_PATH=${{ matrix.healthcheck_path }}
+            CLAMAV_DATABASE_REFRESH=${{ github.sha }}
+            CLAMAV_DATABASE_VERSION=${{ steps.assurance_image_lock.outputs.clamav_database_revision }}
+            ${{ matrix.build_args }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # GitHub Actions cache backend keeps image layers warm across
+          # runs. `mode=max` caches every layer (vs. only the final image),
+          # which matters for our multi-stage Dockerfile.go.
+          cache-from: type=gha,scope=postwave-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=postwave-${{ matrix.service }}
+          # provenance/sbom emit signed attestations. Cheap to add; useful
+          # for downstream supply-chain audits.
+          provenance: true
+          sbom: true
+
+      - name: Verify Campaign Assurance image roles and identities
+        if: ${{ matrix.service == 'campaign-assurance' || matrix.service == 'campaign-assurance-image-services' }}
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner_lc }}/postwave-${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          SERVICE: ${{ matrix.service }}
+          CLAMAV_DATABASE_VERSION: ${{ steps.assurance_image_lock.outputs.clamav_database_revision }}
+        run: |
+          set -euo pipefail
+          output="/tmp/${SERVICE}-verification.json"
+          if [ "$SERVICE" = campaign-assurance ]; then
+            bash scripts/release/verify-campaign-assurance-image.sh \
+              core "$IMAGE_REF" | tee "$output"
+          else
+            bash scripts/release/verify-campaign-assurance-image.sh \
+              image-services "$IMAGE_REF" "$CLAMAV_DATABASE_VERSION" | tee "$output"
+          fi
+          jq -e --arg image "$IMAGE_REF" '.image == $image' "$output" >/dev/null
+
+      - name: Archive Campaign Assurance image identity
+        if: ${{ matrix.service == 'campaign-assurance' || matrix.service == 'campaign-assurance-image-services' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.service }}-verification-${{ github.sha }}
+          path: /tmp/${{ matrix.service }}-verification.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Verify standalone web runtime artifact
+        if: ${{ matrix.service == 'web' }}
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner_lc }}/postwave-web@${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          for platform in linux/amd64 linux/arm64; do
+            POSTWAVE_WEB_IMAGE_PLATFORM="$platform" \
+              bash scripts/release/verify-web-image.sh "$IMAGE_REF"
+          done
+
+      - name: Install cosign
+        # Keyless signing via Sigstore. No private key on disk, no new
+        # secret in GitHub Actions — the OIDC token from `id-token:
+        # write` above is exchanged for a short-lived Fulcio cert tied
+        # to the workflow identity. Consumers verify against the
+        # certificate-identity + OIDC issuer (see docs/RELEASE.md §9).
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+        with:
+          cosign-release: v2.4.1
+
+      - name: Sign and verify image
+        # A pushed image is not promotable until its immutable digest is
+        # signed and that signature verifies against this exact workflow
+        # identity. Any failure makes Docker Push fail, so ecr-bridge's
+        # workflow_run success condition prevents promotion.
+        env:
+          # Pin the image+digest reference so cosign signs the exact
+          # bytes we just pushed (defeats race conditions where :latest
+          # could move between push + sign).
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner_lc }}/postwave-${{ matrix.service }}@${{ steps.build.outputs.digest }}
+          CERTIFICATE_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/docker-push.yml@refs/heads/main
+          OIDC_ISSUER: https://token.actions.githubusercontent.com
+          SOURCE_URL: https://github.com/${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+          # Required by cosign keyless to skip the interactive "press
+          # any key" confirmation prompt in a CI environment.
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$IMAGE_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "::error::build did not return a valid immutable image digest"
+            exit 1
+          fi
+          images="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{ json .Image }}')"
+          printf '%s' "$images" | jq -e \
+            --arg revision "$TARGET_SHA" \
+            --arg source "$SOURCE_URL" '
+              (keys | sort) == ["linux/amd64", "linux/arm64"] and
+              all(.[];
+                .config.Labels["org.opencontainers.image.revision"] == $revision and
+                .config.Labels["org.opencontainers.image.source"] == $source)
+            ' >/dev/null
+
+          cosign sign --yes "$IMAGE_REF"
+          cosign verify \
+            --certificate-identity "$CERTIFICATE_IDENTITY" \
+            --certificate-oidc-issuer "$OIDC_ISSUER" \
+            "$IMAGE_REF" >/dev/null
+
+          provenance="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{ json .Provenance }}')"
+          sbom="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{ json .SBOM }}')"
+          printf '%s' "$provenance" \
+            | jq -e '.. | objects | select(has("SLSA")) | .SLSA | select(type == "object" and length > 0)' >/dev/null
+          printf '%s' "$sbom" \
+            | jq -e '.. | objects | select(has("SPDX")) | .SPDX | select(.SPDXID == "SPDXRef-DOCUMENT")' >/dev/null
+          echo "::notice::Signed and verified $IMAGE_REF with SLSA provenance and SPDX SBOM"

@@ -1,0 +1,6 @@
+email,status,first_name,last_name,tags,segment,signup_source,consent_timestamp,company,plan,locale
+ada@example.com,subscribed,Ada,Lovelace,"founder|weekly|beta",power_users,hosted_form,2026-01-05T10:00:00Z,Example Labs,growth,en-US
+grace@example.org,unsubscribed,Grace,Hopper,"legacy|weekly",alumni,mailchimp_import,2025-11-12T09:30:00Z,Example Navy,starter,en-US
+katherine@example.net,cleaned,Katherine,Johnson,"vip|events",vip,manual_upload,2025-12-01T13:15:00Z,Example Space,enterprise,en-US
+radia@example.com,subscribed,Radia,Perlman,"networking|weekly",power_users,api,2026-02-02T15:45:00Z,Example Networks,growth,en-US
+mary@example.org,subscribed,Mary,Jackson,"founder|vip",vip,hosted_form,2026-03-18T08:05:00Z,Example Aero,starter,en-US

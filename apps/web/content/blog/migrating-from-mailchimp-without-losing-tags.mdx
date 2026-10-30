@@ -1,0 +1,212 @@
+---
+title: "Migrating from Mailchimp without losing your tags"
+description: "Tags, segments, and automations are the highest-friction part of a Mailchimp migration. Here's what Moosewave can translate safely, what it preserves as evidence, and why Customer Journeys require a manual rebuild."
+date: "2026-04-22"
+author: "The Moosewave team"
+tags: ["migration", "mailchimp", "automations", "engineering"]
+readingTime: "8 min read"
+---
+
+If you've ever exported a Mailchimp audience and tried to bring it somewhere
+else, you already know the failure mode: you import 47,000 contacts, the
+unsubscribes look right, and then a week later you realize half your
+"engaged-90d" tags are gone, the welcome Customer Journey isn't running, and
+the segment that drove your most reliable revenue last year is now an empty
+list. Subscribers carried over. Everything _about_ them did not.
+
+This is the migration friction tax. It's the reason Mailchimp can charge
+$815/month for what costs them $30 in actual infrastructure — most people
+quietly conclude it would be cheaper to just keep paying.
+
+We don't think that should be true. So Moosewave's migration adapter spends
+most of its code budget on the boring metadata: tags, segments, suppression,
+and (the part nobody else does properly) the automations themselves.
+
+## The three things that always break
+
+Across roughly 50 real beta migrations, the same three categories of data
+loss show up regardless of source platform:
+
+1. **Tags collapse.** A contact with `customer`, `paid-2024`, `engaged-90d`,
+   and `interest:product-updates` lands at the destination as a single
+   "tag" field with one of those values picked at random.
+2. **Segment definitions are dropped.** The CSV export contains the
+   subscribers but not the rule that grouped them — so re-creating "opened
+   in last 30 days AND tagged customer AND not in the launch list" becomes
+   a manual task you'll never finish.
+3. **Automations are silently abandoned.** The export tells you the contact
+   is in journey _XYZ-WelcomeFlow_, but XYZ-WelcomeFlow itself doesn't come
+   with them. You're left to rebuild it from screenshots.
+
+The first two are solved by reading more of the API. The third is the hard
+one. It's also where 80% of our adapter code lives.
+
+## Tags: it's a many-to-many table, not a string
+
+Mailchimp's data model treats tags as a many-to-many relation between
+members and a workspace-scoped tag set. This is the right model. The CSV
+export flattens it because CSV is one row per subscriber.
+
+The Moosewave migration reads the API, not the CSV. For each member we
+fetch:
+
+```ts
+GET / 3.0 / lists / { list_id } / members / { subscriber_hash } / tags;
+// → { tags: [{ id: 12345, name: "engaged-90d" }, ...] }
+```
+
+We then upsert tags as first-class entities in our own schema and re-attach
+them to subscribers, preserving cardinality. Same with the merge fields
+(FNAME, LNAME, plus any custom merge variables). Same with the source URL
+and the consent timestamp — which Mailchimp does expose but the CSV exporter
+strips.
+
+For the writer, the practical effect is that segments built on tags actually
+keep working after the cut-over. "Tagged with `customer` and not tagged
+with `unsubscribed-from-launches`" stays valid because both pieces of
+information made the trip.
+
+## Segments: rules in, rules out
+
+Mailchimp segments are stored as a JSON tree of conditions. So are
+ConvertKit segments. So are Beehiiv segments. They're all slightly
+different trees.
+
+Moosewave defines a small **segment IR** — a typed expression tree with a
+strict set of operators (`equals`, `contains`, `before`, `after`,
+`not_contains`, `intersects`, etc.) and a strict set of fields (tag,
+list-membership, custom field, last-open, last-click, country, signup
+date, …). Each platform has an adapter from its native segment JSON to
+the Moosewave IR.
+
+The IR is deliberately limited. There are Mailchimp segment shapes we
+**can't** translate, and when we hit one, the migration report flags it
+as `untranslatable_segment` with the original JSON attached. We'd rather
+tell you the segment has to be rebuilt manually than silently translate
+it into something that means almost-but-not-quite the same thing. Half
+of the migration "data loss" you see in the wild is actually
+silently-misinterpreted-segment loss.
+
+## The hard part: Customer Journeys cannot be exported safely
+
+Customer Journeys are directed programs: nodes are _steps_ (send an
+email, wait, branch on a condition, add a tag, exit) and edges are
+_transitions_. A safe migration needs the complete graph, stable message
+references, and exact trigger semantics.
+
+Mailchimp's supported Marketing API does not provide a general endpoint
+for listing and exporting complete Customer Journey / Automation Flow
+graphs. Its Customer Journeys API can trigger a configured step, which is
+not an export contract. Moosewave therefore does **not** claim to migrate
+Customer Journeys automatically. The dry-run records an explicit rebuild
+gap so an operator can recreate and behavior-test the journey manually.
+
+### The Moosewave automation AST
+
+The AST is intentionally small. It's a sum type with seven node kinds:
+
+```ts
+type AutomationNode =
+  | { kind: "trigger"; type: TriggerType; config: TriggerConfig }
+  | { kind: "send"; templateId: string; subject?: string }
+  | { kind: "wait"; duration: ISO8601Duration }
+  | {
+      kind: "branch";
+      predicate: SegmentIR;
+      whenTrue: NodeId;
+      whenFalse: NodeId;
+    }
+  | { kind: "tag"; op: "add" | "remove"; tag: string }
+  | { kind: "webhook"; url: string; method: "POST" | "PUT"; payload: unknown }
+  | { kind: "exit"; reason?: string };
+
+interface Automation {
+  id: string;
+  name: string;
+  entry: NodeId;
+  nodes: Record<NodeId, AutomationNode>;
+  exitConditions: SegmentIR[];
+}
+```
+
+That AST is used only when a source exposes enough information to prove
+the behavior. A destination `branch` node can carry the same segment IR
+used elsewhere, but a source-specific engagement rule is not executable
+unless the underlying event data and time semantics are also available.
+
+### What Mailchimp automation support actually covers
+
+Mailchimp's `/automations` API covers **Classic Automations**, a separate
+product from Customer Journeys. Moosewave imports only the narrowly
+validated welcome-series subset, and only when the selected audience,
+every email template, and every delay can be resolved without guessing.
+The resulting runtime record stays paused for review.
+
+Unknown Classic workflow types, unsupported delay units, runtime-window
+semantics, unresolved templates, and missing audience identity fail
+closed. They appear in the verification report as manual rebuild work;
+Moosewave does not run a plausible-looking partial chain.
+
+This keeps the distinction clear: supported Classic Automations can be
+reviewed as paused runtime records, while Customer Journeys must be rebuilt
+from the configuration visible in the source account.
+
+## What the dry-run report actually looks like
+
+Before we commit a migration to your production audience, we run the
+entire thing as a dry-run and produce a verification report. A typical
+one looks like this:
+
+```
+Source:        Mailchimp (acct: writer-acme, audience: "Main list")
+Subscribers:   47,238 (47,221 active, 17 cleaned)
+Tags:          1,206 distinct tags, all preserved
+Segments:      82 detected
+                 → 78 translated to Moosewave segment IR
+                 →  3 translated with warnings (review_recommended)
+                 →  1 untranslatable_segment (manual rebuild required)
+Classic autos: 14 discovered for the selected audience
+                 →  2 supported welcome series, imported paused
+                 → 12 manual rebuild items; no partial runtime chains
+Journeys:      graph export unavailable; explicit manual rebuild gap
+Member state: subscribed, unsubscribed, cleaned, pending, transactional,
+              archived, and exact raw status retained
+Consent:       source evidence available for 94.3%; contacts without
+               sufficient proof remain quarantined from sending
+
+Blockers:      freeze relevant Mailchimp edits; use exact dedicated tenant
+Warnings:      account-wide templates/landing/ecommerce require scope review
+Rollback window: 7 days
+```
+
+Every line of that is something we'd rather flag now than have you
+discover three weeks in. The migration only commits when you click
+**Confirm**. The 7-day rollback applies to destination records tracked by
+that job: it removes job-created records and restores recorded before-images
+when they have not been changed later. It never changes Mailchimp and refuses
+to clobber post-import edits or records owned by a later migration.
+
+## What this means for you
+
+If you're sitting on a Mailchimp account because the migration looks
+scary — you're paying the friction tax. The actual thing to verify
+before switching isn't "does the import work" (every tool can move
+subscribers); it's "does my favorite automation still run on day 1, and
+does my best segment still match the same people".
+
+For both of those, ask the platform you're considering for a _dry-run
+report on your real audience_. The honest tools will give you one before
+asking for any payment. The ones who can't, you've already learned
+something.
+
+You can run the Moosewave dry-run today, free, on your live Mailchimp
+audience: see [Migrate from Mailchimp →](/migrations/mailchimp). It reads
+your data, never writes, and produces the verification report above so
+you can decide based on actual numbers instead of a sales call.
+
+Or read [the rest of the migration features](/features#migration) for the
+detailed breakdown.
+
+We'll keep writing about the rough edges as we hit them. The next post is
+about voice profiles — why we built them and what "fidelity score 73"
+actually means in practice.

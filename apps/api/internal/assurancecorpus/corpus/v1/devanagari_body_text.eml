@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <devanagari-body-text.v1@example.com>
+Subject: आपका ऑर्डर तैयार है
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-deva-v1"
+
+--pw-deva-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+आपका ऑर्डर तैयार है। देखें: https://shop.example.com/hi/6
+--pw-deva-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>आपका ऑर्डर तैयार है</h1><p>तीन दिनों में डिलीवरी होगी।</p><p><a href="https://shop.example.com/hi/6">ऑर्डर देखें</a></p></body></html>
+--pw-deva-v1--

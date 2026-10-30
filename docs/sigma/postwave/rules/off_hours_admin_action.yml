@@ -1,0 +1,37 @@
+title: Off-Hours Destructive Admin Action
+id: 4c2e8915-a4f1-44b0-bfd2-13c5e6e6abcd
+status: stable
+description: |
+  Destructive operations (delete, disable, rotate) performed outside the
+  tenant's configured business hours by an Admin or User account. Outside
+  business hours = before 06:00 or after 22:00 in the tenant's local time
+  zone; SIEMs that normalise to UTC should rebase before applying.
+author: Moosewave Security
+date: 2026/05/01
+references:
+  - https://schema.ocsf.io/1.8.0/categories/iam
+  - docs/audit/ocsf-mapping.md
+tags:
+  - attack.persistence
+  - attack.t1098
+  - postwave.audit
+logsource:
+  product: postwave
+  service: audit_log
+  category: iam
+detection:
+  destructive:
+    severity_id:
+      - 3   # Medium  (rotate, disable, export)
+      - 4   # High    (delete, remove)
+  admin_actor:
+    actor.user.type_id:
+      - 1   # User
+      - 2   # Admin
+  off_hours:
+    time|hour|after_business_hours: true
+  condition: destructive and admin_actor and off_hours
+falsepositives:
+  - "On-call engineer responding to an incident — silence per-individual via tenant-specific allowlist."
+  - "Automated retention worker should run as actor.user.type_id=3 (System) and not match."
+level: medium

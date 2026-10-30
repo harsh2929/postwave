@@ -1,0 +1,949 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Moosewave production metrics plane. Creates a KMS-encrypted Amazon Managed
+  Service for Prometheus workspace, managed alerting to encrypted SNS, an
+  AWS-SigV4 OpenTelemetry collector on private ECS/Fargate networking, and a private
+  Amazon Managed Grafana workspace. Deploy after the five application services
+  are healthy; the collector starts at desired count zero until explicitly
+  enabled.
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  VpcCidr:
+    Type: String
+    AllowedPattern: "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}/(?:[0-9]|[12][0-9]|3[0-2])$"
+    Description: CIDR of VpcId, used only for private DNS egress.
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: At least two private subnets in distinct availability zones.
+  PrivateRouteTableIds:
+    Type: CommaDelimitedList
+    Description: Route tables used by PrivateSubnetIds, for the private S3 gateway endpoint.
+  EcsClusterName:
+    Type: String
+    MinLength: 1
+  ApiSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: EcsTaskSecurityGroupId output from postwave-stack.yaml.
+  SidecarSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: EcsSidecarSecurityGroupId output from postwave-sidecars.yaml.
+  MetricsTokenSecretArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:postwave/prod/metrics-token-[A-Za-z0-9]+$"
+    Description: Dedicated high-entropy bearer token shared by the collector and five scrape targets.
+  SecretsManagerKmsKeyArn:
+    Type: String
+    AllowedPattern: "^arn:(aws|aws-us-gov|aws-cn):kms:[a-z0-9-]+:[0-9]{12}:key/[0-9a-fA-F-]{36}$"
+    Description: KMS key encrypting MetricsTokenSecretArn.
+  CollectorImageDigest:
+    Type: String
+    AllowedPattern: "^sha256:[0-9a-f]{64}$"
+    Description: >
+      Signed and vulnerability-scanned multi-architecture Moosewave wrapper
+      manifest digest copied into the stack-owned collector repository before
+      enabling service. There is intentionally no mutable or fallback default.
+  DeployCollector:
+    Type: String
+    Default: "false"
+    AllowedValues: ["false", "true"]
+    Description: Keep false until the image is mirrored and all five scrape targets are healthy.
+  GrafanaOperatorCidr:
+    Type: String
+    AllowedPattern: "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}/(?:[0-9]|[12][0-9]|3[0-2])$"
+    Description: Corporate VPN/operator CIDR permitted to reach the private Grafana endpoint.
+  AlertEmail:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$"
+    Description: Optional initial SNS email receiver; production paging integrations may subscribe separately.
+  MetricsRetentionDays:
+    Type: Number
+    Default: 365
+    MinValue: 30
+    MaxValue: 1095
+
+Conditions:
+  CollectorEnabled: !Equals [!Ref DeployCollector, "true"]
+  CreateEmailSubscription: !Not [!Equals [!Ref AlertEmail, ""]]
+
+Resources:
+  ObservabilityKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Moosewave production AMP metrics and Prometheus alert topic encryption.
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AccountAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: AllowAMPGrantsWithinThisAccount
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action:
+              - kms:CreateGrant
+              - kms:DescribeKey
+              - kms:GenerateDataKey
+              - kms:Decrypt
+            Resource: "*"
+            Condition:
+              StringEquals:
+                kms:CallerAccount: !Ref AWS::AccountId
+                kms:ViaService: !Sub "aps.${AWS::Region}.amazonaws.com"
+          - Sid: AllowAMPToEncryptAlertMessages
+            Effect: Allow
+            Principal:
+              Service: aps.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub "arn:${AWS::Partition}:aps:${AWS::Region}:${AWS::AccountId}:workspace/*"
+          - Sid: AllowSNSToDeliverEncryptedAlertMessages
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey*
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:postwave-prometheus-alerts"
+      Tags:
+        - Key: Project
+          Value: postwave
+        - Key: Environment
+          Value: production
+
+  ObservabilityKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/postwave-production-observability
+      TargetKeyId: !Ref ObservabilityKey
+
+  PrometheusLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /aws/aps/postwave-production
+      RetentionInDays: 365
+
+  CollectorLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-observability-collector
+      RetentionInDays: 90
+
+  PrometheusAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: postwave-prometheus-alerts
+      DisplayName: Moosewave Prometheus alerts
+      KmsMasterKeyId: !GetAtt ObservabilityKey.Arn
+      Tags:
+        - Key: Project
+          Value: postwave
+        - Key: Environment
+          Value: production
+
+  PrometheusAlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: CreateEmailSubscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+      TopicArn: !Ref PrometheusAlertsTopic
+
+  PrometheusWorkspace:
+    Type: AWS::APS::Workspace
+    Properties:
+      Alias: postwave-production
+      KmsKeyArn: !GetAtt ObservabilityKey.Arn
+      LoggingConfiguration:
+        LogGroupArn: !GetAtt PrometheusLogGroup.Arn
+      WorkspaceConfiguration:
+        RetentionPeriodInDays: !Ref MetricsRetentionDays
+      AlertManagerDefinition:
+        Fn::Sub: |
+          alertmanager_config: |
+            route:
+              receiver: postwave-production-sns
+              group_by: [alertname, job, severity]
+              group_wait: 30s
+              group_interval: 5m
+              repeat_interval: 4h
+            receivers:
+              - name: postwave-production-sns
+                sns_configs:
+                  - sigv4:
+                      region: ${AWS::Region}
+                    topic_arn: ${PrometheusAlertsTopic}
+                    subject: '[Moosewave {{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+                    send_resolved: true
+      Tags:
+        - Key: Project
+          Value: postwave
+        - Key: Environment
+          Value: production
+
+  PrometheusAlertsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics: [!Ref PrometheusAlertsTopic]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AccountAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+            Action: "sns:*"
+            Resource: !Ref PrometheusAlertsTopic
+          - Sid: AMPAlertManagerPublish
+            Effect: Allow
+            Principal:
+              Service: aps.amazonaws.com
+            Action:
+              - sns:GetTopicAttributes
+              - sns:Publish
+            Resource: !Ref PrometheusAlertsTopic
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnEquals:
+                aws:SourceArn: !GetAtt PrometheusWorkspace.Arn
+
+  ProductionRuleGroups:
+    Type: AWS::APS::RuleGroupsNamespace
+    Properties:
+      Name: postwave-release-core
+      Workspace: !GetAtt PrometheusWorkspace.Arn
+      Data: |
+        groups:
+          - name: postwave-release-core
+            interval: 30s
+            rules:
+              - alert: APIScrapeMissing
+                expr: absent(up{job="postwave-api"}) or up{job="postwave-api"} == 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: The production API metrics target is absent or down.
+                  runbook: docs/runbooks/incident-response.md
+              - alert: MigrationScrapeMissing
+                expr: absent(up{job="postwave-migration"}) or up{job="postwave-migration"} == 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: The migration metrics target is absent or down.
+                  runbook: docs/runbooks/migration-failure.md
+              - alert: DeliverabilityScrapeMissing
+                expr: absent(up{job="postwave-deliverability"}) or up{job="postwave-deliverability"} == 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: The deliverability metrics target is absent or down.
+                  runbook: docs/runbooks/deliverability-incident.md
+              - alert: VoiceScrapeMissing
+                expr: absent(up{job="postwave-voice"}) or up{job="postwave-voice"} == 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: The voice metrics target is absent or down.
+                  runbook: docs/runbooks/incident-response.md
+              - alert: AutomationScrapeMissing
+                expr: absent(up{job="postwave-automation"}) or up{job="postwave-automation"} == 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: The automation metrics target is absent or down.
+                  runbook: docs/runbooks/automation-runtime-stuck.md
+              - alert: APIHigh5xxRate
+                expr: sum(rate(pw_http_requests_total{job="postwave-api",status_class="5xx"}[5m])) > 0.5
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: API 5xx rate is above 0.5 requests per second.
+                  runbook: docs/runbooks/incident-response.md
+              - alert: APILatencyP95High
+                expr: histogram_quantile(0.95, sum by (le, route) (rate(pw_http_duration_seconds_bucket{job="postwave-api"}[5m]))) > 2
+                for: 10m
+                labels: { severity: ticket }
+                annotations:
+                  summary: API p95 latency is above two seconds.
+                  runbook: docs/runbooks/common-failures.md
+              - alert: RateLimiterEvicting
+                expr: sum(rate(rate_limit_lru_evictions_total{job="postwave-api"}[5m])) by (limiter) > 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: A bounded rate limiter is evicting active buckets.
+                  runbook: docs/runbooks/incident-response.md
+              - alert: AuditSinkConsecutiveFailures
+                expr: max(postwave_auditsink_consecutive_failures{job="postwave-api"}) by (kind) >= 10
+                for: 5m
+                labels: { severity: ticket }
+                annotations:
+                  summary: An audit sink has ten or more consecutive failures.
+                  runbook: docs/runbooks/common-failures.md#audit-sink-delivery-failures
+              - alert: PrivacyRequestOverdue
+                expr: sum(postwave_privacy_overdue_requests{job="postwave-api"}) by (request_type) > 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: A privacy request is past its recorded due date.
+                  runbook: docs/runbooks/common-failures.md#privacy-request-overdue
+              - alert: RecurrenceScannerStale
+                expr: time() - max(postwave_recurrence_scanner_last_run_timestamp{job="postwave-automation"}) > 900
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: The automation recurrence scanner has not completed for 15 minutes.
+                  runbook: docs/runbooks/automation-runtime-stuck.md
+              - alert: AutomationQueueBacklogHigh
+                expr: max(postwave_automation_queue_depth{job="postwave-automation"}) > 1000
+                for: 10m
+                labels: { severity: page }
+                annotations:
+                  summary: The automation queue has more than 1,000 pending, scheduled, or retry tasks.
+                  runbook: docs/runbooks/automation-runtime-stuck.md
+              - alert: AutomationQueueObservationFailing
+                expr: sum(increase(postwave_automation_queue_observation_failures_total{job="postwave-automation"}[10m])) > 2
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: Automation cannot reliably inspect its Redis/Asynq queue.
+                  runbook: docs/runbooks/automation-runtime-stuck.md
+              - alert: ReputationProviderFailures
+                expr: sum(rate(reputation_source_failures_total{job="postwave-deliverability"}[15m])) by (source) > 0.1
+                for: 15m
+                labels: { severity: ticket }
+                annotations:
+                  summary: A deliverability reputation provider is repeatedly failing.
+                  runbook: docs/runbooks/deliverability-incident.md
+              - alert: EmailVerificationAPI5xx
+                expr: sum(rate(pw_http_requests_total{job="postwave-api",route=~"/api/v1/verification/.*",status_class="5xx"}[5m])) > 0
+                for: 5m
+                labels: { severity: page }
+                annotations:
+                  summary: Email verification API routes are returning server errors.
+                  runbook: docs/runbooks/email-verification-health.md
+              - alert: RecipientHealthGateEvidenceFailure
+                expr: sum(increase(postwave_sendloop_recipient_health_gate_total{job="postwave-api",reason=~"error|incomplete"}[5m])) > 0
+                labels: { severity: page }
+                annotations:
+                  summary: The campaign send boundary could not obtain complete recipient-health evidence.
+                  runbook: docs/runbooks/email-verification-health.md
+              - alert: SignupVerificationFailOpen
+                expr: sum(increase(postwave_forms_signup_verification_total{job="postwave-api",outcome=~"degraded_allowed|error_allowed"}[5m])) > 0
+                labels: { severity: ticket }
+                annotations:
+                  summary: Public signup verification admitted addresses through a degraded fail-open path.
+                  runbook: docs/runbooks/email-verification-health.md
+              - alert: EmailVerificationAmbiguousJob
+                expr: sum(increase(postwave_email_verification_jobs_terminal_total{job="postwave-api",status="failed",failure_code="verification_outcome_ambiguous"}[5m])) > 0
+                labels: { severity: page }
+                annotations:
+                  summary: A durable verification job ended with an ambiguous provider outcome and must not be retried automatically.
+                  runbook: docs/runbooks/email-verification-health.md
+              - alert: EmailVerificationProviderFailure
+                expr: sum by (provider, outcome) (increase(postwave_email_verification_provider_batches_total{job="postwave-api",outcome=~"no_credits|unauthorized|account_rejected|not_configured|unavailable|error|ambiguous"}[5m])) > 0
+                labels: { severity: ticket }
+                annotations:
+                  summary: A metered email-verification provider batch did not complete successfully.
+                  runbook: docs/runbooks/email-verification-health.md
+              - alert: EmailVerificationUsagePersistenceFailure
+                expr: sum by (surface) (increase(postwave_email_verification_usage_persistence_failures_total{job="postwave-api"}[5m])) > 0
+                labels: { severity: page }
+                annotations:
+                  summary: Completed email verification could not confirm its tenant usage-accounting record.
+                  runbook: docs/runbooks/email-verification-health.md
+              - alert: EmailHealthEvidenceUnavailable
+                expr: increase(postwave_email_health_evidence_unavailable_total{job="postwave-api"}[5m]) > 0
+                labels: { severity: page }
+                annotations:
+                  summary: Verification responses were forced fail-closed because recipient-health evidence was unavailable.
+                  runbook: docs/runbooks/email-verification-health.md
+
+  CollectorRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      RepositoryName: postwave-observability-collector
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: IMMUTABLE
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      Tags:
+        - Key: Project
+          Value: postwave
+        - Key: Environment
+          Value: production
+
+  CollectorSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Private Moosewave metrics collector with explicit scrape and AWS-endpoint egress.
+      VpcId: !Ref VpcId
+      SecurityGroupEgress:
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: !Ref VpcCidr
+          Description: VPC DNS
+        - IpProtocol: tcp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: !Ref VpcCidr
+          Description: VPC DNS fallback
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          DestinationSecurityGroupId: !Ref ApiSecurityGroupId
+          Description: Authenticated API metrics scrape
+        - IpProtocol: tcp
+          FromPort: 8081
+          ToPort: 8084
+          DestinationSecurityGroupId: !Ref SidecarSecurityGroupId
+          Description: Authenticated sidecar metrics scrapes
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          DestinationSecurityGroupId: !Ref AwsEndpointSecurityGroup
+          Description: Private AWS APIs for AMP, ECR, logs, and Secrets Manager
+
+  AwsEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Interface endpoints used by the Moosewave observability collector.
+      VpcId: !Ref VpcId
+
+  AwsEndpointIngressFromCollector:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref AwsEndpointSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourceSecurityGroupId: !Ref CollectorSecurityGroup
+      Description: TLS from observability collector only
+
+  ApiMetricsIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ApiSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 8080
+      ToPort: 8080
+      SourceSecurityGroupId: !Ref CollectorSecurityGroup
+      Description: Authenticated metrics scrape from OpenTelemetry collector
+
+  SidecarMetricsIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref SidecarSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 8081
+      ToPort: 8084
+      SourceSecurityGroupId: !Ref CollectorSecurityGroup
+      Description: Authenticated metrics scrapes from OpenTelemetry collector
+
+  PrometheusEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      VpcEndpointType: Interface
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.aps-workspaces"
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref PrivateSubnetIds
+      SecurityGroupIds: [!Ref AwsEndpointSecurityGroup]
+
+  SecretsManagerEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      VpcEndpointType: Interface
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.secretsmanager"
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref PrivateSubnetIds
+      SecurityGroupIds: [!Ref AwsEndpointSecurityGroup]
+
+  CloudWatchLogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      VpcEndpointType: Interface
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref PrivateSubnetIds
+      SecurityGroupIds: [!Ref AwsEndpointSecurityGroup]
+
+  EcrApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      VpcEndpointType: Interface
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.api"
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref PrivateSubnetIds
+      SecurityGroupIds: [!Ref AwsEndpointSecurityGroup]
+
+  EcrDockerEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      VpcEndpointType: Interface
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.dkr"
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref PrivateSubnetIds
+      SecurityGroupIds: [!Ref AwsEndpointSecurityGroup]
+
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      VpcEndpointType: Gateway
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      RouteTableIds: !Ref PrivateRouteTableIds
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: EcrLayerReadOnly
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:${AWS::Partition}:s3:::prod-${AWS::Region}-starport-layer-bucket/*"
+
+  CollectorExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:task/*"
+      Policies:
+        - PolicyName: postwave-observability-execution
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: EcrAuthentication
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Sid: PullCollectorImage
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: !GetAtt CollectorRepository.Arn
+              - Sid: WriteCollectorLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "${CollectorLogGroup.Arn}:*"
+              - Sid: InjectMetricsToken
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref MetricsTokenSecretArn
+              - Sid: DecryptMetricsToken
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: !Ref SecretsManagerKmsKeyArn
+                Condition:
+                  StringEquals:
+                    kms:ViaService: !Sub "secretsmanager.${AWS::Region}.amazonaws.com"
+                    kms:EncryptionContext:SecretARN: !Ref MetricsTokenSecretArn
+
+  CollectorTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:task/*"
+      Policies:
+        - PolicyName: amp-remote-write
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: aps:RemoteWrite
+                Resource: !GetAtt PrometheusWorkspace.Arn
+
+  CollectorTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: postwave-observability-collector
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !GetAtt CollectorExecutionRole.Arn
+      TaskRoleArn: !GetAtt CollectorTaskRole.Arn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      Volumes:
+        - Name: collector-tmp
+      ContainerDefinitions:
+        - Name: postwave-observability-collector
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/postwave-observability-collector@${CollectorImageDigest}"
+          Command: ["--config=env:AOT_CONFIG_CONTENT"]
+          Essential: true
+          User: "10001"
+          ReadonlyRootFilesystem: true
+          StopTimeout: 120
+          LinuxParameters:
+            InitProcessEnabled: true
+            Capabilities:
+              Drop: [ALL]
+          MountPoints:
+            - SourceVolume: collector-tmp
+              ContainerPath: /tmp
+              ReadOnly: false
+          Secrets:
+            - Name: METRICS_TOKEN
+              ValueFrom: !Ref MetricsTokenSecretArn
+          Environment:
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: AOT_CONFIG_CONTENT
+              Value:
+                Fn::Sub: |
+                  extensions:
+                    health_check:
+                      endpoint: 0.0.0.0:13133
+                    sigv4auth:
+                      region: ${AWS::Region}
+                      service: aps
+                  receivers:
+                    prometheus:
+                      config:
+                        global:
+                          scrape_interval: 30s
+                          scrape_timeout: 10s
+                        scrape_configs:
+                          - job_name: postwave-api
+                            metrics_path: /metrics
+                            authorization:
+                              type: Bearer
+                              credentials: ${!env:METRICS_TOKEN}
+                            static_configs:
+                              - targets: [api.postwave.internal:8080]
+                          - job_name: postwave-migration
+                            metrics_path: /metrics
+                            authorization:
+                              type: Bearer
+                              credentials: ${!env:METRICS_TOKEN}
+                            static_configs:
+                              - targets: [migration.postwave.internal:8081]
+                          - job_name: postwave-deliverability
+                            metrics_path: /metrics
+                            authorization:
+                              type: Bearer
+                              credentials: ${!env:METRICS_TOKEN}
+                            static_configs:
+                              - targets: [deliverability.postwave.internal:8082]
+                          - job_name: postwave-voice
+                            metrics_path: /metrics
+                            authorization:
+                              type: Bearer
+                              credentials: ${!env:METRICS_TOKEN}
+                            static_configs:
+                              - targets: [voice.postwave.internal:8083]
+                          - job_name: postwave-automation
+                            metrics_path: /metrics
+                            authorization:
+                              type: Bearer
+                              credentials: ${!env:METRICS_TOKEN}
+                            static_configs:
+                              - targets: [automation.postwave.internal:8084]
+                  processors:
+                    memory_limiter:
+                      check_interval: 5s
+                      limit_mib: 384
+                      spike_limit_mib: 128
+                    batch:
+                      timeout: 5s
+                      send_batch_size: 1024
+                  exporters:
+                    prometheusremotewrite:
+                      endpoint: ${PrometheusWorkspace.PrometheusEndpoint}remote_write
+                      auth:
+                        authenticator: sigv4auth
+                      resource_to_telemetry_conversion:
+                        enabled: true
+                      remote_write_queue:
+                        enabled: true
+                        queue_size: 10000
+                        num_consumers: 5
+                      retry_on_failure:
+                        enabled: true
+                        initial_interval: 5s
+                        max_interval: 30s
+                        max_elapsed_time: 300s
+                  service:
+                    extensions: [health_check, sigv4auth]
+                    telemetry:
+                      logs:
+                        level: info
+                    pipelines:
+                      metrics:
+                        receivers: [prometheus]
+                        processors: [memory_limiter, batch]
+                        exporters: [prometheusremotewrite]
+          HealthCheck:
+            Command: [CMD, /healthcheck]
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CollectorLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: collector
+
+  CollectorService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - PrometheusEndpoint
+      - SecretsManagerEndpoint
+      - CloudWatchLogsEndpoint
+      - EcrApiEndpoint
+      - EcrDockerEndpoint
+      - S3Endpoint
+    Properties:
+      Cluster: !Ref EcsClusterName
+      ServiceName: postwave-observability-collector
+      TaskDefinition: !Ref CollectorTaskDefinition
+      DesiredCount: !If [CollectorEnabled, 1, 0]
+      LaunchType: FARGATE
+      EnableECSManagedTags: true
+      EnableExecuteCommand: false
+      PropagateTags: TASK_DEFINITION
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups: [!Ref CollectorSecurityGroup]
+          AssignPublicIp: DISABLED
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+  CollectorErrorMetricFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref CollectorLogGroup
+      FilterName: postwave-observability-collector-errors
+      FilterPattern: '?"error" ?"failed" ?"dropped"'
+      MetricTransformations:
+        - MetricNamespace: Moosewave/Observability
+          MetricName: CollectorErrorLogCount
+          MetricValue: "1"
+          DefaultValue: 0
+          Unit: Count
+
+  CollectorRunningTasksAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CollectorEnabled
+    Properties:
+      AlarmName: postwave-observability-collector-running-tasks-low
+      AlarmDescription: The production metrics collector is absent or Container Insights telemetry is missing.
+      Namespace: ECS/ContainerInsights
+      MetricName: RunningTaskCount
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 3
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      Dimensions:
+        - Name: ClusterName
+          Value: !Ref EcsClusterName
+        - Name: ServiceName
+          Value: !GetAtt CollectorService.Name
+      AlarmActions: [!Ref PrometheusAlertsTopic]
+      OKActions: [!Ref PrometheusAlertsTopic]
+
+  CollectorErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: CollectorEnabled
+    Properties:
+      AlarmName: postwave-observability-collector-errors
+      AlarmDescription: The collector repeatedly logged failed or dropped telemetry.
+      Namespace: Moosewave/Observability
+      MetricName: CollectorErrorLogCount
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref PrometheusAlertsTopic]
+      OKActions: [!Ref PrometheusAlertsTopic]
+
+  GrafanaWorkspaceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: grafana.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub "arn:${AWS::Partition}:grafana:${AWS::Region}:${AWS::AccountId}:/workspaces/*"
+      Policies:
+        - PolicyName: postwave-observability-read
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: QueryPrometheus
+                Effect: Allow
+                Action:
+                  - aps:GetLabels
+                  - aps:GetMetricMetadata
+                  - aps:GetSeries
+                  - aps:QueryMetrics
+                Resource: !Sub "arn:${AWS::Partition}:aps:${AWS::Region}:${AWS::AccountId}:workspace/*"
+              - Sid: DecryptPrometheusWorkspace
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: !GetAtt ObservabilityKey.Arn
+              - Sid: ReadCloudWatch
+                Effect: Allow
+                Action:
+                  - cloudwatch:DescribeAlarmHistory
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:DescribeAlarmsForMetric
+                  - cloudwatch:GetInsightRuleReport
+                  - cloudwatch:GetMetricData
+                  - cloudwatch:ListMetrics
+                  - ec2:DescribeRegions
+                  - tag:GetResources
+                Resource: "*"
+              - Sid: DiscoverLogs
+                Effect: Allow
+                Action: logs:DescribeLogGroups
+                Resource: "*"
+              - Sid: QueryPostwaveLogs
+                Effect: Allow
+                Action:
+                  - logs:FilterLogEvents
+                  - logs:GetLogEvents
+                  - logs:GetLogGroupFields
+                  - logs:GetQueryResults
+                  - logs:StartQuery
+                  - logs:StopQuery
+                Resource: !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/postwave-*"
+
+  GrafanaEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Private operator access to the Moosewave Grafana workspace.
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref GrafanaOperatorCidr
+          Description: HTTPS from the corporate VPN/operator network
+
+  GrafanaEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      VpcEndpointType: Interface
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.grafana-workspace"
+      PrivateDnsEnabled: true
+      SubnetIds: !Ref PrivateSubnetIds
+      SecurityGroupIds: [!Ref GrafanaEndpointSecurityGroup]
+
+  GrafanaWorkspace:
+    Type: AWS::Grafana::Workspace
+    Properties:
+      AccountAccessType: CURRENT_ACCOUNT
+      AuthenticationProviders: [AWS_SSO]
+      Description: Moosewave production metrics, alerts, CloudWatch, and logs.
+      Name: postwave-production
+      PermissionType: CUSTOMER_MANAGED
+      PluginAdminEnabled: false
+      RoleArn: !GetAtt GrafanaWorkspaceRole.Arn
+      NetworkAccessControl:
+        PrefixListIds: []
+        VpceIds: [!Ref GrafanaEndpoint]
+
+Outputs:
+  CollectorRepositoryUri:
+    Description: Push the signed, scanned Moosewave collector wrapper here before enabling the service.
+    Value: !GetAtt CollectorRepository.RepositoryUri
+  CollectorServiceName:
+    Value: !GetAtt CollectorService.Name
+  PrometheusWorkspaceArn:
+    Value: !GetAtt PrometheusWorkspace.Arn
+  PrometheusWorkspaceId:
+    Value: !GetAtt PrometheusWorkspace.WorkspaceId
+  PrometheusEndpointUrl:
+    Value: !GetAtt PrometheusWorkspace.PrometheusEndpoint
+  PrometheusAlertsTopicArn:
+    Value: !Ref PrometheusAlertsTopic
+  GrafanaWorkspaceId:
+    Value: !Ref GrafanaWorkspace
+  GrafanaWorkspaceEndpoint:
+    Value: !GetAtt GrafanaWorkspace.Endpoint
+  GrafanaPrivateEndpointId:
+    Value: !Ref GrafanaEndpoint
+  ObservabilityKmsKeyArn:
+    Value: !GetAtt ObservabilityKey.Arn

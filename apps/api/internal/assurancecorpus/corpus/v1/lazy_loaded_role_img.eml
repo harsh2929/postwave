@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <lazy-loaded-role-img.v1@example.com>
+Subject: Quarterly report
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-lazy-v1"
+
+--pw-lazy-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Q3 report is published: https://www.example.com/q3
+--pw-lazy-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Quarterly report</h1><img src="https://cdn.example.com/chart.png" role="img" loading="lazy" alt="Revenue rose from 1.2M to 1.9M across the quarter" width="600" height="320"><p>Revenue rose from 1.2M to 1.9M across the quarter.</p><p><a href="https://www.example.com/q3">Read the report</a></p></body></html>
+--pw-lazy-v1--

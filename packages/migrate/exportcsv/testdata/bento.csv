@@ -1,0 +1,4 @@
+email,subscriber_id,status,unsubscribed_at,tags
+ada@example.com,000123,subscribed,,VIP
+optout@example.com,000124,subscribed,2024-02-01,VIP
+unknown@example.com,000125,,,

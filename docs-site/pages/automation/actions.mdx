@@ -1,0 +1,93 @@
+---
+title: Actions
+---
+
+import { Callout } from 'nextra/components';
+
+# Actions
+
+`action` nodes mutate subscriber state. Five action kinds are supported.
+
+## `add_tag`
+
+```yaml
+type: action
+config:
+  kind: add_tag
+  tag:  "completed-onboarding"
+```
+
+Idempotent — adding a tag a subscriber already has is a no-op.
+
+## `remove_tag`
+
+```yaml
+type: action
+config:
+  kind: remove_tag
+  tag:  "trial"
+```
+
+Idempotent — removing a missing tag is a no-op.
+
+## `move_to_list`
+
+```yaml
+type: action
+config:
+  kind:    move_to_list
+  list_id: <uuid>
+  remove_from_current: true   # if false, subscriber is added without removing from origin list
+```
+
+## `unsubscribe`
+
+```yaml
+type: action
+config:
+  kind: unsubscribe
+  reason: "completed-winback-no-engagement"   # stored on the subscriber record
+```
+
+Sets subscriber status to `unsubscribed` workspace-wide. Cannot be reversed by the subscriber clicking a confirm link — they need to re-subscribe via a form.
+
+<Callout type="warning">
+**`unsubscribe` is destructive.** It pulls the subscriber out of all your lists, segments, and future automations. Use it for end-of-winback dropoff, not as a routing primitive.
+</Callout>
+
+## `webhook_dispatch`
+
+```yaml
+type: action
+config:
+  kind:   webhook_dispatch
+  url:    "https://your-app.example.com/postwave-callback"
+  method: POST
+  headers:
+    Authorization: "Bearer ${{ secrets.YOUR_API_KEY }}"
+  payload:
+    subscriber_email: "${{ subscriber.email }}"
+    event_context:    "completed_onboarding_sequence"
+```
+
+Templating: `${{ subscriber.* }}`, `${{ run.* }}`, `${{ secrets.* }}` are interpolated. Secrets live in **Settings → Secrets** and are never logged or surfaced.
+
+Webhook dispatches are retried 5 times with exponential backoff on non-2xx responses. After exhausting retries, the run continues (the webhook is best-effort, not blocking).
+
+## Composing actions
+
+Multiple actions in sequence are normal — e.g., end of a course-launch sequence:
+
+```
+[ wait 2 days ]
+        ↓
+[ branch: purchased? ]
+   yes → [ add_tag "course-2026-buyer" ] → [ move_to_list "Customers" ] → [ end ]
+   no  → [ add_tag "course-2026-tirekicker" ] → [ end ]
+```
+
+## Next steps
+
+- [Triggers](/automation/triggers)
+- [Branches](/automation/branches)
+- [Migrating from Mailchimp Journeys](/automation/migrating-from-mailchimp-journeys)

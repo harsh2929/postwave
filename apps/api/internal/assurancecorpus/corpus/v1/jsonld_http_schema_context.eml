@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-http-schema-context.v1@example.com>
+Subject: Order 4411 confirmed
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ldhttp-v1"
+
+--pw-ldhttp-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Order 4411 confirmed - 18.00 USD. https://shop.example.com/o/4411
+--pw-ldhttp-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><script type="application/ld+json">{"@context":"http://schema.org","@type":"Order","orderNumber":"4411","price":"18.00","priceCurrency":"USD","url":"https://shop.example.com/o/4411"}</script></head><body><h1>Order 4411 confirmed</h1><p>Total 18.00 USD.</p><p><a href="https://shop.example.com/o/4411">View your order</a></p></body></html>
+--pw-ldhttp-v1--

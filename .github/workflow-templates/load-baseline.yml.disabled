@@ -1,0 +1,132 @@
+name: Load baseline (authenticated staging)
+
+# Nightly release baselines run only against the exact production-like staging
+# origin configured in repository variables. The job deliberately fails when
+# staging or its scoped API key is absent: a fake/local target is not evidence.
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Optional HTTPS staging origin override (must match the allowed host)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: load-baseline
+  cancel-in-progress: false
+
+env:
+  POSTWAVE_LOAD_BASE_URL: ${{ inputs.target_url || vars.POSTWAVE_LOAD_BASE_URL }}
+  POSTWAVE_LOAD_ALLOWED_HOST: ${{ vars.POSTWAVE_LOAD_ALLOWED_HOST }}
+  POSTWAVE_LOAD_API_KEY: ${{ secrets.POSTWAVE_LOAD_API_KEY }}
+
+jobs:
+  preflight:
+    name: Validate staging target and authentication
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Enforce exact deployed target contract
+        run: node scripts/check-load-target.mjs
+
+      - name: Confirm API health
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 10 \
+            --max-time 20 \
+            -H "Authorization: Bearer ${POSTWAVE_LOAD_API_KEY}" \
+            "${POSTWAVE_LOAD_BASE_URL%/}/api/ready" >/dev/null
+
+  k6-smoke:
+    name: k6 — ${{ matrix.script }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        script:
+          - dashboard.k6.js
+          - subscriber-crud.k6.js
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Install checksum-verified k6 v0.54.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/k6-v0.54.0-linux-amd64.tar.gz"
+          curl --fail --location --silent --show-error --retry 3 \
+            --output "$archive" \
+            https://github.com/grafana/k6/releases/download/v0.54.0/k6-v0.54.0-linux-amd64.tar.gz
+          echo "c7f03434854f837b6790ee81572e4b0f955241974c79a43cbb9f8d0fef069589  $archive" \
+            | sha256sum --check --strict
+          tar --extract --gzip --file "$archive" --directory "$RUNNER_TEMP"
+          install -d "$RUNNER_TEMP/k6-bin"
+          install -m 0755 "$RUNNER_TEMP/k6-v0.54.0-linux-amd64/k6" "$RUNNER_TEMP/k6-bin/k6"
+          echo "$RUNNER_TEMP/k6-bin" >> "$GITHUB_PATH"
+
+      - name: Run authenticated smoke
+        run: k6 run --quiet --summary-export=summary-${{ matrix.script }}.json infra/load/${{ matrix.script }}
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: k6-summary-${{ matrix.script }}
+          path: summary-${{ matrix.script }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+  sse-scale:
+    name: SSE — 500 real concurrent streams
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache-dependency-path: tests/e2e/go.mod
+
+      - name: Verify SSE probe semantics
+        working-directory: tests/e2e
+        run: GOWORK=off go test ./cmd/sse-load
+
+      - name: Hold 500 authenticated streams and enforce budgets
+        working-directory: tests/e2e
+        run: |
+          GOWORK=off go run ./cmd/sse-load \
+            -clients 500 \
+            -hold 10s \
+            -connect-timeout 10s \
+            -max-p95 1s \
+            -max-drop-rate 0.005 \
+            -output "$GITHUB_WORKSPACE/sse-load-summary.json"
+
+      - name: Upload SSE summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sse-load-summary
+          path: sse-load-summary.json
+          if-no-files-found: error
+          retention-days: 30

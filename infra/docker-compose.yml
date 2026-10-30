@@ -1,0 +1,119 @@
+# Moosewave local development stack.
+#
+# Brings up Postgres 16, Redis 7 (Asynq job queue), and Listmonk.
+#
+# Listmonk runs as a standalone container over HTTP. Moosewave application
+# services never import Listmonk Go packages — they only call its REST API.
+# See ../LICENSE-BOUNDARY.md for the component and release rules.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postwave-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: public-local-demo-only
+      POSTGRES_DB: postwave
+    ports:
+      - "127.0.0.1:${POSTWAVE_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # init.sql provisions the listmonk DB + role alongside the main postwave DB.
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postwave"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+
+  redis:
+    image: redis:7-alpine
+    container_name: postwave-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:${POSTWAVE_REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+
+  # Standalone Listmonk binary. Communicates with Moosewave over HTTP only.
+  # Image is pulled from Docker Hub; this repository has no Listmonk source build.
+  listmonk:
+    image: listmonk/listmonk:${LISTMONK_VERSION:-v6.1.0}
+    container_name: postwave-listmonk
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      listmonk-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${POSTWAVE_LISTMONK_PORT:-9000}:9000"
+    environment:
+      LISTMONK_app__address: "0.0.0.0:9000"
+      LISTMONK_db__host: postgres
+      LISTMONK_db__port: "5432"
+      LISTMONK_db__user: listmonk_user
+      LISTMONK_db__password: listmonk_dev
+      LISTMONK_db__database: listmonk
+      LISTMONK_db__ssl_mode: disable
+      LISTMONK_db__max_open: "25"
+      LISTMONK_db__max_idle: "25"
+      LISTMONK_db__max_lifetime: "300s"
+      LISTMONK_ADMIN_USER: "${LISTMONK_ADMIN_USER:-listmonk}"
+      LISTMONK_ADMIN_PASSWORD: "${LISTMONK_ADMIN_PASSWORD:-listmonk}"
+      LISTMONK_ADMIN_API_USER: "${LISTMONK_ADMIN_API_USER:-api}"
+      LISTMONK_ADMIN_API_PASSWORD: "${LISTMONK_ADMIN_API_PASSWORD:-listmonk}"
+      TZ: "Etc/UTC"
+    volumes:
+      - listmonk_uploads:/listmonk/uploads
+    networks:
+      - default
+
+  # One-shot DB install. Runs ./listmonk --install --idempotent --yes against
+  # the listmonk DB created by infra/postgres/init.sql, then exits.
+  listmonk-init:
+    image: listmonk/listmonk:${LISTMONK_VERSION:-v6.1.0}
+    container_name: postwave-listmonk-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LISTMONK_app__address: "0.0.0.0:9000"
+      LISTMONK_db__host: postgres
+      LISTMONK_db__port: "5432"
+      LISTMONK_db__user: listmonk_user
+      LISTMONK_db__password: listmonk_dev
+      LISTMONK_db__database: listmonk
+      LISTMONK_db__ssl_mode: disable
+      LISTMONK_db__max_open: "25"
+      LISTMONK_db__max_idle: "25"
+      LISTMONK_db__max_lifetime: "300s"
+      LISTMONK_ADMIN_USER: "${LISTMONK_ADMIN_USER:-listmonk}"
+      LISTMONK_ADMIN_PASSWORD: "${LISTMONK_ADMIN_PASSWORD:-listmonk}"
+      LISTMONK_ADMIN_API_USER: "${LISTMONK_ADMIN_API_USER:-api}"
+      LISTMONK_ADMIN_API_PASSWORD: "${LISTMONK_ADMIN_API_PASSWORD:-listmonk}"
+      TZ: "Etc/UTC"
+    command: ["./listmonk", "--install", "--idempotent", "--yes"]
+    restart: "no"
+    networks:
+      - default
+
+volumes:
+  pg_data:
+  redis_data:
+  listmonk_uploads:
+
+networks:
+  default:
+    driver: bridge

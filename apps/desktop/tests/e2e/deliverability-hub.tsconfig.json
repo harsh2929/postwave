@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "deliverability-hub-evidence-harness.ts",
+    "deliverability-hub-maturity.spec.ts",
+    "deliverability-hub.playwright.config.ts"
+  ],
+  "exclude": ["../../node_modules", "../../dist", "../../src-tauri"],
+  "references": []
+}

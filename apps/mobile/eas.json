@@ -1,0 +1,84 @@
+{
+  "_comment": "EAS Build + Submit profiles for simulator/emulator development, ad-hoc internal QA, and store-ready artifacts. Store account identifiers are supplied by CI/EAS credentials, not checked in here.",
+  "_updates_comment": "OTA UPDATES ARE ON. All three legs are configured together and src/lib/easUpdateChannelContract.test.ts fails if any one of them regresses: (1) `expo-updates` is a dependency; (2) each build profile below binds to an EAS Update branch via `channel`; (3) app.json declares `runtimeVersion` ({policy:'appVersion'}) and app.config.js derives `updates.url` from the env-supplied EAS project id. The URL is DERIVED rather than checked in because the project id differs between this checkout and the release pipeline, and a url pointing at the wrong project polls a manifest that never matches the runtime version \u2014 the binary would silently never update, which is indistinguishable from 'OTA works, nothing new'. With no project id configured the whole `updates` block is omitted, so a local build has no update channel rather than a broken one. `runtimeVersion: appVersion` keeps a JS hotfix off a binary whose native modules differ ONLY while expo.version moves with the native surface, and nothing bumps it automatically: adding a native dependency without a manual version bump gives two binaries one runtime. That obligation is enforced only for store submissions (scripts/validate-release-version.mjs refuses one not built from a mobile-v<expo.version> tag), and an OTA update must be published from that release tag's hotfix line, never from main. Independently of OTA, the gateway answers a below-minimum build with 426, which src/api/sdkClient.ts turns into the blocking UpgradeRequiredScreen.",
+  "cli": {
+    "version": "20.5.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "_comment": "Simulator/emulator dev-client build. The loopback API origins below are not a physical-device configuration; use an approved HTTPS development origin for device testing.",
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "development",
+      "node": "20.19.5",
+      "ios": {
+        "resourceClass": "m-medium",
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:8080",
+        "EXPO_PUBLIC_APP_URL": "http://localhost:3000",
+        "EXPO_PUBLIC_BUILD_PROFILE": "development",
+        "EXPO_PUBLIC_POSTWAVE_ENV": "development"
+      },
+      "channel": "development"
+    },
+    "preview": {
+      "_comment": "Internal-distribution release-mode build. iOS is ad hoc for registered devices; Android is an APK for managed sideloading. TestFlight requires an App Store distribution build and submission.",
+      "distribution": "internal",
+      "environment": "preview",
+      "node": "20.19.5",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.moosewave.com",
+        "EXPO_PUBLIC_APP_URL": "https://app.moosewave.com",
+        "EXPO_PUBLIC_BUILD_PROFILE": "preview",
+        "EXPO_PUBLIC_POSTWAVE_ENV": "preview",
+        "EXPO_UPDATES_CODE_SIGNING_CERTIFICATE": "certs/postwave-updates.pem"
+      },
+      "channel": "preview"
+    },
+    "production": {
+      "_comment": "Store-ready builds. iOS .ipa for App Store Connect; Android .aab for Play Console. autoIncrement bumps the build/version codes so we never push the same code twice.",
+      "_secrets_comment": "REQUIRED in the EAS production environment: EXPO_PUBLIC_SENTRY_DSN_MOBILE, EXPO_PUBLIC_POSTHOG_KEY, EXPO_PUBLIC_POSTHOG_HOST, EXPO_PUBLIC_EAS_PROJECT_ID, EXPO_APPLE_TEAM_ID, EXPO_PUBLIC_IOS_APP_STORE_ID (the numeric App Store Connect Apple ID, the ASC_APP_ID number, whose listing the iOS forced-upgrade screen opens; the pre-install hook fails an iOS production build without it), SENTRY_ORG, SENTRY_PROJECT, SENTRY_AUTH_TOKEN, and GOOGLE_SERVICES_JSON (EAS file variable, production and preview: the Firebase google-services.json for com.moosewave.app, without which Android push registration fails on every device; the pre-install hook fails an Android production or preview build without it). The pre-install hook derives EXPO_PUBLIC_POSTWAVE_RELEASE/SENTRY_RELEASE from EAS_BUILD_GIT_COMMIT_HASH and fails on a conflicting configured value. NOT a secret, and set in this profile's env (and preview's): EXPO_UPDATES_CODE_SIGNING_CERTIFICATE, the path of the committed PUBLIC expo-updates certificate (certs/postwave-updates.pem), without which app.config.js refuses to configure the update channel. The PRIVATE key that signs OTA updates must never be put in an EAS build environment or in this file (README: OTA update code signing).",
+      "environment": "production",
+      "node": "20.19.5",
+      "ios": {
+        "resourceClass": "m-medium",
+        "autoIncrement": "buildNumber"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "autoIncrement": "versionCode"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.moosewave.com",
+        "EXPO_PUBLIC_APP_URL": "https://app.moosewave.com",
+        "EXPO_PUBLIC_BUILD_PROFILE": "production",
+        "EXPO_PUBLIC_POSTWAVE_ENV": "production",
+        "EXPO_UPDATES_CODE_SIGNING_CERTIFICATE": "certs/postwave-updates.pem"
+      },
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "_comment": "CI injects ascAppId/appleTeamId and a runner-temporary App Store Connect API-key path immediately before an opted-in submit."
+      },
+      "android": {
+        "_comment": "CI injects a runner-temporary Google Play service-account path immediately before an opted-in submit. Track 'internal' is closed testing; promote deliberately after certification.",
+        "track": "internal"
+      }
+    }
+  }
+}

@@ -1,0 +1,163 @@
+---
+title: FAQ
+---
+
+# Frequently asked questions
+
+## Pricing & ownership
+
+### What does Moosewave cost?
+
+Only the current [pricing page](https://moosewave.com/pricing), checkout, and
+executed order can state an offer. This archived documentation does not define
+prices, included usage, taxes, discounts, plan limits, or availability.
+
+### Do you offer refunds?
+
+No fixed refund promise is made here. Eligibility, timing, exclusions, and the
+request process must come from the approved Refund Policy and order presented
+at checkout. Do not rely on historical support or documentation copy.
+
+### Is there a lifetime deal (LTD)?
+
+No lifetime-plan sale or universal continuity promise is approved by this
+page. Any existing customer's rights come only from that customer's executed
+order and applicable terms; availability of a future offer requires a separate
+product, legal, tax, and billing approval.
+
+### What happens if Moosewave shuts down?
+
+Do not rely on an implied self-host distribution, escrow, permissive relicensing,
+wind-down release, or hosted-service continuity commitment. None is currently
+approved or evidenced. Data-export capabilities and any post-termination
+window are governed by the deployed product and approved order/legal terms.
+Customers that require escrow, continuity, or transition assistance must put
+that scope in an executed agreement.
+
+### Who owns my subscriber list?
+
+Data rights, controller/processor roles, export availability, retention, and
+deletion obligations are governed by the approved Terms, Privacy Policy, DPA,
+and executed order. Confirm those documents and the deployed workflows for the
+customer's jurisdiction before making a contractual statement.
+
+## Privacy / compliance
+
+### Are you GDPR-compliant?
+
+Do not treat source code or this page as a blanket compliance certification.
+Before a GDPR claim, verify the approved DPA and Privacy Policy, subprocessors,
+lawful-basis and data-subject workflows, retention/deletion behavior,
+international-transfer mechanism, and the live region/data-flow evidence. No
+EU-only endpoint or residency commitment is established here.
+
+### Are you SOC 2 / HIPAA / etc.?
+
+The repository does not prove a completed SOC examination, HIPAA program, CCPA
+attestation, or other certification. Do not claim a report, certification, or
+regulated-workload eligibility until the responsible owner links a current,
+independently issued artifact and approved customer terms.
+
+### Do you train AI models on my data?
+
+Tenant-isolation controls and provider configuration are implemented in code,
+but a categorical no-training promise requires approved privacy terms,
+provider contracts, retention settings, and live configuration evidence. Refer
+customers to the current Privacy Policy and DPA rather than this archived page.
+
+### Is Moosewave AGPL?
+
+The application source under `apps/`, `services/`, and `infra/` is
+AGPL-3.0-only. Each `packages/*` root is MIT licensed. Tuned assets under
+`proprietary/` are separately controlled and excluded from public and customer
+artifacts; MIT placeholders live under `proprietary-stubs/`. Moosewave uses a
+separately running upstream AGPL Listmonk process and contains no Listmonk fork
+or submodule. See [Source and independent operation](/self-host) and the root
+`LICENSE-BOUNDARY.md`.
+
+## Migration
+
+### What sources do you support?
+
+Mailchimp, ConvertKit (Kit), Substack, Beehiiv, MailerLite, and CSV. See [Migration](/migration). Adding new sources is a quarterly cadence; vote at our [public roadmap](https://moosewave.com/roadmap).
+
+### How accurate is segment translation?
+
+For tag-based and attribute-based conditions: 100%. For provider-specific stats (Mailchimp Member Rating, Beehiiv engagement composites): surfaced as unsupported with a manual recreation flow. See the [Verification report](/migration/verification-report).
+
+### Will my paid Substack subscribers keep paying me?
+
+The file import makes no automatic billing-continuity promise. It preserves
+paid/founding/gift/comp membership metadata, but it does not move or mutate
+Stripe or Apple subscriptions and does not create Moosewave entitlements. Review
+the publication-bound billing handoff, including Substack's shutdown sequence,
+with Substack and the payment provider. See [Substack migration](/migration/substack#step-4--handle-paid-readers-outside-the-file-import).
+
+### Do you offer concierge migration?
+
+Migration assistance is not automatically included by this page. It is
+available only when the current offer or executed order states its scope,
+provider coverage, evidence requirements, scheduling, and support terms.
+
+## Sending
+
+### Can I bring my own sender (BYOSP)?
+
+Yes. Connect SES, Postmark, Sendgrid, Mailgun, or any SMTP relay. See [Sending API](/api-reference/sending).
+
+### Can I pause sending?
+
+Yes — the **Sending tier** is pause-anytime. Stop sending mid-month and your reputation infrastructure (warmup, IPs) stays in place for resume.
+
+### Can I send from multiple sender domains?
+
+Multiple-domain capability and limits depend on the deployed plan, provider,
+and verified domain setup. Do not promise an unlimited allowance; confirm the
+current entitlement and sending-provider capacity.
+
+## Voice AI
+
+### How is voice quality measured?
+
+Per email, with a [4-component fidelity score](/voice-ai/fidelity-scoring). Scores below 60 auto-retry; final scores show as red/yellow/green badges in the sequence preview.
+
+### Can I use my own LLM (OpenAI, Anthropic, local)?
+
+Managed-provider availability is controlled by the deployed configuration and
+approved plan. The repository does not currently offer a supported self-host
+distribution or promise a portable `LLM_PROVIDER` switch. Operators building
+from source must review and test the adapters and credentials they configure.
+
+### How many templates ship with Moosewave?
+
+50, hand-authored, across 11 categories. See [Templates](/voice-ai/templates).
+
+## Operations
+
+### Is there an agency / multi-publication mode?
+
+The source includes organization/workspace capabilities. Availability, seat or
+workspace limits, and billing behavior depend on the deployed plan and approved
+order; this page does not grant an unlimited entitlement.
+
+### Can I self-host?
+
+There is no approved or supported self-host distribution, installer, price, or
+customer image channel today. The source licenses remain effective, but
+packaging, maintenance, support, and an SLA require an executed agreement tied
+to a reviewed artifact. See [Source and independent operation](/self-host).
+
+### What's your uptime?
+
+No historical uptime or GA claim is established by the repository. The
+production platform is not yet certified, and a public host name is not uptime
+evidence. Quote only a live status history or an SLA in an executed order after
+the production owner verifies it.
+
+### Where are you on Listmonk?
+
+Moosewave calls a separately running upstream Listmonk process over HTTP. This
+repository contains no Listmonk source tree, fork, or submodule, and the local
+development stack selects upstream v6.1.0 by default. A release must resolve an
+approved immutable upstream image digest. The source and artifact boundary is
+documented in `LICENSE-BOUNDARY.md`.

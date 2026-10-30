@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <mixed-script-brand-name.v1@example.com>
+Subject: Welcome to Ωmega
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-mixed-v1"
+
+--pw-mixed-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Welcome to Omega Analytics. Start: https://app.example.com/omega
+--pw-mixed-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Welcome to Ωmega Analytics</h1><p>Your workspace is ready.</p><p><a href="https://app.example.com/omega">Open your workspace</a></p></body></html>
+--pw-mixed-v1--

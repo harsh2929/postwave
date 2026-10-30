@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <mixed-language-quoted-name.v1@example.com>
+Subject: Grüße from München
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-de-v1"
+
+--pw-de-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Grüße from München. Read more: https://www.example.com/de
+--pw-de-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Grüße from München</h1><p>Our Munich office opened this week — Grüße from the team.</p><p><a href="https://www.example.com/de">Read the announcement</a></p></body></html>
+--pw-de-v1--

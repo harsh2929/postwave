@@ -1,0 +1,163 @@
+---
+title: Migrate from Substack
+---
+
+import { Callout } from 'nextra/components';
+
+# Migrating from Substack
+
+Moosewave imports the publication data that Substack places in its user-owned
+CSV/ZIP exports. The dry-run keeps source status, membership tier, and signup
+date distinct from two things the export cannot prove: portable email consent
+and live billing continuity.
+
+<Callout type="warning">
+This migration does **not** move, cancel, recreate, or attach live paid
+subscriptions. Paid, founding, gift, and comp values are membership metadata,
+not Stripe/Apple billing objects or Moosewave entitlements. Coordinate the
+billing handoff with Substack and the payment provider before changing the
+source publication.
+</Callout>
+
+## Step 1 — Create the source export
+
+For subscribers plus post history, use Substack's publication export:
+
+1. Open the publication dashboard.
+2. Go to **Settings → Exports**.
+3. Select **Create new export**.
+4. Download the ZIP when Substack finishes preparing it.
+
+Substack describes this ZIP as containing the publication's posts, subscriber
+list, and related statistics. Upload the original ZIP without opening and
+re-saving its CSV files. See [Substack's publication-export
+instructions](https://support.substack.com/hc/en-us/articles/360037466012-How-do-I-export-my-posts).
+
+If you need a subscriber-only snapshot, open **Subscribers → All subscribers →
+… → Export** and choose **All columns**. Substack says visible-only exports can
+contain a selected subset of columns, while all-column exports can include
+activity and plan details. See [Substack's current subscriber-export
+instructions](https://support.substack.com/hc/en-us/articles/6314498343700-How-do-I-export-my-email-list-on-Substack).
+
+## Step 2 — Upload one ZIP or CSV
+
+From **Migrate → Substack**, upload either:
+
+- the complete Substack ZIP (preferred); or
+- one subscriber CSV with an email column.
+
+For a ZIP, Moosewave safely extracts portable CSV/HTML files, rejects path
+traversal, symbolic links, ambiguous subscriber lists, and oversized expanded
+archives, then locates:
+
+- `email_list.*.csv` or an equivalent subscriber CSV;
+- `posts.csv`;
+- `posts/<post_id>.*.html` content fragments; and
+- optional `<post_id>.delivers.csv` / `<post_id>.opens.csv` aggregate evidence.
+
+Recipient identities inside delivery/open files are counted and discarded.
+They are not copied into campaign analytics.
+
+## Step 3 — Review the dry-run
+
+The report shows:
+
+- de-duplicated email identities;
+- disabled, unsubscribed, bounced, and complaint state where exported;
+- paid, founding, gift, comp, and free membership metadata;
+- email-sent posts with matching HTML content;
+- aggregate delivery/open evidence when present; and
+- a fixed checklist for every non-portable Substack surface.
+
+Duplicate rows merge conservatively: a complaint, bounce, unsubscribe, or
+disabled row wins over an earlier active row. If the export has no status
+column, the subscriber remains unconfirmed.
+
+<Callout type="info">
+Substack signup dates are stored as `substack_created_at` provenance. They are
+not written as consent timestamps. Even a source row marked active remains
+unconfirmed in Moosewave until reviewed permission evidence authorizes sending
+from the destination.
+</Callout>
+
+## Step 4 — Handle paid readers outside the file import
+
+Substack can collect payment through Stripe and through Apple in-app purchase.
+A connected Stripe account can also contain activity unrelated to the
+publication. Therefore an arbitrary Stripe account ID or a matching email is
+not sufficient proof of publication, product, customer, entitlement, or tax
+ownership.
+
+Before cutover:
+
+1. Inventory Stripe-billed and Apple-billed readers separately.
+2. Bind every Stripe product/price/customer set to this publication.
+3. Reconcile trials, renewal dates, founding plans, gifts, comps, pledges,
+   refunds, disputes, taxes, and failed payments.
+4. Decide how destination checkout and webhook ownership will work.
+5. Ask Substack support for the correct move-away sequence before disconnecting
+   or turning off paid subscriptions.
+6. Test renewal and entitlement behavior in an isolated destination before
+   announcing cutover.
+
+Substack warns that turning off paid subscriptions can refund active
+subscriptions, notify readers, cancel subscriptions, and revoke paid access;
+its help article directs publications moving platforms to support. See
+[Substack's paid-subscription shutdown guidance](https://support.substack.com/hc/en-us/articles/360060408872-How-do-I-turn-off-paid-subscriptions-on-Substack).
+
+## What the adapter imports
+
+| Source evidence | Moosewave result |
+| --- | --- |
+| Email identity | De-duplicated subscriber |
+| Source email/subscription state | Namespaced provenance plus conservative destination status |
+| Signup date | `substack_created_at` provenance, never portable consent |
+| Free/paid/founding/gift/comp type | `substack_subscription_type` and `substack:tier:*` metadata |
+| `posts.csv` row with email-send timestamp | Immutable sent campaign archive record |
+| Matching `posts/<post_id>.*.html` | Archive HTML content |
+| Delivery/open CSVs | Aggregate counts only; recipient identities discarded |
+| ZIP file list and digest | Durable export-inventory evidence |
+
+## Explicit rebuild or review surfaces
+
+- Live Stripe or Apple billing, entitlements, checkout, webhooks, disputes, and
+  tax continuity
+- Consent proof, complaints/bounces not present in the selected export, and
+  source deletions absent from the snapshot
+- Drafts, pages, web-only/direct content without supported sent-email evidence
+- Audience-specific/free/paid/founding content variants and paywall semantics
+- Comments, reactions, moderation, Notes, restacks, follows, and chat
+- Recommendations, referrals, and other network-growth relationships
+- Welcome emails, scheduled direct emails, and automations
+- Surveys and responses (Substack exposes responses through a separate export)
+- Podcasts, private feeds, audio/video/live media, transcripts, and distribution
+- Images, social thumbnails, files, and attachment ownership (HTML may retain
+  remote Substack CDN URLs)
+- Theme, About/custom pages, navigation, domain/redirects, SEO metadata, embeds,
+  and capture widgets
+- Per-reader delivery, open, view, click, activity, and targeting history
+- Apps, analytics/pixels, webhooks, API clients, sender/DNS, and reply routing
+
+## Troubleshooting
+
+- **ZIP says no subscriber CSV:** generate the export from the publication that
+  owns the audience. The ZIP must contain one unambiguous CSV with an email
+  column.
+- **Multiple subscriber CSVs:** upload the untouched official ZIP, or choose one
+  current all-column subscriber CSV. Moosewave will not guess between equally
+  likely audience files.
+- **All active subscribers are unconfirmed:** expected. Attach reviewed consent
+  evidence through the destination's consent workflow before enabling them.
+- **Posts have no body:** the `posts.csv` row had no matching
+  `posts/<post_id>.*.html` fragment. Regenerate the export or preserve the post
+  manually.
+- **ZIP exceeds 200 MB:** contact support for a controlled assisted transfer;
+  do not split recipient activity files into ad-hoc subscriber imports.
+- **Spreadsheet encoding or columns changed:** upload the original download.
+  Spreadsheet tools can change UTF-8, timestamps, headers, and leading IDs.
+
+## Next steps
+
+- [Verification report reference](/migration/verification-report)
+- [Sender setup](/getting-started/account-setup)
+- [Forms](/forms) for new sign-ups

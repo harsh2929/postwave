@@ -1,0 +1,287 @@
+---
+title: Webhooks
+---
+
+import { Callout } from 'nextra/components';
+
+# Webhooks
+
+Moosewave has two complementary webhook surfaces:
+
+- **Outbound webhooks** deliver Moosewave events to an HTTPS endpoint you control.
+- **Inbound webhooks** accept signed JSON from another system and durably fan it out to Moosewave automations and configured trigger actions.
+
+The canonical management routes are `/api/v1/outbound-webhooks` and
+`/api/v1/inbound-webhooks`. The older `/api/v1/webhooks` surface is retained
+only for compatibility; new integrations should not use it.
+
+## Create an outbound destination
+
+Create destinations from **Settings → Webhooks → Outbound → New destination**
+or with the API:
+
+```bash
+curl https://api.moosewave.com/api/v1/outbound-webhooks \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: provision-crm-webhook-v1" \
+  --data '{
+    "url": "https://hooks.example.com/postwave",
+    "description": "Production CRM",
+    "events": ["subscriber.added", "list.subscriber.added"]
+  }'
+```
+
+HMAC destinations receive an `owhsec_*` signing secret in
+`signing_secret`. It is returned only by create or rotation responses. Store
+it in a secret manager before discarding the response.
+
+ECDSA P-256 and Ed25519 destinations receive only the public verification key
+in `public_key_pem`. Moosewave keeps the corresponding private signing key
+encrypted server-side and never returns it through the management API.
+
+Production destinations must use HTTPS. Moosewave rejects URL credentials,
+localhost, and direct or DNS-resolved private/reserved addresses at
+configuration and connection time.
+
+Descriptions are trimmed and limited to 512 Unicode characters. A `list_id`
+must be a UUID for a list owned by the active workspace; Moosewave rejects
+cross-workspace or unknown list identifiers before creating the destination.
+
+## Safe destination reads and updates
+
+The complete receiver URL is envelope-encrypted. Read APIs expose only a safe
+display projection such as `https://hooks.example.com/…?…`; path and query
+values are never returned. `url_status` reports whether the encrypted
+destination is `ready`, `legacy_pending`, or `invalid`.
+
+<Callout type="warning">
+Never copy `GET.url` into a PATCH request. Omit `url` to preserve the existing
+destination, or submit a complete new URL to replace it. Display projections
+containing the redaction ellipsis are rejected with
+`400 redacted_destination`.
+</Callout>
+
+## Delivery contract
+
+Every untransformed delivery uses the same envelope:
+
+```json
+{
+  "event": {
+    "id": "aa63bf94-2aa1-4cc7-aaf9-3dc4cf929cf1",
+    "type": "list.subscriber.added",
+    "occurred_at": "2026-07-23T10:14:24.019Z",
+    "data": {
+      "list_id": "b4fb913f-2ce9-4f25-a245-066ab846c091",
+      "subscriber_id": "06e77b25-243b-4ff0-a7ee-a0181ac13b59",
+      "email": "ada@example.com"
+    }
+  },
+  "webhook": { "id": "31f3da3a-a44b-482e-8d54-b8a98b7602b2" },
+  "delivery": {
+    "id": "3b7f2f9a-b028-4b8f-852a-47193770d73c",
+    "attempt": 1
+  }
+}
+```
+
+The request also includes:
+
+| Header | Meaning |
+| --- | --- |
+| `X-Postwave-Signature` | Signature over the exact request bytes. |
+| `X-Postwave-Key-Id` | Signing-key fingerprints during key rotation, when applicable. |
+| `X-Postwave-Event` | The canonical event type. |
+| `X-Postwave-Event-Id` | Auxiliary stable source-event UUID; the current signature does not cover this header. |
+| `X-Postwave-Delivery` | Auxiliary unique delivery-row UUID; the current signature does not cover this header. |
+| `X-Postwave-Test: true` | Present only for operator-initiated test traffic. |
+
+Verify the signature before parsing the body. See
+[Signature verification](/webhooks/signing).
+
+<Callout type="warning">
+Receiver authentication does not replace Moosewave signature verification.
+Bearer tokens, custom headers, or mTLS authenticate Moosewave to your receiver;
+the signature authenticates the exact payload.
+</Callout>
+
+## Event and delivery identity
+
+For an untransformed delivery, verify the raw body first and then use the
+signed `event.id` in that body as your business-side idempotency key. It is
+stable across automatic retries and manual replays. If you configure a payload
+transform, include `/event/id` in the transformed body whenever the receiver
+needs authenticated source-event identity.
+
+`X-Postwave-Event-Id` and `X-Postwave-Delivery` are diagnostic transport
+headers in the current signature version: they are not covered by the
+body-only signature and must not be trusted as authenticated identity on their
+own. For an untransformed delivery, use the signed `delivery.id` in the body
+for attempt-level diagnostics. A manual replay creates a new pending child
+delivery and leaves the original delivery history immutable. The replay
+response contains both the new `delivery_id` and `replayed_from`.
+
+When replaying through the management API, send a stable `Idempotency-Key`.
+Retrying the same replay request with that key returns the same accepted
+operation instead of creating another child delivery. A delivery that is
+still pending cannot be replayed and returns `409 delivery_in_progress`.
+
+## Retry policy
+
+The first attempt is immediate. Failed deliveries are retried on this
+schedule:
+
+| Retry | Delay after the previous attempt |
+| --- | --- |
+| 1 | 30 seconds |
+| 2 | 5 minutes |
+| 3 | 30 minutes |
+| 4 | 2 hours |
+| 5 | 8 hours |
+| 6 | 24 hours |
+| 7 | 24 hours |
+
+Any `2xx` response succeeds. Most `4xx` responses are terminal because they
+indicate a receiver contract error; `429`, `5xx`, timeouts, and network
+failures consume the retry schedule. Redirects are not followed and `3xx`
+responses are terminal, which prevents a configured endpoint from redirecting
+delivery into an unintended network location. A destination is automatically
+disabled after sustained consecutive failures.
+
+Delivery rows have the stored states `pending`, `delivered`, `exhausted`, or
+`skipped`. The diagnostic `status=failing` filter means exhausted rows plus
+pending rows that already carry a delivery error; it is a derived filter, not
+a stored state. `skipped` means pending work was cancelled by permanent
+destination deletion and is excluded from failure and top-error totals.
+Malformed status, limit, timestamp, or webhook-id filters return `400`
+instead of being silently ignored.
+
+## Filters and payload transforms
+
+An optional `filter_expression` selects deliveries before any network request.
+It is a bounded, non-executable DSL over the canonical envelope:
+
+```text
+event.data.email endswith @example.com && event.type == subscriber.added
+```
+
+Supported operators are `==`, `!=`, `>`, `<`, `>=`, `<=`, `contains`,
+`startswith`, `endswith`, and `includes`. Combine at most 32 conditions with
+`&&` or `||`; evaluation is left-to-right and parentheses are not supported.
+
+An optional `transform_template` maps output names to RFC 6901 JSON Pointers:
+
+```json
+{
+  "event_id": "/event/id",
+  "email": "/event/data/email",
+  "event_type": "/event/type"
+}
+```
+
+The transform produces an object containing only resolved fields. Filtering
+and transformation happen before signing, so the signature always covers the
+exact transmitted bytes. For PATCH, omit either field to preserve it or send
+`null` to clear it. Invalid writes return `invalid_filter` or
+`invalid_transform`.
+
+Read APIs return `delivery_policy_status`. An invalid legacy or direct-database
+policy stays readable for repair, but live delivery fails closed and operator
+test/playground requests return `409 delivery_configuration_invalid`.
+
+## Receiver authentication
+
+Outbound destinations can add one or more receiver-side authentication
+methods:
+
+- bearer token;
+- custom HTTP headers; and
+- an mTLS client certificate and private key.
+
+Credentials are write-only and envelope-encrypted at rest. List, update,
+health, and delivery APIs return only value-free metadata such as
+`bearer_configured`, `header_names`, `mtls_configured`, and
+`auth_config_status`. They never echo a bearer token, header value, client
+certificate, or private key.
+
+Custom header names and values are validated. Moosewave-owned delivery headers
+such as `X-Postwave-Signature`, `X-Postwave-Event-Id`, `Content-Type`, and
+`User-Agent` are reserved and cannot be overridden.
+
+For `PATCH /api/v1/outbound-webhooks/{id}`:
+
+- omit `auth_config` to preserve current credentials;
+- send `auth_config: null` or `{ "type": "none" }` to clear them; or
+- send a complete credential object to replace them atomically.
+
+If `auth_config_status` is `legacy_pending` or `invalid`, delivery is paused
+until an administrator replaces or clears the configuration.
+
+## Readiness, testing, and re-enabling
+
+Activation is allowed only when `auth_config_status`, `url_status`, and
+`delivery_policy_status` are all ready. `PATCH active:true` and
+`POST /api/v1/outbound-webhooks/{id}/re-enable` return an actionable `409`
+(`receiver_auth_unavailable`, `destination_unavailable`, or
+`delivery_configuration_invalid`) otherwise. A successful enable resets the
+consecutive-failure counter.
+
+`POST /api/v1/outbound-webhooks/{id}/test` runs the production filter,
+transform, receiver-auth, destination-resolution, and signing pipeline. Setup
+failures are explicit: `404 not_found`; `503 cipher_unconfigured`;
+`503 delivery_configuration_pending`; `503 destination_unavailable` while a
+legacy destination is still being secured; and `409 destination_unavailable`
+or `409 delivery_configuration_invalid` for invalid configuration.
+
+Read models expose `disabled_reason` (`manual` or `auto_failures`) and
+`disabled_at`. Auto-disable operator notifications are delivered through a
+durable retrying outbox rather than a best-effort request callback.
+
+## Deactivation and permanent deletion
+
+`DELETE /api/v1/outbound-webhooks/{id}?soft=1` (or exactly one `soft=true`)
+reversibly deactivates a visible destination. The response is
+`{"ok":true,"deleted":false,"deactivated":true}`.
+
+With the query omitted—or exactly one `soft=0` or `soft=false`—DELETE
+permanently tombstones the destination and returns
+`{"ok":true,"deleted":true,"deactivated":false}`. Empty, duplicate, or unknown
+`soft` values return `400 invalid_soft_delete`.
+
+Permanent deletion hides the destination from CRUD, cancels pending work as
+`skipped`, and prevents new enqueue or replay. It immediately cryptoshreds the
+signing material, complete URL, and receiver-auth configuration. Value-free
+delivery and operator-notification evidence remains until retention can safely
+purge it. An HTTP request already in flight cannot be recalled and may still
+finish; no new work can be created after the tombstone.
+
+Replay of a reversibly deactivated destination returns
+`409 webhook_inactive`. Replay also returns the same readiness `409` errors as
+activation. A permanently tombstoned destination is not found.
+
+## Acknowledge quickly
+
+Queue trusted events and return `2xx` before doing slow work:
+
+```js
+app.post(
+  "/postwave-webhook",
+  express.raw({ type: "application/json", limit: "2mb" }),
+  async (req, res) => {
+    if (!(await verifySignature(req.body, req.get("X-Postwave-Signature"), secret))) {
+      return res.sendStatus(401);
+    }
+
+    const envelope = JSON.parse(req.body.toString("utf8"));
+    await queue.enqueueUnique(envelope.event.id, envelope);
+    return res.sendStatus(202);
+  },
+);
+```
+
+## Next steps
+
+- [Event catalog](/webhooks/events)
+- [Signature verification](/webhooks/signing)
+- [Inbound webhooks](/webhooks/inbound)

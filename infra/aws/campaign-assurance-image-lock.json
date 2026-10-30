@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "postwave.campaign-assurance-image-lock.v1",
+  "reviewedAt": "2026-08-30T06:01:26Z",
+  "clamav": {
+    "engineVersion": "1.4.4-r0",
+    "dailyDatabaseRevision": 28107,
+    "revisionSource": "current.cvd.clamav.net TXT"
+  },
+  "tesseract": {
+    "engineVersion": "5.5.1-r0",
+    "englishDataVersion": "5.5.1-r0",
+    "trainedDataPath": "/usr/share/tessdata/eng.traineddata"
+  }
+}

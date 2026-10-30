@@ -1,0 +1,88 @@
+---
+title: AI Diagnostician
+---
+
+import { Callout } from 'nextra/components';
+
+# AI Diagnostician
+
+The Diagnostician is Moosewave's deliverability triage tool. When something is wrong — degraded placement, a new DNSBL listing, a failing DKIM signature, an SPF lookup overflow — the Diagnostician takes the full set of signals, produces a **diagnosis**, and ranks **fixes** by estimated impact and effort.
+
+## Inputs (what it sees)
+
+The Diagnostician reads from all 5 layers of [Inbox Reality](/deliverability):
+
+1. **Authentication state**: SPF parse + lookup count, DKIM signature pass rate (last 7d), DMARC alignment rate (last 7d aggregate-report-derived), BIMI eligibility.
+2. **Reputation state**: current DNSBL listings, IP throttling events seen, Postmaster Tools data (if Gmail Postmaster is connected).
+3. **Placement signals**: last 7 seedlist runs, per-provider trend.
+4. **Content signals**: average campaign HTML size, link-to-text ratio, spammy-token density (last 30 campaigns), image-only ratio.
+5. **Volume signals**: send volume per day (last 90), bounce rate, complaint rate, unsubscribe rate, hard-bounce-to-soft ratio.
+
+## Output (what it produces)
+
+```json
+{
+  "diagnosis": "Recent Gmail seedlist drop (78% → 42% Inbox over 5 days) coincides with a 3.2× spike in soft bounces from gmail.com addresses. Gmail Postmaster shows IP reputation degraded to 'Medium'. SPF/DKIM/DMARC all pass. Most likely cause: complaint-rate-driven reputation decay, not authentication.",
+  "fixes": [
+    {
+      "id": "fix_complaint_audit",
+      "title": "Audit campaigns sent in the past 14 days for high-complaint segments",
+      "rationale": "Complaint rate 0.34% (target &lt;0.10%). Top contributor: re-engagement campaign on 2026-04-21 to 'inactive 90d+' segment (1.1% complaints).",
+      "estimated_impact": 0.40,
+      "effort": "low",
+      "action": { "kind": "open_report", "ref": "campaigns?filter=complaints&gt;0.5%" }
+    },
+    {
+      "id": "fix_warmup_pause",
+      "title": "Pause re-engagement to inactive 90d+ for 14 days",
+      "rationale": "Inactive segments are the dominant complaint source. Cooling off allows IP/domain reputation to recover.",
+      "estimated_impact": 0.25,
+      "effort": "low",
+      "action": { "kind": "pause_segment", "ref": "inactive_90d" }
+    },
+    {
+      "id": "fix_list_hygiene",
+      "title": "Drop hard-bounced addresses from all active segments",
+      "rationale": "1,247 hard-bounced addresses still in 3 active segments. Continuing to attempt these signals carelessness to mailbox providers.",
+      "estimated_impact": 0.10,
+      "effort": "low",
+      "action": { "kind": "run_hygiene", "ref": "drop_hard_bounces" }
+    }
+  ]
+}
+```
+
+## Constraints it operates under
+
+The Diagnostician is constrained — by code — to the following rules:
+
+1. **No inventing stats.** Every number cited in `diagnosis` and `rationale` must trace to an input signal. The Diagnostician produces structured citations the UI verifies before display.
+2. **Per-fix `estimated_impact ≤ 0.40`.** No single fix can claim to recover more than 40% of placement. Reality rarely supports stronger claims; the cap prevents the model from over-promising.
+3. **Sum of `estimated_impact` across all fixes ≤ 0.85.** Even cumulatively, the Diagnostician can never claim to fully fix the problem in advance — there's always residual uncertainty.
+4. **At most 5 fixes.** Forces ranking; prevents kitchen-sink output.
+5. **Effort is `low` / `medium` / `high`.** Coarse on purpose — anything finer-grained is a false precision.
+6. **No fixes that require user data Moosewave doesn't have.** ("Connect Postmaster Tools" can be a fix; "stop sending to Salesforce-marked-do-not-mail" can't, because Moosewave doesn't see Salesforce.)
+
+<Callout type="warning">
+The Diagnostician is a **co-pilot**, not an oracle. It surfaces the most likely cause given the evidence; the operator decides whether to act. Always read the rationale before clicking *Do it*.
+</Callout>
+
+## Sample fix walkthrough
+
+The fix `fix_complaint_audit` above:
+
+1. Click **Open report**. Moosewave routes you to the Campaigns view, pre-filtered to complaint rate &gt;0.5% in the last 14 days.
+2. The offending campaign is row 1. Open it.
+3. The Diagnostician's diagnosis appears at the top of the campaign report with a "What I think went wrong" panel.
+4. From there: pause the segment (next fix), or rewrite the campaign's targeting and re-send to a smaller, healthier segment.
+
+## When the Diagnostician runs
+
+- **On dashboard load** if any layer is non-green.
+- **On every seedlist run** that shows &gt;10% degradation vs the trailing 7-day average.
+- **Daily** as a background job; output stored as a timeline you can scroll.
+
+## Next steps
+
+- [Pre-Send Predictor](/deliverability/predictor) — catches issues before they enter the Diagnostician's input.
+- [Improving placement](/deliverability/improving-placement) — playbook of preventative habits.

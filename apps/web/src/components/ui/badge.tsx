@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const badgeVariants = cva(
+  "inline-flex items-center rounded-[5px_8px_5px_8px] border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default: "border-mw-ink bg-mw-ink text-mw-paper",
+        secondary: "border-mw-ink/10 bg-mw-pink-soft text-mw-blue",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground",
+        outline: "border-mw-ink/25 bg-card text-foreground",
+        // Semantic variants read from theme-aware tokens (success / warning
+        // (=brand gold) / info) instead of ad-hoc emerald/amber, so status
+        // color is consistent app-wide and flips correctly in dark mode.
+        success: "border-transparent bg-success-subtle text-success-emphasis",
+        warning: "border-transparent bg-warning-subtle text-warning-emphasis",
+        info: "border-transparent bg-info-subtle text-info",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
+export interface BadgeProps
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
+  return (
+    <div
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
+      {...props}
+    />
+  );
+}
+
+export { Badge, badgeVariants };

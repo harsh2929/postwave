@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <nested-blockquote-reply.v1@example.com>
+Subject: Re: your question
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-quote2-v1"
+
+--pw-quote2-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Answering your question below. https://help.example.com/t/12
+--pw-quote2-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Re: your question</h1><p>Yes, imports run hourly.</p><blockquote><p>You wrote: how often do imports run?</p></blockquote><p><a href="https://help.example.com/t/12">Continue the thread</a></p></body></html>
+--pw-quote2-v1--

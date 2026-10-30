@@ -1,0 +1,83 @@
+---
+title: Glossary
+---
+
+# Glossary
+
+## A
+
+**AGPL** — Affero General Public License. A copyleft license used by some open-source ESPs (notably the original Listmonk). Moosewave's relationship to AGPL code is documented in `LICENSE-BOUNDARY.md`.
+
+## B
+
+**BIMI** — Brand Indicators for Message Identification. A standard for displaying your brand logo next to messages in supporting inboxes (Gmail prominently). Requires DMARC `quarantine`/`reject` and a Verified Mark Certificate. See [BIMI](/deliverability/bimi).
+
+**BYOSP** — Bring Your Own Sending Provider. The Moosewave model where you provide an SMTP relay (Postmark, SES, Sendgrid) and Moosewave dispatches through it.
+
+## C
+
+**Canonical Schema** — Moosewave's internal common-denominator data model that every [migration adapter](/migration) projects into. See [Migration overview](/migration#the-canonical-schema).
+
+## D
+
+**DKIM** — DomainKeys Identified Mail. Cryptographic signing of email messages. See [DKIM](/deliverability/dkim).
+
+**DMARC** — Domain-based Message Authentication, Reporting & Conformance. Policy layer on top of SPF + DKIM. See [DMARC](/deliverability/dmarc).
+
+**DNSBL** — DNS Block List. Public databases of IPs/domains observed sending spam. See [Blacklists](/deliverability/blacklists).
+
+**Drip** — A scheduled, time-based [automation](/automation) that sends a sequence of emails over a defined cadence (e.g., a 5-day welcome drip).
+
+## F
+
+**FBL** — Feedback Loop. Programs (Microsoft, Yahoo, others) where receivers report user complaints back to senders. Moosewave subscribes to all major FBLs and treats reported addresses as automatically suppressed.
+
+## I
+
+**IP Warming** — The process of gradually increasing send volume from a new sending IP so receivers learn its reputation. See [Improving placement → warmup discipline](/deliverability/improving-placement).
+
+## L
+
+**Listmonk** — An upstream AGPL newsletter application that Moosewave runs as a separately deployed process and calls over HTTP. The Moosewave repository contains no Listmonk source tree, fork, or submodule; see `LICENSE-BOUNDARY.md`.
+
+## M
+
+**MJML** — Mailjet Markup Language. A markup language that compiles to email-safe responsive HTML. Moosewave's email composer uses MJML internally.
+
+**MTA** — Mail Transfer Agent. The server software that actually delivers email (Postfix, Exim, Haraka, Moosewave's bundled MTA).
+
+## O
+
+**Opt-in (single)** — Subscriber is added to the list immediately on form submit. Riskier; see [Opt-in](/forms/opt-in).
+
+**Opt-in (double)** — Subscriber is added as `pending`, must click a confirmation link to become `subscribed`. Recommended default.
+
+## P
+
+**Postmaster Tools** — Free dashboards (Gmail, Microsoft SNDS, Yahoo) where senders see receiver-side reputation data. Moosewave can ingest Gmail Postmaster Tools data into the [Diagnostician](/deliverability/diagnostician).
+
+## R
+
+**RLS** — Row-Level Security. Postgres feature that scopes data visibility per-row. Moosewave uses Postgres RLS for tenant isolation.
+
+## S
+
+**Seedlist** — A panel of test inboxes used to measure inbox-vs-spam placement. See [Seedlist](/deliverability/seedlist).
+
+**SES** — Simple Email Service (Amazon). A common BYOSP relay choice.
+
+**SPF** — Sender Policy Framework. DNS-based authorization of who can send as your domain. See [SPF](/deliverability/spf).
+
+**Suppression List** — A list of email addresses that should never be mailed (hard bounces, complaints, unsubscribes, manual blocks).
+
+## T
+
+**Transactional vs Marketing** — Transactional emails are 1:1 triggered by a user action (password reset, order confirmation); marketing emails are bulk broadcasts to many subscribers. Moosewave handles both, with separate queues and reputation isolation.
+
+## V
+
+**Voice Profile** — Moosewave's structured fingerprint of how you write, used by [Voice AI](/voice-ai) generation. See [Profile](/voice-ai/profile).
+
+## W
+
+**Warmup** — See _IP Warming_.

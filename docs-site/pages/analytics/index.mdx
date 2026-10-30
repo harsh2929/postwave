@@ -1,0 +1,71 @@
+---
+title: Analytics & Reporting
+---
+
+import { Callout } from 'nextra/components';
+
+# Analytics & Reporting
+
+Moosewave's reporting splits into three layers, each backed by real API routes:
+
+1. **Per-campaign reports** — engagement rollups + breakdowns for one campaign.
+2. **Cross-campaign analytics** — the dashboard rollups: comparisons, cohorts, funnels, time-series, fatigue, leaderboards.
+3. **Custom & scheduled reports** — a metric/dimension builder you can save, run, export, and put on a cron.
+
+<Callout type="info">
+All read routes require the `read:reports` scope; the custom-report writer needs `write:reports`; scheduled reports are `admin`. The full route catalog with request/response shapes is in the [Campaign Reports API](/api-reference/reports).
+</Callout>
+
+## Per-campaign
+
+`GET /api/v1/campaigns/{id}/report` is the headline rollup — sent, delivered, opens, clicks, bounces, complaints, unsubscribes, and the derived rates. It also returns **bot-stripped** `human_*` counts (Apple Mail Privacy Protection, Gmail image proxy, and link scanners removed) so your open/click rates reflect actual humans.
+
+Drill-down breakdowns are separate routes:
+
+- **Links** — `/api/v1/campaigns/{id}/link-report`
+- **Devices & clients** — `/api/v1/campaigns/{id}/devices`
+- **Geography** — `/api/v1/campaigns/{id}/geography`
+- **Revenue** — `/api/v1/campaigns/{id}/revenue`
+- **Bounces** — `/api/v1/campaigns/{id}/bounces`
+- **Hourly time-series** — `/api/v1/campaigns/{id}/timeseries`
+- **Anomalies** — `/api/v1/campaigns/{id}/anomalies`
+- **CSV export** — `/api/v1/campaigns/{id}/report.csv`
+
+For a send-in-progress, `GET /api/v1/campaigns/{id}/events` streams the report object over Server-Sent Events.
+
+## Cross-campaign
+
+These power the dashboard's overview and analytics pages:
+
+| Route                                            | What it answers                              |
+| ------------------------------------------------ | -------------------------------------------- |
+| `/api/v1/analytics/campaigns/compare?ids=a,b`    | How do these campaigns stack up side by side?|
+| `/api/v1/analytics/cohorts`                      | How do subscriber cohorts engage over time?  |
+| `/api/v1/analytics/subscribers/funnel`           | Where do subscribers drop off in the lifecycle?|
+| `/api/v1/analytics/subscribers/timeseries`       | How is the list growing / shrinking?         |
+| `/api/v1/analytics/timeseries`                   | A grouped metric series for any dimension.   |
+| `/api/v1/analytics/fatigue`                      | Are we over-mailing a segment?               |
+| `/api/v1/analytics/template-leaderboard`         | Which templates perform best?                |
+
+## Custom & scheduled reports
+
+The reporting builder exposes a **metric registry** (`/api/v1/reporting/metric-registry`) of the metrics and dimensions you can combine. Build a query, **preview** it (`/api/v1/reporting/preview`) to validate without saving, then **save it as a definition** and run it on demand or **on a cron** that emails the result.
+
+See the [Campaign Reports API → Custom reports](/api-reference/reports#custom-reports) and [→ Scheduled reports](/api-reference/reports#scheduled-reports) for the full request/response shapes.
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/reporting/preview \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "metrics": ["unique_opens","unique_clicks"], "dimensions": ["campaign"] }'
+```
+
+## Anomaly digests
+
+Moosewave watches campaign engagement for anomalies and can email a digest. The per-campaign anomaly route (`/api/v1/campaigns/{id}/anomalies`) and the tenant-wide anomaly list + digest-preference endpoints feed the same model.
+
+## See also
+
+- [Campaign Reports API](/api-reference/reports) — the complete route + payload reference.
+- [Campaigns API](/api-reference/campaigns) — what produces these reports.
+- [SMS](/sms/broadcasts) — SMS report schemas are source inventory; private
+  evidence reads are `sms_evidence_read_release_held`.

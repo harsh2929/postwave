@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <currency-and-math-symbols.v1@example.com>
+Subject: Quote 118
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-symbols-v1"
+
+--pw-symbols-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Subtotal EUR 1.200,00 - discount 12% = EUR 1.056,00. https://sales.example.com/q/118
+--pw-symbols-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Quote 118</h1><p>Subtotal €1.200,00 × 1 unit − 12% discount ≈ €1.056,00</p><p>Weight: 2.5 kg ± 0.1 kg. Area: 3 m².</p><p><a href="https://sales.example.com/q/118">View the quote</a></p></body></html>
+--pw-symbols-v1--

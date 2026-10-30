@@ -1,0 +1,765 @@
+name: Test
+
+# -----------------------------------------------------------------------------
+# Comprehensive test workflow: fans out into per-language jobs gated on
+# path filters so a docs-only PR doesn't run the Go matrix or vice versa.
+#
+# Coverage map:
+#   - go         apps/api, services/{automation,deliverability,migration,voice},
+#                packages/migrate. Runs `go test ./... -race -coverprofile`.
+#                The race detector catches subtle goroutine bugs the
+#                X1+X2+X3 unit tests are guarding against; we don't need
+#                special tags to pick them up because they live in normal
+#                `_test.go` files alongside the code they cover.
+#   - ts-pkgs    packages/{sdk-ts,mcp-server,cli,email-react,
+#                claude-code-plugin,schema}. tsc --noEmit + per-package test
+#                scripts where present. Skips packages without the script
+#                via `--if-present`.
+#   - desktop    apps/desktop. `tsc --noEmit` + `vite build` (no Tauri bundle
+#                — bundle-time checks live in desktop-ci.yml/desktop-release.yml).
+#   - web        apps/web. `next build`. Lint runs as part of the build
+#                so we don't need to pass `--no-lint`.
+#   - mobile     apps/mobile. Canonical source/export checks run in ci.yml;
+#                this path-gated workflow clean-prebuilds and compiles native
+#                Android/iOS Release smoke artifacts without signing.
+#
+# Hard rule: NO untrusted github.event.* values are interpolated into shell
+# commands. Every dynamic value goes through env: blocks.
+# -----------------------------------------------------------------------------
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  aws-deployment-contracts:
+    name: AWS deployment contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Verify canonical platform, digest, migration, secret, and service-roll contracts
+        run: |
+          node scripts/check-sensitive-handoff.mjs
+          node scripts/check-production-platform.mjs
+          node scripts/release/verify-aws-deployment-contracts.mjs
+
+      - name: Install pinned CloudFormation validator
+        run: pipx install cfn-lint==1.53.0
+
+      - name: Validate every canonical CloudFormation template
+        run: >-
+          cfn-lint
+          infra/aws/cloudformation/postwave-stack.yaml
+          infra/aws/cloudformation/postwave-sidecars.yaml
+          infra/aws/cloudformation/postwave-web.yaml
+          infra/aws/observability-stack.yaml
+          infra/aws/cloudwatch-alarms.yaml
+          infra/backup/aws-backup-dr.yaml
+          infra/backup/aws-rds-dr.yaml
+          infra/backup/aws-dns-failover.yaml
+
+  # ---------------------------------------------------------------------------
+  # changes — single source of truth for which language matrices to run.
+  # Every other job depends on this and gates its `if:` on the matching
+  # output flag.
+  # ---------------------------------------------------------------------------
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.filter.outputs.go }}
+      ts_pkgs: ${{ steps.filter.outputs.ts_pkgs }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      web: ${{ steps.filter.outputs.web }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      migrations: ${{ steps.filter.outputs.migrations }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Compute path filters
+        id: filter
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590
+        with:
+          # Editing this workflow file re-validates every language path so
+          # we never ship a workflow change that accidentally skips checks.
+          filters: |
+            go:
+              - 'apps/api/**'
+              - 'services/automation/**'
+              - 'services/deliverability/**'
+              - 'services/migration/**'
+              - 'services/voice/**'
+              - 'packages/migrate/**'
+              - 'go.work'
+              - 'go.work.sum'
+              - 'infra/migrations/**'
+              - 'scripts/release/build-migration-manifest.sh'
+              - 'scripts/release/run-migrator.sh'
+              - 'scripts/release/verify-migration-state.go'
+              - 'scripts/release/verify-migration-state_test.go'
+              - 'scripts/release/verify-consent-evidence.go'
+              - 'scripts/release/verify-consent-evidence_test.go'
+              - '.github/workflows/test.yml'
+            ts_pkgs:
+              - 'packages/sdk-ts/**'
+              - 'packages/mcp-server/**'
+              - 'packages/cli/**'
+              - 'packages/email-react/**'
+              - 'packages/claude-code-plugin/**'
+              - 'packages/schema/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/test.yml'
+            desktop:
+              - 'apps/desktop/**'
+              - 'packages/nav/**'
+              - 'packages/notifications/**'
+              - 'packages/query-contract/**'
+              - 'packages/telemetry/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/test.yml'
+            web:
+              - 'apps/web/**'
+              - 'packages/sdk-ts/**'
+              - 'pnpm-lock.yaml'
+              - '.github/workflows/test.yml'
+            mobile:
+              - 'apps/mobile/**'
+              - 'packages/design-tokens/**'
+              - 'packages/nav/**'
+              - 'packages/notifications/**'
+              - 'packages/onboarding-schema/**'
+              - 'packages/route-map/**'
+              - 'packages/sdk-ts/**'
+              - 'packages/telemetry/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.github/workflows/test.yml'
+            migrations:
+              - 'infra/migrations/**'
+              - 'scripts/lint-migrations.py'
+              - 'scripts/lint-migrations.sh'
+              - 'scripts/lint-migrations.test.sh'
+              - 'scripts/lint-migrations-baseline.json'
+              - 'scripts/lint-migrations-schema.py'
+              - 'scripts/check-worker-db-safety.mjs'
+              - 'scripts/check-worker-db-safety-baseline.json'
+              - 'scripts/check-rls-policies.sh'
+              - '.github/workflows/test.yml'
+
+  # ---------------------------------------------------------------------------
+  # migrations-lint — migration lock/FK/RLS linter. Catches blocking index
+  # builds, missing tenant FKs/FORCE RLS, and the RESTRICTIVE-only-policy
+  # antipattern that caused the 0077 + 0078 emergency fixups.
+  #
+  # The script is fast (pure-Python regex pass over the .sql files), so
+  # we don't need to fence it behind a dependency setup.
+  # ---------------------------------------------------------------------------
+  migrations-lint:
+    # Preserve the established check-run name so existing branch-protection
+    # rules keep requiring it while its coverage expands.
+    name: Migrations — RLS policy lint
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Run migration safety lint
+        env:
+          POSTWAVE_MIGRATION_LINT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          scripts/lint-migrations.test.sh
+          scripts/lint-migrations.sh
+          scripts/check-rls-policies.sh
+          node scripts/check-worker-db-safety.mjs --self-test
+          node scripts/check-worker-db-safety.mjs
+
+  # ---------------------------------------------------------------------------
+  # go — full Go matrix. `go test -race` is the gate; `go vet` runs
+  # implicitly under `go test`. Coverage is uploaded as an artifact for
+  # downstream tooling (Codecov etc.) without coupling this workflow to a
+  # particular SaaS.
+  # ---------------------------------------------------------------------------
+  go:
+    name: Go — apps/api, services/*, packages/migrate
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # ---------------------------------------------------------------------
+    # Postgres service container.
+    #
+    # Without a real DB the bulk of integration tests under
+    # apps/api/internal/* skip on `t.Skip("DATABASE_URL not set")` — that
+    # was performative CI. We boot Postgres 16 (matches docker-compose.yml),
+    # apply every infra/migrations/*.sql, and export DATABASE_URL so the
+    # tests connect as the unprivileged `postwave_app` role used in prod.
+    # The same immutable migrator image used by Compose and production applies
+    # every *.sql file and then asserts exact count/latest/checksum parity.
+    # ---------------------------------------------------------------------
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: public-local-demo-only
+          POSTGRES_DB: postwave
+          # Lock-table headroom for the parallel DB tests; the first step
+          # below explains the value and fails if it did not take.
+          POSTGRES_INITDB_ARGS: "--set=max_locks_per_transaction=512"
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Verify Postgres lock-table headroom
+        # The service runs with max_locks_per_transaction=512 instead of the
+        # image's 64. One DELETE FROM tenants cascades through over 700
+        # foreign keys and holds ~3,300 locks until it commits, and the DB
+        # tests delete tenants concurrently:
+        # - DATABASE_URL is postwave_app, which RLS lets delete a tenant only
+        #   with app.tenant_id set. Such a delete takes the push-suppression
+        #   domain advisory lock SHARED plus a per-tenant lock (migration
+        #   1996), so deletes of different tenants in one database overlap.
+        #   Only a delete made without app.tenant_id, such as a superuser's
+        #   through POSTWAVE_TEST_ADMIN_DATABASE_URL, takes that lock
+        #   exclusively and so never overlaps another in the same database.
+        # - Advisory locks are per database, and the tests that build scratch
+        #   databases beside `postwave` delete tenants there too. Those
+        #   overlaps cost the most: cascades in one database share lock-table
+        #   entries, while cascades in different databases each need their
+        #   own.
+        # - No test that deletes a tenant calls t.Parallel, so the overlap is
+        #   bounded by `go test -p` (the CPU count by default).
+        # The lock table has room for max_locks_per_transaction entries per
+        # backend slot, and the image has 122 slots (100 connections plus
+        # background processes): ~7,800 entries at 64, ~62,000 at 512.
+        # Measured on postgres:16-alpine with every migration applied, each
+        # cascade holding 3,289 locks: at 64, with four cascades in four
+        # databases at once, a fresh server failed the fourth with SQLSTATE
+        # 53200 ("out of shared memory"), which surfaces as an unrelated test
+        # failure, and once earlier overlap had used up the spare shared
+        # memory, two could fail; at 512, 24 in one database and 16 across 16
+        # databases ran cleanly, for 20 MB more shared memory.
+        #
+        # A service container takes no server arguments, and this setting
+        # changes only on a restart. initdb's --set (PostgreSQL 16+), which
+        # the image entrypoint passes from POSTGRES_INITDB_ARGS, writes it to
+        # postgresql.conf before the first start, so the server GitHub
+        # health-checks already has it: no ALTER SYSTEM, no container restart
+        # and no second wait. This step proves it took effect.
+        # infra/aws/codebuild/ci-group.sh starts its Postgres with the same
+        # value.
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          # The health check probes the socket, which the image's first-start
+          # bootstrap server also answers; only the real server listens on TCP.
+          for _ in $(seq 1 30); do
+            if docker exec "$POSTGRES_CONTAINER" pg_isready -h 127.0.0.1 -U postgres -d postwave >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          locks="$(docker exec "$POSTGRES_CONTAINER" psql -U postgres -d postwave -tAc 'SHOW max_locks_per_transaction')"
+          echo "max_locks_per_transaction=$locks"
+          if [ "$locks" != "512" ]; then
+            echo "::error::max_locks_per_transaction is $locks, want 512: POSTGRES_INITDB_ARGS on the postgres service did not take effect"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: true
+
+      - name: Sync Go workspace
+        run: go work sync
+
+      - name: Build
+        run: |
+          go build \
+            ./apps/api/... \
+            ./services/automation/... \
+            ./services/deliverability/... \
+            ./services/migration/... \
+            ./services/voice/... \
+            ./packages/migrate/...
+
+      - name: Test release migration-state verifier
+        run: |
+          cd apps/api
+          go test \
+            ../../scripts/release/verify-migration-state.go \
+            ../../scripts/release/verify-migration-state_test.go
+
+      - name: Test consent-evidence release preflight
+        run: |
+          cd apps/api
+          go test \
+            ../../scripts/release/verify-consent-evidence.go \
+            ../../scripts/release/verify-consent-evidence_test.go
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Apply migrations
+        # Mirrors infra/docker-compose.full.yml's `db-migrate` service. The
+        # image contains the canonical checksum/advisory-lock Go runner plus
+        # a baked manifest; its entrypoint fails if a file is omitted,
+        # changed, duplicated, or missing from schema_migrations after apply.
+        # POSTWAVE_MIGRATOR_ALLOW_UNSAFE is limited to empty-schema bootstrap:
+        # historical migration 0339 contains its reviewed partition cutover.
+        env:
+          PGPASSWORD: public-local-demo-only
+        run: |
+          set -euo pipefail
+          # Wait for the postgres service container to accept connections
+          # (the GitHub-managed health check usually has it up by the time
+          # we get here, but be defensive).
+          for _ in $(seq 1 30); do
+            if pg_isready -h localhost -U postgres -d postwave >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+
+          # Provision the unprivileged role our app + tests connect as.
+          # Mirrors infra/postgres/init.sql verbatim.
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postwave -c "
+            CREATE ROLE postwave_app WITH
+              LOGIN
+              PASSWORD 'postwave_app_dev'
+              NOSUPERUSER
+              NOCREATEDB
+              NOCREATEROLE
+              NOINHERIT;
+            GRANT CONNECT ON DATABASE postwave TO postwave_app;
+          "
+
+          docker build \
+            --file infra/migrations/Dockerfile \
+            --tag postwave-db-migrator:test \
+            .
+          docker run --rm --network host \
+            --env DATABASE_URL='postgres://postgres:public-local-demo-only@127.0.0.1:5432/postwave?sslmode=disable' \
+            --env POSTWAVE_MIGRATOR_ALLOW_UNSAFE=1 \
+            --env POSTWAVE_MIGRATOR_TIMEOUT=20m \
+            postwave-db-migrator:test
+
+      - name: Verify reviewed migration-lint effective schema
+        env:
+          DATABASE_URL: postgres://postgres:public-local-demo-only@127.0.0.1:5432/postwave?sslmode=disable
+        run: scripts/lint-migrations-schema.py
+
+      - name: Test (race + coverage)
+        # `-race` catches data races that would otherwise only show up in
+        # production under load. `-covermode=atomic` is required when -race
+        # is set; it's slower but accurate. The 10m per-package timeout
+        # kills a hanging test individually instead of wedging the job.
+        #
+        # DATABASE_URL is set so the Postgres-gated tests under
+        # apps/api/internal/* (which previously skipped) actually run.
+        # The connection string matches docker-compose.full.yml's
+        # postwave_app role — same path prod will use.
+        env:
+          DATABASE_URL: postgres://postwave_app:postwave_app_dev@localhost:5432/postwave?sslmode=disable
+          TEST_DATABASE_URL: postgres://postwave_app:postwave_app_dev@localhost:5432/postwave?sslmode=disable
+          POSTWAVE_TEST_ADMIN_DATABASE_URL: postgres://postgres:public-local-demo-only@localhost:5432/postwave?sslmode=disable
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out -timeout=10m \
+            ./apps/api/... \
+            ./services/automation/... \
+            ./services/deliverability/... \
+            ./services/migration/... \
+            ./services/voice/... \
+            ./packages/migrate/...
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: go-coverage
+          path: coverage.out
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # ts-pkgs — typecheck + test every TypeScript package. We use pnpm's
+  # --if-present so packages without a `test` script (e.g. schema) don't
+  # break the matrix. Build is also done so type-only consumers catch tsup
+  # config drift here, not in publish-packages.yml.
+  # ---------------------------------------------------------------------------
+  ts-packages:
+    name: TS packages — typecheck, test, build
+    needs: changes
+    if: needs.changes.outputs.ts_pkgs == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build @postwave/sdk first so downstream packages can resolve its
+      # types — they reference dist/index.d.ts which doesn't exist until
+      # build runs. mcp-server / cli / email-react all depend on sdk via
+      # workspace:* and were silently failing typecheck before this step.
+      - name: Build SDK first (typecheck dependency)
+        run: pnpm --filter @postwave/sdk build
+
+      - name: Typecheck
+        run: |
+          pnpm --filter @postwave/sdk --if-present typecheck
+          pnpm --filter @postwave/mcp-server --if-present typecheck
+          pnpm --filter @postwave/cli --if-present typecheck
+          pnpm --filter @postwave/email-react --if-present typecheck
+          pnpm --filter @postwave/claude-code-plugin --if-present typecheck
+          pnpm --filter @postwave/schema --if-present typecheck
+
+      - name: Test
+        run: |
+          pnpm --filter @postwave/sdk --if-present test
+          pnpm --filter @postwave/mcp-server --if-present test
+          pnpm --filter @postwave/cli --if-present test
+          pnpm --filter @postwave/email-react --if-present test
+          pnpm --filter @postwave/claude-code-plugin --if-present test
+
+      - name: Build remaining packages
+        run: |
+          pnpm --filter @postwave/mcp-server --if-present build
+          pnpm --filter @postwave/cli --if-present build
+          pnpm --filter @postwave/email-react --if-present build
+          pnpm --filter @postwave/claude-code-plugin --if-present build
+
+  # ---------------------------------------------------------------------------
+  # desktop — TypeScript shell only. Rust + Tauri checks live in
+  # desktop-ci.yml (which only runs on apps/desktop changes); we don't
+  # duplicate them here.
+  # ---------------------------------------------------------------------------
+  desktop:
+    name: Desktop — tsc + vite build
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (tsc -b + vite build)
+        # The package.json `build` script is `tsc -b && vite build`; it
+        # covers typecheck (via tsc -b) and the production frontend bundle
+        # in one go.
+        run: pnpm --filter postwave-desktop-shell build
+
+  # ---------------------------------------------------------------------------
+  # web — Next.js. `next build` runs ESLint by default; lint-on-build is
+  # the desired CI behavior.
+  # ---------------------------------------------------------------------------
+  web:
+    name: Web — next build
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @postwave/web typecheck
+
+      - name: Environment contract
+        run: pnpm --filter @postwave/web env:check
+
+      - name: Unit tests
+        run: pnpm --filter @postwave/web test
+
+      - name: Build
+        run: pnpm --filter @postwave/web build
+
+      - name: Bundle budgets
+        run: pnpm --filter @postwave/web bundle:check
+
+      - name: Upload bundle report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: web-bundle-report
+          path: apps/web/.next/postwave-bundle-report.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # mobile native — source/lint/test/export checks live once in ci.yml. These
+  # jobs spend the saved duplicate capacity on clean native Release compiles.
+  # ---------------------------------------------------------------------------
+  mobile-native-android:
+    name: Mobile native — Android Release smoke
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Setup Java and Gradle cache
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            apps/mobile/package.json
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build mobile workspace dependencies
+        run: pnpm --filter '@postwave/mobile^...' --if-present run build
+
+      - name: Clean Android prebuild
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+          EXPO_APPLE_TEAM_ID: ABCDE12345
+          EXPO_PUBLIC_API_URL: https://api.invalid
+          EXPO_PUBLIC_APP_URL: https://app.invalid
+          EXPO_PUBLIC_BUILD_PROFILE: verification
+          EXPO_PUBLIC_POSTWAVE_ENV: verification
+        run: pnpm --filter @postwave/mobile exec expo prebuild --clean --no-install --platform android
+
+      # The one check that can only run here.
+      #
+      # apps/mobile/android is a gitignored build artifact, so nothing outside
+      # this job ever sees what prebuild actually produced. A config plugin that
+      # silently no-ops leaves every unit test green — the manifest mutation and
+      # the Kotlin emit are asserted from the plugin's own exports, and a plugin
+      # Expo never effectively ran passes those just as well.
+      #
+      # Both halves, because either alone is a working build that fails at use:
+      # a declared <activity> with no class is ClassNotFoundException the first
+      # time somebody shares into Moosewave, and a written class with no filter
+      # never appears in the share sheet at all. Run BEFORE assembleRelease so
+      # the failure names the plugin rather than surfacing as a compile error
+      # ten minutes later.
+      - name: Verify the Android share target survived prebuild
+        working-directory: apps/mobile/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=app/src/main/AndroidManifest.xml
+          test -f "$manifest"
+          if ! grep -q 'android.intent.action.SEND' "$manifest"; then
+            echo "::error::withAndroidShareTarget did not add an ACTION_SEND filter to $manifest"
+            exit 1
+          fi
+          activity=$(find app/src/main/java -name 'PostwaveShareActivity.kt' -print -quit)
+          if [ -z "$activity" ]; then
+            echo "::error::the manifest declares .PostwaveShareActivity but no PostwaveShareActivity.kt was emitted"
+            exit 1
+          fi
+          echo "share target present: $manifest + $activity"
+
+      - name: Compile Android Release APK
+        working-directory: apps/mobile/android
+        env:
+          SENTRY_DISABLE_AUTO_UPLOAD: "true"
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Smoke-check Android artifact
+        working-directory: apps/mobile/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifacts=(app/build/outputs/apk/release/*.apk)
+          test -f "${artifacts[0]}"
+          unzip -t "${artifacts[0]}"
+          test "$(stat -c %s "${artifacts[0]}")" -gt 1000000
+
+  mobile-native-ios:
+    name: Mobile native — iOS Release simulator smoke
+    needs: changes
+    if: needs.changes.outputs.mobile == 'true'
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: mobile-pods-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/mobile/package.json') }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build mobile workspace dependencies
+        run: pnpm --filter '@postwave/mobile^...' --if-present run build
+
+      - name: Install pinned CocoaPods
+        run: gem install cocoapods --version 1.16.2 --no-document
+
+      - name: Clean iOS prebuild
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+          EXPO_APPLE_TEAM_ID: ABCDE12345
+          EXPO_PUBLIC_API_URL: https://api.invalid
+          EXPO_PUBLIC_APP_URL: https://app.invalid
+          EXPO_PUBLIC_BUILD_PROFILE: verification
+          EXPO_PUBLIC_POSTWAVE_ENV: verification
+        run: pnpm --filter @postwave/mobile exec expo prebuild --clean --no-install --platform ios
+
+      - name: Install locked native dependencies
+        working-directory: apps/mobile/ios
+        run: pod install
+
+      - name: Compile unsigned iOS Release simulator app
+        working-directory: apps/mobile/ios
+        env:
+          SENTRY_DISABLE_AUTO_UPLOAD: "true"
+        run: >-
+          xcodebuild
+          -workspace Moosewave.xcworkspace
+          -scheme Moosewave
+          -configuration Release
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build/DerivedData
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          COMPILER_INDEX_STORE_ENABLE=NO
+          build
+
+      - name: Smoke-check iOS artifact
+        working-directory: apps/mobile/ios
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifacts=(build/DerivedData/Build/Products/Release-iphonesimulator/*.app)
+          test -d "${artifacts[0]}"
+          plutil -lint "${artifacts[0]}/Info.plist"
+          executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${artifacts[0]}/Info.plist")"
+          test -x "${artifacts[0]}/${executable}"

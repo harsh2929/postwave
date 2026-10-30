@@ -1,0 +1,645 @@
+/*
+ * Moosewave Desktop — design system stylesheet.
+ * Native-feeling productivity-app dark theme. Tokens live in :root.
+ * No web-style hero typography, no bouncy animations, no oversized headlines.
+ *
+ * Brand anchors (ember / paper / ink / warm-border) are the canonical values
+ * from @postwave/design-tokens; src/__tests__/brand-anchors.test.ts consumes
+ * that package's BRAND_ANCHORS and fails if any anchor here drifts from it, so
+ * the desktop theme can no longer diverge from web/mobile "by construction"
+ * (frontier G-59). Status colours (success/warning/danger/info/subtle) are
+ * deliberately tuned per-consumer for WCAG AA on desktop surfaces and are NOT
+ * gated — see the contrast math in the light-theme block below.
+ */
+
+/* stylelint-disable color-no-hex, function-disallowed-list -- design-token definitions are the one allowed source of hex/rgb literals */
+:root {
+  /*
+   * Tells the UA which way to theme native widgets (inputs, scrollbars,
+   * checkboxes, dropdown arrows, date pickers). Without this, on a
+   * dark-mode OS the UA may render bare <input> elements with the
+   * system dark theme even when our page is in light mode — exactly
+   * the symptom that caused the "dark text box on white modal" bug.
+   */
+  color-scheme: dark;
+  /* Global accent for native checkbox/radio/range so they stop rendering
+     in browser-default blue and adopt the brand ember everywhere. Caret
+     matches the brand for the native-app feel. */
+  accent-color: var(--pw-accent);
+  caret-color: var(--pw-accent);
+
+  /* Warm-ink canvas — reconciled to the @postwave/design-tokens canonical
+     dark palette (#0F0F0F ink, matching web .dark + mobile), replacing the
+     prior cool blue-slate ramp (#0c0e14…#232734) the ecosystem audit flagged
+     as off-brand. Surfaces ramp warm-neutral, not blue. */
+  --pw-bg: #0f0f0f;
+  --pw-bg-sidebar: #161616;
+  --pw-bg-elev: #1a1a1a;
+  --pw-bg-elev-2: #242424;
+  /* Borders decoupled from the surface ramp (Phase-1 design-system pass):
+     each border sits one luminance step above any surface it can land on so
+     hairlines stay crisp on nested surfaces. Re-anchored warm-neutral. */
+  --pw-border: #2e2e2e;
+  --pw-border-soft: #262626;
+  --pw-border-strong: #3a3a3a;
+  --pw-fg: #e8eaed;
+  --pw-fg-muted: #9aa0aa;
+  /* Lightened from #6b7280, which failed WCAG AA on every dark surface
+     (3.0-4.0:1); ~4.6:1 on --pw-bg-elev now. */
+  --pw-fg-subtle: #838b98;
+  /* Brand accent = ember — unifies the Mac app with the web + marketing brand
+     (replaces the prior proprietary teal). This :root block is the DARK theme,
+     so ember is lifted to ember-300 (#E55262) to stay vivid on ink; the
+     light-theme override below uses ember-500 (#C8102E) on white. */
+  --pw-accent: #e55262;
+  --pw-accent-hover: #f08591;
+  --pw-accent-active: color-mix(in srgb, var(--pw-accent) 86%, #000);
+  --pw-accent-fg: #0f0f0f;
+  /* Focus-ring color. In dark mode the ember accent clears the 3:1 non-text
+     floor, so it mirrors the accent; light mode overrides to ember-500
+     (#C8102E) which passes on white. */
+  --pw-ring: var(--pw-accent);
+  /* De-overloaded roles: a dedicated live/SSE green and a categorical
+     data-viz ramp, so the accent stops doubling as chart + status color. */
+  --pw-live: #34d399;
+  --pw-data-1: #e55262;
+  --pw-data-2: #a78bfa;
+  --pw-data-3: #fbbf24;
+  --pw-data-4: #f472b6;
+  --pw-data-5: #38bdf8;
+  --pw-solid-fg: #ffffff;
+  --pw-email-canvas: #ffffff;
+  --pw-danger: #f0623d; /* red-orange — kept hue-distinct from the ember accent (#e55262) so primary vs destructive never read as the same color */
+  /* Status colors reconciled to the @postwave/design-tokens canonical dark
+     set so success/warning read identically across web/desktop/mobile (the
+     audit found #10b981 / #eab308 here diverged from #34d399 / #f1c04c). */
+  --pw-warning: #f1c04c;
+  --pw-success: #34d399;
+  /* Refined visual-polish PR: semantic info / advisor tokens kept
+   * deliberately distinct from --pw-accent (brand ember). The accent
+   * is reserved for primary actions, focus rings, and selection —
+   * using it for "info" suggestion cards painted tips in mint-green,
+   * which pattern-matched to the AI-chat-assistant idiom. Indigo
+   * (info) and violet (advisor) belong to a calmer, more sophisticated
+   * family. */
+  --pw-info: #818cf8; /* indigo-400 — neutral "tip" / advice */
+  --pw-advisor: #a78bfa; /* violet-400 — recommendation / advisor surface */
+  --pw-shadow-color: #000000;
+  --pw-radius-xs: 4px;
+  --pw-radius-sm: 6px;
+  --pw-radius-md: 8px;
+  --pw-radius-lg: 12px;
+  --pw-radius-pill: 999px;
+  --pw-shadow-card:
+    0 1px 2px color-mix(in srgb, var(--pw-shadow-color) 40%, transparent),
+    0 1px 3px color-mix(in srgb, var(--pw-shadow-color) 10%, transparent);
+
+  /* ----- elevation system (Phase-1) -----
+     Every elevated surface gets a 1px inset top-highlight so it "catches
+     light" from above (the single biggest dark-UI depth cue), layered
+     over a ramped drop shadow. Both the highlight and --pw-shadow-color
+     are theme-aware, so the whole ramp re-themes automatically. */
+  --pw-highlight-top: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --pw-highlight-top-strong: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --pw-elev-1: var(--pw-highlight-top), var(--pw-shadow-card);
+  --pw-elev-2:
+    var(--pw-highlight-top),
+    0 4px 12px color-mix(in srgb, var(--pw-shadow-color) 30%, transparent);
+  --pw-elev-3:
+    var(--pw-highlight-top),
+    0 8px 24px color-mix(in srgb, var(--pw-shadow-color) 32%, transparent);
+  --pw-elev-4:
+    var(--pw-highlight-top),
+    0 16px 40px color-mix(in srgb, var(--pw-shadow-color) 45%, transparent);
+
+  /* ----- motion scale (Phase-1) -----
+     One vocabulary of durations + curves so the whole app moves with a
+     single personality. --pw-ease-out is the existing signature curve. */
+  --pw-dur-instant: 80ms;
+  --pw-dur-fast: 120ms;
+  --pw-dur-base: 160ms;
+  --pw-dur-slow: 220ms;
+  --pw-dur-slower: 320ms;
+  --pw-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --pw-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --pw-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pw-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ----- type scale (Phase-1) -----
+     Tokenised sizes / leading / tracking — the canonical vocabulary that
+     surfaces migrate onto incrementally. */
+  --pw-text-display: 24px;
+  --pw-text-title: 20px;
+  --pw-text-lg: 18px;
+  --pw-text-heading: 15px;
+  --pw-text-body: 13px;
+  --pw-text-sm: 12px;
+  --pw-text-xs: 11px;
+  --pw-text-label: 10px;
+  --pw-leading-none: 1;
+  --pw-leading-tight: 1.2;
+  --pw-leading-snug: 1.4;
+  --pw-leading-normal: 1.5;
+  --pw-tracking-caps: 0.06em;
+  --pw-tracking-caps-sm: 0.08em;
+
+  --pw-font:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    system-ui, sans-serif;
+  --pw-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* spacing grid: 4 / 8 / 12 / 16 / 24 */
+  --pw-sp-1: 4px;
+  --pw-sp-2: 8px;
+  --pw-sp-3: 12px;
+  --pw-sp-4: 16px;
+  --pw-sp-6: 24px;
+  --pw-sp-8: 32px;
+  --pw-sp-10: 40px;
+
+  --pw-titlebar-h: 28px;
+  --pw-topbar-h: 44px;
+  --pw-statusbar-h: 22px;
+  --pw-sidebar-w: 220px;
+
+  /* Refined Library (PR 1). Derived from --pw-accent so they re-theme
+     automatically; only --pw-overlay-dim is theme-specific. */
+  --pw-selection-ring: color-mix(in srgb, var(--pw-accent) 35%, transparent);
+  --pw-focus-ring: 0 0 0 3px var(--pw-selection-ring);
+  --pw-shadow-tile-hover:
+    0 1px 2px color-mix(in srgb, var(--pw-shadow-color) 40%, transparent),
+    0 10px 28px color-mix(in srgb, var(--pw-shadow-color) 35%, transparent);
+  --pw-overlay-dim: rgba(0, 0, 0, 0.55);
+
+  /*
+   * Goal-pill color tokens (Templates v2 polish).
+   *
+   * Each goal in the campaign-template taxonomy gets its own hue so
+   * the operator can scan the gallery and visually parse template
+   * intent in milliseconds. Selected pills use the full hue; idle
+   * pills use a 12% color-mix shade so they sit lightly on the
+   * page. Dark + light themes each tune the value channel; the
+   * hues match.
+   */
+  --goal-welcome: #10b981; /* emerald — "good first thing" */
+  --goal-newsletter: #3b82f6; /* blue — recurring / informational */
+  --goal-announcement: #f59e0b; /* amber — attention / launch */
+  --goal-promotional: #ec4899; /* pink — urgency / sale */
+  --goal-re_engagement: #a855f7; /* purple — win-back / nudge */
+  --goal-transactional: #64748b; /* slate — neutral / system */
+  --goal-automation: #06b6d4; /* cyan — flow / mechanism */
+
+  /*
+   * Hero panel background tints (UI/UX audit, 2026-05-27).
+   *
+   * Each top-level tab "family" gets a soft tint that signals
+   * "marketing surface" without competing with content panels. The
+   * tints are deeper/desaturated in dark mode and pastel in light
+   * mode. Pair with --pw-fg / --pw-fg-muted; never use any of the
+   * status colors over these.
+   */
+  --pw-hero-bg-blue: #1a2230; /* Send / Campaigns / Deliverability family */
+  --pw-hero-bg-mint: #1f2a23; /* Audience family */
+  --pw-hero-bg-blush: #2a1f2a; /* Engagement / Forms / Track / Analytics */
+  --pw-hero-bg-sand: #2a241a; /* Integrations / Developer surfaces */
+  --pw-hero-bg-neutral: #1a1d27;
+}
+
+/* ---------- light theme overrides ----------------------------------- */
+/*
+ * Activated by setting `data-theme="light"` on <html>. Only colour
+ * tokens change — every layout, spacing, radius, and typography
+ * variable is shared between themes.
+ *
+ * Contrast ratios (WCAG 2.1) on the chosen palette:
+ *   fg #14171f on bg #fafbfc            → 17.3 : 1  AAA
+ *   fg #14171f on sidebar #f1f3f5       → 16.2 : 1  AAA
+ *   fg-muted #485160 on bg #fafbfc      →  8.2 : 1  AAA
+ *   fg-subtle #6b7280 on bg #fafbfc     →  4.7 : 1  AA  body text
+ *   accent-fg #fdfcf8 on accent #c8102e →  5.8 : 1  AA  button text
+ *
+ * NOTE: light accent-fg is paper (#fdfcf8) on ember-500 (#c8102e) at
+ * ~5.8:1; the dark theme pairs ink (#0f0f0f) on ember-300 (#e55262)
+ * at ~4.8:1 — both clear AA for primary-button labels.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Warm-paper canvas reconciled to the @postwave/design-tokens canonical
+     light palette (#FDFCF8 paper / #0F0F0F ink / #E0DDD3 warm border),
+     replacing the prior cool blue-grey ramp (#fafbfc / #14171f / #dde2e6). */
+  --pw-bg: #fdfcf8;
+  --pw-bg-sidebar: #f2f0ea;
+  --pw-bg-elev: #ffffff;
+  --pw-bg-elev-2: #f0ede5;
+  --pw-border: #e0ddd3;
+  --pw-border-soft: #ece9e1;
+  --pw-fg: #0f0f0f;
+  --pw-fg-muted: #5c5c5c;
+  /* Clears WCAG AA even at 11px on the warm sidebar/elevated surfaces. */
+  --pw-fg-subtle: #6f6b63;
+  --pw-accent: #c8102e;
+  --pw-accent-hover: #9f0c24;
+  --pw-accent-fg: #fdfcf8;
+  --pw-solid-fg: #ffffff;
+  --pw-email-canvas: #ffffff;
+  --pw-danger: #b32f19; /* darkened so small danger text clears AA on its tinted badge surface */
+  --pw-warning: #a34a08;
+  --pw-success: #1d7652;
+  /* Refined visual-polish PR: see dark-theme block above for rationale.
+   * Light-mode picks deeper indigo/violet so the badge text + bar
+   * meet contrast on the white card surface (≥ 4.5 : 1 against
+   * --pw-bg-elev). */
+  --pw-info: #4f46e5; /* indigo-600 */
+  --pw-advisor: #7c3aed; /* violet-600 */
+  --pw-shadow-color: #0f172a;
+  --pw-shadow-card:
+    0 1px 2px color-mix(in srgb, var(--pw-shadow-color) 6%, transparent),
+    0 1px 3px color-mix(in srgb, var(--pw-shadow-color) 8%, transparent);
+  --pw-shadow-tile-hover:
+    0 1px 2px color-mix(in srgb, var(--pw-shadow-color) 6%, transparent),
+    0 10px 28px color-mix(in srgb, var(--pw-shadow-color) 12%, transparent);
+  --pw-overlay-dim: rgba(15, 23, 30, 0.45);
+
+  /* ----- Phase-1 light-theme overrides -----
+     Borders already separate in light mode, but --pw-border-soft was
+     byte-identical to --pw-bg-elev-2 (#e8ecef); nudge it darker so soft
+     dividers show. Highlights/glows invert: on near-white cards the drop
+     shadow carries depth, so the inset highlight is kept faint and the
+     elevation ramp uses much softer shadow opacities. */
+  --pw-border-soft: #e1e5ea;
+  --pw-border-strong: #c8cfd6;
+  --pw-accent-active: color-mix(in srgb, var(--pw-accent) 88%, #000);
+  /* Ember-500 clears WCAG 3:1 non-text on white (~5:1), so the light ring
+     mirrors the light accent. */
+  --pw-ring: #c8102e;
+  --pw-live: #059669;
+  --pw-data-1: #c8102e;
+  --pw-data-2: #7c3aed;
+  --pw-data-3: #d97706;
+  --pw-data-4: #ec4899;
+  --pw-data-5: #0284c7;
+  --pw-highlight-top: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --pw-highlight-top-strong: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --pw-elev-2:
+    var(--pw-highlight-top),
+    0 4px 12px color-mix(in srgb, var(--pw-shadow-color) 10%, transparent);
+  --pw-elev-3:
+    var(--pw-highlight-top),
+    0 8px 24px color-mix(in srgb, var(--pw-shadow-color) 12%, transparent);
+  --pw-elev-4:
+    var(--pw-highlight-top),
+    0 16px 40px color-mix(in srgb, var(--pw-shadow-color) 16%, transparent);
+
+  /* Goal-pill hues — light-theme variants. Same hues, slightly
+     darker/more saturated for AA contrast on white backgrounds. */
+  --goal-welcome: #059669;
+  --goal-newsletter: #2563eb;
+  --goal-announcement: #d97706;
+  --goal-promotional: #db2777;
+  --goal-re_engagement: #9333ea;
+  --goal-transactional: #475569;
+  --goal-automation: #0891b2;
+
+  /* Light-mode hero panel tints — pastel ladder. */
+  --pw-hero-bg-blue: #eaf2fb;
+  --pw-hero-bg-mint: #e8f4eb;
+  --pw-hero-bg-blush: #f5ebf2;
+  --pw-hero-bg-sand: #f8efdf;
+  --pw-hero-bg-neutral: #f4f6f8;
+}
+/* stylelint-enable color-no-hex, function-disallowed-list */
+
+/* ---------- reset ---------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--pw-bg);
+  color: var(--pw-fg);
+  font-family: var(--pw-font);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Smooth theme switch — colour-only, never on borders or shadows. */
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Chrome surfaces (navigation/header/status) keep user-select:none so drags and
+   double-clicks on labels don't accidentally select text. Content surfaces
+   (tables, slideovers, modals body, etc.) inherit user-select:text from body
+   so operators can copy emails, IDs, webhook URLs, slugs, etc. */
+.sidebar,
+.topbar,
+.statusbar,
+.modal-header,
+.slideover-header {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--pw-accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/*
+ * Themed defaults for bare <input>/<select>/<textarea> so every form
+ * across the app picks up the design system without each component
+ * having to add `className="input"` manually. Matches the `.input`
+ * class below (kept for cases where a class is the only viable hook,
+ * e.g. CSS modules or styled wrappers).
+ *
+ * Background uses --pw-bg (the deepest tone) rather than --pw-bg-elev
+ * so inputs inside an elevated modal-card visibly recess into the
+ * card. Without this contrast step, white-on-white blends out and
+ * the field disappears.
+ *
+ * The :not selectors keep this from clobbering checkbox / radio /
+ * range / color / file inputs which need UA chrome to be usable.
+ */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--pw-fg);
+}
+
+/*
+ * NOTE on specificity: every rule below uses :where(...) for the
+ * type exclusions. :where() contributes zero specificity, so these
+ * element rules stay at (0,0,1) and any existing `.input` class
+ * (0,1,0) still wins. Without this, a long :not() chain would
+ * outrank class selectors and silently override pages that rely
+ * on `className="input"` for their bg/height/etc.
+ */
+input:where(
+  :not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="color"]
+    ):not([type="file"]):not([type="submit"]):not([type="button"]):not(
+      [type="reset"]
+    )
+),
+select,
+textarea {
+  /*
+   * Default to --pw-bg-elev so inputs sit raised on the page bg.
+   * Inside a modal-card (which is itself on --pw-bg-elev) the
+   * .modal-body override below switches to --pw-bg so the field
+   * recesses into the elevated card. This dual-mode keeps inputs
+   * visible on both surfaces without per-page styling.
+   */
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  padding: 0 10px;
+  height: 32px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    border-color 80ms ease-out,
+    box-shadow 80ms ease-out,
+    background-color 80ms ease-out;
+}
+
+textarea {
+  height: auto;
+  min-height: 64px;
+  padding: 8px 10px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+select {
+  /* Strip the native dropdown chrome and draw our own chevron so the
+     widget reads the same across OSes. Without this, macOS shows a
+     native rounded-rect that ignores --pw-border. */
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%239aa0aa' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+input:where(
+    :not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+        [type="color"]
+      ):not([type="file"]):not([type="submit"]):not([type="button"]):not(
+        [type="reset"]
+      )
+  ):hover,
+select:hover,
+textarea:hover {
+  border-color: color-mix(in srgb, var(--pw-border) 60%, var(--pw-fg-subtle));
+}
+
+input:where(
+    :not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+        [type="color"]
+      ):not([type="file"]):not([type="submit"]):not([type="button"]):not(
+        [type="reset"]
+      )
+  ):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 3px var(--pw-selection-ring);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--pw-fg-subtle);
+}
+
+/*
+ * Inside a modal-card (which itself uses --pw-bg-elev as the surface),
+ * inputs use the same --pw-bg recess as everywhere else. This rule
+ * is here only as documentation — the global rule above already
+ * covers it — and as a hook to override for an even higher-contrast
+ * recess if a future modal needs it.
+ */
+.modal-body
+  input:where(
+    :not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+        [type="color"]
+      ):not([type="file"]):not([type="submit"]):not([type="button"]):not(
+        [type="reset"]
+      )
+  ),
+.modal-body select,
+.modal-body textarea {
+  background: var(--pw-bg);
+}
+
+/* native scrollbars: thin, slate */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pw-bg-elev);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pw-bg-elev-2);
+}
+
+/* ---------- global interaction (Phase-1) --------------------------- */
+/*
+ * One app-wide focus ring, brand text-selection, and a tactile press.
+ * The focus rule uses :where() (zero specificity) so any component with
+ * its own :focus-visible still wins — it only fills the gap for the many
+ * controls that previously fell through to the inconsistent UA default.
+ * Form fields are intentionally excluded: they keep the soft inner halo
+ * defined on input:focus above, so we never double-indicate.
+ */
+:where(
+  button,
+  [role="button"],
+  a[href],
+  summary,
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--pw-accent) 30%, transparent);
+  color: var(--pw-fg);
+}
+::-moz-selection {
+  background: color-mix(in srgb, var(--pw-accent) 30%, transparent);
+  color: var(--pw-fg);
+}
+
+/* Tactile press: a subtle compress on click so controls feel native
+   under the finger. The global reduced-motion clamp neutralises the
+   transition; the instant 2% scale itself is not a vestibular trigger. */
+:where(button, [role="button"]):active:not(:disabled):not(
+    [aria-disabled="true"]
+  ) {
+  transform: scale(0.98);
+}
+
+/* ---------- utilities ----------------------------------------------- */
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.mono {
+  font-family: var(--pw-font-mono);
+}
+.muted {
+  color: var(--pw-fg-muted);
+}
+.subtle {
+  color: var(--pw-fg-subtle);
+}
+/* Canonical all-caps micro-label + tabular numeric helpers (Phase-1).
+   Replace ad-hoc uppercase/letter-spacing declarations with these. */
+.pw-label {
+  font-size: var(--pw-text-xs);
+  font-weight: 600;
+  letter-spacing: var(--pw-tracking-caps);
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+}
+.pw-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+}
+/* Inline stroke icons (Icon.tsx) sit on the text baseline next to a label
+   and never shrink inside flex rows. */
+.pw-icon {
+  flex: none;
+  vertical-align: -0.125em;
+}
+/* Right-align + tabular numerics for metric/count/score columns so digits
+   stack and line up down the column (Phase-3 tables). Apply to both the
+   header cell and the body cell. */
+.col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+}
+.spacer {
+  flex: 1;
+}
+/* Keep status/live-region copy available to assistive technology only.
+ * Both names are retained because production owners historically used each;
+ * they must remain exact aliases so hidden labels never enter layout. */
+.sr-only,
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

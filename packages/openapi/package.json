@@ -1,0 +1,90 @@
+{
+  "name": "@postwave/openapi",
+  "version": "0.1.0",
+  "description": "OpenAPI 3.1 spec for the Moosewave API. Generate clients in any language, drive contract tests, or browse the spec via the bundled viewer.",
+  "keywords": [
+    "postwave",
+    "openapi",
+    "api-spec",
+    "rest-api",
+    "email",
+    "newsletter"
+  ],
+  "author": "Moosewave",
+  "license": "MIT",
+  "homepage": "https://moosewave.com/forge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/openapi"
+  },
+  "bugs": {
+    "url": "https://github.com/harsh2929/postwave/issues"
+  },
+  "files": [
+    "openapi.yaml",
+    "openapi.json",
+    "viewer.html",
+    "README.md",
+    "LICENSE",
+    "surfaces/openapi.yaml",
+    "dist/types.ts",
+    "MIGRATION.md"
+  ],
+  "main": "openapi.json",
+  "exports": {
+    ".": "./openapi.json",
+    "./yaml": "./openapi.yaml",
+    "./surfaces": "./surfaces/openapi.yaml",
+    "./types": "./dist/types.ts",
+    "./viewer": "./viewer.html"
+  },
+  "scripts": {
+    "build": "pnpm sync-json:check && pnpm codegen:check",
+    "lint": "eslint \"scripts/**/*.mjs\" --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "regen": "go run ./scripts/regenerate.go",
+    "regen:dry": "go run ./scripts/regenerate.go -dry",
+    "regen:check": "go run ./scripts/regenerate.go -check",
+    "regen:test": "go test ./scripts/regenerate.go ./scripts/regenerate_test.go",
+    "regen:go-schemas": "go run ./scripts/gen-go-schemas.go",
+    "regen:go-schemas:check": "go run ./scripts/gen-go-schemas.go -check -merge TransactionalEmailRecord",
+    "regen:go-schemas:test": "go test ./scripts/gen-go-schemas.go ./scripts/gen-go-schemas_test.go",
+    "metadata": "node ./scripts/complete-operation-metadata.mjs",
+    "metadata:check": "node ./scripts/complete-operation-metadata.mjs --check",
+    "sync-json": "python3 ./scripts/yaml-to-json.py",
+    "sync-json:check": "python3 ./scripts/yaml-to-json.py --check",
+    "codegen": "node ./scripts/codegen.mjs",
+    "codegen:check": "node ./scripts/codegen.mjs --check",
+    "regen:go-schemas:merge": "go run ./scripts/gen-go-schemas.go -merge TransactionalEmailRecord && python3 ./scripts/yaml-to-json.py",
+    "test:conversion-ingest-contract": "node ./scripts/conversion-ingest-contract.test.mjs",
+    "test:campaign-polls-contract": "node --test ./scripts/campaign-polls-contract.test.mjs",
+    "test:engagement-reporting-contract": "node --test ./scripts/engagement-reporting-contract.test.mjs",
+    "test:consent-ledger-contract": "node --test ./scripts/consent-ledger-contract.test.mjs",
+    "test:privacy-incidents-contract": "node --test ./scripts/privacy-incidents-contract.test.mjs",
+    "test:privacy-portal-contract": "node --test ./scripts/privacy-portal-contract.test.mjs",
+    "test:mcp-contract": "node --test ./scripts/mcp-contract.test.mjs",
+    "test:api-keys-contract": "node --test ./scripts/api-keys-contract.test.mjs",
+    "test:agent-interactive-release-hold-contract": "node --test ./scripts/agent-interactive-release-hold-contract.test.mjs",
+    "test:sms-release-hold-contract": "node --test ./scripts/sms-release-hold-contract.test.mjs",
+    "test:sms-suppressions-route42-contract": "node --test ./scripts/sms-suppressions-route42-contract.test.mjs",
+    "test:push-suppressions-route43-contract": "node --test ./scripts/push-suppressions-route43-contract.test.mjs",
+    "test:sending-settings-contract": "node --test ./scripts/sending-settings-contract.test.mjs",
+    "test:sending-frequency-caps-contract": "node --test ./scripts/sending-frequency-caps-contract.test.mjs",
+    "test:intelligent-retry-contract": "node --test ./scripts/intelligent-retry-contract.test.mjs",
+    "test:deliverability-repair-override-contract": "node --test ./scripts/deliverability-repair-override-contract.test.mjs",
+    "test:agency-route47-contract": "node --test ./scripts/agency-route47-contract.test.mjs",
+    "test:helpdesk-route41-contract": "node --test ./scripts/helpdesk-route41-contract.test.mjs",
+    "test:outbound-webhook-playground-contract": "node --test ./scripts/outbound-webhook-playground-contract.test.mjs",
+    "test:web-parity-control-plane-contract": "node --test ./scripts/web-parity-control-plane-contract.test.mjs",
+    "test:vanity-path-contract": "node --test ./scripts/vanity-path-contract.test.mjs",
+    "test:offer-action-contract": "node --test ./scripts/offer-action-contract.test.mjs"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "typescript": "^5.6.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

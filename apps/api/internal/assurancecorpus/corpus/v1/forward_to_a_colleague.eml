@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <forward-to-a-colleague.v1@example.com>
+Subject: Invite your team
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-forward-v1"
+
+--pw-forward-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Forward this to a colleague who should see it.
+Invite: https://app.example.com/invite
+--pw-forward-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Invite your team</h1><p>Forward this to a colleague who should see it.</p><p><a href="https://app.example.com/invite">Send an invite</a></p></body></html>
+--pw-forward-v1--

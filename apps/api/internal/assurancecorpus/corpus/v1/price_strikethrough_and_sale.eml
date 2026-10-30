@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <price-strikethrough-and-sale.v1@example.com>
+Subject: Winter sale
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-strike-v1"
+
+--pw-strike-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Wool scarf: was 48.00 USD, now 32.00 USD. https://shop.example.com/scarf
+--pw-strike-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Winter sale</h1><p>Wool scarf <s style="color:#888888;font-size:13px">48.00 USD</s> <strong>32.00 USD</strong></p><p><a href="https://shop.example.com/scarf">Buy the scarf</a></p></body></html>
+--pw-strike-v1--

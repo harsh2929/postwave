@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <system-status-vocabulary.v1@example.com>
+Subject: Scheduled maintenance
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-maint-v1"
+
+--pw-maint-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+System maintenance on 12 August, 02:00-03:00 UTC.
+Status: https://status.example.com
+--pw-maint-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Scheduled maintenance</h1><p>The system will be read-only on 12 August, 02:00&ndash;03:00 UTC. No action is required and no instructions have changed.</p><p><a href="https://status.example.com">Check the status page</a></p></body></html>
+--pw-maint-v1--

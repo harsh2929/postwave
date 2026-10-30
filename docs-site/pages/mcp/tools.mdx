@@ -1,0 +1,332 @@
+---
+title: MCP Tool Reference
+---
+
+# MCP Tool Reference
+
+This page is a curated reference for commonly used Moosewave MCP tools; it is not an exhaustive catalog. Inputs and outputs are JSON Schema, and the summaries below are condensed for reading. The server's `tools/list` response is the authoritative catalog and wire schema for the running release.
+
+Common errors apply to every tool unless overridden:
+
+- `unauthorized`, API key missing or invalid.
+- `permission_denied`, key role band too low for this tool.
+- `rate_limited`, workspace exceeded its per-minute budget.
+- `validation_error`, input failed schema validation.
+- `not_found`, the resource referenced by id does not exist.
+
+## Migration
+
+### `migrate_start`
+
+Begin authorization for an OAuth-capable migration source. For Mailchimp, present the returned authorization URL to the human; the OAuth callback supplies the job ID used as `session_id` below. To reconnect an existing OAuth migration, pass that callback job ID as `job_id`. The new OAuth state is then bound to the same tenant, source, and job, and the callback must preserve that job ID.
+
+- **Input:** `source` (a supported migration source) and optional `job_id` (same-job OAuth reconnect only).
+- **Returns:** an authorization URL plus state for human completion.
+- **Errors:** `source_unsupported`, provider setup errors, or a reconnect job that belongs to a different tenant/source. The callback also rejects a different source account.
+- **Example:** `migrate_start({ "source": "mailchimp" })`.
+- **Reconnect example:** `migrate_start({ "source": "mailchimp", "job_id": "mig_123" })`.
+
+### `migrate_discover`
+
+Pre-flight summary. Counts subscribers, lists, tags, automations, and reports source capabilities without writing anything.
+
+- **Input:** `source`, `session_id`, and optional `selected_audience_ids`. `session_id` is the callback/credential job ID, not the OAuth state token. For Mailchimp, call once to list audiences and optionally again with explicit selected IDs for an informative scoped inventory.
+- **Returns:** source counts, capabilities, warnings, and (for Mailchimp) selectable audiences.
+- **Errors:** `source_rate_limited`.
+- **Example:** `migrate_discover({ "source": "mailchimp", "session_id": "mig_123", "selected_audience_ids": ["aud_main"] })`.
+
+Scoped discovery is planning evidence only. `migrate_dry_run` reruns source discovery and persists the authoritative Mailchimp audience scope used for review and commit.
+
+### `migrate_dry_run`
+
+Start the asynchronous migration pipeline without destination writes. The pipeline reruns discovery and produces a verification report.
+
+- **Input:** `source`, `session_id`, and at least one `selected_audience_ids` value for Mailchimp. These IDs become the authoritative normalized scope persisted on the job.
+- **Returns:** `{ job_id }`; poll `migrate_status` until `status` is `awaiting_confirmation` or `failed`. Before asking for approval, review both `selected_audience_ids` and `verification_report` from the job.
+- **Errors:** `discovery_required`.
+- **Example:** `migrate_dry_run({ "source": "mailchimp", "session_id": "mig_123", "selected_audience_ids": ["aud_main"] })`.
+
+### `migrate_commit`
+
+Execute the previously reviewed dry-run job.
+
+- **Input:** `source`, `session_id`, and, for Mailchimp, the exact authoritative normalized `selected_audience_ids` recorded by the reviewed dry-run. The server rejects a missing or different set.
+- **Returns:** `{ job_id }`. Poll `migrate_status` until `completed` or `failed`.
+- **Errors:** `dry_run_required`, `already_committed`.
+- **Example:** `migrate_commit({ "source": "mailchimp", "session_id": "mig_123", "selected_audience_ids": ["aud_main"] })`.
+
+### `migrate_status`
+
+Poll a migration job and inspect the server's raw job record.
+
+- **Input:** `job_id`.
+- **Returns:** `{ id, tenant_id, source, status, progress, cursor, started_at, completed_at, rollback_until, source_session_expires_at?, selected_audience_ids?, verification_report, error }`.
+- **Errors:** none beyond the common set.
+- **Example:** `migrate_status({ "job_id": "mig_123" })`.
+
+### `migrate_rollback`
+
+Start an asynchronous reversal of tracked destination writes made by an eligible completed, failed-partial, or operator-cancelled job. Available during the job's 7-day window; whole-job conflict checks refuse to overwrite later edits or later-job ownership. Rollback never writes to the source provider, and append-only consent/audit evidence remains with compensating rollback records.
+
+- **Input:** `job_id`.
+- **Returns:** `{ job_id, state: "running" }`.
+- **Errors:** `rollback_window_expired`, invalid job state, or rollback conflict.
+- **Example:** `migrate_rollback({ "job_id": "mig_123" })`.
+
+### `migrate_rollback_status`
+
+Poll the asynchronous rollback started by `migrate_rollback`.
+
+- **Input:** `job_id`.
+- **Returns:** `state` (`pending`, `running`, `completed`, or `failed`); deleted/total counters for archives, templates, automations, segments, subscribers, lists, and paid subscriptions; `started_at`; and optional `completed_at` or `error`.
+- **Errors:** none beyond the common set.
+- **Example:** `migrate_rollback_status({ "job_id": "mig_123" })`.
+
+## Deliverability
+
+### `diagnose_campaign`
+
+Explain placement for a sent campaign and propose ranked fixes.
+
+- **Input:** `campaign_id`.
+- **Returns:** `{ diagnosis, fixes[], predicted_impact, generated_at }`.
+- **Errors:** `campaign_not_sent`, `signals_unavailable`.
+- **Example:** `diagnose_campaign({ "campaign_id": "cmp_42" })`.
+
+### `predict_placement`
+
+Score a draft campaign before sending. Inputs the same MJML or HTML you would queue.
+
+- **Input:** `subject`, `body_html`, optional `from_address`.
+- **Returns:** `{ inbox_pct, spam_pct, promotions_pct, warnings[] }`.
+- **Errors:** `body_too_large`.
+- **Example:** `predict_placement({ "subject": "Issue 12", "body_html": "<html>..." })`.
+
+### `check_reputation`
+
+Inspect domain and IP reputation across Google Postmaster, Microsoft SNDS, Sender Score, and 12 RBLs.
+
+- **Input:** `domain`, optional `ip`.
+- **Returns:** `{ google_score, microsoft_score, sender_score, blacklist_hits[] }`.
+- **Errors:** `domain_unknown`.
+- **Example:** `check_reputation({ "domain": "news.example.com" })`.
+
+### `check_auth`
+
+Validate SPF, DKIM, DMARC, and BIMI records.
+
+- **Input:** `domain`, optional `dkim_selector`.
+- **Returns:** `{ spf, dkim, dmarc, bimi, ptr }` each with `{ status, detail }`.
+- **Errors:** `dns_lookup_failed`.
+- **Example:** `check_auth({ "domain": "news.example.com" })`.
+
+### `render_cross_client`
+
+Render an HTML body across the 10 mailbox environments tracked by HCTI and return per-client screenshots.
+
+- **Input:** `body_html`, optional `subject`.
+- **Returns:** `{ renders[] }` with each entry `{ client, screenshot_url, issues[] }`.
+- **Errors:** `body_too_large`, `render_timeout`.
+- **Example:** `render_cross_client({ "body_html": "<html>..." })`.
+
+### `inbox_report`
+
+Fetch the seedlist report for a sent campaign.
+
+- **Input:** `campaign_id`.
+- **Returns:** `{ providers[], overall_pct }` where each provider has `{ provider, total, placements }`.
+- **Errors:** `seedlist_pending`.
+- **Example:** `inbox_report({ "campaign_id": "cmp_42" })`.
+
+## Voice
+
+### `voice_profile_get`
+
+Read the active voice profile for the workspace.
+
+- **Input:** none, or `profile_id`.
+- **Returns:** `{ profile_id, version, features, sources[] }`.
+- **Errors:** `profile_not_built`.
+- **Example:** `voice_profile_get({})`.
+
+### `voice_source_add`
+
+Attach a content source for voice training.
+
+- **Input:** `kind` (`rss`, `archive`, `paste`, `transcript`), `payload` (URL or text).
+- **Returns:** `{ source_id, kind, item_count }`.
+- **Errors:** `source_unreachable`, `payload_too_short`.
+- **Example:** `voice_source_add({ "kind": "rss", "payload": "https://example.com/feed.xml" })`.
+
+### `voice_profile_build`
+
+Compile the attached sources into a profile. Supersedes the previous active profile on success.
+
+- **Input:** none, or `source_ids[]` to build a partial profile.
+- **Returns:** `{ profile_id, built_at, item_count }`.
+- **Errors:** `not_enough_sources`.
+- **Example:** `voice_profile_build({})`.
+
+### `sequence_generate`
+
+Generate a sequence from a template, conditioned on the active voice profile.
+
+- **Input:** `template_id`, `variables` (object).
+- **Returns:** `{ sequence_id, emails[], fidelity_scores[] }`.
+- **Errors:** `template_unknown`, `variables_missing`.
+- **Example:** `sequence_generate({ "template_id": "welcome-5-email", "variables": { "product": "Moosewave" } })`.
+
+### `sequence_regenerate_email`
+
+Rewrite a single email at a position. Useful when the auto-fidelity score was below threshold.
+
+- **Input:** `sequence_id`, `position` (1-indexed), optional `notes`.
+- **Returns:** `{ position, email, fidelity_score }`.
+- **Errors:** `position_out_of_range`.
+- **Example:** `sequence_regenerate_email({ "sequence_id": "seq_99", "position": 3 })`.
+
+## Subscribers
+
+### `subscribers_list`
+
+Page through subscribers.
+
+- **Input:** optional `status`, `tag`, `cursor`, `limit` (max 200).
+- **Returns:** `{ items[], next_cursor }`.
+- **Errors:** `cursor_invalid`.
+- **Example:** `subscribers_list({ "status": "subscribed", "limit": 50 })`.
+
+### `subscribers_search`
+
+Free-text search across email, name, and custom fields.
+
+- **Input:** `query`, optional `limit`.
+- **Returns:** `{ items[] }`.
+- **Errors:** `query_too_short`.
+- **Example:** `subscribers_search({ "query": "acme.co" })`.
+
+### `subscriber_create`
+
+Create one subscriber. Honours double opt-in if the workspace requires it.
+
+- **Input:** `email`, optional `name`, `tags[]`, `custom` (object), `consent_source`.
+- **Returns:** `{ subscriber_id, status }`.
+- **Errors:** `email_invalid`, `email_suppressed`, `duplicate`.
+- **Example:** `subscriber_create({ "email": "ada@example.com", "tags": ["beta"] })`.
+
+### `subscriber_suppress`
+
+Add a subscriber to the suppression list. Idempotent.
+
+- **Input:** `email`, `reason` (one of `complaint`, `bounce`, `manual`, `unsubscribe`).
+- **Returns:** `{ subscriber_id, suppressed_at }`.
+- **Errors:** `email_unknown`.
+- **Example:** `subscriber_suppress({ "email": "ada@example.com", "reason": "manual" })`.
+
+### `segment_eval`
+
+Evaluate a `SegmentNode` AST and return a sample plus a count.
+
+- **Input:** `ast` (object), optional `sample_size` (max 100).
+- **Returns:** `{ count, sample[] }`.
+- **Errors:** `ast_invalid`, `field_unknown`.
+- **Example:** `segment_eval({ "ast": { "op": "and", "children": [...] } })`.
+
+## Forms
+
+### `form_create`
+
+Create a hosted form from a spec.
+
+- **Input:** `name`, `fields[]`, `confirmation` (object), optional `webhook_url`.
+- **Returns:** `{ form_id, hosted_url, embed_snippet }`.
+- **Errors:** `field_invalid`.
+- **Example:** `form_create({ "name": "Newsletter", "fields": [{ "type": "email" }] })`.
+
+### `form_submissions_list`
+
+Paginate form submissions.
+
+- **Input:** `form_id`, optional `cursor`, `limit`.
+- **Returns:** `{ items[], next_cursor }`.
+- **Errors:** none beyond common.
+- **Example:** `form_submissions_list({ "form_id": "frm_1" })`.
+
+### `automation_trigger`
+
+Trigger an automation for one subscriber. Honours guardrails.
+
+- **Input:** `automation_id`, `subscriber_id`.
+- **Returns:** `{ enrollment_id }`.
+- **Errors:** `subscriber_unsubscribed`, `automation_paused`.
+- **Example:** `automation_trigger({ "automation_id": "auto_1", "subscriber_id": "sub_42" })`.
+
+### `automation_pause`
+
+Pause or resume an automation.
+
+- **Input:** `automation_id`, `paused` (boolean).
+- **Returns:** `{ automation_id, paused }`.
+- **Errors:** none beyond common.
+- **Example:** `automation_pause({ "automation_id": "auto_1", "paused": true })`.
+
+## Gift history
+
+The MCP server currently exposes one identity-minimized Gift archive tool. The
+underlying authenticated REST/SDK archive has exactly three
+`read:reports` GET operations—list, aggregate statistics, and opaque-record
+detail—but statistics and detail are not registered as MCP tools. Attribution
+and Gift mutations are not live MCP capabilities.
+
+### `gift_subscription_list`
+
+List bounded historical Gift lifecycle records without exposing personal
+identity, free text, provider identifiers or URLs, redemption material, tenant
+IDs, or subscriber IDs.
+
+- **Input:** optional `limit` (1–100), `offset` (0–10,000), `q` (an 8–32 character hexadecimal opaque-record prefix), `filter` (`all`, `open`, `pending`, `redeemed`, `closed`, `cancelled`, `expired`, or `refunded`), and `sort` (`newest`, `oldest`, `duration`, or `status`).
+- **Returns:** `{ items, total, limit, offset, snapshot_at }`; each item contains a safe record label, safe plan label, stored duration/status/timestamps, and boolean evidence that a message, provider invoice, gifter member, or recipient member linkage exists.
+- **Errors:** validation errors for out-of-range paging, non-hexadecimal search prefixes, or unsupported filters/sorts; common authentication and authorization errors also apply.
+- **Example:** `gift_subscription_list({ "limit": 24, "filter": "open", "q": "5f2a90bc" })`.
+
+The related REST responses use `Cache-Control: no-store`. This sanitized read
+boundary does not imply that the underlying Gift record store contains no
+personal data.
+
+## Campaigns
+
+### `campaign_create`
+
+Create a draft from MJML.
+
+- **Input:** `name`, `subject`, `from`, `mjml`, optional `segment_id`.
+- **Returns:** `{ campaign_id, status: "draft" }`.
+- **Errors:** `mjml_invalid`.
+- **Example:** `campaign_create({ "name": "Issue 12", "subject": "Issue 12", "from": "you@example.com", "mjml": "<mjml>..." })`.
+
+### `campaign_send`
+
+Send a prepared campaign now.
+
+- **Input:** `campaign_id`, `confirm` (must be `true`).
+- **Returns:** `{ campaign_id, started_at }`.
+- **Errors:** `not_draft`, `segment_empty`.
+- **Example:** `campaign_send({ "campaign_id": "cmp_1", "confirm": true })`.
+
+### `campaign_create_ab`
+
+Create an A/B campaign with split rules. See [A/B testing](/features/ab-testing) for the full schema.
+
+- **Input:** `name`, `variants[]` (each `{ subject, mjml, weight }`), `segment_id`, `winner_metric` (one of `open_rate`, `click_rate`, `conversion_rate`), `evaluation_window_hours`.
+- **Returns:** `{ campaign_id, variant_ids[] }`.
+- **Errors:** `weights_invalid`, `variants_too_few`.
+- **Example:** `campaign_create_ab({ "name": "Issue 12 A/B", "variants": [{ "subject": "A", "weight": 0.5 }, { "subject": "B", "weight": 0.5 }], "segment_id": "seg_1", "winner_metric": "click_rate", "evaluation_window_hours": 24 })`.
+
+### `campaign_ab_results`
+
+Read winner and per-variant metrics.
+
+- **Input:** `campaign_id`.
+- **Returns:** `{ winner_variant_id, confidence, per_variant[] }` where each entry has `{ variant_id, sent, opens, clicks, conversions, lift }`.
+- **Errors:** `evaluation_pending`.
+- **Example:** `campaign_ab_results({ "campaign_id": "cmp_ab_3" })`.

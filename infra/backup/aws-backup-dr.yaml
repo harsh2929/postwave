@@ -1,0 +1,1058 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Moosewave governance-retained PostgreSQL backup storage, cross-region
+  replication, least-privilege policies, signed evidence key, and health alarms.
+
+Metadata:
+  DeploymentOrder:
+    Description: >-
+      Deploy mode=seed in the primary region, mode=replica in the secondary
+      region, then mode=primary in the primary region. Exact commands are in
+      infra/backup/README.md.
+
+Parameters:
+  Mode:
+    Type: String
+    AllowedValues: [seed, replica, primary]
+  Environment:
+    Type: String
+    Default: prod
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{0,30}$"
+  PrimaryBucketName:
+    Type: String
+    Default: postwave-unused-primary-bucket
+    AllowedPattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+  ReplicaBucketName:
+    Type: String
+    Default: postwave-unused-replica-bucket
+    AllowedPattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+  PrimaryBackupKeyArn:
+    Type: String
+    Default: arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000001
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:kms:[a-z0-9-]+:[0-9]{12}:key/(mrk-)?[a-zA-Z0-9-]+$"
+  PrimaryEvidenceSigningKeyArn:
+    Type: String
+    Default: arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000002
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:kms:[a-z0-9-]+:[0-9]{12}:key/[a-zA-Z0-9-]+$"
+  ReplicaBucketArn:
+    Type: String
+    Default: arn:aws:s3:::postwave-unused-replica-bucket
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:s3:::[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+  ReplicaBackupKeyArn:
+    Type: String
+    Default: arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000003
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:kms:[a-z0-9-]+:[0-9]{12}:key/(mrk-)?[a-zA-Z0-9-]+$"
+  AlarmTopicArn:
+    Type: String
+    Default: arn:aws:sns:us-east-1:000000000000:postwave-unused-alarm-topic
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]+$"
+
+Rules:
+  SeedInputs:
+    RuleCondition: !Equals [!Ref Mode, seed]
+    Assertions:
+      - Assert: !Equals [!Ref PrimaryBucketName, postwave-unused-primary-bucket]
+        AssertDescription: Seed mode does not create a bucket.
+  ReplicaInputs:
+    RuleCondition: !Equals [!Ref Mode, replica]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref ReplicaBucketName, postwave-unused-replica-bucket]]
+        AssertDescription: Replica mode requires ReplicaBucketName.
+      - Assert: !Not [!Equals [!Ref PrimaryBackupKeyArn, "arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000001"]]
+        AssertDescription: Replica mode requires the multi-region PrimaryBackupKeyArn from seed mode.
+  PrimaryInputs:
+    RuleCondition: !Equals [!Ref Mode, primary]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref PrimaryBucketName, postwave-unused-primary-bucket]]
+        AssertDescription: Primary mode requires PrimaryBucketName.
+      - Assert: !Not [!Equals [!Ref PrimaryBackupKeyArn, "arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000001"]]
+        AssertDescription: Primary mode requires PrimaryBackupKeyArn.
+      - Assert: !Not [!Equals [!Ref PrimaryEvidenceSigningKeyArn, "arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000002"]]
+        AssertDescription: Primary mode requires PrimaryEvidenceSigningKeyArn.
+      - Assert: !Not [!Equals [!Ref ReplicaBucketArn, "arn:aws:s3:::postwave-unused-replica-bucket"]]
+        AssertDescription: Primary mode requires ReplicaBucketArn.
+      - Assert: !Not [!Equals [!Ref ReplicaBackupKeyArn, "arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000003"]]
+        AssertDescription: Primary mode requires ReplicaBackupKeyArn.
+      - Assert: !Not [!Equals [!Ref AlarmTopicArn, "arn:aws:sns:us-east-1:000000000000:postwave-unused-alarm-topic"]]
+        AssertDescription: Primary mode requires an operator-owned on-call AlarmTopicArn.
+
+Conditions:
+  IsSeed: !Equals [!Ref Mode, seed]
+  IsReplica: !Equals [!Ref Mode, replica]
+  IsPrimary: !Equals [!Ref Mode, primary]
+
+Resources:
+  SeedBackupKey:
+    Type: AWS::KMS::Key
+    Condition: IsSeed
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Moosewave multi-region PostgreSQL backup encryption key
+      EnableKeyRotation: true
+      MultiRegion: true
+      PendingWindowInDays: 30
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: RootAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+        - Key: purpose
+          Value: backup-encryption
+
+  SeedBackupKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: IsSeed
+    Properties:
+      AliasName: !Sub alias/postwave-${Environment}-backup-primary
+      TargetKeyId: !Ref SeedBackupKey
+
+  SeedEvidenceSigningKey:
+    Type: AWS::KMS::Key
+    Condition: IsSeed
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Moosewave backup and restore evidence signing key
+      Enabled: true
+      KeySpec: RSA_3072
+      KeyUsage: SIGN_VERIFY
+      PendingWindowInDays: 30
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: RootAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+        - Key: purpose
+          Value: backup-evidence-signing
+
+  SeedEvidenceSigningKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: IsSeed
+    Properties:
+      AliasName: !Sub alias/postwave-${Environment}-backup-evidence
+      TargetKeyId: !Ref SeedEvidenceSigningKey
+
+  ReplicaBackupKey:
+    Type: AWS::KMS::ReplicaKey
+    Condition: IsReplica
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Moosewave cross-region PostgreSQL backup replica key
+      PrimaryKeyArn: !Ref PrimaryBackupKeyArn
+      PendingWindowInDays: 30
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: RootAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+        - Key: purpose
+          Value: backup-replica-encryption
+
+  ReplicaBackupKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: IsReplica
+    Properties:
+      AliasName: !Sub alias/postwave-${Environment}-backup-replica
+      TargetKeyId: !Ref ReplicaBackupKey
+
+  ReplicaBucket:
+    Type: AWS::S3::Bucket
+    Condition: IsReplica
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref ReplicaBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !GetAtt ReplicaBackupKey.Arn
+      ObjectLockEnabled: true
+      ObjectLockConfiguration:
+        ObjectLockEnabled: Enabled
+        Rule:
+          DefaultRetention:
+            Mode: GOVERNANCE
+            Days: 35
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: ExpireHealthHeartbeats
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/health/
+            ExpirationInDays: 35
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 35
+          - Id: ExpireWalChains
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/clusters/
+            ExpirationInDays: 45
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 45
+          - Id: RetainLogicalBackups
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/logical/
+            Transitions:
+              - StorageClass: GLACIER_IR
+                TransitionInDays: 30
+            ExpirationInDays: 180
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 180
+          - Id: RetainDrillEvidence
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/evidence/
+            Transitions:
+              - StorageClass: GLACIER_IR
+                TransitionInDays: 90
+            ExpirationInDays: 2555
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 2555
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+        - Key: purpose
+          Value: backup-replica
+
+  ReplicaBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: IsReplica
+    Properties:
+      Bucket: !Ref ReplicaBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt ReplicaBucket.Arn
+              - !Sub ${ReplicaBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+          - Sid: DenyUnencryptedObjectWrites
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub ${ReplicaBucket.Arn}/*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyWrongKmsKey
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub ${ReplicaBucket.Arn}/*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !GetAtt ReplicaBackupKey.Arn
+
+  ReplicationRole:
+    Type: AWS::IAM::Role
+    Condition: IsPrimary
+    Properties:
+      Description: Replicates governance-retained Moosewave backup versions to the DR region
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ReplicateBackupVersions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetReplicationConfiguration
+                  - s3:ListBucket
+                Resource: !Sub arn:${AWS::Partition}:s3:::${PrimaryBucketName}
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionAcl
+                  - s3:GetObjectVersionTagging
+                  - s3:GetObjectRetention
+                  - s3:GetObjectLegalHold
+                Resource: !Sub arn:${AWS::Partition}:s3:::${PrimaryBucketName}/*
+              - Effect: Allow
+                Action:
+                  - s3:ReplicateObject
+                  - s3:ReplicateTags
+                  - s3:ObjectOwnerOverrideToBucketOwner
+                Resource: !Sub ${ReplicaBucketArn}/*
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                  - kms:GenerateDataKey
+                Resource: !Ref PrimaryBackupKeyArn
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                Resource: !Ref ReplicaBackupKeyArn
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+
+  PrimaryBucket:
+    Type: AWS::S3::Bucket
+    Condition: IsPrimary
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref PrimaryBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref PrimaryBackupKeyArn
+      ObjectLockEnabled: true
+      ObjectLockConfiguration:
+        ObjectLockEnabled: Enabled
+        Rule:
+          DefaultRetention:
+            Mode: GOVERNANCE
+            Days: 35
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      ReplicationConfiguration:
+        Role: !GetAtt ReplicationRole.Arn
+        Rules:
+          - Id: !Sub postwave-${Environment}-backup-cross-region
+            Status: Enabled
+            Priority: 1
+            DeleteMarkerReplication:
+              Status: Disabled
+            Filter:
+              Prefix: !Sub postgres/${Environment}/
+            SourceSelectionCriteria:
+              SseKmsEncryptedObjects:
+                Status: Enabled
+            Destination:
+              Bucket: !Ref ReplicaBucketArn
+              EncryptionConfiguration:
+                ReplicaKmsKeyID: !Ref ReplicaBackupKeyArn
+              Metrics:
+                Status: Enabled
+                EventThreshold:
+                  Minutes: 15
+              ReplicationTime:
+                Status: Enabled
+                Time:
+                  Minutes: 15
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: ExpireHealthHeartbeats
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/health/
+            ExpirationInDays: 35
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 35
+          - Id: ExpireWalChains
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/clusters/
+            ExpirationInDays: 45
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 45
+          - Id: RetainLogicalBackups
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/logical/
+            Transitions:
+              - StorageClass: GLACIER_IR
+                TransitionInDays: 30
+            ExpirationInDays: 180
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 180
+          - Id: RetainDrillEvidence
+            Status: Enabled
+            Prefix: !Sub postgres/${Environment}/evidence/
+            Transitions:
+              - StorageClass: GLACIER_IR
+                TransitionInDays: 90
+            ExpirationInDays: 2555
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 2555
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+        - Key: purpose
+          Value: backup-primary
+
+  PrimaryBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: IsPrimary
+    Properties:
+      Bucket: !Ref PrimaryBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource:
+              - !GetAtt PrimaryBucket.Arn
+              - !Sub ${PrimaryBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+          - Sid: DenyUnencryptedObjectWrites
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub ${PrimaryBucket.Arn}/*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyWrongKmsKey
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub ${PrimaryBucket.Arn}/*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Ref PrimaryBackupKeyArn
+
+  BackupWriterManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: IsPrimary
+    Properties:
+      Description: Attach to the EKS/ECS backup writer role; intentionally has no delete or retention-bypass action
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ReadBackupBucketLocation
+            Effect: Allow
+            Action: s3:GetBucketLocation
+            Resource: !GetAtt PrimaryBucket.Arn
+          - Sid: ListBackupPrefixes
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:ListBucketVersions
+            Resource: !GetAtt PrimaryBucket.Arn
+            Condition:
+              StringLike:
+                s3:prefix:
+                  - !Sub postgres/${Environment}/clusters/*/walg/*
+                  - !Sub postgres/${Environment}/health/base-backup/*
+                  - !Sub postgres/${Environment}/health/base-backup-signed/*
+                  - !Sub postgres/${Environment}/health/logical-backup/*
+                  - !Sub postgres/${Environment}/health/replication-canary/*
+                  - !Sub postgres/${Environment}/evidence/base-backups/*
+                  - !Sub postgres/${Environment}/evidence/restore-drills/*
+          - Sid: ReadWriteBackupObjectsWithoutDelete
+            Effect: Allow
+            Action:
+              - s3:AbortMultipartUpload
+              - s3:GetObject
+              - s3:GetObjectAttributes
+              - s3:GetObjectRetention
+              - s3:GetObjectVersion
+              - s3:ListMultipartUploadParts
+              - s3:PutObject
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+            Resource:
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/clusters/*/walg/*
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/health/base-backup/*
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/health/replication-canary/*
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/evidence/base-backups/*/manifest.json
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/evidence/base-backups/*/manifest.json.sha256
+          - Sid: ReadSignerOwnedBackupHealth
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectAttributes
+              - s3:GetObjectVersion
+            Resource:
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/health/base-backup-signed/*
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/health/logical-backup/*
+          - Sid: UseBackupEncryptionKey
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Resource: !Ref PrimaryBackupKeyArn
+          - Sid: VerifyEvidence
+            Effect: Allow
+            Action:
+              - kms:GetPublicKey
+              - kms:Verify
+            Resource: !Ref PrimaryEvidenceSigningKeyArn
+          - Sid: PublishBackupMetrics
+            Effect: Allow
+            Action: cloudwatch:PutMetricData
+            Resource: "*"
+            Condition:
+              StringEquals:
+                cloudwatch:namespace: Postwave/Backup
+          - Sid: ReadReplicaHealthEvidence
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:ListBucket
+            Resource:
+              - !Ref ReplicaBucketArn
+              - !Sub ${ReplicaBucketArn}/postgres/${Environment}/health/*
+          - Sid: ReadSignedRestoreDrillEvidence
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectAttributes
+            Resource: !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/evidence/restore-drills/passed/*
+          - Sid: DecryptReplicaHealthEvidence
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource: !Ref ReplicaBackupKeyArn
+
+  BackupEvidenceSignerManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: IsPrimary
+    Properties:
+      Description: Attach only to isolated logical-backup and evidence-attestor workloads; never to the PostgreSQL pod
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ReadBackupBucketLocation
+            Effect: Allow
+            Action: s3:GetBucketLocation
+            Resource: !GetAtt PrimaryBucket.Arn
+          - Sid: ListEvidenceAndLogicalPrefixes
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:ListBucketVersions
+            Resource: !GetAtt PrimaryBucket.Arn
+            Condition:
+              StringLike:
+                s3:prefix:
+                  - !Sub postgres/${Environment}/evidence/base-backups/*
+                  - !Sub postgres/${Environment}/logical/*
+                  - !Sub postgres/${Environment}/health/base-backup-signed/*
+                  - !Sub postgres/${Environment}/health/logical-backup/*
+          - Sid: ReadUnsignedBaseEvidence
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectAttributes
+              - s3:GetObjectRetention
+              - s3:GetObjectVersion
+            Resource:
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/evidence/base-backups/*/manifest.json
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/evidence/base-backups/*/manifest.json.sha256
+          - Sid: WriteBaseEvidenceSignaturesOnly
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectAttributes
+              - s3:GetObjectRetention
+              - s3:PutObject
+              - s3:PutObjectRetention
+            Resource: !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/evidence/base-backups/*/manifest.json.sig.json
+          - Sid: WriteLogicalBackupTrailWithoutDelete
+            Effect: Allow
+            Action:
+              - s3:AbortMultipartUpload
+              - s3:GetObject
+              - s3:GetObjectAttributes
+              - s3:GetObjectRetention
+              - s3:ListMultipartUploadParts
+              - s3:PutObject
+              - s3:PutObjectRetention
+              - s3:PutObjectTagging
+            Resource:
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/logical/*
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/health/base-backup-signed/*
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/health/logical-backup/*
+          - Sid: EncryptEvidenceAndLogicalArtifacts
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Resource: !Ref PrimaryBackupKeyArn
+          - Sid: SignAndVerifyEvidence
+            Effect: Allow
+            Action:
+              - kms:GetPublicKey
+              - kms:Sign
+              - kms:Verify
+            Resource: !Ref PrimaryEvidenceSigningKeyArn
+          - Sid: PublishEvidenceMetrics
+            Effect: Allow
+            Action: cloudwatch:PutMetricData
+            Resource: "*"
+            Condition:
+              StringEquals:
+                cloudwatch:namespace: Postwave/Backup
+
+  RestoreManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: IsPrimary
+    Properties:
+      Description: Attach only to the break-glass restore/drill role
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ReadPrimaryAndReplicaBackups
+            Effect: Allow
+            Action:
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:GetObjectAttributes
+              - s3:GetObjectRetention
+              - s3:GetObjectVersion
+              - s3:ListBucket
+              - s3:ListBucketVersions
+            Resource:
+              - !GetAtt PrimaryBucket.Arn
+              - !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/*
+              - !Ref ReplicaBucketArn
+              - !Sub ${ReplicaBucketArn}/postgres/${Environment}/*
+          - Sid: DecryptBackupObjects
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+            Resource:
+              - !Ref PrimaryBackupKeyArn
+              - !Ref ReplicaBackupKeyArn
+          - Sid: VerifyEvidenceSignatures
+            Effect: Allow
+            Action:
+              - kms:GetPublicKey
+              - kms:Verify
+            Resource: !Ref PrimaryEvidenceSigningKeyArn
+
+  RestoreDrillEvidenceManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Condition: IsPrimary
+    Properties:
+      Description: Attach with the read-only restore policy during approved drills; writes evidence only and cannot delete it
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: WriteAndVerifyRetainedDrillEvidence
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectAttributes
+              - s3:GetObjectRetention
+              - s3:PutObject
+              - s3:PutObjectRetention
+            Resource: !Sub ${PrimaryBucket.Arn}/postgres/${Environment}/evidence/restore-drills/*
+          - Sid: EncryptDrillEvidence
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:DescribeKey
+              - kms:Encrypt
+              - kms:GenerateDataKey
+            Resource: !Ref PrimaryBackupKeyArn
+          - Sid: SignAndVerifyDrillEvidence
+            Effect: Allow
+            Action:
+              - kms:GetPublicKey
+              - kms:Sign
+              - kms:Verify
+            Resource: !Ref PrimaryEvidenceSigningKeyArn
+          - Sid: PublishDrillMetrics
+            Effect: Allow
+            Action: cloudwatch:PutMetricData
+            Resource: "*"
+            Condition:
+              StringEquals:
+                cloudwatch:namespace: Postwave/Backup
+
+  BaseBackupAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: No successful physical base backup within the engineering alert threshold
+      Namespace: Postwave/Backup
+      MetricName: BaseBackupAgeSeconds
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 93600
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  LogicalBackupAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: No successful logical backup within the engineering alert threshold
+      Namespace: Postwave/Backup
+      MetricName: LogicalBackupAgeSeconds
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 25200
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  WalArchiveAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: PostgreSQL has not reported a successfully archived WAL segment within the engineering alert threshold
+      Namespace: Postwave/Backup
+      MetricName: WalArchiveAgeSeconds
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 600
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  # BaseBackupHealthy and LogicalBackupHealthy were published and alarmed on by
+  # nobody, while their sibling WalIntegrityHealthy (below) was wired up.
+  #
+  # The failure was still CAUGHT, just late. base-backup-once.sh uploads its
+  # health manifest only on success, so a failed run leaves BaseBackupAgeSeconds
+  # climbing until the staleness alarm trips — hours later. Meanwhile the script's
+  # own EXIT trap publishes `BaseBackupHealthy 0` within seconds of the failure
+  # and that signal was thrown away. Backups are the one system where the gap
+  # between "it broke" and "we noticed" is the whole risk: every hour spent
+  # unaware is an hour of RPO nobody is accounting for.
+  #
+  # Statistic Minimum so a single 0 in the window alarms even when a later retry
+  # in the same period succeeds — a run that failed is worth looking at.
+  # TreatMissingData: breaching matches every sibling here: a monitor that has
+  # stopped reporting is indistinguishable from one reporting failure, and both
+  # deserve the page.
+  BaseBackupHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: A physical base backup run reported failure
+      Namespace: Postwave/Backup
+      MetricName: BaseBackupHealthy
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Minimum
+      Period: 21600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  LogicalBackupHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: A logical (pg_dump) backup run reported failure
+      Namespace: Postwave/Backup
+      MetricName: LogicalBackupHealthy
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Minimum
+      Period: 21600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  WalIntegrityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: WAL-G reports a missing segment or timeline inconsistency
+      Namespace: Postwave/Backup
+      MetricName: WalIntegrityHealthy
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Minimum
+      Period: 21600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  WalIntegrityMonitorFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: The bounded WAL integrity monitor failed or stopped reporting
+      Namespace: Postwave/Backup
+      MetricName: WalIntegrityMonitorSuccess
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Minimum
+      Period: 21600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  ReplicationLagAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: Backup heartbeat has not reached the independent replica bucket promptly
+      Namespace: Postwave/Backup
+      MetricName: BackupReplicationLagSeconds
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 900
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  RestoreVerificationAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: No signed successful destructive restore drill within 100 days
+      Namespace: Postwave/Backup
+      MetricName: RestoreVerificationAgeSeconds
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Maximum
+      Period: 21600
+      EvaluationPeriods: 1
+      Threshold: 8640000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  BackupMonitorFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: The scheduled backup monitor stopped reporting successful completion
+      Namespace: Postwave/Backup
+      MetricName: BackupMonitorSuccess
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Minimum
+      Period: 300
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  EvidenceSignerFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: The isolated backup evidence signer failed or stopped reporting
+      Namespace: Postwave/Backup
+      MetricName: EvidenceSignerSuccess
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Minimum
+      Period: 3600
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  BackupJobFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: A physical or logical backup job reported failure
+      Namespace: Postwave/Backup
+      MetricName: BackupJobFailures
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  RestoreDrillFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: A destructive restore drill reported failure
+      Namespace: Postwave/Backup
+      MetricName: RestoreDrillFailures
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+  NativeReplicationFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: S3 reported failed cross-region replication operations
+      Namespace: AWS/S3
+      MetricName: OperationsFailedReplication
+      Dimensions:
+        - Name: SourceBucket
+          Value: !Ref PrimaryBucketName
+        - Name: DestinationBucket
+          Value: !Select [5, !Split [":", !Ref ReplicaBucketArn]]
+        - Name: RuleId
+          Value: !Sub postwave-${Environment}-backup-cross-region
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+
+Outputs:
+  SeedPrimaryBackupKeyArn:
+    Condition: IsSeed
+    Value: !GetAtt SeedBackupKey.Arn
+  SeedEvidenceSigningKeyArn:
+    Condition: IsSeed
+    Value: !GetAtt SeedEvidenceSigningKey.Arn
+  ReplicaBackupKeyArn:
+    Condition: IsReplica
+    Value: !GetAtt ReplicaBackupKey.Arn
+  ReplicaBucketArn:
+    Condition: IsReplica
+    Value: !GetAtt ReplicaBucket.Arn
+  ReplicaBackupBucketName:
+    Condition: IsReplica
+    Value: !Ref ReplicaBucket
+  PrimaryBucketArn:
+    Condition: IsPrimary
+    Value: !GetAtt PrimaryBucket.Arn
+  PrimaryBackupBucketName:
+    Condition: IsPrimary
+    Value: !Ref PrimaryBucket
+  BackupWriterManagedPolicyArn:
+    Condition: IsPrimary
+    Value: !Ref BackupWriterManagedPolicy
+  BackupEvidenceSignerManagedPolicyArn:
+    Condition: IsPrimary
+    Value: !Ref BackupEvidenceSignerManagedPolicy
+  RestoreManagedPolicyArn:
+    Condition: IsPrimary
+    Value: !Ref RestoreManagedPolicy
+  RestoreDrillEvidenceManagedPolicyArn:
+    Condition: IsPrimary
+    Value: !Ref RestoreDrillEvidenceManagedPolicy
+  ReplicationRoleArn:
+    Condition: IsPrimary
+    Value: !GetAtt ReplicationRole.Arn

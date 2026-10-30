@@ -1,0 +1,61 @@
+{
+  "_note": [
+    "The URL a client must build for GET /api/v1/audit/chain/{requestId}, and the",
+    "request id the server must recover from it.",
+    "",
+    "This file is the contract between the server and EVERY client, and both sides",
+    "assert against it rather than against each other's prose:",
+    "",
+    "  server  apps/api/internal/handlers/audit_chain_path_contract_test.go",
+    "          serves each `path` through a real chi router mounted at `route` and",
+    "          checks the production decode (handlers.chainRequestID) recovers",
+    "          `requestId` exactly.",
+    "  desktop apps/desktop/src/__tests__/lib/audit-chain-api.test.ts",
+    "          checks api.getAuditChain(requestId) requests exactly `path`.",
+    "",
+    "Why a shared fixture instead of each side hard-coding a string: real",
+    "correlation ids CONTAIN A SLASH (chi mints `hostname/b64prefix-000001`), so a",
+    "client must percent-encode the id to keep it one path segment. A client that",
+    "encodes wrongly does not get an error — it gets an EMPTY chain, which reads as",
+    "'this request touched nothing'. A client-side test asserting its own",
+    "construction would pass on exactly that bug, because it never asks the server",
+    "whether the URL it built round-trips.",
+    "",
+    "The cases are not all realistic ids; some exist to prove the encoders agree",
+    "where they could plausibly disagree. JS encodeURIComponent escapes '+' and '='",
+    "while Go's url.PathEscape leaves both alone in a path segment — both are valid",
+    "and both must decode back to the same id."
+  ],
+  "route": "/api/v1/audit/chain/{requestId}",
+  "cases": [
+    {
+      "name": "slash-free id needs no escaping and must still route",
+      "requestId": "req-abc",
+      "path": "/api/v1/audit/chain/req-abc"
+    },
+    {
+      "name": "the shape chi actually mints: hostname, slash, base62 prefix, counter",
+      "requestId": "postwave-api-7c9f/lF3kQ2xTvB-000042",
+      "path": "/api/v1/audit/chain/postwave-api-7c9f%2FlF3kQ2xTvB-000042"
+    },
+    {
+      "name": "characters JS escapes and Go would not — the round trip must still hold",
+      "requestId": "web-01.internal/AbC+dEf=-000001",
+      "path": "/api/v1/audit/chain/web-01.internal%2FAbC%2BdEf%3D-000001"
+    },
+    {
+      "name": "a literal percent and a space survive double-encoding",
+      "requestId": "host-9/weird %-id~ok",
+      "path": "/api/v1/audit/chain/host-9%2Fweird%20%25-id~ok"
+    }
+  ],
+  "unencodedMustNotRoute": {
+    "_note": [
+      "The same id with its slash left raw. It splits into an extra path segment and",
+      "misses the one-segment route entirely, which is why encoding is mandatory",
+      "rather than cosmetic."
+    ],
+    "requestId": "postwave-api-7c9f/lF3kQ2xTvB-000042",
+    "path": "/api/v1/audit/chain/postwave-api-7c9f/lF3kQ2xTvB-000042"
+  }
+}

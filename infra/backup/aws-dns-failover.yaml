@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Active-passive Route 53 alias records for two independently deployed
+  Moosewave ALBs. Deploy only after both stacks pass /api/ready.
+
+Parameters:
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+  RecordName:
+    Type: String
+    Description: Fully qualified service record, for example api.example.com.
+  PrimaryAlbDnsName:
+    Type: String
+  PrimaryAlbHostedZoneId:
+    Type: String
+  SecondaryAlbDnsName:
+    Type: String
+  SecondaryAlbHostedZoneId:
+    Type: String
+
+Rules:
+  DistinctFailoverTargets:
+    Assertions:
+      - Assert: !Not [!Equals [!Ref PrimaryAlbDnsName, !Ref SecondaryAlbDnsName]]
+        AssertDescription: Primary and secondary failover records must target different ALBs.
+
+Resources:
+  FailoverRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Comment: Moosewave active-passive service failover; ALB target health controls eligibility
+      RecordSets:
+        - Name: !Ref RecordName
+          Type: A
+          SetIdentifier: postwave-primary
+          Failover: PRIMARY
+          AliasTarget:
+            DNSName: !Ref PrimaryAlbDnsName
+            HostedZoneId: !Ref PrimaryAlbHostedZoneId
+            EvaluateTargetHealth: true
+        - Name: !Ref RecordName
+          Type: A
+          SetIdentifier: postwave-secondary
+          Failover: SECONDARY
+          AliasTarget:
+            DNSName: !Ref SecondaryAlbDnsName
+            HostedZoneId: !Ref SecondaryAlbHostedZoneId
+            EvaluateTargetHealth: true
+
+Outputs:
+  FailoverRecordName:
+    Value: !Ref RecordName

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <hebrew-body-text.v1@example.com>
+Subject: ההזמנה שלך נשלחה
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-heb-v1"
+
+--pw-heb-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ההזמנה שלך נשלחה. מעקב: https://ship.example.com/he/4
+--pw-heb-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>ההזמנה שלך נשלחה</h1><p>המשלוח יגיע תוך שלושה ימים.</p><p><a href="https://ship.example.com/he/4">מעקב אחר ההזמנה</a></p></body></html>
+--pw-heb-v1--

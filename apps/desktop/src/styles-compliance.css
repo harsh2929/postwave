@@ -1,0 +1,202 @@
+/* ===== Refined Compliance PR 1 =========================================
+ * Multi-framework attestation tracker (was HIPAA-only). Grid of
+ * framework cards + detail panel + reused readiness/gate visuals.
+ * ================================================================== */
+
+.compliance-posture-strip {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.compliance-posture-stat {
+  padding: 8px 14px;
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  background: var(--pw-bg-elev);
+  min-width: 110px;
+}
+.compliance-posture-overdue {
+  border-color: color-mix(
+    in srgb,
+    var(--pw-warning, var(--pw-accent)) 40%,
+    var(--pw-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--pw-warning, var(--pw-accent)) 6%,
+    var(--pw-bg-elev)
+  );
+}
+
+.compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.compliance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+  background: var(--pw-bg-elev);
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition:
+    border-color 80ms ease,
+    box-shadow 80ms ease,
+    transform 80ms ease;
+}
+.compliance-card:hover {
+  border-color: color-mix(in srgb, var(--pw-info) 50%, var(--pw-border));
+  box-shadow: 0 4px 12px
+    color-mix(in srgb, var(--pw-shadow-color) 18%, transparent);
+  transform: translateY(-1px);
+}
+.compliance-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.compliance-card-short {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.compliance-card-status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--pw-fg-muted) 15%, transparent);
+  color: var(--pw-fg-muted);
+}
+.compliance-card-status.is-attested {
+  background: color-mix(in srgb, var(--pw-success) 18%, transparent);
+  color: var(--pw-success);
+}
+.compliance-card-status.is-overdue {
+  background: color-mix(
+    in srgb,
+    var(--pw-warning, var(--pw-accent)) 22%,
+    transparent
+  );
+  color: var(--pw-warning, var(--pw-accent));
+}
+.compliance-card-status.is-revoked {
+  background: color-mix(in srgb, var(--pw-danger) 18%, transparent);
+  color: var(--pw-danger);
+}
+.compliance-card-status.is-unsupported {
+  background: color-mix(in srgb, var(--pw-danger) 18%, transparent);
+  color: var(--pw-danger);
+}
+.compliance-card-status.is-not-started {
+  background: color-mix(in srgb, var(--pw-fg-muted) 15%, transparent);
+  color: var(--pw-fg-muted);
+}
+.compliance-card-region {
+  font-weight: 500;
+}
+.compliance-card-blurb {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--pw-fg);
+}
+.compliance-card-meta {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+/* The card's left edge picks up the status colour so the grid scans
+ * like a status board even when the badge is small. */
+.compliance-card-is-attested {
+  border-left: 3px solid var(--pw-success);
+}
+.compliance-card-is-overdue {
+  border-left: 3px solid var(--pw-warning, var(--pw-accent));
+}
+.compliance-card-is-revoked {
+  border-left: 3px solid var(--pw-danger);
+}
+.compliance-card-is-unsupported {
+  border-left: 3px solid var(--pw-danger);
+}
+.compliance-card-is-not-started {
+  border-left: 3px solid color-mix(in srgb, var(--pw-fg-muted) 30%, transparent);
+}
+
+/* Detail panel below the grid */
+.compliance-detail {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+  background: var(--pw-bg-elev);
+}
+.compliance-gate-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.compliance-overdue {
+  color: var(--pw-danger);
+}
+.compliance-readiness-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--pw-radius-pill);
+  background: var(--pw-fg-subtle);
+  color: var(--pw-solid-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--pw-text-xs);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.compliance-readiness-icon.is-complete {
+  background: var(--pw-success);
+}
+.compliance-gate-marker {
+  color: var(--pw-fg-subtle);
+}
+.compliance-gate-list > li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+}
+
+/* Attest modal — tighter than the default modal so the form doesn't
+ * sprawl across the screen. */
+.compliance-attest-modal {
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.compliance-attest-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+.compliance-attest-modal input,
+.compliance-attest-modal textarea {
+  font-size: 13px;
+}
+/* ===== end ===== */

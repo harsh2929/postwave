@@ -1,0 +1,91 @@
+---
+title: Fidelity scoring
+---
+
+import { Callout } from 'nextra/components';
+
+# Fidelity scoring
+
+The fidelity score measures how well a generated email matches your [voice profile](/voice-ai/profile) — on a 0–100 scale, 100 being indistinguishable from your past writing on the same dimensions.
+
+## The formula
+
+```text
+fidelity = 100 * (
+    0.40 * embedding_similarity
+  + 0.30 * stylistic_match
+  + 0.20 * vocab_match
+  + 0.10 * structural_match
+)
+```
+
+Each component is a 0.0–1.0 score.
+
+### `embedding_similarity` (40%)
+
+The generated email is embedded with the same model used to embed your representative samples during profile-build. We compute the cosine similarity to the centroid of your representative-sample embeddings.
+
+This is the **strongest single voice signal** because embeddings capture diffuse, hard-to-articulate stylistic features that no rule-based metric can.
+
+Score interpretation:
+
+- &gt; 0.85 — semantically dense voice match.
+- 0.70–0.85 — strong match with some drift.
+- 0.55–0.70 — recognisable but generic.
+- &lt; 0.55 — could've been written by anyone.
+
+### `stylistic_match` (30%)
+
+Compares quantitative stylistic features of the generated email to your profile's `stylistic` block:
+
+- Sentence-length distribution match (KL divergence, normalised).
+- Paragraph-length distribution match.
+- Punctuation density match (em-dash, parens, ellipsis).
+- Reading-grade match (within ±1.5 grades).
+
+Each sub-feature contributes equally; the average is the component score.
+
+### `vocab_match` (20%)
+
+- Presence of `signature_phrases` (small bonus per phrase used).
+- Avoidance of `avoided` words (penalty per occurrence).
+- Use of `recurring` high-frequency words at expected rate.
+- Domain-vocabulary appropriateness.
+
+### `structural_match` (10%)
+
+- Bold/italic density vs profile expectation.
+- Use of lists matches profile rate.
+- Subheader use matches profile rate.
+- Link density within ±50% of profile mean.
+
+## Why these weights
+
+Embeddings dominate (40%) because they capture the most. Stylistic is heavy (30%) because it's the most *teachable* — when fidelity is low and the embedding is fine, stylistic is usually the lever. Vocab (20%) is meaningful but easy to over-weight (banning a word doesn't make output sound like you). Structural (10%) is sticky but small in effect.
+
+## What to do when fidelity is persistently low
+
+Diagnostic ladder:
+
+1. **Check the embedding component.** If embedding similarity is low (&lt;0.55) but the other components are fine, the generation is on-form but tonally off — your profile may be too narrow. Add more diverse [sources](/voice-ai/sources).
+2. **Check vocab.** If `vocab_match` is the low component, scan the email for `avoided` words. The most common offenders: corporate jargon ("leverage", "synergy", "delivered value") creeping in despite being in your avoided list.
+3. **Check stylistic.** If your profile says median sentence is 14 words but the email runs 25-word sentences throughout, generation is over-formalising. Lower the **Formality** [slider](/voice-ai/generation).
+4. **Rebuild the profile.** If you've made writing-style shifts since the profile was built, scores will drift. Rebuild from current sources.
+5. **Try a different template.** Some templates have structural requirements (course-launch sequences are more transactional in shape) that pull generation away from your usual voice. Pick a template closer to your natural register.
+
+<Callout type="info">
+A consistent score of ~70 across many sequences is normal and good. **Don't chase 90s.** Fidelity is a regularising signal, not a maximisation target — emails optimised purely for fidelity tend to over-mimic your past content, which reads as parody.
+</Callout>
+
+## Per-email badges
+
+In the sequence preview UI:
+
+- 🔴 **&lt;60** — auto-retried; if still &lt;60, surfaced as needing manual editing.
+- 🟡 **60–74** — usable; review carefully.
+- 🟢 **≥75** — ship-ready (still review!).
+
+## Next steps
+
+- [Regeneration](/voice-ai/regeneration) — fixing low scores via hints.
+- [Best practices](/voice-ai/best-practices) — when fidelity isn't the right metric.

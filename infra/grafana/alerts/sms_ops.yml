@@ -1,0 +1,62 @@
+# Moosewave SMS pilot operations alerts.
+#
+# These alerts intentionally stay provider-level instead of tenant-level to
+# avoid high-cardinality labels during the first customer pilot.
+
+groups:
+  - name: postwave-sms-ops
+    interval: 30s
+    rules:
+      - alert: SMSProviderFailureRateHigh
+        expr: |
+          sum(rate(postwave_sms_provider_sends_total{result="failed"}[10m])) by (provider)
+          /
+          clamp_min(sum(rate(postwave_sms_provider_sends_total[10m])) by (provider), 1)
+          > 0.05
+        for: 10m
+        labels:
+          severity: page
+          component: api-gateway
+          subsystem: sms
+        annotations:
+          summary: "SMS provider failure rate is above 5%"
+          description: "Pause the affected sender, inspect provider errors, and compare Moosewave campaign reports with provider console logs before resuming."
+          runbook_path: "docs/first-customer-pilot-runbook.md"
+
+      - alert: SMSOptOutSpike
+        expr: sum(rate(postwave_sms_inbound_messages_total{action="revoked"}[30m])) by (provider) > 0.05
+        for: 15m
+        labels:
+          severity: page
+          component: api-gateway
+          subsystem: sms
+        annotations:
+          summary: "SMS opt-out rate is elevated"
+          description: "Stop the campaign, verify audience consent proof, and review copy/frequency before any further SMS sends."
+          runbook_path: "docs/first-customer-pilot-runbook.md"
+
+      - alert: SMSCostMovingWithoutCallbacks
+        expr: |
+          sum(increase(postwave_sms_estimated_cost_micros_total[30m])) by (provider) > 25000000
+          and
+          sum(increase(postwave_sms_delivery_callbacks_total[30m])) by (provider) == 0
+        for: 10m
+        labels:
+          severity: page
+          component: api-gateway
+          subsystem: sms
+        annotations:
+          summary: "SMS spend is moving but delivery callbacks are absent"
+          description: "Pause SMS sends and verify public callback URLs, provider webhook credentials, and sender-profile callback configuration."
+          runbook_path: "docs/first-customer-pilot-runbook.md"
+
+      - alert: SMSCampaignBlockedByCostCap
+        expr: sum(rate(postwave_sms_campaign_recipients_total{result="blocked"}[10m])) by (provider) > 0
+        for: 5m
+        labels:
+          severity: ticket
+          component: api-gateway
+          subsystem: sms
+        annotations:
+          summary: "SMS campaign recipients are being blocked"
+          description: "Check campaign report blocking codes. If sms_cost_cap_reached appears, raise the campaign cap only after customer approval."

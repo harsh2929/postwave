@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <figure-with-figcaption.v1@example.com>
+Subject: Site progress
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-figure-v1"
+
+--pw-figure-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The roof went on this week: https://www.example.com/progress
+--pw-figure-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Site progress</h1><figure><img src="https://cdn.example.com/roof.jpg" alt="The finished roof from the north side" width="600" height="400"><figcaption style="font-size:12px;color:#666666">The finished roof from the north side.</figcaption></figure><p><a href="https://www.example.com/progress">See the update</a></p></body></html>
+--pw-figure-v1--

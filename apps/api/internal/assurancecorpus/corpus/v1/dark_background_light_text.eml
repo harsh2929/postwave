@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <dark-background-light-text.v1@example.com>
+Subject: Your monthly summary
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-dark-v1"
+
+--pw-dark-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your monthly summary is ready: https://app.example.com/summary/3
+--pw-dark-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body style="background-color:#111111"><h1 style="color:#ffffff">Your monthly summary</h1><p style="color:#eeeeee">Three reports are ready to read.</p><p><a href="https://app.example.com/summary/3" style="color:#66ccff">Open the summary</a></p></body></html>
+--pw-dark-v1--

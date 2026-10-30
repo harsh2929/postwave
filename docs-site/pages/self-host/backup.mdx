@@ -1,0 +1,33 @@
+---
+title: Backup and recovery responsibilities
+---
+
+import { Callout } from "nextra/components";
+
+# Backup and recovery responsibilities
+
+<Callout type="warning">
+  There is no supported self-host product or certified backup package.
+  Repository backup scripts are engineering references and do not establish a
+  recovery SLA.
+</Callout>
+
+An independently operated source build can contain PostgreSQL data, object
+storage, encryption keys, provider credentials, and external Listmonk state.
+A database dump alone is therefore not a complete backup.
+
+The operator must define and prove:
+
+- the complete data and secret inventory, ownership, and retention policy;
+- encrypted, immutable, independently replicated backups;
+- version-matched application, migration, and upstream image provenance;
+- isolated restore procedures that never overwrite the source environment;
+- integrity checks for schema, row-level security, objects, keys, queues, and
+  external-provider state;
+- measured recovery point and recovery time objectives; and
+- credential rotation and send/automation safety after recovery.
+
+Repository scripts under `scripts/backup/` may help with individual steps, but
+they are not evidence of a successful restore. Record a full environment
+rehearsal before placing real customer or recipient data in an independently
+operated deployment.

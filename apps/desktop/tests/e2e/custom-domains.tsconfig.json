@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "custom-domains-evidence-harness.ts",
+    "custom-domains-maturity.spec.ts",
+    "custom-domains.playwright.config.ts"
+  ],
+  "exclude": ["../../node_modules", "../../dist", "../../src-tauri"],
+  "references": []
+}

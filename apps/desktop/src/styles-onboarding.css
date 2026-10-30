@@ -1,0 +1,972 @@
+/* ---------- Onboarding wizard --------------------------------------- */
+
+/*
+ * Sits on top of the AppShell once the user lands on the dashboard for the
+ * first time. Same backdrop treatment as the regular Modal but the card is
+ * wider so the four-step content has room to breathe.
+ */
+.onboarding-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: color-mix(in srgb, var(--pw-shadow-color) 62%, transparent);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 64px;
+  padding-bottom: 32px;
+  backdrop-filter: blur(4px);
+  animation: pw-fade-in 140ms ease-out;
+  overflow-y: auto;
+}
+
+.onboarding-card {
+  width: 100%;
+  max-width: 720px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  box-shadow: 0 16px 64px
+    color-mix(in srgb, var(--pw-shadow-color) 55%, transparent);
+  animation: pw-rise 160ms ease-out;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 96px);
+}
+
+.onboarding-header {
+  position: relative;
+  padding: 20px 24px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.onboarding-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  letter-spacing: -0.01em;
+}
+.onboarding-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 12.5px;
+  color: var(--pw-fg-muted);
+}
+.onboarding-skip {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.onboarding-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.onboarding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--pw-border);
+  background: transparent;
+  transition:
+    background 120ms,
+    border-color 120ms;
+}
+.onboarding-dot.is-upcoming {
+  background: transparent;
+  border-color: var(--pw-border);
+}
+.onboarding-dot.is-active {
+  background: var(--pw-accent);
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pw-accent) 15%, transparent);
+}
+.onboarding-dot.is-done {
+  background: var(--pw-fg-muted);
+  border-color: var(--pw-fg-muted);
+}
+
+.onboarding-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.onboarding-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px 16px;
+  border-top: 1px solid var(--pw-border-soft);
+  background: color-mix(in srgb, var(--pw-shadow-color) 15%, transparent);
+}
+
+/* ----- step 1: goal cards ----- */
+.onboarding-goal-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.onboarding-goal-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev);
+  border-radius: var(--pw-radius-md);
+  cursor: pointer;
+  transition:
+    border-color 80ms,
+    background 80ms;
+}
+.onboarding-goal-card:hover {
+  background: var(--pw-bg-elev-2);
+  border-color: var(--pw-fg-subtle);
+}
+.onboarding-goal-card.is-selected {
+  border-color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 6%, transparent);
+}
+.onboarding-goal-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--pw-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--pw-accent-fg);
+  background: var(--pw-bg-elev);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.onboarding-goal-card.is-selected .onboarding-goal-check {
+  background: var(--pw-accent);
+  border-color: var(--pw-accent);
+  color: var(--pw-accent-fg);
+}
+.onboarding-goal-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.onboarding-goal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.onboarding-goal-desc {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  line-height: 1.5;
+}
+
+/* ----- shared hero banner (used in domain + explore-mode test) ----- */
+.onboarding-hero-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--pw-accent) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 25%, transparent);
+  border-radius: var(--pw-radius-md);
+}
+.onboarding-hero-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--pw-accent);
+  color: var(--pw-accent-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+.onboarding-hero-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.onboarding-hero-body {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+/* ----- step 2: DNS records ----- */
+.onboarding-dns-table {
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  overflow: hidden;
+  background: var(--pw-bg-elev);
+}
+.onboarding-dns-row {
+  display: grid;
+  grid-template-columns: 70px 140px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--pw-border-soft);
+  font-size: 12px;
+}
+.onboarding-dns-row:last-child {
+  border-bottom: none;
+}
+.onboarding-dns-head {
+  background: var(--pw-bg-elev-2);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pw-fg-subtle);
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.onboarding-dns-type {
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.onboarding-dns-host {
+  color: var(--pw-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.onboarding-dns-value {
+  color: var(--pw-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11.5px;
+}
+.onboarding-dns-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.onboarding-dns-purpose {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  margin-top: 2px;
+  color: var(--pw-fg-subtle);
+}
+.onboarding-verify-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.onboarding-verify-msg {
+  font-size: 12px;
+}
+
+/* ----- step 3: subscribers ----- */
+.onboarding-subs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.onboarding-section {
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.onboarding-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.onboarding-section-desc {
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.5;
+}
+.onboarding-file-input {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+.onboarding-csv-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+}
+.onboarding-csv-meta {
+  font-size: 11.5px;
+  color: var(--pw-fg-muted);
+}
+.onboarding-csv-table {
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+  overflow-x: auto;
+  background: var(--pw-bg-elev);
+}
+.onboarding-csv-row {
+  display: flex;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+.onboarding-csv-row:last-child {
+  border-bottom: none;
+}
+.onboarding-csv-head {
+  background: var(--pw-bg-elev-2);
+  font-weight: 600;
+}
+.onboarding-csv-cell {
+  flex: 1;
+  min-width: 100px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-right: 1px solid var(--pw-border-soft);
+}
+.onboarding-csv-cell:last-child {
+  border-right: none;
+}
+.onboarding-manual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+}
+
+/* ----- step 4: test campaign ----- */
+.onboarding-body-textarea {
+  height: auto;
+  min-height: 96px;
+  padding: 8px 10px;
+  font-family: var(--pw-font-mono);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+/* ----- success card ----- */
+.onboarding-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 12px 12px;
+  gap: 12px;
+}
+.onboarding-success-check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--pw-success);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--pw-success) 12%, transparent);
+}
+.onboarding-success-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.onboarding-success-body {
+  font-size: 13px;
+  color: var(--pw-fg-muted);
+  max-width: 440px;
+  line-height: 1.55;
+}
+
+/* =====================================================================
+ * Onboarding wizard v2 — first-run guided setup overlay (4 steps).
+ *
+ * Reuses the existing `.onboarding-backdrop` + `.onboarding-card` chrome
+ * from styles.css for backdrop/header/scroll behaviour, but introduces
+ * its own `.onb2-*` classes for the step body so we don't conflict with
+ * the legacy goal-card / DNS-table layout that OnboardingTour still uses.
+ *
+ * Append-only block — keep additions here.
+ * =================================================================== */
+
+.onb2-card {
+  /* Slightly tighter than the legacy goal/DNS card; the new wizard is
+     more linear and benefits from less width. */
+  max-width: 560px;
+}
+
+/* ---- step progress (•—•—•—•) -------------------------------------- */
+
+.onb2-progress {
+  display: flex;
+  align-items: center;
+  padding: 14px 24px 4px;
+  gap: 0;
+}
+.onb2-progress-cell {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.onb2-progress-cell:last-child {
+  flex: 0 0 auto;
+}
+.onb2-progress-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--pw-border);
+  background: transparent;
+  flex-shrink: 0;
+  transition:
+    background 120ms,
+    border-color 120ms;
+}
+.onb2-progress-dot.is-upcoming {
+  background: var(--pw-bg-elev-2);
+  border-color: var(--pw-border);
+}
+.onb2-progress-dot.is-active {
+  background: var(--pw-accent);
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pw-accent) 18%, transparent);
+}
+.onb2-progress-dot.is-done {
+  background: var(--pw-fg-muted);
+  border-color: var(--pw-fg-muted);
+}
+.onb2-progress-bar {
+  flex: 1;
+  height: 1px;
+  background: var(--pw-border);
+  margin: 0 6px;
+}
+.onb2-progress-bar.is-done {
+  background: var(--pw-fg-muted);
+}
+
+/* ---- step body ----------------------------------------------------- */
+
+.onb2-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3) var(--pw-sp-2) var(--pw-sp-2);
+}
+
+.onb2-step-illustration {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.onb2-step-num {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--pw-accent);
+}
+
+.onb2-step-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  letter-spacing: -0.01em;
+}
+.onb2-step-desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--pw-fg-muted);
+  max-width: 420px;
+  line-height: 1.55;
+}
+
+.onb2-step-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  margin-top: var(--pw-sp-2);
+}
+
+.onb2-big-cta {
+  min-width: 240px;
+}
+
+/* Inline status pills used in StepDomain / StepCampaign. */
+.onb2-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pw-sp-2);
+}
+.onb2-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px var(--pw-sp-2);
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--pw-border-soft);
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+}
+.onb2-status-pill.is-ok {
+  border-color: color-mix(in srgb, var(--pw-success) 35%, transparent);
+  background: color-mix(in srgb, var(--pw-success) 8%, transparent);
+  color: var(--pw-success);
+}
+.onb2-status-pill.is-warn {
+  border-color: color-mix(in srgb, var(--pw-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--pw-warning) 8%, transparent);
+  color: var(--pw-fg);
+}
+.onb2-status-pill.is-muted {
+  color: var(--pw-fg-muted);
+}
+
+/* ---- secondary "skip" / "don't show again" links ------------------- */
+.onb2-dismiss-link {
+  margin-top: var(--pw-sp-3);
+  font-size: 11.5px;
+  opacity: 0.7;
+}
+.onb2-dismiss-link:hover {
+  opacity: 1;
+}
+
+/* ---- StepSubscribers card grid ------------------------------------- */
+
+.onb2-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--pw-sp-2);
+  width: 100%;
+  margin-top: var(--pw-sp-2);
+}
+@media (max-width: 600px) {
+  .onb2-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.onb2-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--pw-sp-3);
+  border-radius: var(--pw-radius-md);
+  border: 1px solid var(--pw-border-soft);
+  background: var(--pw-bg-elev-2);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 80ms,
+    background 80ms,
+    transform 80ms;
+}
+.onb2-card:hover:not(:disabled) {
+  border-color: var(--pw-accent);
+  background: var(--pw-bg-elev);
+  transform: translateY(-1px);
+}
+.onb2-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.onb2-card-glyph {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--pw-accent);
+}
+.onb2-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.onb2-card-desc {
+  font-size: 11.5px;
+  color: var(--pw-fg-muted);
+  line-height: 1.45;
+}
+
+.onb2-note {
+  font-size: 12px;
+  margin-top: var(--pw-sp-1);
+}
+
+/* ---- StepDone --------------------------------------------------- */
+
+.onb2-step-done {
+  padding-top: var(--pw-sp-4);
+}
+.onb2-done-headline {
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--pw-fg);
+  margin-bottom: var(--pw-sp-1);
+}
+.onb2-followups {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-2);
+  width: 100%;
+  max-width: 420px;
+}
+.onb2-followup {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  border: 1px solid var(--pw-border-soft);
+  background: var(--pw-bg-elev-2);
+  border-radius: var(--pw-radius-md);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 80ms,
+    background 80ms;
+}
+.onb2-followup:hover {
+  border-color: var(--pw-accent);
+  background: var(--pw-bg-elev);
+}
+.onb2-followup-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.onb2-followup-body {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+
+/* ===================================================================
+ * Onboarding wizard v3 — branded two-column welcome.
+ *
+ * Turns the first-run modal from a lonely centred single-step card into
+ * a premium "welcome rail + task panel" layout: a teal-tinted, textured
+ * rail carries the brand, a warm value-prop, the whole journey as a
+ * labelled stepper, and a progress meter; the right panel hosts the
+ * active step body (the existing ./onboarding/* components, untouched).
+ * Fully tokenised so it reads correctly in both light and dark themes.
+ * Append-only — keep additions below.
+ * =================================================================== */
+
+.onboarding-card.onb2-split {
+  max-width: 740px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 296px 1fr;
+  overflow: hidden; /* clip the rail's gradient to the rounded corners */
+}
+
+/* ---- left rail ---------------------------------------------------- */
+.onb2-aside {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pw-sp-4);
+  padding: var(--pw-sp-6);
+  border-right: 1px solid var(--pw-border-soft);
+  background: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--pw-accent) 18%, var(--pw-bg-elev)) 0%,
+    color-mix(in srgb, var(--pw-accent) 6%, var(--pw-bg-elev)) 46%,
+    var(--pw-bg-elev) 100%
+  );
+}
+/* radial brand glow, top-left */
+.onb2-aside-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    460px 340px at 8% -12%,
+    color-mix(in srgb, var(--pw-accent) 38%, transparent),
+    transparent 68%
+  );
+}
+/* fine grain texture so the gradient has tactile depth, not flatness */
+.onb2-aside::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.onb2-aside > * {
+  position: relative;
+  z-index: 1;
+}
+
+.onb2-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.onb2-brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+  background: var(--pw-accent);
+  color: var(--pw-accent-fg);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--pw-accent) 45%, transparent);
+}
+.onb2-brand-word {
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: var(--pw-fg);
+}
+
+.onb2-welcome-title {
+  margin: 0 0 7px;
+  font-size: 22px;
+  line-height: 1.18;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pw-fg);
+}
+.onb2-welcome-sub {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--pw-fg-muted);
+  max-width: 30ch;
+}
+
+/* ---- labelled vertical stepper ------------------------------------ */
+.onb2-steps {
+  list-style: none;
+  margin: var(--pw-sp-1) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.onb2-step-item {
+  position: relative;
+}
+/* connector line down to the next bullet (anchored to bullet bottom,
+   extends into the inter-row gap so it survives copy that wraps) */
+.onb2-step-item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 38px;
+  bottom: -10px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--pw-border);
+}
+.onb2-step-item.is-done::before {
+  background: color-mix(in srgb, var(--pw-accent) 70%, transparent);
+}
+.onb2-step-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--pw-radius-md);
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.onb2-step-row:disabled {
+  cursor: default;
+}
+.onb2-step-row:not(:disabled):hover {
+  background: color-mix(in srgb, var(--pw-accent) 9%, transparent);
+}
+.onb2-step-row:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 1px;
+}
+.onb2-step-bullet {
+  position: relative;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg-muted);
+  transition:
+    border-color 140ms,
+    background 140ms,
+    color 140ms,
+    box-shadow 140ms;
+}
+.onb2-step-item.is-active .onb2-step-bullet {
+  border-color: var(--pw-accent);
+  color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 14%, var(--pw-bg-elev));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pw-accent) 16%, transparent);
+}
+.onb2-step-item.is-done .onb2-step-bullet {
+  border-color: var(--pw-accent);
+  background: var(--pw-accent);
+  color: var(--pw-accent-fg);
+}
+.onb2-step-item.is-upcoming .onb2-step-bullet {
+  opacity: 0.72;
+}
+.onb2-step-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-top: 2px;
+  min-width: 0;
+}
+.onb2-step-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--pw-fg);
+}
+.onb2-step-item.is-upcoming .onb2-step-name {
+  font-weight: 500;
+  color: var(--pw-fg-muted);
+}
+.onb2-step-hint {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--pw-fg-muted);
+}
+
+/* ---- rail footer: progress meter ---------------------------------- */
+.onb2-aside-foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.onb2-meter {
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--pw-fg) 12%, transparent);
+}
+.onb2-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--pw-accent),
+    var(--pw-accent-hover)
+  );
+  transition: width 340ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.onb2-aside-note {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--pw-fg-muted);
+}
+
+/* ---- right panel: active step ------------------------------------- */
+.onb2-main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--pw-sp-4);
+  overflow-y: auto;
+}
+.onb2-main .onboarding-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.onb2-skip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}
+/* In the split layout the rail already carries step identity, so the
+   per-step numeral circle would be redundant — hide it and let the body
+   focus on the task (title + copy + status + CTA). */
+.onb2-split .onb2-step-illustration {
+  display: none;
+}
+.onb2-split .onb2-step {
+  padding-top: var(--pw-sp-2);
+}
+
+/* ---- responsive: stack on narrow viewports ------------------------ */
+@media (max-width: 640px) {
+  .onboarding-card.onb2-split {
+    grid-template-columns: 1fr;
+    max-width: 460px;
+  }
+  .onb2-aside {
+    padding: var(--pw-sp-4);
+    gap: var(--pw-sp-3);
+  }
+  .onb2-steps,
+  .onb2-aside-note {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onb2-meter-fill {
+    transition: none;
+  }
+}

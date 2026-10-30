@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <survey-prompt.v1@example.com>
+Subject: Tell us what you think
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-survey-v1"
+
+--pw-survey-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Two questions, one minute: https://survey.example.com/s/3
+--pw-survey-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Tell us what you think</h1><p>Answer two questions about your last order. It takes about a minute.</p><p><a href="https://survey.example.com/s/3">Start the survey</a></p></body></html>
+--pw-survey-v1--

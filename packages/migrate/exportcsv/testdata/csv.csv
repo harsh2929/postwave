@@ -1,0 +1,4 @@
+Email,status,unsubscribed,bounced,Postal Code
+ada@example.com,active,false,false,00123
+optout@example.com,active,true,false,00124
+spam@example.com,active,false,true,00125

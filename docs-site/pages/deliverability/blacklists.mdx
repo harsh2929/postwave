@@ -1,0 +1,84 @@
+---
+title: Blacklists
+---
+
+import { Callout } from 'nextra/components';
+
+# Blacklists (DNSBLs)
+
+DNS Block Lists are public — usually free — databases of IP addresses and domains that have been observed sending spam. Receiving mailservers query them in real time. Being listed on a major DNSBL means a meaningful chunk of receivers will silently reject or junk your mail.
+
+## The DNSBLs Moosewave monitors
+
+| List           | What it catches                                                       | Severity |
+| -------------- | --------------------------------------------------------------------- | -------- |
+| **Spamhaus ZEN** (SBL/CSS/XBL/PBL/DBL) | The biggest. Most receivers consult it.                | 🔴 Critical |
+| **SORBS**      | Aggregator of multiple sub-lists; older but widely consulted.        | 🟠 High  |
+| **Barracuda**  | Operator-specific list; affects mail to Barracuda-protected receivers (a lot of corporate). | 🟠 High |
+| **Invaluement** | Subscription list popular with enterprise spam filters.             | 🟡 Medium |
+| **SpamCop**    | Complaint-driven; listings are usually short-lived (24h).            | 🟡 Medium |
+| **URIBL** / **SURBL** | Domain-name lists (not IP). Listing your *sending* or *clickable-link* domain is severe. | 🔴 Critical |
+| **UCEPROTECT L1/L2/L3** | Aggressive listing; widely considered noisy. We monitor but don't surface as critical. | 🟢 Info |
+
+## Continuous monitoring
+
+Moosewave queries each list **every 6 hours** for:
+
+- Your sending IP(s).
+- Your sending domain.
+- Your tracking subdomain.
+- Any link-host domain in your last 100 sends.
+
+A new listing triggers:
+
+1. An immediate alert (email + dashboard).
+2. A [Diagnostician](/deliverability/diagnostician) entry with the listing details and a delisting fix.
+3. An automatic pause of large outbound campaigns until you acknowledge.
+
+## Delisting workflow
+
+When listed, the Diagnostician's fix walks you through delisting. Generic steps:
+
+### 1. Find the cause first
+
+**Don't request delisting before you know why you were listed.** Most lists keep an internal record of "delisted recently" and re-listing without remediation triggers a longer cool-off.
+
+The Diagnostician will surface the most likely cause from your recent activity (volume spike, complaint cluster, suspect URL in a recent send, etc.).
+
+### 2. Remediate
+
+Common remediations:
+
+- Pause campaigns to high-complaint segments.
+- Drop hard-bounced addresses across all segments.
+- Remove a flagged URL from your link library and from any ongoing automation.
+- For URIBL/SURBL listings on a *click-tracking* host: rotate the tracking domain (Moosewave provisions a new subdomain in &lt;5 min).
+
+### 3. Submit delisting request
+
+Each list has a delisting form:
+
+- **Spamhaus**: [https://www.spamhaus.org/lookup/](https://www.spamhaus.org/lookup/) — search your IP/domain, follow the "remove from list" link. They typically delist within 24h if remediation is plausible.
+- **SORBS**: requires an account; manual review can take 48–72h.
+- **Barracuda**: [https://www.barracudacentral.org/rbl/removal-request](https://www.barracudacentral.org/rbl/removal-request) — usually fast (1–4h) if the cause is no longer evident.
+- **SpamCop**: auto-delists 24h after the last reported complaint; rarely worth manually requesting.
+- **URIBL/SURBL**: domain-level; submit at the list's removal URL. May require proof you control the domain.
+
+Moosewave's Diagnostician fix has a *Pre-fill delisting form* button that copies your IP/domain and a remediation summary you can paste into the form.
+
+<Callout type="info">
+For the **PBL** sub-list of Spamhaus ZEN, listings are actually network-policy declarations from the IP's owner ("this IP is not authorised to send mail directly"). Moosewave's IPs are pre-cleared on the PBL. If you ever see a PBL listing on your account, contact support — it's our problem, not yours.
+</Callout>
+
+### 4. Confirm delisting
+
+After requesting, Moosewave's monitor will detect delisting within the next 6-hour cycle. You can also force a manual recheck from the dashboard.
+
+## Avoiding listings in the first place
+
+The single best defense is consistent application of the [Improving placement](/deliverability/improving-placement) playbook — list hygiene, suppression management, complaint-rate discipline. Listings almost never come from clean senders.
+
+## Next steps
+
+- [Improving placement](/deliverability/improving-placement) — the preventative playbook.
+- [Diagnostician](/deliverability/diagnostician) — what you'll be working with during a listing event.

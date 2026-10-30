@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <avatar-images-with-names.v1@example.com>
+Subject: Meet your team
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-avatar-v1"
+
+--pw-avatar-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three specialists are assigned to your account. https://app.example.com/team
+--pw-avatar-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Meet your team</h1><ul><li><img src="https://cdn.example.com/a1.png" alt="" aria-hidden="true" width="32" height="32"> Priya, onboarding</li><li><img src="https://cdn.example.com/a2.png" alt="" aria-hidden="true" width="32" height="32"> Tomas, deliverability</li></ul><p><a href="https://app.example.com/team">See your team</a></p></body></html>
+--pw-avatar-v1--

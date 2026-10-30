@@ -1,0 +1,122 @@
+/*
+ * DUX-023 — Moosewave AI slash/resource autocomplete.
+ *
+ * Kept as a page-owned stylesheet so this interaction can evolve without
+ * growing or re-hashing the reviewed global content-surface foundation.
+ */
+
+.ai-input-row {
+  position: relative;
+}
+
+.ai-slash-menu {
+  position: absolute;
+  inset-inline-start: var(--pw-sp-3);
+  bottom: calc(100% - 6px);
+  z-index: var(--pw-layer-popover, 400);
+  display: flex;
+  flex-direction: column;
+  width: min(440px, calc(100% - 24px));
+  min-width: min(260px, calc(100% - 24px));
+  max-width: calc(100% - 24px);
+  max-height: min(280px, calc(100vh - 96px));
+  overflow: hidden;
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border-strong);
+  border-radius: var(--pw-radius-md);
+  box-shadow: 0 12px 32px
+    color-mix(in srgb, var(--pw-shadow-color) 42%, transparent);
+  padding: 5px;
+}
+
+.ai-autocomplete-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.ai-slash-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 9px;
+  color: var(--pw-fg);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--pw-radius-sm);
+}
+
+.ai-slash-item:hover,
+.ai-slash-item[data-active="true"] {
+  background: color-mix(in srgb, var(--pw-accent) 16%, transparent);
+  border-color: color-mix(in srgb, var(--pw-accent) 48%, transparent);
+}
+
+.ai-slash-item-label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--pw-text-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-slash-item-hint,
+.ai-mention-kind,
+.ai-mention-status {
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-xs);
+}
+
+.ai-slash-item-hint {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-mention-item {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 9px;
+}
+
+.ai-mention-kind {
+  grid-row: 1 / span 2;
+  align-self: center;
+  min-width: 64px;
+  padding: 2px 5px;
+  text-align: center;
+  background: var(--pw-bg-elev);
+  border-radius: var(--pw-radius-xs);
+}
+
+.ai-mention-status {
+  padding: 8px 9px;
+  line-height: 1.4;
+}
+
+@media (max-width: 560px) {
+  .ai-slash-menu {
+    inset-inline: 8px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ai-slash-menu,
+  .ai-slash-item[data-active="true"] {
+    border-color: CanvasText;
+  }
+}

@@ -1,0 +1,78 @@
+.choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-1);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group-option {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  min-block-size: 32px;
+  padding: 5px 10px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm, 6px);
+  color: var(--pw-fg-muted);
+  background: var(--pw-bg-elev);
+  cursor: pointer;
+}
+
+.choice-group-option[data-selected="true"] {
+  color: var(--pw-fg);
+  border-color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 12%, var(--pw-bg-elev));
+}
+
+.choice-group-option[data-unavailable="true"] {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.choice-group-option:focus-within {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+
+.choice-group-input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice-group-label {
+  font: inherit;
+  line-height: 1.25;
+}
+
+.choice-group-description {
+  margin-block-start: 2px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+@media (forced-colors: active) {
+  .choice-group-option {
+    border-color: ButtonBorder;
+    color: ButtonText;
+    background: ButtonFace;
+  }
+
+  .choice-group-option[data-selected="true"] {
+    border-color: Highlight;
+    color: HighlightText;
+    background: Highlight;
+  }
+
+  .choice-group-option:focus-within {
+    outline-color: Highlight;
+  }
+}

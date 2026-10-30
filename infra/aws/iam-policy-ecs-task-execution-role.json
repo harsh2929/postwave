@@ -1,0 +1,112 @@
+{
+  "_comment": "iam-policy-ecs-task-execution-role.json -- IAM policy for the ECS *execution role*. This role runs at task-start time, before user code executes: it pulls the container image from ECR, fetches secrets from Secrets Manager to inject as env vars, and writes streams inside the seven CloudFormation-managed CloudWatch log groups. It is NOT the role the running container inherits (that's iam-policy-ecs-task-role.json). Splitting these is the AWS-recommended posture: a process inside the container cannot e.g. pull arbitrary images from ECR or create log groups, even if the API code is exploited. Region/account placeholders read <region>/<account>; substitute before applying.",
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ECRAuth",
+      "_comment": "GetAuthorizationToken returns a short-lived bearer credential for `docker pull` from ECR. Resource '*' is required for this action by AWS API design.",
+      "Effect": "Allow",
+      "Action": ["ecr:GetAuthorizationToken"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECRPullPostwaveImage",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchCheckLayerAvailability"
+      ],
+      "Resource": [
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-api",
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-voice",
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-automation",
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-deliverability",
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-migration",
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-db-migrator",
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-campaign-assurance",
+        "arn:aws:ecr:us-west-2:<account>:repository/postwave-campaign-assurance-image-services"
+      ]
+    },
+    {
+      "Sid": "SecretsManagerInjectAtTaskStart",
+      "_comment": "The execution role reads values only while ECS injects container environment variables at task start; it does not retain access inside the container. Runtime API secrets also need the corresponding task-role entry when application code refreshes them. The privileged migration-db-dsn is the deliberate exception: it is injected only into the one-shot migrator and must never be granted to the API task role.",
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": [
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/db-dsn-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-db-dsn-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/auth-hmac-pepper-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/auth-kek-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/oauth/google-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/listmonk-webhook-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/postmark-hmac-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sendgrid-hmac-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/api-key-pepper-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/consent-cursor-signing-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sms-inbox-cursor-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/helpdesk-cursor-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/pii-fingerprint-pepper-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/subscriber-import-fingerprint-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/sending-kek-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-session-kek-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/internal-api-token-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/metrics-token-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/redis-url-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/portal-jwt-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/dodo-payments-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/dodo-payments-webhook-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:moosewave/prod/dodo-payments-product-launch-monthly-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:moosewave/prod/dodo-payments-product-growth-monthly-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:moosewave/prod/dodo-payments-product-scale-monthly-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-stripe-secret-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-mailchimp-client-id-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-mailchimp-client-secret-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-convertkit-client-id-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/migration-convertkit-client-secret-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/arf-hmac-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/cookie-signing-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/anthropic-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/gemini-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/campaign-assurance-gemini-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/openai-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/hcti-user-id-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/hcti-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/seedlist-registry-json-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/seedlist-vendor-api-key-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/listmonk-admin-password-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/ops-db-dsn-*",
+        "arn:aws:secretsmanager:us-west-2:<account>:secret:postwave/prod/ops-slack-webhook-url-*"
+      ]
+    },
+    {
+      "Sid": "KMSDecryptSecretsCMK",
+      "_comment": "Limited to the secrets-manager CMK; the execution role has no business decrypting S3 objects.",
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt"],
+      "Resource": [
+        "arn:aws:kms:us-west-2:<account>:key/<secrets-manager-cmk-uuid>"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "secretsmanager.us-west-2.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "CloudWatchLogsWriteManagedGroups",
+      "_comment": "CloudFormation creates and retains the seven named log groups before any task definition can reference them. ECS may create only per-task streams and write events inside those groups.",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": [
+        "arn:aws:logs:us-west-2:<account>:log-group:/ecs/postwave-api:*",
+        "arn:aws:logs:us-west-2:<account>:log-group:/ecs/postwave-voice:*",
+        "arn:aws:logs:us-west-2:<account>:log-group:/ecs/postwave-automation:*",
+        "arn:aws:logs:us-west-2:<account>:log-group:/ecs/postwave-deliverability:*",
+        "arn:aws:logs:us-west-2:<account>:log-group:/ecs/postwave-migration:*",
+        "arn:aws:logs:us-west-2:<account>:log-group:/ecs/postwave-db-migrator:*",
+        "arn:aws:logs:us-west-2:<account>:log-group:/ecs/postwave-campaign-assurance:*"
+      ]
+    }
+  ]
+}

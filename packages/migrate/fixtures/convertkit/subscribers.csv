@@ -1,0 +1,6 @@
+email,status,first_name,last_name,tags,forms,sequences,consent_source,custom_plan,paid_status,signup_at
+toni@example.com,active,Toni,Morrison,"newsletter|authors|paid",landing-page,welcome,kit_form,growth,paid,2026-01-11T12:00:00Z
+octavia@example.org,cancelled,Octavia,Butler,"newsletter|sci-fi",checkout,welcome,manual,starter,free,2025-10-02T15:00:00Z
+ursula@example.net,bounced,Ursula,LeGuin,"authors|events",workshop,launch,api,growth,free,2025-12-19T18:30:00Z
+nora@example.com,active,Nora,Ephron,"newsletter|vip|paid",landing-page,launch,kit_form,plus,paid,2026-02-05T09:00:00Z
+james@example.org,active,James,Baldwin,"authors|vip",workshop,welcome,manual,starter,free,2026-02-28T14:10:00Z

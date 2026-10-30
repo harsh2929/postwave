@@ -1,0 +1,59 @@
+---
+title: Spam protection
+---
+
+import { Callout } from 'nextra/components';
+
+# Spam protection
+
+Public forms are spam magnets. Moosewave layers three protections; you choose which to enable per form.
+
+## Honeypot (always on)
+
+A hidden form field that humans never see (CSS `display: none`, plus `aria-hidden`, plus an off-screen position) but naive scraper-bots gleefully fill in. Submissions with the honeypot field populated are silently rejected.
+
+**Catches**: ~70–85% of automated form spam. Good enough that most low-volume forms don't need anything else.
+
+## Optional reCAPTCHA v3
+
+For forms with high spam volume, enable Google reCAPTCHA v3 (invisible — no "click the traffic lights" challenge unless score is borderline).
+
+To enable:
+
+1. Get a v3 site-key + secret-key from [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin).
+2. **Forms → \<form\> → Settings → Spam protection** → toggle reCAPTCHA, paste keys.
+3. Choose the score threshold (default `0.5`; `0.3` more permissive, `0.7` stricter).
+
+reCAPTCHA scores 0.0–1.0; submissions below the threshold are rejected.
+
+<Callout type="info">
+reCAPTCHA introduces a Google network call on every form load, which has Core Web Vitals impact. Honeypot + IP rate-limit handles 95% of cases without it. Don't enable reCAPTCHA preemptively.
+</Callout>
+
+## IP rate limit
+
+Hard-coded protection: **10 submissions per IP per minute**, per form. Excess submissions return `429 Too Many Requests`.
+
+This is non-configurable (we don't want to give operators a footgun). 10/min is high enough that no legitimate human ever hits it, low enough that scraper-driven spam loops get stopped fast.
+
+## Email-domain blocklist
+
+Moosewave maintains a managed blocklist of known disposable / spam-trap email domains (mailinator.com, guerrillamail.com, etc.). Submissions to those domains are rejected with a friendly "please use a permanent email" message.
+
+You can add custom rules under **Settings → Workspace → Subscriber rules**:
+
+- Block specific domains.
+- Block specific addresses.
+- Require email to match a regex (rare; useful for B2B forms enforcing corp emails).
+
+## Best practices
+
+- **Always honeypot.** It's free.
+- **Always double opt-in** for public forms (see [Opt-in](/forms/opt-in)). Even if a bot signs up a real person's email, the confirmation step blocks them from being added.
+- **Add reCAPTCHA only if** honeypot + double opt-in is leaking enough spam to matter.
+- **Monitor your `pending` count.** If pending sign-ups suddenly spike with low confirm-rates, you're being attacked. Toggle reCAPTCHA on and the attack typically stops within hours.
+
+## Next steps
+
+- [Submissions](/forms/submissions) — review and triage incoming.
+- [Opt-in](/forms/opt-in) — your single best spam defense after the honeypot.

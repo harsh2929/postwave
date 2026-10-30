@@ -1,0 +1,73 @@
+---
+title: DKIM
+---
+
+import { Callout } from 'nextra/components';
+
+# DKIM — DomainKeys Identified Mail
+
+DKIM cryptographically signs the email body and selected headers. Receiving servers verify the signature using a public key published in your DNS. A valid DKIM signature proves the message wasn't tampered with in transit and was sent by something that holds your private key.
+
+## The 101
+
+When Moosewave sends an email on your behalf:
+
+1. The MTA computes a hash over the body + selected headers.
+2. It signs the hash with the **private key** for your sending domain (Moosewave generates and stores this; you never see it).
+3. It adds a `DKIM-Signature:` header containing the algorithm, the selector (`postwave._domainkey`), the signed headers list, and the signature itself.
+
+The receiver:
+
+1. Reads the `DKIM-Signature` header.
+2. Looks up the **public key** at `<selector>._domainkey.<your-domain>`.
+3. Re-computes the hash and verifies the signature.
+
+If verification passes, DKIM `=pass`. The receiver now has cryptographic evidence the mail came from someone authorised on your domain.
+
+## Setting it up
+
+Moosewave generates a 2048-bit RSA key per sending domain. Add this CNAME at your DNS provider:
+
+```
+postwave._domainkey.yourdomain.com.   IN  CNAME   postwave._domainkey.dkim.moosewave.com.
+```
+
+(We use a CNAME so we can rotate the key without you touching DNS again. The CNAME points at a TXT record we own.)
+
+Verification runs every 60 seconds; once green, you'll get a confirmation email.
+
+## Key rotation
+
+Moosewave automatically rotates DKIM keys **every 6 months**. Because your DNS is a CNAME pointing into our zone, rotation is invisible to you — we publish the new public key under a new selector, dual-sign with both keys for 7 days, then retire the old one.
+
+If you self-published the public key as a TXT (instead of a CNAME), rotation requires manual DNS work. The Diagnostician will warn you ~30 days before each rotation in that case.
+
+## Key length recommendations
+
+- **2048 bit** (modern standard, what Moosewave uses) — recommended.
+- **1024 bit** — still widely accepted but considered weak; some receivers (notably Yahoo) flag as suspicious.
+- **4096 bit** — overkill; some DNS providers don't accept TXT records that long without splitting, which causes verification edge cases. Not recommended.
+
+<Callout type="info">
+If you're migrating from an older ESP that issued you a 1024-bit DKIM key, you can leave it active alongside Moosewave's 2048-bit key — DKIM allows multiple selectors. But once your last legacy send has aged out (~14 days), retire the old key.
+</Callout>
+
+## Continuous validator
+
+Moosewave's DKIM validator (under **Deliverability → DKIM**):
+
+1. Resolves `postwave._domainkey.<your-domain>`.
+2. Confirms the public key matches what we have stored.
+3. Validates the key length (≥2048 = green, 1024 = yellow, anything else = red).
+4. Sends a test message to our internal seedlist mailbox and confirms `dkim=pass` in the received headers.
+5. Repeats on a 6-hour schedule; failures alert and feed the [Diagnostician](/deliverability/diagnostician).
+
+## Common failures
+
+- **CNAME not propagated**: wait 5–60 minutes; most resolvers cache. Force a refresh by querying `dig TXT postwave._domainkey.yourdomain.com` from a clean resolver.
+- **Wrong selector**: Moosewave always uses `postwave` as the selector unless you configured a custom one.
+- **Key length mismatch**: DNS provider truncated the public key. Use a CNAME instead, or split the TXT into 255-char chunks within parentheses.
+
+## Next steps
+
+- [DMARC](/deliverability/dmarc) — required to make SPF + DKIM enforceable.

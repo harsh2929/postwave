@@ -1,0 +1,774 @@
+/* =====================================================================
+ * X1+X2+X3: Tags page — tiny colour swatch + palette picker.
+ * Used only by /Tags. Reuses .chip / .list / .btn for everything else.
+ *
+ * NOTE FOR OTHER AGENTS: keep additions in this clearly-marked block so
+ * we don't conflict on the same lines.
+ * =================================================================== */
+
+/* 10px round swatch shown next to a tag name and inside filter chips. */
+.tag-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pw-shadow-color) 18%, transparent);
+}
+
+/* Palette picker inside the create / edit modal. */
+.tag-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tags-color-filter .choice-group-label,
+.tag-palette-option .choice-group-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-color-filter-option {
+  min-block-size: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.tag-palette-option {
+  min-inline-size: 88px;
+  flex: 1 1 88px;
+}
+
+.tag-palette-swatch {
+  display: inline-block;
+  inline-size: 16px;
+  block-size: 16px;
+  flex: 0 0 16px;
+  border: 1px solid color-mix(in srgb, var(--pw-fg) 28%, transparent);
+  border-radius: 50%;
+}
+
+/* Larger clickable swatch (radio) inside the palette. */
+.tag-swatch-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  background-clip: padding-box;
+  transition:
+    transform 80ms ease,
+    border-color 80ms ease;
+}
+.tag-swatch-btn:hover {
+  transform: scale(1.06);
+}
+.tag-swatch-btn.is-active {
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pw-accent) 25%, transparent);
+}
+.tag-swatch-btn:focus-visible {
+  outline: none;
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pw-accent) 40%, transparent);
+}
+
+/* Tweak the existing .chip so a leading swatch sits comfortably inside
+ * the colour-filter pill on the Tags page. */
+.chip .tag-swatch {
+  margin-right: 6px;
+}
+
+/* ---- Tags PR 1: detail slideover + bulk-action toolbar ---- */
+
+/* Vertical list of subscribers carrying a tag, rendered inside the
+ * right-side TagDetailSlideover. Each row is a clickable button that
+ * navigates to the Subscribers page. */
+.tag-subs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  background: var(--pw-bg-elev-2, var(--pw-bg-elev));
+  padding: 4px;
+}
+.tag-sub-row {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background 80ms ease;
+}
+.tag-sub-row:hover {
+  background: color-mix(in srgb, var(--pw-accent) 8%, transparent);
+}
+.tag-sub-row:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--pw-accent) 14%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pw-accent) 40%, transparent);
+}
+.tag-sub-email {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Floating bulk-action toolbar that appears when 1+ tag rows are
+ * selected. Pinned bottom-centre, above page chrome. */
+.tag-bulk-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px
+    color-mix(in srgb, var(--pw-shadow-color) 28%, transparent);
+  z-index: 50;
+  font-size: 13px;
+}
+.tag-bulk-bar strong {
+  font-weight: 600;
+}
+
+/* When a row is selected (multi-select, or its detail panel is open) give
+ * it a subtle accent fill + a Linear-style left-edge accent bar so it stays
+ * visually paired with the floating bar / open slideover. */
+.list-row.is-selected {
+  background: color-mix(in srgb, var(--pw-accent) 8%, transparent);
+  box-shadow: inset 3px 0 0 var(--pw-accent);
+}
+
+/* Refined Tags PR 2: orphan rows (tags applied to subscribers but not
+ * in the canonical registry). Slightly muted background to distinguish
+ * them from real catalogue entries, hover hint that clicking will
+ * register them. */
+.list-row.tag-row-orphan {
+  background: color-mix(in srgb, var(--pw-fg-muted) 4%, transparent);
+}
+.list-row.tag-row-orphan:hover {
+  background: color-mix(in srgb, var(--pw-accent) 6%, transparent);
+}
+
+.tag-row-static {
+  cursor: default;
+}
+
+.tag-row-primary {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.tag-row-primary:disabled {
+  cursor: default;
+}
+
+.tag-row-primary[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.tag-row-primary:focus-visible {
+  border-radius: var(--pw-radius-sm);
+  outline: 2px solid var(--pw-selection-ring);
+  outline-offset: 3px;
+}
+
+.tags-workspace-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.tags-catalog-pane {
+  min-width: 0;
+  flex: 1;
+}
+
+.tag-group-sidebar {
+  width: 208px;
+  flex: 0 0 208px;
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev);
+}
+
+.tag-group-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-group-select {
+  display: none;
+}
+
+.tag-group-status {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.tag-group-status strong {
+  color: var(--pw-fg);
+  font-size: 12px;
+}
+
+.tag-group-status .link {
+  margin-left: 4px;
+}
+
+.tags-catalog-controls {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tags-catalog-controls-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tags-search {
+  width: min(100%, 320px);
+}
+
+.tags-view-summary {
+  min-height: 18px;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+.tags-remote-notice,
+.tags-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tags-remote-notice .btn,
+.tags-inline-error .btn {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.tags-refresh-status {
+  margin-bottom: 8px;
+}
+
+.tags-table-scroll {
+  overflow-x: auto;
+  contain: inline-size paint;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev);
+  overscroll-behavior-inline: contain;
+}
+
+.tags-table-scroll:focus-visible {
+  outline: 2px solid var(--pw-selection-ring);
+  outline-offset: 2px;
+}
+
+.tags-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.tags-table th,
+.tags-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--pw-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.tags-table thead th {
+  color: var(--pw-fg-muted);
+  background: var(--pw-bg-elev-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tags-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.tags-table tbody tr:hover > * {
+  background: color-mix(in srgb, var(--pw-accent) 4%, transparent);
+}
+
+.tags-table tbody tr.is-selected > * {
+  background: color-mix(in srgb, var(--pw-accent) 8%, transparent);
+}
+
+.tags-table tbody tr.is-selected > :first-child {
+  box-shadow: inset 3px 0 0 var(--pw-accent);
+}
+
+.tags-table th:nth-child(2) {
+  width: 38%;
+}
+
+.tags-table th:nth-child(3) {
+  width: 128px;
+}
+
+.tags-table th:nth-child(4) {
+  width: 140px;
+}
+
+.tags-cell-select {
+  width: 48px;
+  text-align: center !important;
+}
+
+.tags-cell-actions {
+  width: 220px;
+  text-align: right !important;
+}
+
+.tags-cell-actions .list-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.tags-sort-button {
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.tags-sort-button:focus-visible {
+  border-radius: var(--pw-radius-sm);
+  outline: 2px solid var(--pw-selection-ring);
+  outline-offset: 3px;
+}
+
+.tags-row-badge {
+  padding: 2px 6px;
+  border: 1px dashed currentColor;
+  border-radius: 999px;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tags-row-badge-legacy {
+  border-style: solid;
+  color: var(--pw-warning, var(--pw-fg-muted));
+  letter-spacing: 0.02em;
+}
+
+.tag-legacy-color-notice {
+  display: grid;
+  gap: 2px;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.tag-swatch-orphan {
+  border: 1px dashed currentColor;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tags-loading-cell,
+.tags-empty-cell {
+  padding: 16px !important;
+}
+
+.tags-loading-cell .skel-row {
+  display: block;
+}
+
+.tags-pagination {
+  justify-content: flex-end;
+}
+
+.tag-detail-header {
+  display: grid;
+  gap: 4px;
+}
+
+.tag-detail-title-row,
+.tag-detail-section-header,
+.tag-description-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-detail-title-row .page-title,
+.tag-detail-section-header .label {
+  margin: 0;
+}
+
+.tag-detail-section {
+  margin-top: 18px;
+}
+
+.tag-detail-section-header {
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.tag-description-actions {
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.tag-description-actions .field-help {
+  margin-right: auto;
+}
+
+.tags-history-unavailable {
+  padding: 10px 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev-2);
+}
+
+.tags-history-unavailable p {
+  margin: 4px 0 0;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tags-membership-card,
+.tags-membership-state {
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev-2);
+}
+
+.tags-membership-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 64px;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+.tags-membership-state p {
+  margin: 0;
+}
+
+.tags-membership-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.tags-membership-metric {
+  display: grid;
+  gap: 3px;
+  padding: 9px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg-elev);
+}
+
+.tags-membership-metric span {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.tags-membership-metric strong {
+  font-size: 18px;
+}
+
+.tags-membership-metric.is-positive strong {
+  color: var(--pw-success);
+}
+
+.tags-membership-metric.is-negative strong {
+  color: var(--pw-danger);
+}
+
+.tags-membership-coverage {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.tags-membership-coverage .status-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--pw-warning, var(--pw-accent));
+  flex: 0 0 auto;
+}
+
+.tags-membership-coverage .status-dot-ok {
+  background: var(--pw-success);
+}
+
+.tags-membership-chart {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 100px;
+  margin-top: 12px;
+  padding: 8px 4px;
+  overflow: hidden;
+  border-block: 1px solid var(--pw-border);
+  background: linear-gradient(
+    to bottom,
+    transparent calc(50% - 0.5px),
+    var(--pw-border) calc(50% - 0.5px),
+    var(--pw-border) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+
+.tags-membership-bar {
+  width: max(4px, calc((100% - 87px) / 30));
+  height: var(--tag-membership-bar-size);
+  max-width: 12px;
+  border-radius: 3px 3px 1px 1px;
+  background: var(--pw-success);
+  transform: translateY(-50%);
+  flex: 1 1 auto;
+}
+
+.tags-membership-bar.is-negative {
+  border-radius: 1px 1px 3px 3px;
+  background: var(--pw-danger);
+  transform: translateY(50%);
+}
+
+.tags-membership-empty,
+.tags-membership-stale {
+  margin-top: 10px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.tags-membership-data {
+  margin-top: 8px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+
+.tags-membership-data summary {
+  cursor: pointer;
+}
+
+.tags-membership-data-scroll {
+  max-height: 160px;
+  margin-top: 6px;
+  overflow: auto;
+}
+
+.tags-membership-data table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tags-membership-data th,
+.tags-membership-data td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--pw-border);
+  text-align: left;
+}
+
+.tag-detail-danger-zone {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--pw-border);
+}
+
+.tag-detail-danger-zone .field-help {
+  margin-top: 6px;
+}
+
+.tags-member-overflow {
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+@media (max-width: 1000px) {
+  .tags-workspace-layout {
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tags-catalog-pane {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .tag-group-sidebar {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .tag-group-list {
+    display: none;
+  }
+
+  .tag-group-select {
+    display: block;
+    width: 100%;
+  }
+
+  .tag-group-status {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 720px) {
+  .tags-detail-slideover {
+    width: min(100%, 100vw);
+    max-width: none;
+  }
+
+  .tag-bulk-bar {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    border-radius: var(--pw-radius-lg);
+    transform: none;
+  }
+
+  .tags-catalog-controls-main {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tags-search {
+    width: 100%;
+  }
+
+  .tags-color-filter {
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .tags-membership-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (pointer: coarse) {
+  .tag-swatch-btn,
+  .tag-color-filter-option,
+  .tag-group-row,
+  .tag-bulk-bar .btn,
+  .tags-table .btn,
+  .tags-table input[type="checkbox"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .tag-row-primary {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag-swatch-btn,
+  .tag-sub-row {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .tag-palette-swatch,
+  .tag-swatch {
+    border-color: ButtonText;
+  }
+
+  .tags-table tbody tr.is-selected > :first-child {
+    box-shadow: inset 3px 0 0 Highlight;
+  }
+
+  .tags-row-badge,
+  .tags-history-unavailable,
+  .tags-membership-card,
+  .tags-membership-metric,
+  .tags-membership-state,
+  .tags-table-scroll {
+    border-color: CanvasText;
+  }
+
+  .tags-membership-bar,
+  .tags-membership-coverage .status-dot {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+
+  .tags-membership-bar.is-negative {
+    background: CanvasText;
+  }
+}
+/* ===== end ===== */

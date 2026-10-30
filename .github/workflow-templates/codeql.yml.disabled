@@ -1,0 +1,119 @@
+name: CodeQL
+
+# -----------------------------------------------------------------------------
+# Static security scanning via GitHub CodeQL.
+#
+# Languages: JavaScript/TypeScript (apps/desktop + apps/web + apps/mobile +
+# audit-portal + scripts) and Go (every repository module, including infra
+# observability components and the standalone end-to-end suite).
+#
+# Schedule:
+#   - on PR against main: blocks merge if a new HIGH/CRITICAL finding lands
+#   - on push to main: refreshes the baseline so Security tab dashboards stay
+#     accurate even when CodeQL itself ships a query update.
+#   - weekly cron (Monday 04:00 UTC): catches new CodeQL queries shipped by
+#     GitHub against a frozen branch — i.e. detects regressions caused by
+#     them, not by us.
+#
+# Manual fix recipe — handling a CodeQL finding:
+#   1. Open the Security tab → Code scanning → click the alert.
+#   2. Reproduce locally:
+#        gh codeql database create db --language=<lang> --source-root=.
+#        gh codeql database analyze db --format=sarif-latest --output=ql.sarif
+#      (requires the CodeQL CLI: brew install --cask codeql)
+#   3. Confirm the alert points to real reachable code (CodeQL has false
+#      positives on test fixtures + generated code).
+#   4. If real: patch the code. If false positive: add a
+#      `// lgtm[<query-id>]` suppression with a one-line justification.
+#   5. Push and watch this workflow turn green.
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Monday 04:00 UTC — picks up new CodeQL query packs published the prior
+    # week without overlapping our weekday CI peak.
+    - cron: "0 4 * * 1"
+
+permissions:
+  # Read repo contents for the analysis checkout.
+  contents: read
+  # Required so the codeql-action can upload SARIF to the Security tab.
+  security-events: write
+  # Required to query the GitHub-hosted CodeQL action versions.
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    # Go analysis benefits from the larger runner; JS analysis is light enough
+    # to also share it without burning budget.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          # A dynamic manual build is required for a multi-module repository;
+          # GitHub's autobuild only guarantees one discovered module.
+          - language: go
+            build-mode: manual
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          # Full history is unnecessary; CodeQL analyzes the working tree.
+          fetch-depth: 1
+
+      # Go needs an explicit toolchain so the manual build can compile every
+      # module.
+      # Pinned to match the project's go.mod toolchain directive.
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version-file: apps/api/go.mod
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+
+      - name: Validate security scan inventory
+        if: matrix.language == 'go'
+        run: node scripts/check-security-scan-coverage.mjs
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # security-extended widens the default suite without the
+          # `security-and-quality` style-noise queries.
+          queries: security-extended
+          # config-file lets us scope paths and exclude generated code below.
+          config-file: ./.github/codeql/codeql-config.yml
+
+      # This enumerates go.mod files from the checkout, then runs both go build
+      # and a no-test execution compile so production and test/e2e source are
+      # traced by CodeQL. The contract fails if Dependabot or scan paths drift.
+      - name: Build and extract every Go module
+        if: matrix.language == 'go'
+        run: node scripts/check-security-scan-coverage.mjs --build-go-modules
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@02c5e83432fe5497fd85b873b6c9f16a8578e1d9 # v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          # Upload always so the Security tab gets a result even on partial
+          # failures. The job itself still fails on hard analysis errors.
+          upload: always

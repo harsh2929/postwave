@@ -1,0 +1,46 @@
+{
+  "description": "Header transform rules — strip server fingerprinting, add security headers.",
+  "rules": [
+    {
+      "id": "strip_server_header",
+      "description": "Remove the upstream Server header to avoid leaking the runtime.",
+      "expression": "true",
+      "action": "rewrite",
+      "action_parameters": {
+        "headers": {
+          "Server": { "operation": "remove" }
+        }
+      }
+    },
+    {
+      "id": "security_headers",
+      "description": "Add HSTS / X-Content-Type-Options / Referrer-Policy / X-Frame-Options.",
+      "expression": "true",
+      "action": "rewrite",
+      "action_parameters": {
+        "headers": {
+          "Strict-Transport-Security": {
+            "operation": "set",
+            "value": "max-age=63072000; includeSubDomains; preload"
+          },
+          "X-Content-Type-Options": {
+            "operation": "set",
+            "value": "nosniff"
+          },
+          "Referrer-Policy": {
+            "operation": "set",
+            "value": "strict-origin-when-cross-origin"
+          },
+          "X-Frame-Options": {
+            "operation": "set",
+            "value": "DENY"
+          },
+          "Permissions-Policy": {
+            "operation": "set",
+            "value": "geolocation=(), microphone=(), camera=()"
+          }
+        }
+      }
+    }
+  ]
+}

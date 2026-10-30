@@ -1,0 +1,65 @@
+---
+title: Regeneration
+---
+
+import { Callout } from 'nextra/components';
+
+# Regeneration
+
+Once a sequence is generated, you can regenerate any single email without affecting the others. The regeneration UI has a **hint textarea** — short instructions that steer the next attempt.
+
+## When to regenerate vs edit
+
+- **Edit directly** when you want to change a sentence, fix a fact, swap a word.
+- **Regenerate with a hint** when the email's overall *direction* is off — wrong angle, wrong opening, wrong CTA framing.
+
+## Hint textarea — best practices
+
+The hint is appended to the generation prompt. Short, specific, action-oriented hints work best.
+
+### Good hints
+
+- "Open with a personal anecdote instead of a stat."
+- "Cut the second paragraph. Tighten."
+- "Make this less salesy — more like a friend recommending something."
+- "Lead with the failure story, not the lesson."
+- "Add a single concrete example in the middle."
+
+### Bad hints
+
+- "Make it better." (no signal)
+- "More engaging." (vague)
+- "Different." (no direction)
+- "Use my voice." (already what generation does)
+
+## "More humor" vs "more direct" — when to use which
+
+A common confusion. Both can fix a "this feels off" email but they fix different problems:
+
+| Symptom                                              | Hint                          |
+| ---------------------------------------------------- | ----------------------------- |
+| Email reads as flat or earnest where you'd be wry.   | `"More humour. A drier register."` |
+| Email reads as wandering or overly explained.        | `"More direct. Cut hedging."`      |
+| Email reads as sycophantic or over-empathetic.       | `"Less affirming. More peer-to-peer."` |
+| Email reads as preachy.                              | `"Less prescriptive. Show, don't tell."` |
+| Email opens with a generic "Hey there" or weather.   | `"Open with the point, not a warmup."` |
+| Email's CTA is buried.                               | `"Single clear CTA in the second paragraph."` |
+
+## Regenerate with profile-anchoring
+
+If repeated regenerations all miss in similar ways, your [voice profile](/voice-ai/profile) might be drifting from current you. From the regeneration panel, click **Profile review** to see the profile's current values and rebuild if needed.
+
+<Callout type="warning">
+Don't regenerate the same email more than 3 times. If you can't get it right in 3 attempts, the template + profile combination probably isn't a fit — try a different [template](/voice-ai/templates) or write the email from scratch.
+</Callout>
+
+## Cost
+
+Regeneration usage and limits depend on the deployed entitlement and approved
+offer. This archived page does not define unit cost or promise unlimited
+regeneration.
+
+## Next steps
+
+- [Fidelity scoring](/voice-ai/fidelity-scoring) — what the score is reacting to.
+- [Best practices](/voice-ai/best-practices) — when to stop iterating and ship.

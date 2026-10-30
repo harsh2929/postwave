@@ -1,0 +1,72 @@
+---
+title: Migrate from Klaviyo
+---
+
+import { Callout } from "nextra/components";
+
+# Migrate from Klaviyo
+
+The Klaviyo migration adapter imports the primary email identity exposed by stable profile retrieval, enumerated send-targetable list and segment membership snapshots after validated list-level suppressions, renderable templates, and sent email campaign history. It preserves sent SMS/push history, flows, Multi-Email Profile review work, and unsupported product-area checklists as non-executable source-archive or review/rebuild evidence. No separate raw Klaviyo membership count is exposed.
+
+<Callout type="warning">
+  A completed initial import is not cutover certification. Klaviyo flows are
+  never activated automatically, and changed-profile polling does not prove
+  deletions or current list/segment membership. A final frozen full-snapshot
+  delta is mandatory. Secondary Multi-Email Profile addresses and their
+  independent per-address consent require provider-export or retained-account
+  review; imported profile/consent counts do not prove identity/consent parity.
+</Callout>
+
+## Connect with a dedicated private API key
+
+Create a Klaviyo private API key with read access to accounts, profiles, lists, segments, flows, campaigns and campaign messages, templates, and forms. Moosewave validates the key against Klaviyo `/accounts` and binds the migration job to that exact account. If the key exposes multiple accounts, provide the intended Klaviyo account ID explicitly.
+
+Private-key setup is the only path exposed in the Moosewave web, desktop, CLI, and MCP migration clients. Direct API and SDK callers can instead hand off a caller-managed Klaviyo OAuth token as `access_token`; the adapter uses Bearer authentication. This does not start or manage a migration OAuth flow. The caller owns authorization, refresh, revocation, and submitting each fresh access token. It is separate from the native Klaviyo integration's managed OAuth lifecycle.
+
+For a tenant/account lineage that has not been rolled back, reuse the original Klaviyo migration job for credential refreshes and every delta/full snapshot. A second job for the same tenant/account is rejected to prevent duplicate active identities after an email change.
+
+The migration adapter pins Klaviyo API revision `2026-07-15`.
+
+Profile reads request `subscriptions,predictive_analytics` and are throttled below the predictive field's stricter 10 requests/second and 150 requests/minute profile-read tier.
+
+Discovery reports `profiles_without_email_count`, `source_archive_count`, `sms_campaigns_count`, and `push_campaigns_count` as nonnegative integers. `source_archive_count` always includes eight unconditional static checklist rows for commerce, reviews, service, CDP, Multi-Email Profiles, omni-channel, deliverability, and marketplace work; every checklist has `source_total=1`, but none proves source inventory. Additional rows represent actual rebuild/source evidence. SMS/push counts identify non-executable campaign evidence, not imported channel runtime.
+
+## What moves
+
+| Resource                | Migration behavior                                                                                                                                                                                                                                      |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Profiles                | The primary email exposed by stable Get Profiles imports with available primary-address subscription state, consent timestamps, custom properties, and predictive fields.                                                                               |
+| Multi-Email Profiles    | Secondary addresses and independent per-address consent/suppression are unavailable. A `multi_email_profiles` source-archive record requires provider-export or retained-account review.                                                                |
+| Lists and segments      | Enumerated membership after validated list-level suppressions is frozen into tag-backed destination segments. Counts/tags are the send-targetable projection, not separately exposed raw membership. Unnamed records use deterministic ID-based labels. |
+| Templates               | Templates with rendered HTML import. Structured-only templates become rebuild records.                                                                                                                                                                  |
+| Sent email campaigns    | Preserved only as immutable campaign-archive evidence. Sent messages require content definitions. Campaign tags remain provider IDs; names/groups are not hydrated. Reporting metrics and recipient activity are unavailable.                           |
+| Sent SMS/push campaigns | Preserved only as non-executable source-archive evidence. They do not become campaign-archive rows, channel identities, consent continuity, or destination runtime.                                                                                     |
+| Flows                   | Definitions and graph evidence are preserved for rebuild review. A null definition retains metadata but is not rebuild-complete and requires provider-export recovery or retirement. None is activated automatically.                                   |
+| Non-sent campaigns      | Preserved as rebuild records. A draft message definition may be null; metadata remains, while content/settings require recovery or explicit retirement.                                                                                                 |
+| Forms and rebuild gaps  | Forms and unrenderable templates become source-archive rebuild records.                                                                                                                                                                                 |
+| Static product checks   | Eight unconditional `source_total=1` checklist rows cover commerce, reviews, service, CDP, Multi-Email Profiles, omni-channel, deliverability, and marketplace work. They are not source inventory.                                                     |
+
+## What does not move
+
+- Reporting API metrics, report dashboards, opens, clicks, or per-recipient activity.
+- Multi-Email Profile secondary addresses or independent per-address consent/suppression. The preserved review record is evidence of the gap, not an imported secondary identity.
+- SMS identities, consent continuity, sender configuration, or executable SMS/WhatsApp/push runtime. Sent SMS/push records can appear only as non-executable source-archive evidence.
+- Ecommerce catalogs, orders, carts, feeds, reviews, CDP/warehouse configuration, helpdesk state, or provider integrations.
+- Live form layout/targeting, draft or scheduled campaign state, hydrated campaign-tag taxonomy, or Klaviyo flow execution. Nullable draft-message/flow definitions remain explicit manual-recovery gaps.
+
+## Cutover sequence
+
+1. Discover the account, run a dry-run, and resolve every warning, rebuild record, and unconditional static checklist without treating a checklist as source inventory.
+2. Commit the reviewed job and observe a shadow window if required.
+3. Freeze all relevant changes in Klaviyo.
+4. Run the final delta as a **full source snapshot**, including fresh list and segment membership enumeration after validated list-level suppressions. Treat counts/tags as the send-targetable projection; no separate raw count is available.
+5. Run fresh verification and shadow checks, reconcile the `multi_email_profiles` record, attach the provider-export or retained-account reference to consent/suppression and ecosystem-dependency review, recover or retire nullable flow/draft-message definitions, resolve campaign tag IDs where taxonomy matters, then rebuild/test or retire every flow.
+6. Rehearse rollback and retain non-secret evidence before approving cutover.
+
+Changed-profile source events help detect updates during the shadow window, but they do not prove deleted profiles, lost or secondary email addresses, independent per-address consent, or membership changes. When a stable profile ID changes from email A to B while prior source-owned A is still active, replay fails before a destination write; run the full snapshot to materialize B and disable A before resuming replay. Source events never replace step 4.
+
+## Certification status
+
+The adapter and local test coverage are available, but a real Klaviyo account has not yet completed the strict live-certification gates. Do not describe the integration as live-certified until a credentialed run proves account binding, pagination/rate-limit behavior, final-snapshot reconciliation, archive fidelity, flow rebuild review, rollback, and credential cleanup.
+
+See the repository operator runbook for endpoint details and live-validator flags: [`docs/integrations/klaviyo-migration.md`](https://github.com/harsh2929/postwave/blob/main/docs/integrations/klaviyo-migration.md).

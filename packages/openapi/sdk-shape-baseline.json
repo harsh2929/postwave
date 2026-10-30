@@ -1,0 +1,21 @@
+{
+  "$comment": [
+    "Known SDK/contract shape disagreements, enumerated so NEW ones fail.",
+    "",
+    "Not a count. A stored number drifts from the truth in silence and this repo",
+    "has already shipped one that sat unchanged through two rounds of work; a list",
+    "fails loudly when a new disagreement appears, and shrinking it is a visible",
+    "diff naming exactly what was fixed.",
+    "",
+    "Each entry is Type.property. Being here does NOT mean the SDK is wrong \u2014 the",
+    "gate reports disagreement and cannot tell which side is stale. WebhookEvent",
+    "is the worked example: the SDK says occurred_at, the contract requires",
+    "created_at, and the gateway really does send occurred_at, so there the SPEC",
+    "is the one to fix. Check the handler before editing either side."
+  ],
+  "acknowledged": [
+    "VoiceSource.label",
+    "VoiceSource.params",
+    "VoiceSource.tenant_id"
+  ]
+}

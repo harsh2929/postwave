@@ -1,0 +1,56 @@
+---
+title: Templates API
+---
+
+# Templates API
+
+Read access to the 50 built-in [Voice AI templates](/voice-ai/templates), plus CRUD on custom workspace templates.
+
+## Endpoints
+
+| Method | Path                       | Purpose                              |
+| ------ | -------------------------- | ------------------------------------ |
+| GET    | `/api/v1/templates`            | List (built-in + custom).            |
+| GET    | `/api/v1/templates/{id}`       | Get one.                             |
+| POST   | `/api/v1/templates`            | Create a custom template.            |
+| PATCH  | `/api/v1/templates/{id}`       | Update a custom template.            |
+| DELETE | `/api/v1/templates/{id}`       | Delete a custom template.            |
+
+Built-in templates are read-only.
+
+## List
+
+```bash
+curl https://api.moosewave.com/api/v1/templates?category=welcome \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+Filterable by `category`, `length` (`short`/`medium`/`long`), `audience`.
+
+```json
+{
+  "data": [
+    { "id": "welcome-5-email", "name": "Welcome — 5 emails", "category": "welcome", "email_count": 5, "builtin": true },
+    { "id": "welcome-7-email", "name": "Welcome — 7 emails", "category": "welcome", "email_count": 7, "builtin": true }
+  ]
+}
+```
+
+## Get
+
+```bash
+curl https://api.moosewave.com/api/v1/templates/welcome-5-email \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+Returns the full template schema — variables, per-email outlines, default sliders.
+
+## Create custom
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/templates \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d @custom-template.json
+```
+
+See the [Voice AI templates page](/voice-ai/templates) for the schema.

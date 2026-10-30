@@ -1,0 +1,18 @@
+{
+  "createdAt": "2026-09-15T10:18:05.900661+05:30",
+  "description": "Everyone in the spring cohort.",
+  "id": "f53c93a8-ade8-49fa-8869-835f900121ca",
+  "includeArchived": false,
+  "isTemplate": false,
+  "lastCount": 2,
+  "lastEvaluatedAt": "2026-09-15T10:18:05.921057+05:30",
+  "name": "Spring audience",
+  "queryAst": {
+    "comparator": "contains",
+    "field": "email",
+    "op": "condition",
+    "value": "0cf4f1d4-f9a8-496e-a26e-52f43cd11f16"
+  },
+  "tenantId": "d5853b43-86f3-4d09-9a21-42c28a9766e3",
+  "updatedAt": "2026-09-15T10:18:05.900661+05:30"
+}

@@ -1,0 +1,76 @@
+---
+title: Rate limits
+---
+
+# Rate limits
+
+Per API key, per region. Limits scale with your plan.
+
+## Default limits
+
+| Plan       | Reads/sec | Writes/sec | Burst   |
+| ---------- | --------- | ---------- | ------- |
+| Free       | 10        | 2          | 50      |
+| Pro        | 50        | 20         | 250     |
+| Scale      | 200       | 100        | 1,000   |
+| Enterprise | Negotiated | Negotiated | Negotiated |
+
+Reads = `GET`. Writes = `POST` / `PATCH` / `DELETE`.
+
+Burst = the bucket can hold up to N tokens; it refills at the per-second rate.
+
+## Response headers
+
+Every response includes:
+
+```http
+X-RateLimit-Limit:     50
+X-RateLimit-Remaining: 47
+X-RateLimit-Reset:     1714478400          # Unix seconds when bucket fully refills
+X-RateLimit-Bucket:    writes              # which bucket this request charged
+```
+
+## On 429
+
+When a request would exceed the limit, the API returns `429 Too Many Requests`:
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 3
+Content-Type: application/json
+
+{
+  "error": {
+    "code": "rate_limited",
+    "message": "Rate limit exceeded for bucket 'writes'. Retry after 3s.",
+    "retry_after_seconds": 3,
+    "request_id": "req_..."
+  }
+}
+```
+
+**Always honour `Retry-After`.** Pure exponential backoff without respecting this header is wasteful (sometimes the bucket recovers in &lt;1s; sometimes it's longer).
+
+## Recommended client behaviour
+
+```js
+async function call(req) {
+  while (true) {
+    const r = await fetch(req);
+    if (r.status !== 429) return r;
+    const wait = parseInt(r.headers.get('Retry-After') ?? '1', 10);
+    await new Promise(res => setTimeout(res, wait * 1000));
+  }
+}
+```
+
+For batch operations, prefer **bulk endpoints** (e.g., `/api/v1/subscribers:batch`) over thousands of single-record calls — bulk endpoints count as one request against your bucket.
+
+## Migration endpoints
+
+Migration operations are exempt from the standard write limits — they have their own concurrency cap (1 active migration per workspace, regardless of plan).
+
+## Special cases
+
+- `/api/v1/events` (custom-event ingestion) has a separate, higher limit (suited for product-event volume).
+- Webhook *outbound* dispatches don't count against your inbound API limits.

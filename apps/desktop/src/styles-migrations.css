@@ -1,0 +1,333 @@
+/* ====================================================================
+ * Migration wizard — added by the Migrations agent.
+ *
+ * Surfaces the 5-step Modal-driven wizard plus the history table on the
+ * Migrations page. Reuses .badge, .input, .field, .skel, .notice, .btn.
+ * Variables (--pw-*) come from the existing token block at the top.
+ * ================================================================== */
+
+/* Source brand strip on the Migrations page header --------------------- */
+.wizard-brand-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--pw-sp-3);
+}
+.wizard-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  background: var(--pw-bg-elev);
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+
+/* Step indicator (top of every step) ----------------------------------- */
+.wizard-progress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  margin: 0 0 var(--pw-sp-4);
+  padding: 4px 0;
+}
+.wizard-step {
+  position: relative;
+  display: grid;
+  grid-template-rows: 22px auto;
+  gap: 6px;
+  justify-items: center;
+  min-width: 0;
+}
+.wizard-step-num {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg-subtle);
+  border: 1px solid var(--pw-border);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.wizard-step.is-active .wizard-step-num {
+  background: var(--pw-accent);
+  color: var(--pw-accent-fg);
+  border-color: var(--pw-accent);
+}
+.wizard-step.is-done .wizard-step-num {
+  background: color-mix(in srgb, var(--pw-accent) 18%, transparent);
+  color: var(--pw-accent);
+  border-color: color-mix(in srgb, var(--pw-accent) 35%, transparent);
+}
+.wizard-step-label {
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--pw-fg-subtle);
+  overflow-wrap: normal;
+}
+.wizard-step.is-active .wizard-step-label {
+  color: var(--pw-fg);
+  font-weight: 600;
+}
+.wizard-step-sep {
+  position: absolute;
+  top: 10px;
+  right: calc(-50% + 15px);
+  left: calc(50% + 15px);
+  height: 1px;
+  background: var(--pw-border);
+}
+.wizard-step.is-done .wizard-step-sep {
+  background: color-mix(in srgb, var(--pw-accent) 35%, transparent);
+}
+
+/* Step 1 source-pick grid --------------------------------------------- */
+.wizard-source-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.42fr);
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.wizard-source-controls .field {
+  margin: 0;
+}
+
+.wizard-source-result-count {
+  margin: 0 0 10px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wizard-source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 4px;
+}
+@media (min-width: 640px) {
+  .wizard-source-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.wizard-source-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 142px;
+  padding: 12px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition:
+    border-color 80ms,
+    transform 80ms,
+    background 80ms;
+}
+.wizard-source-card:hover {
+  border-color: var(--pw-accent);
+  background: var(--pw-bg-elev-2);
+  transform: translateY(-1px);
+}
+.wizard-source-card.is-unavailable {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+.wizard-source-card.is-unavailable:hover {
+  border-color: var(--pw-border);
+  background: var(--pw-bg-elev);
+  transform: none;
+}
+.wizard-source-card:focus-visible {
+  outline: 2px solid var(--pw-accent);
+  outline-offset: 1px;
+}
+.wizard-source-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex: 0 0 auto;
+}
+.wizard-source-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.wizard-source-tag {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+  line-height: 1.4;
+}
+.wizard-source-auth {
+  margin-top: auto;
+  color: var(--pw-fg-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.wizard-source-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg-muted);
+}
+.wizard-source-badge.is-ready {
+  background: color-mix(in srgb, var(--pw-success) 12%, transparent);
+  color: var(--pw-success);
+}
+.wizard-source-badge.is-review {
+  background: color-mix(in srgb, var(--pw-warning) 12%, transparent);
+  color: var(--pw-warning);
+}
+.wizard-source-badge.is-blocked {
+  background: color-mix(in srgb, var(--pw-danger) 10%, transparent);
+  color: var(--pw-danger);
+}
+
+@media (max-width: 639px) {
+  .wizard-source-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .wizard-source-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Step 2 file picker -------------------------------------------------- */
+.wizard-file-drop {
+  position: relative;
+  border: 1px dashed var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: 22px 16px;
+  text-align: center;
+  background: var(--pw-bg-elev);
+  cursor: pointer;
+  transition:
+    border-color 80ms,
+    background 80ms;
+}
+.wizard-file-drop:hover,
+.wizard-file-drop.is-over {
+  border-color: var(--pw-accent);
+  background: var(--pw-bg-elev-2);
+}
+.wizard-file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.wizard-file-prompt {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  pointer-events: none;
+}
+
+/* Step 3/5 verification table ----------------------------------------- */
+.wizard-table {
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  overflow: hidden;
+  background: var(--pw-bg-elev);
+}
+.wizard-table-row {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--pw-border);
+  font-size: 12px;
+}
+.wizard-table-row:last-child {
+  border-bottom: 0;
+}
+.wizard-table-key {
+  color: var(--pw-fg-muted);
+}
+.wizard-table-val {
+  color: var(--pw-fg);
+  text-align: right;
+}
+
+/* Risk callouts ------------------------------------------------------- */
+.wizard-risk {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--pw-warning) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 25%, transparent);
+  border-radius: var(--pw-radius-sm);
+}
+.wizard-risk-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pw-warning);
+  margin-bottom: 6px;
+}
+.wizard-risk ul {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--pw-fg);
+}
+.wizard-risk li {
+  margin: 2px 0;
+}
+
+/* Step 4 progress bar ------------------------------------------------- */
+.wizard-progress-bar {
+  height: 8px;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.wizard-progress-fill {
+  height: 100%;
+  background: var(--pw-accent);
+  transition: width 240ms ease;
+}
+
+/* A skeleton wrapper used during dry-run polling ---------------------- */
+.wizard-action-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}

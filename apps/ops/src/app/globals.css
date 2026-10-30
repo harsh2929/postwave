@@ -1,0 +1,671 @@
+/* SPDX-License-Identifier: AGPL-3.0-only
+ *
+ * Ops console design system. The console is an internal control plane, so the
+ * craft goal is scannability under stress, not decoration: a strict status
+ * hierarchy (fire -> green), dense-but-legible tables, and status expressed as
+ * tinted pills rather than bare colored text.
+ *
+ * BRAND: every canonical color below is pinned to @postwave/design-tokens
+ * (dark palette — warm ink canvas, ember accent, canonical status hues) via
+ * OPS_VAR_MAP; apps/ops/src/lib/designTokens.test.ts re-derives the values
+ * from the package and fails on drift, and the package's own drift.test.ts
+ * anchors this file. Ops-local derivations (tint fills/borders, the 4th text
+ * tier, the AUTOMATIONS violet) are marked "ops-local" where they appear.
+ */
+
+:root {
+  /* Surfaces — canonical dark: layered warm ink (@postwave/design-tokens). */
+  --bg: #0F0F0F;
+  --bg-grad-1: #161616;
+  --bg-grad-2: #0A0A0A; /* ops-local: deep-ink gradient tail */
+  --surface: #1A1A1A;
+  --surface-2: #242424;
+  --surface-hover: #2A2A2A; /* ops-local: one step above surface-2 */
+  --border: #2E2E2E;
+  --border-2: #3A3A3A; /* ops-local: emphasized border */
+
+  /* Text tiers — canonical fg/fgMuted/fgSubtle + one ops-local faint tier. */
+  --text: #F6F4ED;
+  --text-2: #B8B8B8;
+  --text-3: #8A8A86;
+  /* Faintest tier (ops-local) — still clears WCAG AA (4.5:1) on --bg for the
+     0.75rem labels, IDs and captions it carries. */
+  --text-4: #82807A;
+
+  /* Semantic — canonical status hues (danger/warning/success/info); the
+     ink/bg/bd companions are ops-local tints derived from the same hue. */
+  --red: #F0623D;      --red-ink: #F9AE99;   --red-bg: rgba(240, 98, 61, 0.13);     --red-bd: rgba(240, 98, 61, 0.34);
+  --amber: #F1C04C;    --amber-ink: #F8DFA0; --amber-bg: rgba(241, 192, 76, 0.13);  --amber-bd: rgba(241, 192, 76, 0.32);
+  --green: #34D399;    --green-ink: #A7EBD0; --green-bg: rgba(52, 211, 153, 0.12);  --green-bd: rgba(52, 211, 153, 0.30);
+  --blue: #7AA2F0;     --blue-ink: #BDD2F8;  --blue-bg: rgba(122, 162, 240, 0.13);  --blue-bd: rgba(122, 162, 240, 0.32);
+  /* ops-local: the "meta-state" tone, for BLOCKED and UNWATCHED.
+     Deliberately NOT red — no engineering fix exists for either, and putting a
+     purchase order in the same visual bucket as an outage is how a team learns
+     to ignore the fire lane. Deliberately NOT muted either: a launch blocker
+     that fades into the background becomes a launch surprise. Violet is
+     already the console's ops-local automation accent, so it reads as "this is
+     the board talking about itself". 11.3:1 on --bg, 10.3:1 on --surface. */
+  --slate: #A78BFA;    --slate-ink: #CDBEFC; --slate-bg: rgba(167, 139, 250, 0.13); --slate-bd: rgba(167, 139, 250, 0.32);
+
+  --accent: #E55262;
+  --focus: #E55262;
+  --neutral-bg: rgba(138, 138, 134, 0.12); --neutral-bd: rgba(138, 138, 134, 0.26);
+
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 14px;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -18px rgba(0, 0, 0, 0.8);
+  --ring: 0 0 0 2px var(--bg), 0 0 0 4px rgba(229, 82, 98, 0.55);
+
+  /* Brand type: Inter body / Fraunces display (@postwave/design-tokens
+     `fonts`). Stack-first — renders the brand faces when available and falls
+     back cleanly; self-hosting is the ecosystem's typography phase. */
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Fraunces", Georgia, "Iowan Old Style", serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, var(--bg-grad-1), transparent 60%),
+    radial-gradient(1000px 500px at -10% 0%, #1C1B18, transparent 55%), /* ops-local: warm-ink glow */
+    var(--bg);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgba(56, 189, 248, 0.28); }
+
+/* Content enters with a barely-there settle so a fresh render doesn't snap. */
+main { animation: opsIn 0.28s ease both; }
+@keyframes opsIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  main { animation: none; }
+  * { transition: none !important; }
+}
+
+/* ---- Typography ------------------------------------------------------- */
+
+h1 {
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.35rem;
+}
+h2 {
+  font-size: 1rem;
+  font-weight: 620;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.6rem;
+}
+h3 { font-weight: 620; }
+
+a { color: var(--blue); text-decoration: none; transition: color 0.15s ease; }
+a:hover { color: var(--accent); }
+
+code, .num { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---- Focus (a11y) ----------------------------------------------------- */
+:focus-visible { outline: none; box-shadow: var(--ring); border-radius: var(--r-sm); }
+
+/* ---- App bar ---------------------------------------------------------- */
+
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem clamp(1rem, 4vw, 2rem);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.appbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 640;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.appbar__dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px var(--green-bg), 0 0 10px var(--green);
+}
+.appbar__nav { display: flex; gap: 0.2rem; flex-wrap: wrap; margin-left: auto; }
+.navlink {
+  position: relative;
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 550;
+  color: var(--text-3);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.navlink:hover { color: var(--text); background: var(--surface-hover); }
+.navlink[aria-current="page"] {
+  color: var(--text);
+  background: linear-gradient(var(--surface-2), var(--surface));
+  box-shadow: inset 0 0 0 1px var(--border-2);
+}
+
+/* ---- Page container --------------------------------------------------- */
+.page {
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 1.6rem clamp(1rem, 4vw, 2rem) 4rem;
+}
+.page__head {
+  display: flex; align-items: baseline; gap: 0.85rem; flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+/* ---- Panels ----------------------------------------------------------- */
+.panel {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-2);
+}
+
+/* ---- Tables ----------------------------------------------------------- */
+/* Applies to every page table (they only inline collapse/size/color, never
+   padding or hover), so the craft lift lands without rewriting the markup. */
+table { border-collapse: collapse; width: 100%; }
+thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--border-2);
+  white-space: nowrap;
+}
+tbody td, tbody th {
+  padding: 0.6rem 0.85rem;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+tbody tr { transition: background 0.12s ease; }
+tbody tr:hover td, tbody tr:hover th { background: rgba(246, 244, 237, 0.045); }
+caption { text-align: left; color: var(--text-3); font-size: 0.8rem; padding: 0 0 0.55rem; }
+
+/* ---- Badges (status / severity / health) ------------------------------ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.16rem 0.55rem 0.16rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  white-space: nowrap;
+  border: 1px solid var(--neutral-bd);
+  background: var(--neutral-bg);
+  color: var(--text-2);
+}
+.badge::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  opacity: 0.9;
+}
+.badge--red    { color: var(--red-ink);   background: var(--red-bg);   border-color: var(--red-bd); }
+.badge--amber  { color: var(--amber-ink); background: var(--amber-bg); border-color: var(--amber-bd); }
+.badge--green  { color: var(--green-ink); background: var(--green-bg); border-color: var(--green-bd); }
+.badge--info   { color: var(--blue-ink);  background: var(--blue-bg);  border-color: var(--blue-bd); }
+.badge--muted::before { box-shadow: none; opacity: 0.6; }
+
+/* ---- Form controls ---------------------------------------------------- */
+/* Base styling so unclassed inputs/selects/buttons (e.g. the tenant search and
+   its submit) match the dark theme. Inline-styled controls in the client action
+   components override these, so they are unaffected. */
+input, textarea, select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  padding: 0.42rem 0.6rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input::placeholder, textarea::placeholder { color: var(--text-4); }
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(229, 82, 98, 0.18);
+}
+label { color: var(--text-3); font-size: 0.82rem; }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  color: var(--text-2);
+  background: linear-gradient(var(--surface-2), var(--surface));
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  padding: 0.42rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.06s ease;
+}
+button:hover { border-color: var(--text-4); color: var(--text); }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Buttons ---------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  padding: 0.32rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.06s ease;
+}
+.btn:hover { background: var(--surface-hover); border-color: var(--text-4); color: var(--text); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---- Empty / status notes -------------------------------------------- */
+[role="status"], [role="alert"] { line-height: 1.5; }
+
+/* ======================================================================
+ * Craft layer, v2. Everything below lets the pages drop their inline
+ * hardcoded hex + per-page shells in favour of one vocabulary, and adds
+ * the at-a-glance summary, freshness, motion and a11y affordances the
+ * control plane was missing. Colour is never the sole signal — every
+ * status also carries a label — and all motion is gated on
+ * prefers-reduced-motion at the end of the file.
+ * ==================================================================== */
+
+/* ---- Skip link (keyboard a11y) --------------------------------------- */
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transform: translateY(-160%);
+  transition: transform 0.18s ease;
+}
+.skip-link:focus-visible { transform: none; box-shadow: var(--ring); }
+
+/* ---- Page shell extras ------------------------------------------------ */
+.page__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.page__count { color: var(--text-4); font-weight: 500; }
+.page__meta { margin-left: auto; display: inline-flex; align-items: center; gap: 0.75rem; }
+.page__lead {
+  color: var(--text-3);
+  font-size: 0.88rem;
+  margin: 0 0 1.1rem;
+  max-width: 62ch;
+}
+.scroll-x {
+  overflow-x: auto;
+  border-radius: var(--r);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+.scroll-x::-webkit-scrollbar { height: 10px; }
+.scroll-x::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 999px; }
+
+/* A table wrapped in .panel reads as one card. */
+.panel > table thead th:first-child { padding-left: 1rem; }
+.panel > table tbody td:first-child,
+.panel > table tbody th:first-child { padding-left: 1rem; }
+.panel > table thead th:last-child,
+.panel > table tbody td:last-child { padding-right: 1rem; }
+
+/* ---- Stat bar (at-a-glance health) ----------------------------------- */
+.statbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+}
+.stat {
+  position: relative;
+  padding: 0.8rem 0.95rem 0.85rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-2);
+  border-radius: var(--r);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.stat__num {
+  display: block;
+  font-size: 1.7rem;
+  font-weight: 680;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.stat__label {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.stat__sub { display: block; margin-top: 0.15rem; font-size: 0.76rem; color: var(--text-4); }
+.stat--red    { border-left-color: var(--red); }
+.stat--red    .stat__num { color: var(--red-ink); }
+.stat--amber  { border-left-color: var(--amber); }
+.stat--amber  .stat__num { color: var(--amber-ink); }
+.stat--green  { border-left-color: var(--green); }
+.stat--green  .stat__num { color: var(--green-ink); }
+.stat--info   { border-left-color: var(--accent); }
+.stat--info   .stat__num { color: var(--blue-ink); }
+.stat--muted  .stat__num { color: var(--text-2); }
+.stat--blocked { border-left-color: var(--slate); }
+.stat--blocked .stat__num { color: var(--slate-ink); }
+/* A non-zero fire count earns a slow ambient glow so the eye lands there. */
+.stat--hot::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(80% 120% at 0% 0%, var(--red-bg), transparent 70%);
+  pointer-events: none;
+  animation: statHot 2.4s ease-in-out infinite;
+}
+
+/* ---- Freshness indicator --------------------------------------------- */
+.freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+}
+.freshness__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 var(--green);
+  animation: pulse 2.4s ease-out infinite;
+}
+.freshness--stale { color: var(--amber-ink); }
+.freshness--stale .freshness__dot { background: var(--amber); animation: none; box-shadow: 0 0 6px var(--amber); }
+
+/* ---- Lanes (board) ---------------------------------------------------- */
+.lane {
+  --lane-accent: var(--text-3);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--lane-accent);
+  border-radius: var(--r);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+.lane:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
+.lane__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.85rem;
+}
+.lane__title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  color: var(--lane-accent);
+}
+.lane__count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.4rem; height: 1.4rem; padding: 0 0.4rem;
+  border-radius: 999px;
+  font-size: 0.74rem; font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  background: color-mix(in srgb, var(--lane-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lane-accent) 34%, transparent);
+}
+/* Per-lane accent lives here, in the design layer — not hardcoded in the
+   component. Keyed on the lane name so globals.css is the single source of
+   colour; CLOCKS/SNOOZED reuse existing tokens, the rest are the board's
+   own identity hues. */
+.lane[data-lane="ON FIRE"]     { --lane-accent: var(--red); }
+.lane[data-lane="NEEDS YOU"]   { --lane-accent: var(--amber); }
+.lane[data-lane="BLOCKED"]     { --lane-accent: var(--slate); }
+.lane[data-lane="UNWATCHED"]   { --lane-accent: var(--slate); }
+.lane[data-lane="CLOCKS"]      { --lane-accent: var(--blue); }
+.lane[data-lane="AUTOMATIONS"] { --lane-accent: #A78BFA; } /* ops-local: automation violet (no canonical token) */
+.lane[data-lane="SNOOZED"]     { --lane-accent: var(--text-4); }
+.lane[data-lane="GREEN"]       { --lane-accent: var(--green); }
+.lane__body { padding: 0 0.85rem 0.75rem; color: var(--text-2); }
+.lane__empty { padding: 0.2rem 0.85rem 0.8rem; color: var(--text-4); font-style: italic; }
+.lane__ids { margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.35rem 0.6rem; }
+.lane__ids code { font-size: 0.78rem; }
+.lane details > summary {
+  cursor: pointer;
+  color: var(--green-ink);
+  list-style: none;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  width: fit-content;
+}
+.lane details > summary::-webkit-details-marker { display: none; }
+.lane details > summary::before {
+  content: "▸"; color: var(--text-4);
+  transition: transform 0.15s ease;
+  display: inline-block;
+}
+.lane details[open] > summary::before { transform: rotate(90deg); }
+
+/* ---- Check rows (board leaf) ----------------------------------------- */
+.checks { list-style: none; margin: 0; padding: 0; }
+.check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.55rem;
+  padding: 0.6rem 0.85rem;
+  border-top: 1px solid var(--border);
+  line-height: 1.5;
+  transition: background 0.12s ease;
+}
+.check:hover { background: rgba(246, 244, 237, 0.045); }
+.check__title { color: var(--text); font-weight: 620; }
+.check__id { color: var(--text-4); font-size: 0.75rem; }
+.check__why { color: var(--text-3); font-style: italic; }
+.check__detail { color: var(--text-2); }
+.check__hot { color: var(--red-ink); font-weight: 600; }
+.check__due { color: var(--amber-ink); }
+.check__blocked { color: var(--slate-ink); }
+
+/* The title is the way into a check's timeline. Underlined on hover only, so
+   a lane still reads as a list of checks rather than a page of links. */
+.check__link { color: inherit; text-decoration: none; }
+.check__link:hover, .check__link:focus-visible { text-decoration: underline; }
+
+/* The owner is the answer to "who picks this up", so it must be present on
+   every row and never the loudest thing on it. Right-aligned into its own
+   column so a scan down the lane reads as a list of names. */
+.check__owner {
+  color: var(--text-4);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* An UNWATCHED row is an absence, not an observation. The dashed left edge
+   says "there is nothing here" without borrowing the red lane's urgency. */
+.check--unwatched { border-left: 2px dashed var(--slate-bd); padding-left: 0.6rem; }
+
+/* A required launch gate that is failing. Solid, not dashed: unlike an
+   unwatched surface this is a known, named thing standing between here and
+   go-live. */
+.check[data-severity="blocking"] { border-left: 2px solid var(--red); padding-left: 0.6rem; }
+
+/* The coverage sentence sits above the stat bar because it qualifies every
+   number in it. Plain prose on purpose: a percentage would invite rounding a
+   gap away, and "19 of 24" cannot be rounded. */
+.coverage {
+  margin: 0.9rem 0 0;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.coverage strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.check__snooze { color: var(--text-3); }
+.check__spacer { margin-left: auto; display: inline-flex; align-items: center; gap: 0.6rem; }
+.check__runbook { color: var(--accent); white-space: nowrap; }
+
+/* A compact status tag (red/amber/green) that still names itself. */
+.tag {
+  display: inline-flex; align-items: center;
+  font-size: 0.66rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--r-sm);
+  border: 1px solid currentColor;
+  line-height: 1.5;
+}
+.tag--red { color: var(--red-ink); background: var(--red-bg); border-color: var(--red-bd); }
+.tag--amber { color: var(--amber-ink); background: var(--amber-bg); border-color: var(--amber-bd); }
+.tag--green { color: var(--green-ink); background: var(--green-bg); border-color: var(--green-bd); }
+.tag--muted { color: var(--text-3); background: var(--neutral-bg); border-color: var(--neutral-bd); }
+.tag--blocked,
+.tag--unwatched { color: var(--slate-ink); background: var(--slate-bg); border-color: var(--slate-bd); }
+
+/* ---- Fail-loud page (the console's core failure mode) ---------------- */
+.fail {
+  max-width: 44rem;
+  margin: clamp(3rem, 12vh, 7rem) auto;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+.fail__title {
+  color: var(--red);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.6rem;
+}
+.fail__msg { color: var(--text-2); font-size: 1rem; margin: 0 0 0.6rem; }
+.fail__note { color: var(--text-4); font-size: 0.9rem; margin: 0; }
+
+/* Panel-scoped fail: one view down inside a multi-panel page (e.g. Send &
+   delivery). Same red fail-loud vocabulary as the full-page block, but
+   left-aligned and boxed so it sits in the page flow instead of centering. */
+.fail--panel {
+  max-width: none;
+  margin: 1.5rem 0;
+  padding: 0.9rem 1.1rem;
+  text-align: left;
+  border: 1px solid var(--red-bd);
+  border-left: 3px solid var(--red);
+  border-radius: var(--r);
+  background: var(--red-bg);
+}
+.fail--panel .fail__title { font-size: 1rem; margin: 0 0 0.3rem; }
+.fail--panel .fail__msg { font-size: 0.9rem; margin: 0; }
+
+/* ---- Status notes (fail-loud lines: truncation, empty-ok, warnings) --- */
+.note { font-size: 0.85rem; line-height: 1.5; margin: 0 0 0.9rem; }
+.note--ok { color: var(--green-ink); }
+.note--warn { color: var(--amber-ink); }
+.note--info { color: var(--text-3); }
+
+/* ---- Definition list (detail pages) ---------------------------------- */
+.dl {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: 0.55rem 1.25rem;
+  margin: 0;
+}
+.dl dt { color: var(--text-3); font-size: 0.8rem; letter-spacing: 0.02em; }
+.dl dd { margin: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ---- Loading skeletons ----------------------------------------------- */
+.skel {
+  border-radius: var(--r-sm);
+  background: linear-gradient(100deg, var(--surface) 30%, var(--surface-hover) 50%, var(--surface) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+.skel--line { height: 0.85rem; margin: 0.4rem 0; }
+.skel--lane { height: 4.5rem; margin-bottom: 0.9rem; }
+
+/* ---- Motion ----------------------------------------------------------- */
+/* Children of .stagger settle in sequence. Each sets --i inline so the
+   cascade is arbitrarily long without per-nth rules. */
+.rise { animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > * { animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes statHot { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.7; } }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Everything motion-related collapses under the OS reduced-motion switch. */
+@media (prefers-reduced-motion: reduce) {
+  .rise, .stagger > *, .freshness__dot, .stat--hot::after, .skel,
+  .lane details > summary::before { animation: none !important; }
+  .lane:hover { transform: none; }
+  .skip-link { transition: none; }
+}
+
+/* ---- Narrow screens --------------------------------------------------- */
+@media (max-width: 640px) {
+  body { font-size: 14px; }
+  .page { padding: 1.1rem 0.9rem 3rem; }
+  .stat__num { font-size: 1.45rem; }
+  .check__spacer { margin-left: 0; width: 100%; }
+}

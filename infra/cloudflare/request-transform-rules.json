@@ -1,0 +1,19 @@
+{
+  "description": "Request header transform rules — publish edge-measured client facts to the origin. Deployed to the http_request_late_transform phase, NOT the response phase used by transform-rules.json: a request-header rewrite placed in the response phase is accepted by the API and never reaches the origin, so the signal would appear configured and stay silently absent.",
+  "rules": [
+    {
+      "id": "client_asn_request_header",
+      "description": "Publish the connecting client's autonomous-system number to the origin as X-Postwave-Client-ASN. subscriber_event_observations.network_asn was NULL on every row ever written because nothing supplied it, and the machine-source registry matches on that column — this rule is what makes the signal measurable at all. MUST be 'set', never 'add': the value has to OVERWRITE any client-supplied copy, and the origin refuses the header outright when it arrives more than once. This rule is necessary but NOT sufficient: the origin honours the header only when the TCP peer is inside POSTWAVE_TRUSTED_PROXY_CIDRS and POSTWAVE_TRUST_FORWARDED_IP_HEADERS is enabled, so a header arriving from anywhere else is ignored rather than believed. Without that second half an attacker could choose their own ASN and therefore their own human/machine classification.",
+      "expression": "true",
+      "action": "rewrite",
+      "action_parameters": {
+        "headers": {
+          "X-Postwave-Client-ASN": {
+            "operation": "set",
+            "expression": "to_string(ip.src.asnum)"
+          }
+        }
+      }
+    }
+  ]
+}

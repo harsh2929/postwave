@@ -1,0 +1,185 @@
+---
+title: "Designing tenant-region enforcement without overclaiming data residency"
+description: "The controls Moosewave implements in code, the deployment evidence a real residency commitment still needs, and the failure paths teams should test."
+date: "2026-04-08"
+author: "The Moosewave team"
+tags: ["compliance", "engineering", "gdpr", "infrastructure"]
+readingTime: "8 min read"
+---
+
+Data residency is not established by an enum, an AWS region name, or a line in
+a privacy policy. It is an environment-specific claim about every place where
+personal data can be stored, processed, observed, backed up, or recovered.
+
+**Qualification status:** the Moosewave codebase contains tenant-region routing
+and enforcement controls. A customer-facing residency commitment is made only
+for an environment whose application, database, queues, object storage,
+backups, keys, observability, support access, and subprocessors have been
+deployed and evidenced within the agreed boundary. Region identifiers present
+in source code are supported configuration values; they are not a claim that a
+corresponding production stack is live.
+
+This distinction matters under GDPR. Chapter V governs transfers of personal
+data to third countries; it does not reduce to “keep every byte in one city.”
+The [official GDPR text](https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng)
+and the [EDPB’s final guidance on international
+transfers](https://www.edpb.europa.eu/documents/guideline/guidelines-052021-on-the-interplay-between-the-application-of-article-3-and-the_en)
+are the appropriate starting points for counsel and a DPO. Technical
+localisation can reduce transfer paths, but it does not replace a complete
+legal and subprocessor assessment.
+
+## What has to be inside the boundary
+
+A newsletter platform handles more than subscriber rows:
+
+1. subscriber profiles, consent records, suppression state, and custom fields;
+2. engagement events, imports, exports, and campaign content;
+3. uploaded media, generated archives, and voice-profile source material;
+4. audit, security, support, and observability data that may contain identifiers
+   or request content;
+5. queues, dead-letter payloads, backups, replicas, keys, and recovered copies;
+6. recipient information sent to email, SMS, billing, CRM, AI, and webhook
+   providers.
+
+A credible residency statement inventories all six. It also names allowed
+exceptions and transfer mechanisms instead of implying that no transfer could
+ever occur.
+
+## The routing control in Moosewave
+
+Moosewave stores a `data_region` on each tenant. The production API must also
+declare its own `POSTWAVE_DEPLOYMENT_REGION`; startup rejects an absent or
+unsupported value. Authenticated tenant route groups look up the tenant’s
+stored region and compare it with the local deployment before continuing.
+
+The core decision is deliberately small:
+
+```go
+tenantRegion, err := getTenantRegion(tenant.ID)
+if err != nil {
+    // Fail closed when the region cannot be established.
+    writeRegionErr(w, http.StatusInternalServerError, ...)
+    return
+}
+
+if tenantRegion != regions.Current() {
+    correct := regions.HostFor(tenantRegion)
+    w.Header().Set("Location", correct)
+    w.Header().Set("X-Postwave-Region", string(tenantRegion))
+    w.WriteHeader(http.StatusMisdirectedRequest)
+    return
+}
+```
+
+The `421 Misdirected Request` response keeps a wrong regional API from serving
+the tenant and gives supported clients a canonical endpoint. Lookup failure is
+also fail-closed. Tests cover matching, mismatched, missing-tenant, and lookup
+error paths, and SCIM applies an equivalent check inside its authentication
+layer.
+
+That is useful enforcement, but its limits are important:
+
+- the middleware is a request-path guard, not a data-placement system;
+- the region list in the database is not evidence that every region is
+  provisioned;
+- background jobs, internal routes, migrations, imports, exports, and support
+  tools must enforce the same decision independently;
+- DNS redirection does not prove that databases, queues, or buckets are
+  isolated;
+- a metadata update is not a tenant migration. A real move must copy and verify
+  all coupled state, drain work, reconcile providers, and delete the old copy
+  according to the approved lifecycle.
+
+## Data-plane and provider controls
+
+The code includes a region-to-endpoint registry for services that expose
+regional endpoints, including AWS SES/SNS and Mailgun’s EU endpoint. That
+registry should be treated as configuration input. The live proof is the
+provider account, selected endpoint, contractual data location, webhook path,
+logs, and a test showing that an unsupported region fails safely.
+
+The same rule applies to each internal layer:
+
+**PostgreSQL.** A tenant-region value has meaning only when the request reaches
+the database designated for that region. Connection strings, network policy,
+RLS, replication, administrative access, and query logging must all match the
+declared design.
+
+**Queues and workers.** Job payloads and dead letters can contain personal
+data. Producers and consumers need region-scoped credentials and must reject a
+tenant whose region differs from the worker’s deployment. A shared queue is a
+cross-boundary path even if the final database write is local.
+
+**Object storage.** Uploads, exports, campaign snapshots, and voice sources need
+region-scoped buckets and keys. IAM should make a wrong-region write impossible,
+and object inventories must be reconciled during migration and recovery.
+
+**Email and webhooks.** Choosing a regional API endpoint does not, by itself,
+establish where a provider processes every field. Suppression lists, delivery
+events, support access, and downstream subprocessors belong in the DPA and
+technical assessment.
+
+**Observability and support.** Request logs, traces, exception payloads, replay
+tools, and support exports are frequent blind spots. Redaction, regional sinks,
+short-lived access, and auditable break-glass procedures are part of the
+residency control.
+
+## Backups and disaster recovery
+
+Backups do not receive an automatic exemption from a residency commitment. A
+deployment has to document the location and access boundary of database
+backups, object versions, replicas, evidence, encryption keys, and recovery
+infrastructure.
+
+Moosewave’s repository includes an immutable PostgreSQL backup design,
+cross-region storage templates, and destructive restore tooling. Those are
+deployment building blocks. A region-wide recovery becomes an operating
+control only after the exact customer environment has completed a signed
+restore and failover exercise, including the application, object data,
+Listmonk, secrets, provider reconciliation, and prevention of simultaneous
+writers.
+
+Cross-region replication is sometimes desirable for resilience and sometimes
+outside a promised residency boundary. The correct choice is contractual and
+environment-specific: select an allowed recovery region, document it, restrict
+access, and test it. Never quietly add a remote backup to a “region-only”
+offering.
+
+## Evidence required before making the claim
+
+For each environment and contractual boundary, retain dated evidence of:
+
+- deployed account/region inventory for the application, database, queues,
+  object stores, logs, backups, replicas, and keys;
+- least-privilege identities that cannot access another data plane;
+- startup and request tests proving missing/invalid/mismatched regions fail
+  closed;
+- worker, export, import, migration, SCIM, webhook, and support-tool tests—not
+  only browser API tests;
+- provider configuration and current subprocessor/legal review;
+- an isolated restore from the permitted backup source and a controlled
+  failover/failback exercise;
+- old-region deletion and reconciliation evidence after any tenant migration;
+- exact release and infrastructure revisions used for the exercise.
+
+Evidence also has an expiry. Provider settings, subprocessors, IAM policies,
+and deployment topology change, so the claim must be requalified after material
+changes and reviewed on a defined schedule.
+
+## What we say to customers
+
+Before qualification, the accurate statement is:
+
+> Moosewave includes tenant-region enforcement and deployment controls. Data
+> residency availability and scope depend on the contracted and verified
+> environment; ask us for its current data-flow, subprocessor, backup, and
+> recovery evidence.
+
+After qualification, the statement should name the actual scope and exceptions:
+which data, which region or legal boundary, which subprocessors, where backups
+and recovery copies live, and how support access works. “GDPR compliant” or
+“your data never leaves Europe” is too broad unless current evidence and legal
+review support every part of it.
+
+The engineering lesson is simple: code can enforce a regional decision, but
+only a deployed and repeatedly tested system can support a residency promise.

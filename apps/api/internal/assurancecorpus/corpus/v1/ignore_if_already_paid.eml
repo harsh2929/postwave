@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <ignore-if-already-paid.v1@example.com>
+Subject: Invoice reminder
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ignore-v1"
+
+--pw-ignore-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Please ignore this reminder if you have already paid.
+View the invoice: https://billing.example.com/inv/31
+--pw-ignore-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Invoice reminder</h1><p>Please ignore this reminder if you have already paid.</p><p><a href="https://billing.example.com/inv/31">View invoice</a></p></body></html>
+--pw-ignore-v1--

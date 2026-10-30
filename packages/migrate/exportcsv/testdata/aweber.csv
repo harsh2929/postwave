@@ -1,0 +1,4 @@
+Email,Name,Status,Stop Status,Created At,Postal Code
+ada@example.com,Ada,subscribed,0,2024-01-01,00123
+optout@example.com,Opt Out,subscribed,1,2024-01-01,00124
+unknown@example.com,Unknown,,0,2024-01-01,00125

@@ -1,0 +1,1017 @@
+{
+  "boolean_ops": [
+    "and",
+    "or",
+    "not"
+  ],
+  "custom_objects": [
+    {
+      "id": "111e30e5-c4fa-4ec8-9c31-4e436a73d944",
+      "key": "order",
+      "label": "Order",
+      "primary_key": "external_id",
+      "status": "active",
+      "updated_at": "2026-09-15T10:18:05.795+05:30"
+    }
+  ],
+  "metrics": [
+    {
+      "aggregation": "count",
+      "event_name": "opened",
+      "key": "subscriber_events.opened.count",
+      "label": "Opened email count",
+      "source": "subscriber_events",
+      "value_type": "number"
+    },
+    {
+      "aggregation": "count",
+      "event_name": "clicked",
+      "key": "subscriber_events.clicked.count",
+      "label": "Clicked email count",
+      "source": "subscriber_events",
+      "value_type": "number"
+    },
+    {
+      "aggregation": "last",
+      "key": "subscriber_events.any.last",
+      "label": "Last engagement",
+      "source": "subscriber_events",
+      "value_type": "datetime"
+    },
+    {
+      "aggregation": "count",
+      "event_name": "Placed Order",
+      "key": "track.placed_order.count",
+      "label": "Placed Order count",
+      "last_seen_at": "2026-09-15T10:18:05.795+05:30",
+      "source": "track",
+      "total": 1,
+      "value_type": "number"
+    }
+  ],
+  "predicates": [
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "contains",
+        "not_contains",
+        "starts_with",
+        "ends_with",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "email",
+      "label": "Email",
+      "source": "subscriber",
+      "source_ref": "email",
+      "value_type": "string"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "status",
+      "label": "Status",
+      "options": [
+        "enabled",
+        "disabled",
+        "blocklisted",
+        "unconfirmed"
+      ],
+      "source": "subscriber",
+      "source_ref": "status",
+      "value_type": "enum"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "help": "Lifecycle state used by the Subscribers Directory marketing-status filters. Bounced is represented as cleaned.",
+      "key": "mailchimp_status",
+      "label": "Marketing lifecycle status",
+      "options": [
+        "subscribed",
+        "unsubscribed",
+        "non_subscribed",
+        "pending",
+        "transactional",
+        "cleaned",
+        "archived",
+        "deleted"
+      ],
+      "source": "subscriber",
+      "source_ref": "mailchimp_status",
+      "value_type": "enum"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "help": "ISO 3166-1 alpha-2 subscriber country code, for example US or IN.",
+      "key": "country",
+      "label": "Country",
+      "source": "subscriber",
+      "source_ref": "country",
+      "value_type": "string"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "help": "ISO 639-1 alpha-2 subscriber language code, for example en or fr.",
+      "key": "language",
+      "label": "Language",
+      "source": "subscriber",
+      "source_ref": "language",
+      "value_type": "string"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "created_at",
+      "label": "Subscriber created",
+      "source": "subscriber",
+      "source_ref": "created_at",
+      "value_type": "date"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "in",
+        "not_in",
+        "is_null",
+        "is_not_null"
+      ],
+      "compiler_status": "supported",
+      "help": "Mailchimp-parity subscriber star rating (subscribers.rating, 1–5). is_null matches unrated contacts. Surfaces the Audience Intelligence contact-rating tiles as a segmentable predicate.",
+      "key": "contact_rating",
+      "label": "Contact rating",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "source": "subscriber",
+      "source_ref": "contact_rating",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "profile",
+      "category_label": "Profile",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "contains",
+        "not_contains",
+        "in",
+        "not_in",
+        "added_in_last_days",
+        "removed_in_last_days"
+      ],
+      "compiler_status": "supported",
+      "help": "Check whether the subscriber has (or doesn't have) a specific tag. equals matches the exact tag; contains matches any tag containing the text. Lifecycle comparators (added_in_last_days / removed_in_last_days) take {tag, days} and match against the tag_history audit log.",
+      "key": "tags",
+      "label": "Tag",
+      "source": "subscriber",
+      "source_ref": "tags",
+      "value_type": "tag"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "contains",
+        "not_contains",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "consent_source",
+      "label": "Consent source",
+      "source": "subscriber",
+      "source_ref": "consent_source",
+      "value_type": "string"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "is_null",
+        "is_not_null"
+      ],
+      "compiler_status": "supported",
+      "help": "Timestamp recorded for the subscriber's consent. Rolling values such as now-30d are supported for ordered comparisons.",
+      "key": "consent_timestamp",
+      "label": "Consent date",
+      "source": "subscriber",
+      "source_ref": "consent_timestamp",
+      "value_type": "date"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "State-of-record from the consent vector (subscribers.consent_email_marketing_at IS NOT NULL).",
+      "key": "consent.email_marketing",
+      "label": "Consent: email marketing",
+      "source": "subscriber",
+      "source_ref": "email_marketing",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "State-of-record from the consent vector (subscribers.consent_sms_marketing_at IS NOT NULL).",
+      "key": "consent.sms_marketing",
+      "label": "Consent: SMS marketing",
+      "source": "subscriber",
+      "source_ref": "sms_marketing",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "State-of-record from the consent vector (subscribers.consent_profiling_at IS NOT NULL).",
+      "key": "consent.profiling",
+      "label": "Consent: profiling / analytics",
+      "source": "subscriber",
+      "source_ref": "profiling",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "State-of-record from the consent vector (subscribers.consent_targeted_ads_at IS NOT NULL). Covers both sale_share and targeted_advertising categories.",
+      "key": "consent.targeted_ads",
+      "label": "Consent: targeted advertising",
+      "source": "subscriber",
+      "source_ref": "targeted_ads",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "State-of-record from the consent vector (subscribers.consent_ai_processing_at IS NOT NULL). Required for LLM-powered features like aicompose.",
+      "key": "consent.ai_processing",
+      "label": "Consent: AI processing",
+      "source": "subscriber",
+      "source_ref": "ai_processing",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "is_null",
+        "is_not_null"
+      ],
+      "compiler_status": "supported",
+      "help": "Raw timestamptz column for the AI processing consent grant. NULL = no recorded grant.",
+      "key": "consent.ai_processing_at",
+      "label": "Consent: AI processing date",
+      "source": "subscriber",
+      "source_ref": "ai_processing_at",
+      "value_type": "date"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "SUB-051 channel-consent gate. equals true → the subscriber has email-marketing consent (consent_email_marketing_at IS NOT NULL); equals false → no consent. Injected automatically by the send-guard for email campaigns so non-consented profiles are excluded at activation time.",
+      "key": "channel_consent.email",
+      "label": "Can receive: email",
+      "source": "subscriber",
+      "source_ref": "email",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "SUB-051 channel-consent gate. equals true → the subscriber has SMS-marketing consent (consent_sms_marketing_at IS NOT NULL); equals false → no consent. Injected automatically by the send-guard for SMS campaigns.",
+      "key": "channel_consent.sms",
+      "label": "Can receive: SMS",
+      "source": "subscriber",
+      "source_ref": "sms",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "consent",
+      "category_label": "Consent",
+      "comparators": [
+        "equals",
+        "not_equals"
+      ],
+      "compiler_status": "supported",
+      "help": "SUB-051 channel-consent gate for push. No consent-vector column exists yet, so 'equals true' currently matches no one (deterministic FALSE) and 'equals false' matches everyone — explicit rather than silently including the whole base.",
+      "key": "channel_consent.push",
+      "label": "Can receive: push",
+      "source": "subscriber",
+      "source_ref": "push",
+      "value_type": "boolean"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "engagement",
+      "category_label": "Engagement",
+      "comparators": [
+        "in_last_days",
+        "more_than_days_ago",
+        "ever",
+        "never"
+      ],
+      "compiler_status": "supported",
+      "help": "Most-recent open across all campaigns.",
+      "key": "last_opened_at",
+      "label": "Last opened",
+      "source": "subscriber_events",
+      "source_ref": "last_opened_at",
+      "value_type": "engagement_date"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "engagement",
+      "category_label": "Engagement",
+      "comparators": [
+        "in_last_days",
+        "more_than_days_ago",
+        "ever",
+        "never"
+      ],
+      "compiler_status": "supported",
+      "key": "last_clicked_at",
+      "label": "Last clicked",
+      "source": "subscriber_events",
+      "source_ref": "last_clicked_at",
+      "value_type": "engagement_date"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "engagement",
+      "category_label": "Engagement",
+      "comparators": [
+        "in_last_days",
+        "more_than_days_ago",
+        "ever",
+        "never"
+      ],
+      "compiler_status": "supported",
+      "key": "last_event_at",
+      "label": "Last engagement (any)",
+      "source": "subscriber_events",
+      "source_ref": "last_event_at",
+      "value_type": "engagement_date"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "custom_field",
+      "category_label": "Custom fields",
+      "comparators": [
+        "equals",
+        "contains",
+        "exists",
+        "not_exists"
+      ],
+      "compiler_status": "partial",
+      "help": "Match against any subscribers.custom_fields key. Field key goes in 'field' as 'custom.\u003cname\u003e'.",
+      "key": "custom.*",
+      "label": "Custom field",
+      "source": "custom_field",
+      "source_ref": "*",
+      "value_type": "custom_field"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "composable",
+      "category_label": "Segments",
+      "comparators": [
+        "in_segment",
+        "not_in_segment"
+      ],
+      "compiler_status": "supported",
+      "help": "Segment-of-segments (SUB-032): match subscribers who are (or are not) in another saved segment. The 'value' carries the referenced segment id. Nesting is allowed up to depth 2 (a referenced segment may itself reference one more) to keep the planner cost bounded.",
+      "key": "segment_id",
+      "label": "Member of segment",
+      "source": "segment",
+      "source_ref": "segment_id",
+      "value_type": "segment"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "predictive.historic_clv_cents",
+      "label": "Historic CLV",
+      "source": "profile_predictions",
+      "source_ref": "predictive.historic_clv_cents",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "predictive.predicted_clv_cents",
+      "label": "Predicted CLV",
+      "source": "profile_predictions",
+      "source_ref": "predictive.predicted_clv_cents",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "predictive.total_clv_cents",
+      "label": "Total CLV",
+      "source": "profile_predictions",
+      "source_ref": "predictive.total_clv_cents",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "help": "0 to 1 score materialized by the predictive profile suite.",
+      "key": "predictive.churn_risk",
+      "label": "Churn risk",
+      "source": "profile_predictions",
+      "source_ref": "predictive.churn_risk",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "predictive.predicted_order_count",
+      "label": "Predicted order count",
+      "source": "profile_predictions",
+      "source_ref": "predictive.predicted_order_count",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "predictive.average_days_between_orders",
+      "label": "Average days between orders",
+      "source": "profile_predictions",
+      "source_ref": "predictive.average_days_between_orders",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "predictive.data_sufficiency",
+      "label": "Predictive data sufficiency",
+      "options": [
+        "insufficient",
+        "limited",
+        "sufficient"
+      ],
+      "source": "profile_predictions",
+      "source_ref": "predictive.data_sufficiency",
+      "value_type": "enum"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "rfm.segment_key",
+      "label": "RFM segment",
+      "options": [
+        "champions",
+        "loyal_customers",
+        "at_risk_high_value",
+        "needs_attention",
+        "new_or_low_value",
+        "hibernating",
+        "insufficient_data"
+      ],
+      "source": "profile_rfm_scores",
+      "source_ref": "rfm.segment_key",
+      "value_type": "enum"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "rfm.recency_score",
+      "label": "RFM recency score",
+      "source": "profile_rfm_scores",
+      "source_ref": "rfm.recency_score",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "rfm.frequency_score",
+      "label": "RFM frequency score",
+      "source": "profile_rfm_scores",
+      "source_ref": "rfm.frequency_score",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "rfm.monetary_score",
+      "label": "RFM monetary score",
+      "source": "profile_rfm_scores",
+      "source_ref": "rfm.monetary_score",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "rfm.recency_days",
+      "label": "RFM recency days",
+      "source": "profile_rfm_scores",
+      "source_ref": "rfm.recency_days",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "rfm.frequency",
+      "label": "RFM order frequency",
+      "source": "profile_rfm_scores",
+      "source_ref": "rfm.frequency",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "predictive",
+      "category_label": "Predictive \u0026 RFM",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte"
+      ],
+      "compiler_status": "supported",
+      "key": "rfm.monetary_cents",
+      "label": "RFM monetary value",
+      "source": "profile_rfm_scores",
+      "source_ref": "rfm.monetary_cents",
+      "value_type": "number"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report",
+        "template"
+      ],
+      "category": "custom_field",
+      "category_label": "Custom fields",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "contains",
+        "not_contains",
+        "starts_with",
+        "ends_with",
+        "in",
+        "not_in"
+      ],
+      "compiler_status": "supported",
+      "key": "custom.plan",
+      "label": "Plan",
+      "source": "custom_field",
+      "source_ref": "plan",
+      "value_type": "string"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "report"
+      ],
+      "category": "metric",
+      "category_label": "Events",
+      "comparators": [
+        "equals",
+        "not_equals",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "in_last_days",
+        "more_than_days_ago"
+      ],
+      "compiler_status": "supported",
+      "help": "Aggregate of this event over an optional time window (count by default). Use in_last_days / more_than_days_ago for occurred / not-occurred-within windows.",
+      "key": "metric.track.placed_order.count",
+      "label": "Placed Order count",
+      "source": "track",
+      "source_ref": "Placed Order",
+      "value_type": "metric_aggregate"
+    },
+    {
+      "activation": [
+        "segment",
+        "flow",
+        "template"
+      ],
+      "category": "custom_object",
+      "category_label": "Custom objects",
+      "comparators": [
+        "equals"
+      ],
+      "compiler_status": "planned",
+      "key": "object.order.exists",
+      "label": "Order exists",
+      "source": "custom_object",
+      "source_ref": "order",
+      "value_type": "boolean"
+    }
+  ],
+  "registry_version": "klv06.registry.v1"
+}

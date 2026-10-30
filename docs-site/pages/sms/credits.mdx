@@ -1,0 +1,45 @@
+---
+title: SMS credits & billing
+---
+
+# SMS credits & billing
+
+SMS provider charges can depend on encoding, billable segments, destination,
+sender program, carrier fees, and MMS. Moosewave does not currently expose an
+authoritative hosted SMS financial ledger.
+
+> **HOLD / NO-GO:** preview, balance, usage, top-up quote/checkout, and related
+> cost claims return `sms_financial_ledger_release_held`. MMS readiness returns
+> `sms_mms_readiness_release_held`.
+
+## Endpoints
+
+| Method | Path                                          | Scope          | Purpose                                |
+| ------ | --------------------------------------------- | -------------- | -------------------------------------- |
+| POST   | `/api/v1/sms/credits/preview`                 | `read:reports` | Held; no authoritative estimate.       |
+| GET    | `/api/v1/sms/credits/balance`                 | `read:reports` | Held; no authoritative balance.        |
+| POST   | `/api/v1/sms/credits/top-ups/quote`           | `read:reports` | Held; no authoritative quote.          |
+| POST   | `/api/v1/sms/credits/top-ups/checkout`        | `admin`        | Held; no checkout is created.          |
+
+## No financial example
+
+This page intentionally includes no runnable preview, top-up, or checkout
+example while the ledger is held. A composer may calculate GSM/UCS-2 segments
+to explain message length, but a client-side count is not a price, reserved
+budget, invoice, provider charge, or settlement record.
+
+Retained `cost_micros` fields are source schema/evidence fields only. Private
+campaign report/export reads are separately
+`sms_evidence_read_release_held`, so they cannot be used to reconcile charges.
+
+## Balance & top-ups
+
+No SMS balance or top-up action is supported. Payment UI, route names, and
+source schemas do not establish a ledger or authorize a carrier-cost-bearing
+send.
+
+## See also
+
+- [Broadcasts & campaigns](/sms/broadcasts) — draft/progress schemas; cost and
+  private report evidence are release-held.
+- [SMS overview](/sms).

@@ -1,0 +1,979 @@
+.campaign-analytics-slideover {
+  --campaign-analytics-edge: color-mix(
+    in srgb,
+    var(--pw-accent) 22%,
+    var(--pw-border)
+  );
+  --campaign-analytics-soft: color-mix(
+    in srgb,
+    var(--pw-accent) 7%,
+    var(--pw-bg-elev)
+  );
+}
+
+.campaign-analytics-slideover .slideover-header {
+  border-bottom-color: var(--campaign-analytics-edge);
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--pw-accent) 11%, transparent),
+      transparent 42%
+    ),
+    var(--pw-bg-elev);
+}
+
+.campaign-analytics-slideover .slideover-title {
+  max-width: 38rem;
+  overflow: hidden;
+  font-size: var(--pw-text-lg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-analytics-slideover .slideover-body {
+  gap: var(--pw-sp-3);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pw-accent) 3%, transparent),
+      transparent 12rem
+    ),
+    var(--pw-bg);
+  scrollbar-gutter: stable;
+}
+
+.campaign-analytics-tabs {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--pw-sp-2);
+  padding: var(--pw-sp-1);
+  overflow-x: auto;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  background: color-mix(in srgb, var(--pw-bg-elev) 94%, transparent);
+  box-shadow: var(--pw-elev-1);
+  scrollbar-width: thin;
+  backdrop-filter: blur(16px);
+}
+
+.campaign-analytics-tab {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 3.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-2);
+  padding: 0.625rem 0.6875rem;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: calc(var(--pw-radius-lg) - 2px);
+  color: var(--pw-fg-muted);
+  text-align: left;
+  transition:
+    border-color var(--pw-dur-fast) var(--pw-ease-standard),
+    background-color var(--pw-dur-fast) var(--pw-ease-standard),
+    color var(--pw-dur-fast) var(--pw-ease-standard),
+    transform var(--pw-dur-fast) var(--pw-ease-out);
+}
+
+.campaign-analytics-tab::after {
+  position: absolute;
+  right: 0.6875rem;
+  bottom: 0;
+  left: 0.6875rem;
+  height: 2px;
+  border-radius: var(--pw-radius-pill);
+  background: transparent;
+  content: "";
+}
+
+.campaign-analytics-tab:hover {
+  border-color: var(--pw-border);
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev-2);
+}
+
+.campaign-analytics-tab:active {
+  transform: translateY(1px);
+}
+
+.campaign-analytics-tab[data-active="true"] {
+  border-color: var(--campaign-analytics-edge);
+  color: var(--pw-fg);
+  background: var(--campaign-analytics-soft);
+}
+
+.campaign-analytics-tab[data-active="true"]::after {
+  background: var(--pw-accent);
+}
+
+.campaign-analytics-tab:focus-visible {
+  z-index: 1;
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 1px;
+}
+
+.campaign-analytics-tab-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.125rem;
+}
+
+.campaign-analytics-tab-copy strong {
+  overflow: hidden;
+  color: inherit;
+  font-size: var(--pw-text-sm);
+  font-weight: 650;
+  line-height: var(--pw-leading-snug);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-analytics-tab-copy > span {
+  overflow: hidden;
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  line-height: var(--pw-leading-snug);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-analytics-tab-state {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.4375rem;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-pill);
+  color: var(--pw-fg-subtle);
+  background: var(--pw-bg-elev);
+  font-size: 0.625rem;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.campaign-analytics-tab-state::before {
+  width: 0.375rem;
+  height: 0.375rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--pw-fg-subtle);
+  content: "";
+}
+
+.campaign-analytics-tab-state[data-state="loading"]::before {
+  background: var(--pw-info);
+}
+
+.campaign-analytics-tab-state[data-state="ready"] {
+  color: color-mix(in srgb, var(--pw-success) 78%, var(--pw-fg));
+  border-color: color-mix(in srgb, var(--pw-success) 30%, var(--pw-border));
+}
+
+.campaign-analytics-tab-state[data-state="ready"]::before {
+  background: var(--pw-success);
+}
+
+.campaign-analytics-tab-state[data-state="error"] {
+  color: color-mix(in srgb, var(--pw-danger) 84%, var(--pw-fg));
+  border-color: color-mix(in srgb, var(--pw-danger) 35%, var(--pw-border));
+}
+
+.campaign-analytics-tab-state[data-state="error"]::before {
+  background: var(--pw-danger);
+}
+
+.campaign-evidence-scope {
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-4);
+  overflow: hidden;
+  border: 1px solid var(--campaign-analytics-edge);
+  border-radius: var(--pw-radius-lg);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--pw-accent) 10%, transparent),
+      transparent 58%
+    ),
+    var(--pw-bg-elev);
+  box-shadow: var(--pw-elev-1);
+}
+
+.campaign-evidence-scope::before {
+  position: absolute;
+  top: -3.5rem;
+  right: -2.5rem;
+  width: 9rem;
+  height: 9rem;
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 14%, transparent);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.campaign-evidence-scope-head {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(11rem, 0.36fr);
+  gap: var(--pw-sp-4);
+  align-items: start;
+}
+
+.campaign-evidence-kicker {
+  display: block;
+  margin-bottom: var(--pw-sp-1);
+  color: var(--pw-accent);
+  font-size: var(--pw-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--pw-tracking-caps-sm);
+  text-transform: uppercase;
+}
+
+.campaign-evidence-scope h3 {
+  margin: 0;
+  color: var(--pw-fg);
+  font-size: var(--pw-text-title);
+  line-height: var(--pw-leading-tight);
+}
+
+.campaign-evidence-scope p {
+  max-width: 48rem;
+  margin: var(--pw-sp-1) 0 0;
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+  line-height: var(--pw-leading-normal);
+}
+
+.campaign-evidence-snapshot {
+  position: relative;
+  display: grid;
+  gap: 0.1875rem;
+  min-width: 0;
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  background: color-mix(in srgb, var(--pw-bg-elev) 86%, transparent);
+}
+
+.campaign-evidence-snapshot span {
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  line-height: var(--pw-leading-snug);
+}
+
+.campaign-evidence-snapshot strong {
+  overflow: hidden;
+  color: var(--pw-fg);
+  font-size: var(--pw-text-sm);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-evidence-status {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 82%, transparent);
+}
+
+.campaign-evidence-status[data-state="error"] {
+  border-color: color-mix(in srgb, var(--pw-danger) 38%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-danger) 7%, var(--pw-bg-elev));
+}
+
+.campaign-evidence-status[data-state="ready"] {
+  border-color: color-mix(in srgb, var(--pw-success) 32%, var(--pw-border));
+}
+
+.campaign-evidence-status-message {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-xs);
+  line-height: var(--pw-leading-normal);
+}
+
+.campaign-evidence-status-mark {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  border: 2px solid var(--pw-border-strong);
+  border-radius: 50%;
+  background: var(--pw-bg-elev);
+}
+
+.campaign-evidence-status[data-state="loading"] .campaign-evidence-status-mark {
+  border-color: var(--pw-info);
+  border-right-color: transparent;
+}
+
+.campaign-evidence-status[data-state="ready"] .campaign-evidence-status-mark {
+  border-color: var(--pw-success);
+  background: var(--pw-success);
+  box-shadow: inset 0 0 0 2px var(--pw-bg-elev);
+}
+
+.campaign-evidence-status[data-state="error"] .campaign-evidence-status-mark {
+  border-color: var(--pw-danger);
+  background: var(--pw-danger);
+}
+
+.campaign-evidence-sources {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.campaign-evidence-sources li {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3125rem 0.5rem;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-pill);
+  color: var(--pw-fg-muted);
+  background: var(--pw-bg-elev);
+  font-size: var(--pw-text-xs);
+}
+
+.campaign-evidence-sources li > span:first-child {
+  width: 0.375rem;
+  height: 0.375rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--pw-fg-subtle);
+}
+
+.campaign-evidence-sources li > span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.campaign-evidence-sources li strong {
+  color: var(--pw-fg-subtle);
+  font-size: 0.625rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.campaign-evidence-sources li[data-state="loading"] > span:first-child {
+  background: var(--pw-info);
+}
+
+.campaign-evidence-sources li[data-state="ready"] > span:first-child {
+  background: var(--pw-success);
+}
+
+.campaign-evidence-sources li[data-state="error"] {
+  border-color: color-mix(in srgb, var(--pw-danger) 28%, var(--pw-border));
+}
+
+.campaign-evidence-sources li[data-state="error"] > span:first-child {
+  background: var(--pw-danger);
+}
+
+.campaign-analytics-tab-panel {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--pw-sp-3);
+  outline: none;
+}
+
+.campaign-analytics-tab-panel[hidden] {
+  display: none;
+}
+
+.campaign-analytics-tab-panel:focus-visible {
+  border-radius: var(--pw-radius-md);
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+
+.campaign-analytics-tab-panel > .card,
+.campaign-analytics-tab-panel .campaign-analytics-split > .card {
+  border-color: var(--pw-border-soft);
+  border-radius: var(--pw-radius-lg);
+  background: var(--pw-bg-elev);
+  box-shadow: var(--pw-elev-1);
+}
+
+.campaign-analytics-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--pw-sp-2);
+  margin: 0;
+}
+
+.campaign-analytics-stat {
+  position: relative;
+  min-width: 0;
+  padding: var(--pw-sp-3);
+  overflow: hidden;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pw-accent) 7%, transparent),
+      transparent 62%
+    ),
+    var(--pw-bg-elev);
+}
+
+.campaign-analytics-stat::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: color-mix(in srgb, var(--pw-accent) 52%, transparent);
+  content: "";
+}
+
+.campaign-analytics-stat dt {
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  font-weight: 650;
+  letter-spacing: var(--pw-tracking-caps-sm);
+  text-transform: uppercase;
+}
+
+.campaign-analytics-stat dd {
+  margin: 0.1875rem 0 0;
+  color: var(--pw-fg);
+  font-size: 1.25rem;
+  font-weight: 680;
+  line-height: var(--pw-leading-tight);
+}
+
+.campaign-analytics-stat-hint {
+  margin-top: 0.1875rem;
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+}
+
+.campaign-analytics-benchmark-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  scrollbar-gutter: stable;
+}
+
+.campaign-analytics-benchmark-scroll:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+
+.campaign-analytics-benchmark {
+  width: 100%;
+  min-width: 34rem;
+  border-collapse: collapse;
+  font-size: var(--pw-text-xs);
+}
+
+.campaign-analytics-benchmark th,
+.campaign-analytics-benchmark td {
+  padding: 0.5625rem 0.6875rem;
+  border-bottom: 1px solid var(--pw-border-soft);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.campaign-analytics-benchmark th:first-child {
+  text-align: left;
+}
+
+.campaign-analytics-benchmark thead th {
+  color: var(--pw-fg-subtle);
+  background: var(--pw-bg-elev-2);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: var(--pw-tracking-caps-sm);
+  text-transform: uppercase;
+}
+
+.campaign-analytics-benchmark tbody th {
+  color: var(--pw-fg);
+  font-weight: 580;
+  text-transform: capitalize;
+}
+
+.campaign-analytics-benchmark tbody td {
+  color: var(--pw-fg-muted);
+}
+
+.campaign-analytics-benchmark tbody tr:last-child th,
+.campaign-analytics-benchmark tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.campaign-analytics-section-disclosure {
+  margin: var(--pw-sp-2) 0;
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  line-height: var(--pw-leading-normal);
+}
+
+.campaign-analytics-link-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) minmax(5rem, 0.75fr) minmax(
+      10rem,
+      auto
+    );
+  gap: var(--pw-sp-2);
+  min-width: 0;
+  align-items: center;
+  padding: 0.4375rem 0;
+  border-bottom: 1px solid var(--pw-border-soft);
+  font-size: var(--pw-text-xs);
+}
+
+.campaign-analytics-link-row:last-child {
+  border-bottom: 0;
+}
+
+.campaign-analytics-link-row a {
+  border-radius: var(--pw-radius-xs);
+  font-weight: 580;
+}
+
+.campaign-analytics-link-row a:hover {
+  color: var(--pw-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.1875rem;
+}
+
+.campaign-analytics-link-row a:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+
+.campaign-analytics-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--pw-sp-3);
+}
+
+.campaign-analytics-locale-list {
+  display: grid;
+  gap: var(--pw-sp-1);
+}
+
+.campaign-analytics-locale-row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr) auto;
+  gap: var(--pw-sp-2);
+  align-items: center;
+  padding: var(--pw-sp-2);
+  border-bottom: 1px solid var(--pw-border-soft);
+  font-size: var(--pw-text-xs);
+}
+
+.campaign-analytics-locale-row:last-child {
+  border-bottom: 0;
+}
+
+.campaign-analytics-integrity-note {
+  max-width: 19rem;
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 34%, var(--pw-border));
+  border-radius: var(--pw-radius-md);
+  background: color-mix(in srgb, var(--pw-warning) 7%, var(--pw-bg-elev));
+}
+
+.campaign-analytics-export-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pw-sp-4);
+  padding: var(--pw-sp-4);
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 36%, var(--pw-border));
+  border-radius: var(--pw-radius-lg);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--pw-warning) 10%, transparent),
+      transparent 62%
+    ),
+    var(--pw-bg-elev);
+  box-shadow: var(--pw-elev-1);
+}
+
+.campaign-analytics-export-copy {
+  min-width: 0;
+}
+
+.campaign-analytics-export-copy .section-title {
+  margin: 0;
+  color: var(--pw-fg);
+}
+
+.campaign-analytics-export-copy p {
+  max-width: 34rem;
+  margin: var(--pw-sp-1) 0 0;
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+  line-height: var(--pw-leading-normal);
+}
+
+.campaign-recipient-export-review {
+  display: grid;
+  gap: var(--pw-sp-3);
+}
+
+.campaign-recipient-export-review dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+}
+
+.campaign-recipient-export-review dl > div {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 0.28fr) minmax(0, 1fr);
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+
+.campaign-recipient-export-review dl > div:last-child {
+  border-bottom: 0;
+}
+
+.campaign-recipient-export-review dt {
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--pw-tracking-caps-sm);
+  text-transform: uppercase;
+}
+
+.campaign-recipient-export-review dd {
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+  line-height: var(--pw-leading-normal);
+}
+
+.campaign-recipient-export-boundary {
+  margin: 0;
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  line-height: var(--pw-leading-normal);
+}
+
+.campaign-analytics-section-error {
+  min-width: 0;
+}
+
+.campaign-analytics-empty,
+.campaign-analytics-loading {
+  display: flex;
+  min-width: 0;
+  min-height: 4.75rem;
+  align-items: center;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  border: 1px dashed var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  color: var(--pw-fg-muted);
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 62%, transparent);
+}
+
+.campaign-analytics-empty[data-compact="true"],
+.campaign-analytics-loading[data-compact="true"] {
+  min-height: 3.5rem;
+  padding: var(--pw-sp-2);
+}
+
+.campaign-analytics-empty-mark,
+.campaign-analytics-loading-mark {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--pw-border);
+  border-radius: 50%;
+  color: var(--pw-fg-subtle);
+  background: var(--pw-bg-elev);
+  font-size: var(--pw-text-sm);
+}
+
+.campaign-analytics-empty strong {
+  display: block;
+  color: var(--pw-fg);
+  font-size: var(--pw-text-sm);
+  font-weight: 620;
+}
+
+.campaign-analytics-empty p {
+  margin: 0.1875rem 0 0;
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  line-height: var(--pw-leading-normal);
+}
+
+.campaign-analytics-loading {
+  position: relative;
+  overflow: hidden;
+  font-size: var(--pw-text-xs);
+}
+
+.campaign-analytics-loading::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 18%,
+    color-mix(in srgb, var(--pw-accent) 8%, transparent) 42%,
+    transparent 66%
+  );
+  content: "";
+  pointer-events: none;
+  transform: translateX(-100%);
+}
+
+.campaign-analytics-loading-mark {
+  border-color: var(--pw-info);
+  border-right-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .campaign-evidence-status[data-state="loading"]
+    .campaign-evidence-status-mark,
+  .campaign-analytics-loading-mark {
+    animation: campaign-analytics-spin 900ms linear infinite;
+  }
+
+  .campaign-analytics-loading::after {
+    animation: campaign-analytics-sweep 1.8s var(--pw-ease-standard) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campaign-analytics-tab {
+    transition: none;
+  }
+
+  .campaign-analytics-loading::after {
+    display: none;
+  }
+}
+
+@keyframes campaign-analytics-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes campaign-analytics-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 760px) {
+  .campaign-analytics-tab-state {
+    max-width: 5.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .campaign-evidence-scope-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .campaign-evidence-snapshot {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--pw-sp-2);
+    align-items: baseline;
+  }
+
+  .campaign-evidence-snapshot span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .campaign-analytics-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .campaign-analytics-slideover .slideover-body {
+    padding-inline: var(--pw-sp-3);
+  }
+
+  .campaign-analytics-tabs {
+    grid-template-columns: repeat(3, minmax(9.5rem, 1fr));
+    scroll-snap-type: inline proximity;
+  }
+
+  .campaign-analytics-tab {
+    scroll-snap-align: start;
+  }
+
+  .campaign-evidence-scope {
+    padding: var(--pw-sp-3);
+  }
+
+  .campaign-evidence-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .campaign-evidence-status .btn {
+    width: 100%;
+  }
+
+  .campaign-evidence-sources {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .campaign-evidence-sources li {
+    border-radius: var(--pw-radius-md);
+  }
+
+  .campaign-analytics-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .campaign-analytics-link-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .campaign-analytics-link-row > :nth-child(2) {
+    grid-row: 2;
+    grid-column: 1 / -1;
+  }
+
+  .campaign-analytics-link-row > :nth-child(3) {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .campaign-analytics-locale-row {
+    grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
+  }
+
+  .campaign-analytics-locale-row > :last-child {
+    grid-column: 2;
+  }
+
+  .campaign-analytics-export-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .campaign-analytics-export-card .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .campaign-analytics-slideover .slideover-body {
+    padding-inline: var(--pw-sp-2);
+  }
+
+  .campaign-analytics-tab-copy > span {
+    display: none;
+  }
+
+  .campaign-analytics-tab {
+    min-height: 3.125rem;
+  }
+
+  .campaign-analytics-stats,
+  .campaign-evidence-sources {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .campaign-recipient-export-review dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--pw-sp-1);
+  }
+}
+
+@media (max-height: 480px) {
+  .campaign-analytics-slideover .slideover-body {
+    gap: var(--pw-sp-2);
+  }
+
+  .campaign-evidence-scope {
+    padding-block: var(--pw-sp-2);
+  }
+}
+
+@media (forced-colors: active) {
+  .campaign-analytics-tabs,
+  .campaign-analytics-tab,
+  .campaign-evidence-scope,
+  .campaign-evidence-status,
+  .campaign-evidence-sources li,
+  .campaign-analytics-stat,
+  .campaign-analytics-benchmark-scroll,
+  .campaign-analytics-export-card,
+  .campaign-analytics-empty,
+  .campaign-analytics-loading {
+    border-color: CanvasText;
+    color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .campaign-analytics-tab[data-active="true"] {
+    color: HighlightText;
+    border-color: Highlight;
+    background: Highlight;
+  }
+
+  .campaign-analytics-tab[data-active="true"]::after,
+  .campaign-analytics-tab-state::before,
+  .campaign-evidence-status-mark,
+  .campaign-evidence-sources li > span:first-child {
+    background: currentColor;
+  }
+
+  .campaign-analytics-tab:focus-visible,
+  .campaign-analytics-tab-panel:focus-visible,
+  .campaign-analytics-benchmark-scroll:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .campaign-analytics-loading-mark {
+    border-color: CanvasText;
+    border-right-color: transparent;
+    background: Canvas;
+  }
+}

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <opacity-one-explicit.v1@example.com>
+Subject: Account verified
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-opacity-v1"
+
+--pw-opacity-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your account is verified: https://app.example.com/account
+--pw-opacity-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1 style="opacity:1">Account verified</h1><p style="opacity:0.95">You can now send campaigns.</p><p><a href="https://app.example.com/account">Open your account</a></p></body></html>
+--pw-opacity-v1--

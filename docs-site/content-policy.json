@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "canonicalRoot": "apps/web/src/app/(docs)/docs",
+  "archivedRoot": "docs-site/pages",
+  "retiredRoot": "docs-site/content",
+  "owner": "product-documentation",
+  "status": "archived-non-production",
+  "version": 2,
+  "lastReviewed": "2026-07-15",
+  "reviewIntervalDays": 90,
+  "forbiddenPublishedMarkers": [
+    "Screenshot checkpoint:",
+    "(TODO link)",
+    "Wiring TODO",
+    "placeholder.svg"
+  ],
+  "forbiddenPublicClaims": [
+    "$200 one-time add-on",
+    "Moosewave Source-Available License",
+    "pro-rated refund within the first 30 days",
+    "honoured indefinitely",
+    "SOC 2 Type II report available",
+    "achieved 2026",
+    "https://eu.api.moosewave.com",
+    "EU-only data residency",
+    "≥99.95% rolling-90-day",
+    "First public beta.",
+    "Concierge migration is included",
+    "concierge migration covers this",
+    "Pro: unlimited.",
+    "Yes, unlimited."
+  ]
+}

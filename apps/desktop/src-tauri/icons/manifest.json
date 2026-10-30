@@ -1,0 +1,14 @@
+{
+  "source": "source.svg",
+  "generator": "tauri-cli 2.11.1",
+  "files": {
+    "source.svg": "6ed61ace8fcc82bf1632c14960173b41fc8c9e19228f9ec287d5295c22d6eafb",
+    "32x32.png": "a1f3e5143b3aa728aa04510fefa48cf24c979c168f1d2accc8037c91d8131556",
+    "128x128.png": "96d02a8a42d1319569691d3a26c445486a09f596cb3c8a66f47be385c5a6c937",
+    "128x128@2x.png": "9014c8013abb4c90febc5282b319aff60d81f00c1b1782801a8edc597ac0dc29",
+    "icon.icns": "2def01565b2981607169bc2c08e72c0c550ac3f47295ce5bd58767ee108e8485",
+    "icon.ico": "7181eeb1d3326448dd7a4868a4d6d14363ff0cc3b0de4aa94b8750313d49c8c0",
+    "StoreLogo.png": "c606dfcc364b5ba3f306f71d500b16cdf7e71ceb3ebcc2cdc1a1811e7050646c",
+    "Square310x310Logo.png": "fada5b3e39ab73ad28adeee89d907eb00e9d9eb58fb993c5939c7d1262683694"
+  }
+}

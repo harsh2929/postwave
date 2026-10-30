@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <uppercase-marketing-copy.v1@example.com>
+Subject: LAST CHANCE
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-caps-v1"
+
+--pw-caps-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+LAST CHANCE: the sale ends tonight. https://shop.example.com/sale
+--pw-caps-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>LAST CHANCE</h1><p>THE SALE ENDS TONIGHT.</p><p><a href="https://shop.example.com/sale">Shop the sale</a></p></body></html>
+--pw-caps-v1--

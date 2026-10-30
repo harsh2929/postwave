@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest for PostwaveWidget.appex (the widget and ScanControl).
+
+  App Store Connect checks every embedded binary for required-reason APIs
+  (ITMS-91053). The host app's manifest does not cover this extension, so it
+  needs its own. @bacons/apple-targets bundles every file in this directory
+  except Info.plist and expo-target.config.js, so this file ships as-is.
+
+  UserDefaults(suiteName: "group.com.moosewave.app") is read and written here
+  and in the host app, which makes it App Group defaults: reason 1C8F.1.
+  Pinned by src/lib/nativePrivacyContracts.test.ts.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+</dict>
+</plist>

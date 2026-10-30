@@ -1,0 +1,71 @@
+{
+  "name": "@postwave/cli",
+  "version": "0.1.0",
+  "description": "Moosewave command-line interface — migrations, deliverability diagnostics, voice-trained sequences, subscribers, forms, campaigns, and more. Used standalone or in agent workflows.",
+  "keywords": [
+    "postwave",
+    "cli",
+    "email",
+    "newsletter",
+    "marketing-automation",
+    "agent",
+    "agents",
+    "deliverability"
+  ],
+  "author": "Moosewave",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "postwave": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "homepage": "https://docs.moosewave.com/cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/harsh2929/postwave/issues"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0"
+  },
+  "dependencies": {
+    "@postwave/email-react": "workspace:*",
+    "@postwave/route-map": "workspace:*",
+    "@postwave/sdk": "workspace:*",
+    "cac": "^6.7.14",
+    "chalk": "^5.3.0",
+    "conf": "^13.0.0",
+    "open": "^10.1.0",
+    "ora": "^8.0.1",
+    "prompts": "^2.4.2",
+    "qrcode": "^1.5.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/prompts": "^2.4.9",
+    "@types/qrcode": "^1.5.6",
+    "tsup": "^8.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

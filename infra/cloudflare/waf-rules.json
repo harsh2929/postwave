@@ -1,0 +1,47 @@
+{
+  "description": "Moosewave custom WAF rules layered on top of the managed OWASP CRS.",
+  "rules": [
+    {
+      "id": "form_submit_bot_block",
+      "description": "Aggressive bot mitigation on public form submissions.",
+      "expression": "(http.request.uri.path matches \"^/api/public/forms/[^/]+/submit$\") and (cf.bot_management.score lt 30)",
+      "action": "managed_challenge"
+    },
+    {
+      "id": "form_submit_no_referer_block",
+      "description": "Block public form submissions with no Origin/Referer (curl spam). The Origin half must test ABSENCE, not emptiness: http.request.headers[\"origin\"] is a Map of arrays, a missing key yields an EMPTY array, and indexing [0] into it produces a missing value — which compares false against everything, including \"\". So the previous `headers[\"origin\"][0] eq \"\"` matched only a request that sent a literal `Origin:` with an empty value, and never matched the curl traffic this rule names, because curl sends no Origin header at all. The rule read as protection and blocked nothing. `not any(...[*] != \"\")` is the documented idiom and is true in both cases: header absent, or present and empty.",
+      "expression": "(http.request.uri.path matches \"^/api/public/forms/[^/]+/submit$\") and (http.referer eq \"\") and not any(http.request.headers[\"origin\"][*] != \"\")",
+      "action": "block"
+    },
+    {
+      "id": "geo_export_control_blocklist",
+      "description": "Block traffic from CU, IR, KP, SY (OFAC comprehensive country sanctions) plus RU (a Moosewave business decision, NOT an OFAC comprehensive embargo — Russia is subject to extensive sectoral and targeted measures, not a country-wide one). The previous description attributed the whole list to Treasury OFAC, which overstated the legal basis for the RU entry and made a discretionary availability decision look mandatory: anyone reviewing this would have concluded it could not be changed. Note also that OFAC's comprehensive programs cover the Crimea, Donetsk and Luhansk REGIONS of Ukraine, which a country-code match cannot express — so this rule is not, and cannot be, a complete sanctions control on its own.",
+      "expression": "(ip.geoip.country in {\"CU\" \"IR\" \"KP\" \"SY\" \"RU\"})",
+      "action": "block"
+    },
+    {
+      "id": "ja3_known_bad",
+      "description": "Block known-bad JA3 fingerprints (curl-impersonator, common scraper kits).",
+      "expression": "(cf.bot_management.ja3_hash in {\"e7d705a3286e19ea42f587b344ee6865\" \"a0e9f5d64349fb13191bc781f81f42e1\"})",
+      "action": "block"
+    },
+    {
+      "id": "login_brute_force",
+      "description": "Challenge >5 POSTs/min to /api/v1/auth/login from one IP.",
+      "expression": "(http.request.uri.path eq \"/api/v1/auth/login\") and (http.request.method eq \"POST\")",
+      "action": "managed_challenge",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 60,
+        "requests_per_period": 5,
+        "mitigation_timeout": 900
+      }
+    },
+    {
+      "id": "stripe_webhook_ip_allowlist",
+      "description": "Only accept POSTs to /api/public/stripe/webhook from Stripe's published IPs (https://stripe.com/files/ips/ips_webhooks.txt). The list is maintained out-of-band; this rule must be regenerated weekly via `infra/cloudflare/refresh-stripe-ips.sh`.",
+      "expression": "(http.request.uri.path eq \"/api/public/stripe/webhook\") and not (ip.src in $stripe_webhook_ips)",
+      "action": "block"
+    }
+  ]
+}

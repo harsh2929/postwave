@@ -1,0 +1,42 @@
+---
+title: Capability boundaries
+---
+
+import { Callout } from "nextra/components";
+
+# Capability boundaries
+
+<Callout type="info">
+  Because no supported self-host distribution exists, this page records source
+  and operator boundaries rather than promises for a product edition.
+</Callout>
+
+## Separately controlled assets
+
+The tuned Diagnostician prompts/evaluation corpus and voice prompts/templates
+under `proprietary/` are not part of public, customer, self-host, or
+corresponding-source artifacts. MIT placeholders under `proprietary-stubs/`
+exercise the path contract but are intentionally uncalibrated and carry no
+production-quality promise.
+
+## External services and credentials
+
+Source availability does not provide seed inboxes, sender accounts, DNS,
+object storage, KMS, LLM, rendering, payment, identity-provider, observability,
+or support services. Operators must select, license, secure, monitor, and test
+their own dependencies. A configuration option or adapter in the tree is not
+evidence that a provider has certified an integration.
+
+## Deployment and operations
+
+The development Compose stack is not a supported production topology. An
+operator-built deployment owns capacity, abuse controls, deliverability,
+privacy and data residency, backups, restoration, upgrades, vulnerability
+management, incident response, and all applicable legal obligations.
+
+## Commercial support
+
+No community, business-hours, enterprise, or 24/7 support tier is promised for
+independent operation. Support, maintenance, packaging, and SLAs exist only
+when explicitly stated in an executed commercial agreement tied to a reviewed
+release artifact.

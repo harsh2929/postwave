@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-and-decorative-image.v1@example.com>
+Subject: Order 5008 confirmed
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ldimg-v1"
+
+--pw-ldimg-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Order 5008 confirmed - 40.00 USD. https://shop.example.com/o/5008
+--pw-ldimg-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"Order","orderNumber":"5008","price":"40.00","priceCurrency":"USD","url":"https://shop.example.com/o/5008"}</script></head><body><img src="https://cdn.example.com/rule.png" alt="" aria-hidden="true" width="600" height="1"><h1>Order 5008 confirmed</h1><p>Total 40.00 USD.</p><p><a href="https://shop.example.com/o/5008">View your order</a></p></body></html>
+--pw-ldimg-v1--

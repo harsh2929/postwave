@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Intentionally empty hardened-runtime entitlement set.
+
+  Standard WKWebView JavaScript executes in Apple's separately signed WebKit
+  content process; the Moosewave executable does not JIT or map unsigned
+  executable memory. Network access also needs no entitlement for the current
+  direct Developer ID distribution because App Sandbox is not enabled.
+
+  Do not add allow-jit, allow-unsigned-executable-memory, disable-library-
+  validation, or an explicit app-sandbox=false exception. A future Mac App
+  Store build requires a separate sandbox design and test matrix.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict/>
+</plist>

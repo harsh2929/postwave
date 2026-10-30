@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <decorative-icon-aria-hidden.v1@example.com>
+Subject: Welcome aboard
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-decorative-v1"
+
+--pw-decorative-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Welcome aboard. Start here: https://app.example.com/start
+--pw-decorative-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><p><img src="https://cdn.example.com/spacer.png" alt="" aria-hidden="true" width="1" height="1"></p><h1>Welcome aboard</h1><p><a href="https://app.example.com/start">Start here</a></p></body></html>
+--pw-decorative-v1--

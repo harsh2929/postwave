@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <date-timezone-price.v1@example.com>
+Subject: नमस्ते — synthetic offer
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-locale-facts-v1"
+
+--pw-locale-facts-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+नमस्ते! Price: ₹1,299.00 INR. Deadline: 2026-08-15T18:30:00+05:30 (Asia/Kolkata).
+Checkout: https://offers.example.com/checkout
+--pw-locale-facts-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html lang="hi"><body><h1>नमस्ते!</h1><p>Price: ₹1,299.00 INR.</p><p>Deadline: <time datetime="2026-08-15T18:30:00+05:30">2026-08-15 18:30 Asia/Kolkata</time>.</p><p><a href="https://offers.example.com/checkout">Checkout</a></p></body></html>
+--pw-locale-facts-v1--

@@ -1,0 +1,144 @@
+{
+  "uid": "postwave-release-overview",
+  "title": "Moosewave Release Overview",
+  "tags": ["postwave", "release", "core"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "API 5xx Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(pw_http_requests_total{job=\"postwave-api\",status_class=\"5xx\"}[5m]))",
+          "legendFormat": "5xx/s"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "API p95 Latency",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, route) (rate(pw_http_duration_seconds_bucket{job=\"postwave-api\"}[5m])))",
+          "legendFormat": "{{route}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Rate-limit LRU Evictions",
+      "targets": [
+        {
+          "expr": "sum(rate(rate_limit_lru_evictions_total{job=\"postwave-api\"}[5m])) by (limiter)",
+          "legendFormat": "{{limiter}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Audit-sink Consecutive Failures",
+      "targets": [
+        {
+          "expr": "max(postwave_auditsink_consecutive_failures{job=\"postwave-api\"}) by (kind)",
+          "legendFormat": "{{kind}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Overdue Privacy Requests",
+      "targets": [
+        {
+          "expr": "sum(postwave_privacy_overdue_requests{job=\"postwave-api\"}) by (request_type)",
+          "legendFormat": "{{request_type}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "API-key Cache Hit Ratio",
+      "targets": [
+        {
+          "expr": "sum(rate(pw_apikey_cache_hits_total{job=\"postwave-api\"}[5m])) / clamp_min(sum(rate(pw_apikey_cache_hits_total{job=\"postwave-api\"}[5m])) + sum(rate(pw_apikey_cache_misses_total{job=\"postwave-api\"}[5m])), 1)",
+          "legendFormat": "hit ratio"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Tier-1 5xx Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(postwave_tier1_requests_total{job=\"postwave-api\",status_class=\"5xx\"}[5m])) by (surface)",
+          "legendFormat": "{{surface}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Recurrence Scanner Age",
+      "targets": [
+        {
+          "expr": "time() - max(postwave_recurrence_scanner_last_run_timestamp{job=\"postwave-automation\"})",
+          "legendFormat": "seconds since run"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Reputation Provider Failures",
+      "targets": [
+        {
+          "expr": "sum(rate(reputation_source_failures_total{job=\"postwave-deliverability\"}[15m])) by (source)",
+          "legendFormat": "{{source}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Automation Queue Depth",
+      "targets": [
+        {
+          "expr": "max(postwave_automation_queue_depth{job=\"postwave-automation\"}) by (queue)",
+          "legendFormat": "{{queue}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Automation Queue Observation Failures",
+      "targets": [
+        {
+          "expr": "sum(increase(postwave_automation_queue_observation_failures_total{job=\"postwave-automation\"}[10m])) by (queue)",
+          "legendFormat": "{{queue}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }
+    }
+  ]
+}

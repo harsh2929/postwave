@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <nbsp-and-entities.v1@example.com>
+Subject: Invoice 0042
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-entities-v1"
+
+--pw-entities-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Invoice 0042 - 120.00 USD due 30 September.
+Pay: https://billing.example.com/pay/42
+--pw-entities-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Invoice&nbsp;0042</h1><p>120.00&nbsp;USD due 30&nbsp;September.</p><p><a href="https://billing.example.com/pay/42">Pay the invoice</a></p></body></html>
+--pw-entities-v1--

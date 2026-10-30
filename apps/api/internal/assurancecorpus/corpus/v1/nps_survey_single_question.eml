@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <nps-survey-single-question.v1@example.com>
+Subject: How did we do?
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-nps-v1"
+
+--pw-nps-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Rate us from 0 to 10: https://survey.example.com/nps/4
+--pw-nps-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>How did we do?</h1><p>One question, ten seconds.</p><p><a href="https://survey.example.com/nps/4">Give a rating</a></p></body></html>
+--pw-nps-v1--

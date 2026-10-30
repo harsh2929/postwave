@@ -1,0 +1,80 @@
+---
+title: Account setup
+---
+
+import { Callout } from 'nextra/components';
+
+# Account setup
+
+Three things to set up before you send: your **workspace**, your **sender identity**, and **domain verification**.
+
+## Workspace
+
+A workspace is your top-level tenant. It owns your subscribers, sequences, sending domain, and billing. Most users have one. Agencies, holding companies, and multi-publication teams can create additional workspaces from **Settings → Workspaces → New**.
+
+Roles within a workspace:
+
+| Role        | Can do                                                           |
+| ----------- | ---------------------------------------------------------------- |
+| Owner       | Everything, including billing and workspace deletion             |
+| Admin       | Manage members, settings, sender domains; cannot delete workspace |
+| Editor      | Create campaigns, sequences, segments, forms                     |
+| Viewer      | Read-only access to reports and lists                            |
+
+## Sender identity
+
+Your sender identity is the **From** name and address recipients see. Set it under **Settings → Sender identity**. Moosewave requires at minimum:
+
+- **From name** — usually your name or your publication's name.
+- **From email** — must be on a domain you've verified (below).
+- **Reply-to** — defaults to From email; override if you route replies elsewhere.
+- **Physical mailing address** — required by CAN-SPAM and shown in the email footer.
+
+## Domain verification
+
+To send from `you@yourdomain.com`, verify ownership of `yourdomain.com`. Add the following DNS records at your registrar:
+
+### SPF
+
+```
+yourdomain.com.    IN  TXT  "v=spf1 include:_spf.moosewave.com ~all"
+```
+
+If you already have an SPF record, **merge** the include — you can only have one SPF record per domain. See [SPF docs](/deliverability/spf).
+
+### DKIM
+
+Moosewave generates a 2048-bit DKIM key per sending domain. Add the CNAME (or TXT) records shown in the verification screen:
+
+```
+postwave._domainkey.yourdomain.com.   IN  CNAME  postwave._domainkey.dkim.moosewave.com.
+```
+
+Details in [DKIM docs](/deliverability/dkim).
+
+### DMARC
+
+If you don't already have a DMARC record, start with:
+
+```
+_dmarc.yourdomain.com.   IN  TXT  "v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com"
+```
+
+`p=none` is the **monitoring** policy. Once aggregate reports look clean, [promote to p=quarantine](/deliverability/dmarc).
+
+### Tracking domain (optional but recommended)
+
+For click and open tracking on your own subdomain:
+
+```
+track.yourdomain.com.   IN  CNAME  tracking.moosewave.com.
+```
+
+<Callout type="warning">
+DNS changes can take 5 minutes to a few hours to propagate. Moosewave re-checks every 60 seconds and will email you when verification completes.
+</Callout>
+
+## Next steps
+
+- Run your first [migration](/migration) once your sender domain is green.
+- Review [SPF/DKIM/DMARC deliverability fundamentals](/deliverability) to understand what just happened.

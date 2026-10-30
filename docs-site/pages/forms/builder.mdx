@@ -1,0 +1,75 @@
+---
+title: Builder
+---
+
+# Form builder
+
+Moosewave uses [GrapesJS](https://grapesjs.com/) under the hood — a drag-and-drop builder that's been around long enough to be stable.
+
+## The block palette
+
+The left-rail block palette is grouped:
+
+### Inputs
+
+- **Email** — required field; the only one Moosewave hard-requires for any form.
+- **Text** — short text input; map to any string attribute.
+- **Textarea** — long text input.
+- **Checkbox** — single boolean; commonly used for marketing-consent confirmation.
+- **Checkbox group** — multi-select, stored as array attribute.
+- **Radio group** — single-select.
+- **Select** — dropdown single-select.
+- **Hidden** — invisible field, set programmatically (e.g., capture UTM params).
+- **Date** — date picker.
+
+### Layout
+
+- **Section** — a vertical container.
+- **Columns** — 2/3/4-column grid.
+- **Spacer** — vertical gap.
+- **Divider** — horizontal rule.
+
+### Content
+
+- **Heading** — h1–h6.
+- **Paragraph** — rich text.
+- **Image** — uploadable; served from R2.
+- **Button** — usually the form's submit; can also be a link.
+
+### Logic
+
+- **Step** — for multi-step forms; segments the form into pages with prev/next.
+- **Conditional show** — show a block only when another field has a specific value.
+
+## Right-rail panels
+
+- **Style** — Tailwind-style classes plus a custom CSS pane.
+- **Settings** — per-block: required / optional, validation regex, error message, default value.
+- **Layers** — the block tree.
+
+## Form-level settings
+
+Top-bar **Form settings**:
+
+- **Destination list** — required. The list new subscribers are added to.
+- **Tags to apply** — comma-separated.
+- **Opt-in mode** — single or double. See [Opt-in](/forms/opt-in).
+- **Confirmation behaviour** — show a thank-you message inline, or redirect to a URL.
+- **Spam protection** — toggle honeypot, reCAPTCHA. See [Spam protection](/forms/spam-protection).
+
+## Field mapping
+
+When you add a non-email input, the **Settings** panel asks: which subscriber attribute does this map to? Pick from:
+
+- A built-in canonical field (`first_name`, `last_name`).
+- An existing custom attribute on your workspace.
+- "New attribute" — Moosewave creates it on save.
+
+## Preview + publish
+
+The top bar has **Preview** (renders as the public form will), **Save** (draft), and **Publish** (makes the form live + serves the hosted URL + emits the embed snippet).
+
+## Next steps
+
+- [Opt-in](/forms/opt-in) — single vs double.
+- [Embedding](/forms/embedding) — three modes for putting the form on your site.

@@ -1,0 +1,62 @@
+---
+title: Quickstart
+---
+
+import { Callout, Steps } from 'nextra/components';
+
+# Quickstart
+
+Get from sign-up to your first sent campaign in under 20 minutes.
+
+<Steps>
+
+### 1. Sign up and create a workspace
+
+Head to [app.moosewave.com/signup](https://app.moosewave.com/signup) and create your account. You'll be prompted to name your **workspace** — this is your top-level tenant. Most users will only ever have one. Agencies and multi-publication teams can create more later.
+
+<Callout type="info">
+</Callout>
+
+### 2. Migrate from your current platform
+
+From the workspace home, click **Migrate**. Pick your source (Mailchimp, ConvertKit, Substack, Beehiiv, MailerLite, or CSV). Moosewave will run a **dry-run** first — pulling counts and a verification report without writing anything — so you can confirm the import shape before committing.
+
+<Callout type="info">
+</Callout>
+
+See [Migration overview](/migration) for the full lifecycle and what each source does.
+
+### 3. Verify deliverability
+
+After migration, Moosewave's [Inbox Reality](/deliverability) dashboard runs the 5-layer audit on your sender domain: SPF, DKIM, DMARC, BIMI, and a seedlist test. Anything failing shows up as a ranked fix from the [AI Diagnostician](/deliverability/diagnostician). Most setups pass within minutes; DNS-related fixes propagate in 5–60 min.
+
+<Callout type="info">
+</Callout>
+
+### 4. Generate your first sequence
+
+Open **Voice AI → New sequence**. Moosewave will offer to build a [voice profile](/voice-ai/profile) from the campaigns it just imported (no extra work — those count as a source). Pick a [template](/voice-ai/templates) — `welcome-5-email` is a great starter — set your variables, and generate. Each email comes with a [fidelity score](/voice-ai/fidelity-scoring); regenerate any that score below 60.
+
+<Callout type="info">
+</Callout>
+
+### 5. Send your first campaign
+
+From **Campaigns → New**, write or paste your first broadcast, pick a segment, preview, and send. If you want a safety net, run it through the [Pre-Send Predictor](/deliverability/predictor) for an inbox-placement estimate before launch.
+
+<Callout type="info">
+</Callout>
+
+</Steps>
+
+## Next steps
+
+- [Account setup →](/getting-started/account-setup) — sender identity, domain verification, DNS records.
+- [Forms →](/forms) — start collecting new subscribers.
+- [Automation →](/automation) — wire up sequences to triggers like *list_join* or *tag_added*.
+
+<Callout type="info">
+Stuck? The [FAQ](/faq) covers common evaluation and onboarding questions.
+Migration assistance is available only when an approved offer or executed
+order includes it.
+</Callout>

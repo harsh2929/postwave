@@ -1,0 +1,21 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <footer-unsubscribe-not-primary-action.v1@example.com>
+Subject: Your weekly briefing
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-footer-v1"
+
+--pw-footer-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Read the briefing: https://news.example.com/weekly/42
+Archive: https://news.example.com/archive
+Unsubscribe: https://news.example.com/unsubscribe
+--pw-footer-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Weekly briefing</h1><p><a href="https://news.example.com/weekly/42">Read the briefing</a></p><p><a href="https://news.example.com/archive">Browse the archive</a></p><footer><a href="https://news.example.com/unsubscribe">Unsubscribe</a></footer></body></html>
+--pw-footer-v1--

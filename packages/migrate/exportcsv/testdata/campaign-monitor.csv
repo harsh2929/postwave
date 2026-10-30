@@ -1,0 +1,4 @@
+EmailAddress,Name,State,Reason
+ada@example.com,Ada,Active,
+optout@example.com,Opt Out,Active,Unsubscribed
+spam@example.com,Spam,Active,Marked as Spam

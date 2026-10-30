@@ -1,0 +1,272 @@
+/* ===================================================================== *
+ *  SUB-097 — subscriber notes: markdown render + @-mentions + attachments
+ * ===================================================================== */
+
+/* Rendered markdown note body. Tight vertical rhythm so a memo stays
+   compact inside the slideover. */
+.note-md {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  word-break: break-word;
+}
+.note-md-p {
+  margin: 0;
+  line-height: 1.45;
+}
+.note-md-h1,
+.note-md-h2,
+.note-md-h3 {
+  margin: 2px 0 0;
+  font-weight: 600;
+  color: var(--pw-fg);
+  line-height: 1.3;
+}
+.note-md-h1 {
+  font-size: var(--pw-text-heading);
+}
+.note-md-h2 {
+  font-size: var(--pw-text-body);
+}
+.note-md-h3 {
+  font-size: var(--pw-text-sm);
+}
+.note-md-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.note-md-code {
+  font-family: var(--pw-font-mono, ui-monospace, monospace);
+  font-size: 0.92em;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-xs);
+  padding: 0 4px;
+}
+.note-md a {
+  color: var(--pw-accent);
+  text-decoration: underline;
+}
+
+/* Inline @-mention pill (both rendered notes + composer preview). */
+.note-mention-token {
+  display: inline;
+  color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 14%, transparent);
+  border-radius: var(--pw-radius-xs);
+  padding: 0 3px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Composer ----------------------------------------------------------- */
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.note-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.note-editor-hint {
+  font-size: var(--pw-text-label);
+}
+.note-editor-input-wrap {
+  position: relative;
+}
+.note-editor-textarea {
+  resize: vertical;
+  font-size: var(--pw-text-sm);
+  min-height: 72px;
+  width: 100%;
+}
+.note-editor-preview {
+  min-height: 72px;
+  font-size: var(--pw-text-sm);
+  padding: 8px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+}
+
+/* Mention typeahead popover. It opens above the bottom-drawer composer so
+   short desktop windows do not clip the candidate list below the viewport. */
+.note-mention-menu {
+  position: absolute;
+  inset-inline-start: 8px;
+  bottom: calc(100% - 4px);
+  z-index: var(--pw-layer-popover, 400);
+  display: flex;
+  flex-direction: column;
+  width: min(320px, calc(100% - 16px));
+  min-width: min(220px, calc(100% - 16px));
+  max-width: 320px;
+  max-height: min(220px, calc(100vh - 96px));
+  overflow: hidden;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border-strong);
+  border-radius: var(--pw-radius-sm);
+  box-shadow: 0 8px 24px
+    color-mix(in srgb, var(--pw-shadow-color) 35%, transparent);
+  padding: 4px;
+}
+.note-mention-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.note-mention-status {
+  font-size: var(--pw-text-xs);
+  padding: 6px 8px;
+}
+.note-mention-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  color: var(--pw-fg);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--pw-radius-xs);
+  padding: 5px 8px;
+}
+.note-mention-item:hover,
+.note-mention-item[data-active="true"] {
+  background: color-mix(in srgb, var(--pw-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--pw-accent) 48%, transparent);
+}
+.note-mention-label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--pw-text-sm);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.note-mention-hint {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--pw-text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .note-mention-menu {
+    inset-inline: 4px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .note-mention-menu,
+  .note-mention-item[data-active="true"] {
+    border-color: CanvasText;
+  }
+}
+
+/* Attachments -------------------------------------------------------- */
+.note-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.note-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--pw-text-xs);
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-pill);
+  padding: 2px 4px 2px 8px;
+}
+.note-attachment-link {
+  color: var(--pw-accent);
+  text-decoration: none;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.note-attachment-link[href]:hover {
+  text-decoration: underline;
+}
+.note-attachment-size {
+  font-size: var(--pw-text-label);
+}
+.note-attachment-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  color: var(--pw-fg-subtle);
+  border-radius: var(--pw-radius-pill);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+.note-attachment-remove:hover:not(:disabled) {
+  color: var(--pw-danger);
+  background: color-mix(in srgb, var(--pw-danger) 16%, transparent);
+}
+.note-attachment-remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.note-attach-trigger {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.note-attach-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-sm);
+}
+.note-attach-form-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.note-attach-input {
+  flex: 1;
+  font-size: var(--pw-text-xs);
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.note-attach-input .input {
+  width: 100%;
+}
+.note-attach-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.note-attach-size-hint {
+  font-size: var(--pw-text-label);
+}

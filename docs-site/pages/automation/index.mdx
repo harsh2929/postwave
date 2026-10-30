@@ -1,0 +1,53 @@
+---
+title: Automation
+---
+
+# Automation
+
+Moosewave automations are node graphs: a [trigger](/automation/triggers) starts a run for a subscriber, and the runtime walks them through a graph of nodes — sending emails, waiting, branching on conditions, taking actions — until the run terminates.
+
+## Supported node types
+
+| Node          | Purpose                                                  |
+| ------------- | -------------------------------------------------------- |
+| `wait`        | Pause the run for a duration or until a date.             |
+| `send_email`  | Send a specific template (typically from a generated [sequence](/voice-ai)). |
+| `branch`      | Evaluate a condition; route the subscriber down one of N edges. |
+| `action`      | Mutate subscriber state — add/remove tag, move list, unsubscribe, dispatch webhook. |
+
+That's the entire vocabulary. We resisted adding more — every primitive added makes runtimes harder to reason about. The four above compose into ~99% of automations operators want.
+
+## Idempotency guarantees
+
+Three guarantees the runtime upholds:
+
+1. **At-least-once email delivery.** Network/provider hiccups can cause a `send_email` node to retry. Every send carries an idempotency key; downstream sending APIs (SES, etc.) dedup on it. In practice: your subscriber sees exactly one email per `send_email` node.
+2. **Action ordering preserved.** If `add_tag X` precedes `remove_tag X` in the graph, the runtime never reorders.
+3. **Replay-safe.** A run that's interrupted (worker crash mid-step) resumes from the last completed step. Reprocessing the same step is safe — actions check current state before mutating.
+
+## Concurrency
+
+Each subscriber has at most **5 concurrent active runs** by default (configurable per workspace, max 25). Beyond that, new triggers are queued and start when an existing run completes. Prevents runaway "tag added → starts automation → automation adds tag → infinite loop" scenarios.
+
+## Pausing and resuming
+
+You can pause an automation globally — all in-flight runs freeze in place. On resume, runs continue from where they paused (waits resume with their original wake-time; `send_email` nodes that would have fired during the pause window do **not** retroactively send unless you enable "send missed" on resume).
+
+## State you can inspect
+
+Per run, the runtime stores:
+
+- `subscriber_id`
+- `automation_id`, `automation_version`
+- `current_node_id`
+- `started_at`, `last_step_at`
+- `next_wake_at` (for runs in `wait` nodes)
+- Full step history (which node, when entered, when exited, what edge was taken)
+
+Visible under **Automations → \<automation\> → Runs**.
+
+## Next steps
+
+- [Triggers](/automation/triggers) — how runs start.
+- [Branches](/automation/branches) — conditional routing.
+- [Actions](/automation/actions) — subscriber-state mutations.

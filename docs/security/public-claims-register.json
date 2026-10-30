@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "policy": "A capability, control, certification, customer result, service level, legal right, or deployment property may be stated publicly only when this register marks the exact scoped statement approved and its evidence has not expired. Contract-only and prohibited statements must not appear as general marketing claims.",
+  "reviewed_on": "2026-09-12",
+  "forbidden_public_phrases": [
+    "14-day full refund",
+    "14-day refund regardless",
+    "Three regional pods today",
+    "mid-audit with a Big-Four firm",
+    "CCPA: ready",
+    "HIPAA-ready",
+    "End-to-end encrypted",
+    "everything under Now is GA",
+    "Engine is already AGPL",
+    "you can self-host the engine and keep sending",
+    "Recovery point objective: 30 seconds",
+    "Restore drills are run quarterly",
+    "Daniela Cruz",
+    "Marcus Wei",
+    "you own forever"
+  ],
+  "claims": [
+    {
+      "id": "release-status",
+      "statement": "Moosewave is completing production-readiness qualification; source presence is not a GA declaration.",
+      "status": "approved",
+      "owner_role": "release owner",
+      "scope": "public security and roadmap pages",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/security/page.tsx",
+        "apps/web/src/app/(marketing)/roadmap/page.tsx"
+      ],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-10-16"
+    },
+    {
+      "id": "application-security-controls",
+      "statement": "The codebase implements revocable sessions, TOTP, role/scope checks, tenant isolation, and CSRF controls; deployment effectiveness is separately qualified.",
+      "status": "approved_bounded",
+      "owner_role": "security owner",
+      "scope": "application implementation only, not an independent assurance claim",
+      "artifacts": ["apps/web/src/app/(marketing)/security/page.tsx"],
+      "evidence": [
+        "apps/api/internal/middleware",
+        "apps/api/internal/auth",
+        "apps/api/internal/apikeys"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-10-23"
+    },
+    {
+      "id": "desktop-credential-boundary",
+      "statement": "The desktop API credential remains in the operating-system vault behind a native origin-bound request broker, and offline records use authenticated encryption.",
+      "status": "approved_bounded",
+      "owner_role": "desktop security owner",
+      "scope": "current desktop release-candidate source and tests",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/security/page.tsx",
+        "apps/desktop/src/components/AuthShell.tsx"
+      ],
+      "evidence": [
+        "apps/desktop/src-tauri/src/api_broker.rs",
+        "apps/desktop/src-tauri/src/vault.rs",
+        "apps/desktop/src/__tests__/native-secret-boundary.test.ts"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-10-30"
+    },
+    {
+      "id": "certifications",
+      "statement": "No SOC 2, ISO 27001, PCI DSS, HIPAA, GDPR, CCPA, auditor, or Big Four certification or engagement may be claimed without scoped independent evidence.",
+      "status": "prohibited",
+      "owner_role": "security and legal owners",
+      "scope": "all public, sales, desktop, and client-facing material",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/security/page.tsx",
+        "apps/desktop/src/components/AuthShell.tsx"
+      ],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-12-24"
+    },
+    {
+      "id": "resilience-objectives",
+      "statement": "Backup frequency, retention, RPO, RTO, failover, restore-drill cadence, and uptime are customer-environment claims only after measured evidence exists.",
+      "status": "contract_only",
+      "owner_role": "operations owner",
+      "scope": "identified deployed environment and executed order only",
+      "artifacts": ["apps/web/src/app/(marketing)/security/page.tsx"],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md",
+        "docs/runbooks/disaster-recovery.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-11-06"
+    },
+    {
+      "id": "data-residency",
+      "statement": "Region, transfer mechanism, isolation topology, and subprocessor location are stated only for an identified environment in an executed agreement.",
+      "status": "contract_only",
+      "owner_role": "privacy and operations owners",
+      "scope": "identified customer environment only",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/security/page.tsx",
+        "apps/web/src/app/(marketing)/pricing/page.tsx"
+      ],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-11-13"
+    },
+    {
+      "id": "legal-documents",
+      "statement": "Public legal documents are working drafts and are not represented as counsel-approved or binding unless incorporated into an executed agreement.",
+      "status": "external_review_required",
+      "owner_role": "legal owner",
+      "scope": "privacy, terms, DPA, DPIA, subprocessors, refund, AUP, and affiliate terms",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/legal",
+        "docs/launch-decision-register.json"
+      ],
+      "evidence": [
+        "docs/legal-pages-audit-2026-06-02.md",
+        "docs/launch-decision-register.json"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-10-09"
+    },
+    {
+      "id": "refund-rights",
+      "statement": "Refund eligibility and timing are controlled by the terms displayed at purchase and the executed agreement, not a standalone marketing promise.",
+      "status": "contract_only",
+      "owner_role": "legal and commercial owners",
+      "scope": "applicable purchase and jurisdiction",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/pricing/page.tsx",
+        "apps/web/src/app/(marketing)/legal/refund/page.tsx",
+        "apps/web/src/app/(marketing)/legal/terms/page.tsx"
+      ],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-10-02"
+    },
+    {
+      "id": "customer-testimonials",
+      "statement": "Attributable testimonials, company names, performance metrics, and customer outcomes are prohibited without retained written approval and substantiation.",
+      "status": "prohibited",
+      "owner_role": "commercial owner",
+      "scope": "all client-facing and public material",
+      "artifacts": [
+        "apps/desktop/src/pages/SignIn.tsx",
+        "apps/desktop/src/pages/SignUp.tsx"
+      ],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2027-01-08"
+    },
+    {
+      "id": "feature-availability",
+      "statement": "A route, source file, demo, test, or roadmap entry is not evidence that a capability is shipped or generally available.",
+      "status": "release_catalog_only",
+      "owner_role": "product and release owners",
+      "scope": "public feature status and customer orders",
+      "artifacts": ["apps/web/src/app/(marketing)/roadmap/page.tsx"],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-12-11"
+    },
+    {
+      "id": "self-host-and-license-rights",
+      "statement": "Source availability, self-hosting, escrow, perpetual access, and redistribution rights are not promised until the licensing model and executed customer terms explicitly grant them.",
+      "status": "external_review_required",
+      "owner_role": "legal and commercial owners",
+      "scope": "distribution and customer licensing",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/pricing/page.tsx",
+        "apps/web/src/app/(marketing)/roadmap/page.tsx",
+        "LICENSE-BOUNDARY.md"
+      ],
+      "evidence": [
+        "docs/audits/2026-07-14-production-readiness-and-desktop-audit.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-09-25"
+    },
+    {
+      "id": "public-publication-gate",
+      "statement": "Public indexing and sitemap publication fail closed until an opaque release approval reference is provided at runtime; legal and comparison pages remain unavailable pending their own review.",
+      "status": "approved_bounded",
+      "owner_role": "release owner",
+      "scope": "current web source and one-image runtime publication contract; not evidence of a live approved deployment",
+      "artifacts": [
+        "apps/web/src/lib/public-release.ts",
+        "apps/web/src/middleware.ts",
+        "apps/web/src/app/robots.ts",
+        "apps/web/src/app/sitemap.ts",
+        "apps/web/src/app/(marketing)/legal/layout.tsx",
+        "apps/web/src/app/(marketing)/vs/layout.tsx"
+      ],
+      "evidence": [
+        "apps/web/src/__tests__/public-release.test.ts",
+        "apps/web/src/__tests__/sitemap.test.ts",
+        "infra/aws/WEB_DEPLOY_RUNBOOK.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-11-20"
+    },
+    {
+      "id": "paid-checkout-gate",
+      "statement": "Paid checkout is unavailable until the provisional catalog, hard usage caps, provider costs, taxes, refunds, order terms, and a private billing launch approval are reconciled.",
+      "status": "approved_bounded",
+      "owner_role": "commercial and release owners",
+      "scope": "public and authenticated web checkout plus API runtime readiness",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/pricing/_components/checkout-cta.tsx",
+        "apps/web/src/app/(dashboard)/app/billing/upgrade/page.tsx",
+        "apps/api/internal/billing/handlers.go",
+        "apps/api/internal/readiness/readiness.go"
+      ],
+      "evidence": [
+        "apps/api/internal/billing/public_checkout_test.go",
+        "apps/api/internal/readiness/readiness_test.go",
+        "docs/launch-decision-register.json"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-11-27"
+    },
+    {
+      "id": "affiliate-program-availability",
+      "statement": "The public affiliate program, applications, referral tracking, commission terms, and payouts are unavailable until legal and commercial approval plus a separately qualified release contract exist.",
+      "status": "approved_bounded",
+      "owner_role": "legal and commercial owners",
+      "scope": "public marketing, signup, referral-cookie, public API and embedded-client surfaces",
+      "artifacts": [
+        "apps/web/src/app/(marketing)/affiliates/page.tsx",
+        "apps/web/src/app/(marketing)/legal/affiliate-terms/page.tsx",
+        "apps/web/src/app/(dashboard)/app/affiliates/page.tsx",
+        "apps/api/main.go",
+        "packages/openapi/route-reachability.json"
+      ],
+      "evidence": [
+        "apps/web/src/__tests__/affiliate-middleware.test.ts",
+        "apps/web/src/__tests__/affiliate-public-offer-contract.test.ts",
+        "apps/web/src/__tests__/affiliate-containment-render.test.tsx",
+        "apps/api/internal/affiliates/availability_test.go",
+        "scripts/lib/route-reachability.test.mjs",
+        "docs/launch-decision-register.json"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-12-04"
+    },
+    {
+      "id": "canonical-domain-contract",
+      "statement": "Moosewave's reviewed DNS contract uses moosewave.com and its named subdomains; native store identifiers such as com.moosewave.app and stable extension command identifiers are not DNS claims.",
+      "status": "approved_bounded",
+      "owner_role": "platform and release owners",
+      "scope": "repository-owned active defaults, allowlists, links, contacts and deployment templates; DNS ownership and reachability remain external",
+      "artifacts": [
+        "config/production-platform.json",
+        "scripts/check-production-platform.mjs"
+      ],
+      "evidence": [
+        "apps/mobile/src/lib/deepLinks.test.ts",
+        "apps/desktop/src/__tests__/tauri.test.ts",
+        "infra/aws/WEB_DEPLOY_RUNBOOK.md"
+      ],
+      "last_verified": "2026-09-12",
+      "expires_on": "2026-12-18"
+    },
+    {
+      "id": "accessibility-conformance",
+      "statement": "Moosewave targets WCAG 2.1 AA and publishes the automated checks it actually runs, the parts that remain unverified, and a barrier-reporting channel. No independent accessibility audit, certification, or assistive-technology user testing is claimed.",
+      "status": "approved_bounded",
+      "owner_role": "engineering owner",
+      "scope": "public accessibility statement at /accessibility",
+      "artifacts": ["apps/web/src/app/(marketing)/accessibility/page.tsx"],
+      "evidence": [
+        "apps/web/src/__tests__/pages/_keyboard-operability.test.tsx",
+        "apps/web/src/__tests__/scrollable-regions-focusable.test.ts",
+        "apps/web/src/__tests__/aria-references-resolve.test.ts",
+        "apps/web/src/__tests__/components/cookie-banner-a11y.test.tsx",
+        "apps/api/internal/a11y/a11y.go",
+        "docs/compliance/us-eu-compliance-audit-2026-09-05.md"
+      ],
+      "last_verified": "2026-09-05",
+      "expires_on": "2026-12-05"
+    }
+  ]
+}

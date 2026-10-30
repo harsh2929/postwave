@@ -1,0 +1,91 @@
+---
+title: Verification report
+---
+
+import { Callout } from 'nextra/components';
+
+# Verification report
+
+Dry-run and commit attach a `verification_report` to the migration job. The same report is available at `GET /api/v1/migrations/{job_id}/verification` once the relevant run has produced it.
+
+## Wire shape
+
+```json
+{
+  "subscribers_imported": 12450,
+  "suppression_list_size": 310,
+  "consent_known": 11820,
+  "consent_unknown": 630,
+  "duplicate_subscribers_merged": 42,
+  "subscriber_merge_conflicts": [
+    {
+      "email": "member@example.com",
+      "source_ids": ["audience_a:member_1", "audience_b:member_9"],
+      "tags": ["audience:audience_a", "audience:audience_b"],
+      "conflict_fields": ["company"]
+    }
+  ],
+  "custom_fields_mapped": [
+    { "source": "FNAME", "canonical": "first_name", "type": "text" }
+  ],
+  "custom_fields_unmapped": ["LEGACY_SCORE"],
+  "segments_translated": 9,
+  "segments_with_warnings": [
+    { "name": "High rating", "warning": "Requires manual rebuild" }
+  ],
+  "automations_translated": 2,
+  "automations_unsupported": [
+    { "name": "Customer Journey: Welcome", "reason": "Journey graph export is unavailable" }
+  ],
+  "automation_rebuilds": [],
+  "paid_subs_imported": 0,
+  "premium_memberships_observed": 0,
+  "archive_imported": 248,
+  "templates_imported": 14,
+  "source_archive_imported": 7,
+  "discovery_warnings": [],
+  "campaign_archive_warnings": [],
+  "template_warnings": [],
+  "source_archive_warnings": [],
+  "source_archive_by_resource": { "forms": 3, "landing_pages": 4 },
+  "resource_completeness": [
+    {
+      "resource": "customer_journeys",
+      "label": "Customer Journeys",
+      "source_total": 1,
+      "imported": 0,
+      "supported": false,
+      "status": "manual_rebuild_required",
+      "notes": ["Source evidence retained for operator review"]
+    }
+  ],
+  "data_loss_estimate_pct": 1.2
+}
+```
+
+Fields with no rows can be omitted or returned as empty arrays depending on when the report is read. The canonical backend schema is the authority.
+
+## How to read it
+
+- `subscribers_imported` is the number the verifier observed for the run, not a replacement for the source discovery count.
+- `consent_known` and `consent_unknown` report whether source provenance was available. Unknown does not mean consented.
+- `subscriber_merge_conflicts` identifies overlapping source records that mapped to one destination email.
+- warning arrays describe partial fidelity even when a resource was written.
+- `automations_unsupported` and `automation_rebuilds` distinguish executable imports from operator work.
+- `premium_memberships_observed` is source membership metadata observed during traversal; it is not a count of migrated Stripe billing objects.
+- `resource_completeness` is the per-surface contract. Valid statuses are `imported_runtime`, `partial_runtime`, `preserved_for_rebuild`, `manual_rebuild_required`, `not_supported`, and `not_detected`.
+- `data_loss_estimate_pct` is a verifier summary. It is not a contractual threshold and does not override warnings or completeness rows.
+
+<Callout type="warning">
+A translated count proves that a record was translated and validated according to the verifier; it does not by itself prove business equivalence. Test targeting, consent/suppression behavior, template rendering, and paused automation references before cutover.
+</Callout>
+
+## Pre-commit review
+
+1. Compare discovery counts with report and progress totals for every selected resource.
+2. Investigate every discovery, segment, template, campaign, and source-archive warning.
+3. Review unknown consent and duplicate merge conflicts.
+4. Confirm that executable automations are paused and all destination template references resolve.
+5. Treat manual rebuild rows as incomplete until an owner records test evidence.
+
+After commit, use the displayed rollback deadline and the [rollback contract](/migration/rollback) if destination state must be reversed.

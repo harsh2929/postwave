@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <localised-currency-jpy.v1@example.com>
+Subject: ご請求 ¥4,800
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-jpy-v1"
+
+--pw-jpy-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ご請求金額は ¥4,800 です。 https://billing.example.com/ja/7
+--pw-jpy-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>ご請求 ¥4,800</h1><p>お支払い期限は9月30日です。</p><p><a href="https://billing.example.com/ja/7">請求書を見る</a></p></body></html>
+--pw-jpy-v1--

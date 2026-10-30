@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "policy": "Exact per-owner inventory. Reduce intentionally; never add or transfer interactive native title debt.",
+  "budgets": {
+    "components/TemplatePreview.tsx": {
+      "disabled": 0,
+      "total": 1
+    }
+  }
+}

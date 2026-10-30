@@ -1,0 +1,1605 @@
+#
+# surfaces/openapi.yaml — minimal OpenAPI 3.1 spec covering ONLY the
+# five surfaces selected as the first batch for `openapi-typescript`
+# codegen (p2-openapi-codegen):
+#
+#   1. subscribers
+#   2. lists
+#   3. campaigns
+#   4. archive
+#   5. send_time_opt
+#
+# This file is the SOURCE OF TRUTH for the generated types in
+# `packages/openapi/dist/types.ts`. Edit the schema here, run
+# `pnpm openapi:codegen`, commit both. CI fails if the dist file
+# is out of sync.
+#
+# Why a separate file rather than reusing `../openapi.yaml`?
+#   - The parent spec mixes auto-generated path stubs (empty
+#     responses, no schemas) with hand-curated paths and currently
+#     has at least one broken $ref that breaks openapi-typescript.
+#     A clean curated extract gives consumers real, typed
+#     responses today without waiting for the parent to be
+#     line-by-line audited.
+#   - Migration roadmap for the remaining ~40 surfaces lives in
+#     ./MIGRATION.md and is enforced by CI parity scripts.
+
+openapi: 3.1.0
+info:
+  title: Moosewave API — typed surfaces (batch 1)
+  version: 0.1.0
+  description: |
+    Minimal OpenAPI document covering the first five surfaces migrated
+    to `openapi-typescript` codegen. See ../MIGRATION.md for the plan
+    covering the remaining surfaces.
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+
+servers:
+  - url: https://api.moosewave.com
+    description: Production
+  - url: http://localhost:8080
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Subscribers
+  - name: Lists
+  - name: Campaigns
+  - name: Archive
+  - name: SendTimeOpt
+
+paths:
+  # ---------------------------------------------------------------------
+  # 1. Subscribers
+  # ---------------------------------------------------------------------
+  /api/v1/subscribers:
+    get:
+      operationId: listSubscribers
+      summary: List subscribers for the tenant
+      description: Returns a bounded tenant-scoped subscriber page with optional search, lifecycle filtering, sorting, archived-record inclusion, and cursor or offset pagination.
+      tags: [Subscribers]
+      x-required-scopes: [read:subscribers]
+      parameters:
+        - { in: query, name: q, schema: { type: string }, description: Free-text query. }
+        - { in: query, name: status, schema: { type: string }, description: Subscriber lifecycle status or `all`. }
+        - { in: query, name: sort, schema: { type: string }, description: Reviewed subscriber sort key. }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc] } }
+        - { in: query, name: cursor, schema: { type: string }, description: Opaque keyset cursor for the default sort. }
+        - { in: query, name: include_archived, schema: { type: boolean, default: false } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: per_page, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: Subscriber page.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubscriberPage' }
+              example: { items: [{ id: 7f02cfe8-43b8-4f25-92de-e0c57e4df460, email: reader@example.com, status: enabled }], total: 1, page: 1, per_page: 50 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    post:
+      operationId: createSubscriber
+      summary: Create or upsert a subscriber
+      description: Creates a tenant subscriber or updates the existing record with the same normalized email after applying consent and property-normalization rules.
+      tags: [Subscribers]
+      x-required-scopes: [write:subscribers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubscriberInput' }
+            example: { email: reader@example.com, status: enabled, consent_source: api, tags: [newsletter] }
+      responses:
+        '201':
+          description: Subscriber created or upserted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Subscriber' }
+              example: { id: 7f02cfe8-43b8-4f25-92de-e0c57e4df460, email: reader@example.com, status: enabled }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PlanLimitExceeded' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/subscribers/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getSubscriber
+      summary: Fetch one subscriber
+      description: Returns one tenant subscriber and emits an ETag that can be supplied with a later conditional update.
+      tags: [Subscribers]
+      x-required-scopes: [read:subscribers]
+      responses:
+        '200':
+          description: Subscriber record.
+          headers:
+            ETag: { description: Optimistic-concurrency token., schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Subscriber' }
+              example: { id: 7f02cfe8-43b8-4f25-92de-e0c57e4df460, email: reader@example.com, status: enabled }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    patch:
+      operationId: updateSubscriber
+      summary: Patch a subscriber
+      description: Applies supplied subscriber fields only; an optional If-Match token makes the update fail with 412 when the record changed since it was read.
+      tags: [Subscribers]
+      x-required-scopes: [write:subscribers]
+      parameters:
+        - { in: header, name: If-Match, required: false, schema: { type: string }, description: ETag returned by the detail endpoint. }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubscriberUpdateInput' }
+            example: { status: disabled, tags: [newsletter, paused] }
+      responses:
+        '200':
+          description: Updated subscriber.
+          headers:
+            ETag: { description: New optimistic-concurrency token., schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Subscriber' }
+              example: { id: 7f02cfe8-43b8-4f25-92de-e0c57e4df460, email: reader@example.com, status: disabled }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    delete:
+      operationId: deleteSubscriber
+      summary: Hard-delete a subscriber
+      description: Erases the tenant subscriber, synchronizes deletion to the delivery engine, records a redacted erasure audit event, and creates suppression protection against accidental re-import.
+      tags: [Subscribers]
+      x-required-scopes: [write:subscribers]
+      x-postwave-bodyless: true
+      x-postwave-contract-example:
+        example: DELETE requests carry no JSON body and successful erasure returns HTTP 204.
+      responses:
+        '204':
+          description: Subscriber erased; no response body.
+          x-example: no-content
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/subscribers/search:
+    get:
+      operationId: searchSubscribers
+      summary: Search subscriber profiles
+      description: Searches tenant subscribers using free text and supported structured operators, with archived records excluded unless explicitly requested.
+      tags: [Subscribers]
+      x-required-scopes: [read:subscribers]
+      parameters:
+        - { in: query, name: q, required: true, schema: { type: string, minLength: 1 }, example: '@example.com status:enabled' }
+        - { in: query, name: include_archived, schema: { type: boolean, default: false } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: per_page, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: Matching subscriber page.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubscriberPage' }
+              example: { items: [{ id: 7f02cfe8-43b8-4f25-92de-e0c57e4df460, email: reader@example.com, status: enabled }], total: 1, page: 1, per_page: 50 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/subscribers/{id}/suppress:
+    post:
+      operationId: suppressSubscriber
+      summary: Suppress a subscriber
+      description: Blocklists the subscriber in the delivery engine and creates a tenant suppression; the optional body supplies audit metadata while the subscriber email is always resolved server-side.
+      tags: [Subscribers]
+      x-required-scopes: [write:subscribers]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubscriberSuppressInput' }
+            example: { reason: manual, source: operator, campaign_id: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b }
+      responses:
+        '204':
+          description: Subscriber suppressed; no response body.
+          x-example: no-content
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/profile-transform-rules:
+    get:
+      operationId: listProfileTransformRules
+      summary: List subscriber profile transform rules
+      description: Returns all tenant-defined rules that derive normalized subscriber properties during profile ingestion and update.
+      tags: [Subscribers]
+      x-required-scopes: [read:subscribers]
+      responses:
+        '200':
+          description: Tenant profile transform rules.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfileTransformRuleList' }
+              example: { items: [{ id: 8d806c2b-f228-483d-b319-a1886abc8722, name: normalize-country, source_path: country, target_key: country_code, transform: uppercase, status: active }], total: 1 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    post:
+      operationId: upsertProfileTransformRule
+      summary: Upsert a subscriber profile transform rule
+      description: Creates a transform rule or replaces the tenant rule with the same name after validating its source, target, transform, and lifecycle state.
+      tags: [Subscribers]
+      x-required-scopes: [write:subscribers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileTransformRuleInput' }
+            example: { name: normalize-country, source_path: country, target_key: country_code, transform: uppercase, status: active }
+      responses:
+        '200':
+          description: Created or updated rule.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfileTransformRule' }
+              example: { id: 8d806c2b-f228-483d-b319-a1886abc8722, name: normalize-country, source_path: country, target_key: country_code, transform: uppercase, status: active }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/profile-transform-rules/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    delete:
+      operationId: deleteProfileTransformRule
+      summary: Delete a subscriber profile transform rule
+      description: Deletes one tenant transform rule by UUID and reports whether the reviewed resource was removed.
+      tags: [Subscribers]
+      x-required-scopes: [write:subscribers]
+      x-postwave-bodyless: true
+      responses:
+        '200':
+          description: Rule deleted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OKResponse' }
+              example: { ok: true }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  # ---------------------------------------------------------------------
+  # 2. Lists
+  # ---------------------------------------------------------------------
+  /api/v1/lists:
+    get:
+      operationId: listLists
+      summary: List subscriber lists for the tenant
+      description: Proxies the tenant list index from Listmonk and translates either `q` or `query` into Listmonk's native substring-search parameter.
+      tags: [Lists]
+      x-required-scopes: [read:subscribers]
+      parameters:
+        - { in: query, name: q, schema: { type: string }, description: Legacy alias for `query`. }
+        - { in: query, name: query, schema: { type: string }, description: Substring search across name and description. }
+      responses:
+        '200':
+          description: Listmonk list-index envelope.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListPage' }
+              example: { data: { results: [{ id: 42, name: Newsletter, type: private, optin: single }] } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/ListProxyError' }
+        default: { $ref: '#/components/responses/ListProxyError' }
+    post:
+      operationId: createList
+      summary: Create a subscriber list
+      description: Creates a Listmonk list with `private` and `single` defaults when visibility and opt-in mode are omitted; the upstream success status and envelope are preserved.
+      tags: [Lists]
+      x-required-scopes: [write:subscribers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ListCreateInput' }
+            example: { name: Newsletter, type: private, optin: single, tags: [marketing] }
+      responses:
+        '200':
+          description: List created; Listmonk success envelope.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListResponse' }
+              example: { data: { id: 42, name: Newsletter, type: private, optin: single } }
+        '201':
+          description: List created when the configured Listmonk version returns 201.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListResponse' }
+              example: { data: { id: 42, name: Newsletter, type: private, optin: single } }
+        '400': { $ref: '#/components/responses/ListProxyError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '500': { $ref: '#/components/responses/ListProxyError' }
+        default: { $ref: '#/components/responses/ListProxyError' }
+
+  /api/v1/lists/for-subscriber/{sub_id}:
+    parameters:
+      - { in: path, name: sub_id, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: listListsForSubscriber
+      summary: List a subscriber's active list memberships
+      description: Returns the tenant lists in which the subscriber has a non-removed membership, ordered by list name.
+      tags: [Lists]
+      x-required-scopes: [read:subscribers]
+      responses:
+        '200':
+          description: Active list memberships.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SubscriberListMemberships' }
+              example: { items: [{ id: 29a0ec87-d974-4926-a250-917e14a202e6, name: Newsletter }], count: 1 }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/v1/lists/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: integer, format: int64, minimum: 1 } }
+    patch:
+      operationId: updateList
+      summary: Update a subscriber list
+      description: Validates a non-empty allow-listed partial update and proxies it to Listmonk's list update endpoint while preserving its success envelope.
+      tags: [Lists]
+      x-required-scopes: [write:subscribers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ListUpdateInput' }
+            example: { name: Weekly Newsletter, type: public, optin: double }
+      responses:
+        '200':
+          description: Updated Listmonk list envelope.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListResponse' }
+              example: { data: { id: 42, name: Weekly Newsletter, type: public, optin: double } }
+        '400': { $ref: '#/components/responses/ListProxyError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '500': { $ref: '#/components/responses/ListProxyError' }
+        default: { $ref: '#/components/responses/ListProxyError' }
+    delete:
+      operationId: deleteList
+      summary: Delete a subscriber list
+      description: Deletes the integer-addressed Listmonk list and preserves the configured upstream's success status and JSON body.
+      tags: [Lists]
+      x-required-scopes: [write:subscribers]
+      x-postwave-bodyless: true
+      responses:
+        '200':
+          description: Listmonk deletion result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListDeleteResponse' }
+              example: { data: true }
+        '204':
+          description: Deleted with no response body when returned by the configured Listmonk version.
+        '400': { $ref: '#/components/responses/ListProxyError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/ListProxyError' }
+        default: { $ref: '#/components/responses/ListProxyError' }
+
+  # ---------------------------------------------------------------------
+  # 3. Campaigns
+  # ---------------------------------------------------------------------
+  /api/v1/campaigns:
+    get:
+      operationId: listCampaigns
+      summary: List campaigns for the tenant
+      description: Returns a bounded array of tenant campaigns, optionally filtered by a free-text query and paged by offset; it does not wrap results in a page object.
+      tags: [Campaigns]
+      x-required-scopes: [read:campaigns]
+      parameters:
+        - { in: query, name: query, schema: { type: string }, description: Preferred free-text filter. }
+        - { in: query, name: q, schema: { type: string }, description: Legacy alias for `query`. }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 500 } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: per_page, schema: { type: integer, minimum: 1, maximum: 500 } }
+      responses:
+        '200':
+          description: Bounded campaign array.
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Campaign' } }
+              example: [{ id: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b, tenant_id: 4c20c4e6-8aa3-4fc0-a37b-47ed66856473, name: July newsletter, subject: Product updates, status: draft, campaign_type: regular, editor_mode: blocks, created_at: '2026-07-16T08:30:00Z', updated_at: '2026-07-16T08:30:00Z' }]
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    post:
+      operationId: createCampaign
+      summary: Create a campaign
+      description: Creates a normalized draft campaign, rendering MJML or plain text into canonical HTML when those editor modes are supplied.
+      tags: [Campaigns]
+      x-required-scopes: [write:campaigns]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CampaignCreateInput' }
+            example: { name: July newsletter, subject: Product updates, campaign_type: regular, editor_mode: html, body_html: '<p>Hello</p>' }
+      responses:
+        '201':
+          description: Campaign created.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Campaign' }
+              example: { id: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b, tenant_id: 4c20c4e6-8aa3-4fc0-a37b-47ed66856473, name: July newsletter, subject: Product updates, status: draft, campaign_type: regular, editor_mode: html, created_at: '2026-07-16T08:30:00Z', updated_at: '2026-07-16T08:30:00Z' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PlanLimitExceeded' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/campaigns/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid }, example: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b }
+    get:
+      operationId: getCampaign
+      summary: Fetch one campaign
+      description: Returns one tenant campaign and an ETag that can be used for a later conditional update.
+      tags: [Campaigns]
+      x-required-scopes: [read:campaigns]
+      responses:
+        '200':
+          description: Campaign record.
+          headers:
+            ETag: { description: Optimistic-concurrency token., schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Campaign' }
+              example: { id: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b, tenant_id: 4c20c4e6-8aa3-4fc0-a37b-47ed66856473, name: July newsletter, subject: Product updates, status: draft, campaign_type: regular, editor_mode: html, created_at: '2026-07-16T08:30:00Z', updated_at: '2026-07-16T08:30:00Z' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    patch:
+      operationId: updateCampaign
+      summary: Patch a campaign
+      description: Applies supplied campaign fields, refreshes canonical HTML for authoring-mode changes, and optionally enforces the If-Match concurrency token.
+      tags: [Campaigns]
+      x-required-scopes: [write:campaigns]
+      parameters:
+        - { in: header, name: If-Match, required: false, schema: { type: string }, description: ETag returned by the detail endpoint. }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CampaignUpdateInput' }
+            example: { subject: Updated product news, priority: 6 }
+      responses:
+        '200':
+          description: Updated campaign.
+          headers:
+            ETag: { description: New optimistic-concurrency token., schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Campaign' }
+              example: { id: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b, tenant_id: 4c20c4e6-8aa3-4fc0-a37b-47ed66856473, name: July newsletter, subject: Updated product news, status: draft, campaign_type: regular, editor_mode: html, priority: 6, created_at: '2026-07-16T08:30:00Z', updated_at: '2026-07-16T08:45:00Z' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '500': { $ref: '#/components/responses/InternalError' }
+    delete:
+      operationId: deleteCampaign
+      summary: Delete a campaign
+      description: Deletes one tenant campaign and returns no response body when the campaign can be removed.
+      tags: [Campaigns]
+      x-required-scopes: [write:campaigns]
+      x-postwave-bodyless: true
+      x-postwave-contract-example:
+        example: DELETE requests carry no JSON body and successful deletion returns HTTP 204.
+      responses:
+        '204':
+          description: Campaign deleted; no response body.
+          x-example: no-content
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/campaigns/{id}/send:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid }, example: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b }
+    post:
+      operationId: sendCampaign
+      summary: Dispatch a campaign
+      description: Immediately validates and dispatches a sendable campaign, or returns an approval-required acceptance when the tenant's approval policy has not yet been satisfied; this route accepts no request body.
+      tags: [Campaigns]
+      x-required-scopes: [write:campaigns, send:transactional]
+      x-required-scope-mode: all
+      x-postwave-bodyless: true
+      responses:
+        '202':
+          description: Campaign dispatch or approval workflow accepted.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: '#/components/schemas/Campaign' }
+                  - { $ref: '#/components/schemas/CampaignSendAccepted' }
+              example: { campaign_id: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b, recipients_queued: 0, status: approval_required, approval_id: c884d6ae-16db-435d-9bb5-2fba457fdb8c, approval_status: pending, message: campaign send is waiting for approval }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/CampaignSendValidationFailed' }
+        '423': { $ref: '#/components/responses/Locked' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/v1/campaigns/{id}/report:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid }, example: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b }
+    get:
+      operationId: getCampaignReport
+      summary: Get campaign delivery and engagement report
+      description: Returns current tenant-scoped delivery, raw and bot-filtered engagement, rate, and top-link aggregates for a campaign with recorded events.
+      tags: [Campaigns]
+      x-required-scopes: [read:reports]
+      responses:
+        '200':
+          description: Campaign report.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CampaignReport' }
+              example: { campaign_id: 11d0df63-9a0a-4d5c-b3a1-34f2866cf16b, sent: 1000, delivered: 980, opens: 510, unique_opens: 430, clicks: 140, unique_clicks: 120, bounces: 20, complaints: 1, unsubscribes: 4, open_rate: 43.88, click_rate: 12.24, click_to_open_rate: 27.91, bounce_rate: 2.0, unsub_rate: 0.4, top_links: [] }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  # ---------------------------------------------------------------------
+  # 4. Archive (public hosted archive + authenticated tenant index)
+  # ---------------------------------------------------------------------
+  /api/v1/archive:
+    get:
+      operationId: listArchive
+      summary: List the tenant's published archive issues
+      description: Returns a cursor-paginated authenticated archive index including 30-day view aggregates that are omitted from the public index.
+      tags: [Archive]
+      x-required-scopes: [read:reports]
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+        - { in: query, name: cursor, schema: { type: string }, description: Opaque pinned-state and timestamp cursor. }
+        - { in: query, name: q, schema: { type: string }, description: Legacy alias for `query`. }
+        - { in: query, name: query, schema: { type: string }, description: Subject or archive-slug substring. }
+      responses:
+        '200':
+          description: Authenticated archive page.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArchivePage' }
+              example: { items: [{ slug: july-news, subject: July news, excerpt: Product updates, publishedAt: '2026-07-15T09:00:00Z', pinned: true, viewCount: 42, uniqueVisitors: 31 }], nextCursor: cHwyMDI2LTA3LTE1VDA5OjAwOjAwWg }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/public/archive/{tenant_slug}:
+    parameters:
+      - { in: path, name: tenant_slug, required: true, schema: { type: string } }
+    get:
+      operationId: getPublicArchive
+      summary: Get a tenant's public archive index
+      description: Resolves the public tenant slug and returns its cursor-paginated published issues without exposing internal campaign identifiers or traffic aggregates.
+      tags: [Archive]
+      security: []
+      parameters:
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+        - { in: query, name: cursor, schema: { type: string } }
+        - { in: query, name: q, schema: { type: string }, description: Legacy alias for `query`. }
+        - { in: query, name: query, schema: { type: string }, description: Subject or archive-slug substring. }
+      responses:
+        '200':
+          description: Public archive page.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ArchivePage' }
+              example: { items: [{ slug: july-news, subject: July news, excerpt: Product updates, publishedAt: '2026-07-15T09:00:00Z', pinned: true }], nextCursor: cHwyMDI2LTA3LTE1VDA5OjAwOjAwWg }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/public/archive/{tenant_slug}/{campaign_slug}:
+    parameters:
+      - { in: path, name: tenant_slug, required: true, schema: { type: string } }
+      - { in: path, name: campaign_slug, required: true, schema: { type: string } }
+    get:
+      operationId: getPublicArchiveEntry
+      summary: Get one public archive issue
+      description: Returns a published issue by public tenant and campaign slug after stripping its internal campaign identifier.
+      tags: [Archive]
+      security: []
+      responses:
+        '200':
+          description: Public archive issue.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PublicArchiveEntry' }
+              example: { slug: july-news, subject: July news, htmlBody: '<p>Product updates</p>', publishedAt: '2026-07-15T09:00:00Z', pinned: true, excerpt: Product updates }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  # ---------------------------------------------------------------------
+  # 5. Send-Time Optimization
+  # ---------------------------------------------------------------------
+  /api/v1/send-time-opt:
+    get:
+      operationId: getSegmentBestSendTime
+      summary: Get a segment's best send hour
+      description: Resolves a segment directly or through a campaign and returns the median UTC hour-of-day once at least 30 subscribers have computed send-history data.
+      tags: [SendTimeOpt]
+      x-required-scopes: [read:reports]
+      parameters:
+        - { in: query, name: segment_id, schema: { type: string, format: uuid }, description: Segment to aggregate; required when `campaign_id` is absent., example: 9e9d2b32-ec61-49c3-b88b-a8b6e1c034a4 }
+        - { in: query, name: campaign_id, schema: { type: string, format: uuid }, description: Campaign whose segment should be aggregated; required when `segment_id` is absent. }
+      responses:
+        '200':
+          description: Segment-level best send hour.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SegmentBestSendTime' }
+              example: { segment_id: 9e9d2b32-ec61-49c3-b88b-a8b6e1c034a4, best_hour_utc: '14:00', confidence: 0.82, sample_size: 164, computed_at: '2026-07-16T08:30:00Z' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFoundOrInsufficientData' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+  /api/v1/send-time-opt/heatmap:
+    get:
+      operationId: getSegmentSendTimeHeatmap
+      summary: Get a segment's weekly engagement heatmap
+      description: Resolves a segment directly or through a campaign and averages each subscriber's normalized 7-by-24 engagement grid once at least 30 subscribers have usable history.
+      tags: [SendTimeOpt]
+      x-required-scopes: [read:reports]
+      parameters:
+        - { in: query, name: segment_id, schema: { type: string, format: uuid }, description: Segment to aggregate; required when `campaign_id` is absent., example: 9e9d2b32-ec61-49c3-b88b-a8b6e1c034a4 }
+        - { in: query, name: campaign_id, schema: { type: string, format: uuid }, description: Campaign whose segment should be aggregated; required when `segment_id` is absent. }
+      responses:
+        '200':
+          description: Normalized weekly segment engagement pattern.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SegmentSendTimeHeatmap' }
+              example:
+                segment_id: 9e9d2b32-ec61-49c3-b88b-a8b6e1c034a4
+                subscribers_with_data: 164
+                grid:
+                  - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                  - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                  - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                  - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                  - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                  - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                  - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                best_dow: 3
+                best_hour: 14
+                has_secondary_window: false
+                computed_at: '2026-07-16T08:30:00Z'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFoundOrInsufficientData' }
+        '500': { $ref: '#/components/responses/InternalError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Moosewave API key
+      description: 'Supply a Moosewave API key in the `Authorization: Bearer <key>` header.'
+
+  responses:
+    BadRequest:
+      description: The path, query, header, or JSON input is malformed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: bad_request, message: request parameters are invalid } }
+    Unauthorized:
+      description: A valid Moosewave principal is required.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: missing_principal, message: an authenticated API key or dashboard user is required } }
+    Forbidden:
+      description: The authenticated principal lacks the required role or API-key scope.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: insufficient_scope, message: api key does not have permission for this route } }
+    NotFound:
+      description: The tenant-scoped resource does not exist.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: not_found, message: resource not found } }
+    NotFoundOrInsufficientData:
+      description: The selected campaign or segment does not exist, or fewer than 30 subscribers have usable optimization history.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - { $ref: '#/components/schemas/ErrorResponse' }
+              - { $ref: '#/components/schemas/SimpleErrorResponse' }
+          examples:
+            insufficientData:
+              value: { error: insufficient_data, message: Need at least 30 subscribers with send history; have 12 }
+            campaignNotFound:
+              value: { error: { code: campaign_not_found, message: campaign not found for tenant } }
+    Conflict:
+      description: The requested change conflicts with retained state or a protected lifecycle transition.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: erasure_blocked, message: fresh consent is required before re-import } }
+    PreconditionFailed:
+      description: The supplied If-Match token is stale.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: precondition_failed, message: resource changed since it was read } }
+    PayloadTooLarge:
+      description: The request exceeds the endpoint's bounded JSON-body limit.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: payload_too_large, message: request body is too large } }
+    UnsupportedMediaType:
+      description: A non-empty request body must use application/json or a JSON-compatible media type.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: unsupported_media_type, message: content type must be application/json } }
+    PlanLimitExceeded:
+      description: The tenant's current plan limit for the requested resource has been reached.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: plan_limit_exceeded, message: plan contact limit reached, resource: contacts, tier: starter, limit: 1000, current: 1000 } }
+    ValidationFailed:
+      description: The input is valid JSON but violates an endpoint or lifecycle rule.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: validation_failed, message: one or more fields are invalid } }
+    CampaignSendValidationFailed:
+      description: The campaign cannot be sent until its lifecycle, audience, sender, or email-compliance validation succeeds.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - { $ref: '#/components/schemas/ErrorResponse' }
+              - { $ref: '#/components/schemas/CampaignComplianceError' }
+          examples:
+            incomplete:
+              value: { error: { code: incomplete, message: campaign needs a subject and body before sending } }
+            complianceBlocked:
+              value: { error: { code: email_compliance_blocked, message: Complete sender compliance requirements before sending. }, compliance: { ready: false, blockers: [A verified sender identity is required.] } }
+    Locked:
+      description: Tenant email dispatch is paused by the production kill switch.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: email_sending_paused, message: email sending is paused by tenant kill switch } }
+    RateLimited:
+      description: The campaign exceeds the tenant's current warm-up or request limit.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: tier_cap_exceeded, message: audience exceeds today's warmup cap } }
+    InternalError:
+      description: The server could not complete the request; implementation details are not exposed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: internal_error, message: an internal error occurred } }
+    ServiceUnavailable:
+      description: A required repository, lifecycle simulator, or upstream dependency is unavailable.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+          example: { error: { code: service_unavailable, message: required service is unavailable } }
+    ListProxyError:
+      description: A canonical gateway error or the unmodified JSON error returned by the configured Listmonk service.
+      content:
+        application/json:
+          schema: { type: object, additionalProperties: true }
+          example: { message: list operation failed }
+
+  schemas:
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        request_id: { type: string, description: Request correlation identifier when middleware supplied one. }
+        resource: { type: string, description: Quota resource for a plan-limit error. }
+        tier: { type: string, description: Tenant plan tier for a plan-limit error. }
+        limit: { type: integer, description: Configured quota ceiling for a plan-limit error. }
+        current: { type: integer, description: Current quota usage for a plan-limit error. }
+        reason:
+          type: string
+          enum: [plan, role, flag, quota, policy, runtime]
+          description: >-
+            Machine-readable class of the refusal. A client switches on this to
+            choose an affordance: `plan` offers an upgrade, `role` says to ask
+            someone with the permission, `flag` means it is switched off for the
+            workspace, `quota` means wait (see retry_after_seconds), `policy`
+            means it is not self-serviceable, and `runtime` means execution is
+            contained in this deployment. Without it a surface has to
+            pattern-match the message, which is how a paywall gets shown to
+            someone who actually needs a role change.
+        subject:
+          type: string
+          description: >-
+            What was refused — a resource or operation name. Deliberately not
+            named `capability`, which is already on the wire from the
+            runtime-capability envelope with a different meaning.
+        required_role:
+          type: string
+          description: The role that would be permitted, for a `role` refusal.
+        retry_after_seconds:
+          type: integer
+          description: >-
+            When the `quota` window resets. Mirrored into the Retry-After header.
+        remedy:
+          type: string
+          description: >-
+            The one action that resolves this, when there is one. ABSENT means
+            the caller cannot self-serve — which is the honest answer on the top
+            plan tier, where there is nothing to upgrade to.
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error: { $ref: '#/components/schemas/ErrorDetail' }
+
+    SimpleErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error, message]
+      properties:
+        error: { type: string }
+        message: { type: string }
+
+    EmailComplianceReport:
+      type: object
+      additionalProperties: false
+      required: [ready, blockers]
+      properties:
+        ready: { type: boolean }
+        blockers: { type: array, items: { type: string } }
+        warnings: { type: array, items: { type: string } }
+
+    CampaignComplianceError:
+      type: object
+      additionalProperties: false
+      required: [error, compliance]
+      properties:
+        error: { $ref: '#/components/schemas/ErrorDetail' }
+        compliance: { $ref: '#/components/schemas/EmailComplianceReport' }
+
+    OKResponse:
+      type: object
+      additionalProperties: false
+      required: [ok]
+      properties:
+        ok: { type: boolean, const: true }
+
+    # -----------------------------------------------------------------
+    # Subscribers
+    # -----------------------------------------------------------------
+    SubscriberStatus:
+      type: string
+      enum: [enabled, disabled, blocklisted, unconfirmed]
+
+    MailchimpSubscriberStatus:
+      type: string
+      enum: [subscribed, unsubscribed, non_subscribed, pending, transactional, cleaned, archived, deleted]
+
+    ConsentSource:
+      type: string
+      enum: [single_optin, double_optin, import, api, unknown]
+
+    SignupSource:
+      type: string
+      enum: [embedded_form, hosted_page, import, api, integration, popup, landing_page, admin, unknown]
+
+    Subscriber:
+      type: object
+      required: [email, status]
+      properties:
+        id: { type: string, format: uuid }
+        profile_id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        primary_email: { type: string, format: email }
+        external_id: { type: string, nullable: true }
+        status: { $ref: '#/components/schemas/SubscriberStatus' }
+        mailchimp_status: { $ref: '#/components/schemas/MailchimpSubscriberStatus' }
+        first_name: { type: string }
+        last_name: { type: string }
+        full_name: { type: string }
+        display_name: { type: string }
+        consent_timestamp: { type: string, format: date-time, nullable: true }
+        consent_source: { $ref: '#/components/schemas/ConsentSource' }
+        consent_email_marketing_at: { type: string, format: date-time, nullable: true }
+        consent_sms_marketing_at: { type: string, format: date-time, nullable: true }
+        consent_profiling_at: { type: string, format: date-time, nullable: true }
+        consent_targeted_ads_at: { type: string, format: date-time, nullable: true }
+        consent_ai_processing_at: { type: string, format: date-time, nullable: true }
+        custom_fields:
+          type: object
+          additionalProperties: true
+        merge_fields:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          items: { type: string }
+        groups: { type: array, items: { type: object, additionalProperties: true } }
+        gdpr_permissions: { type: array, items: { type: object, additionalProperties: true } }
+        signup_ip: { type: string }
+        unsubscribe_reason: { type: string }
+        mailchimp_last_changed: { type: string, format: date-time, nullable: true }
+        activity_summary: { type: object, additionalProperties: true }
+        source_id: { type: string }
+        source_platform: { type: string }
+        locale: { type: string, nullable: true }
+        language: { type: string, minLength: 2, maxLength: 2, nullable: true }
+        country: { type: string, minLength: 2, maxLength: 2, nullable: true }
+        region: { type: string, nullable: true }
+        data_region: { type: string, nullable: true }
+        archived_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    SubscriberInput:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+        status: { $ref: '#/components/schemas/SubscriberStatus' }
+        mailchimp_status: { $ref: '#/components/schemas/MailchimpSubscriberStatus' }
+        consent_source: { $ref: '#/components/schemas/ConsentSource' }
+        consent_timestamp: { type: string, format: date-time }
+        custom_fields:
+          type: object
+          additionalProperties: true
+        merge_fields:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          maxItems: 50
+          items: { type: string }
+        groups: { type: array, items: { type: object, additionalProperties: true } }
+        gdpr_permissions: { type: array, items: { type: object, additionalProperties: true } }
+        signup_ip: { type: string }
+        unsubscribe_reason: { type: string }
+        mailchimp_last_changed: { type: string, format: date-time, nullable: true }
+        activity_summary: { type: object, additionalProperties: true }
+        source_id: { type: string }
+        source_platform: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        full_name: { type: string }
+        display_name: { type: string }
+        locale: { type: string, maxLength: 35 }
+        language: { type: string, minLength: 2, maxLength: 2 }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        region: { type: string }
+        signup_source: { $ref: '#/components/schemas/SignupSource' }
+        gpp_sections: { type: object, additionalProperties: { type: string } }
+
+    SubscriberUpdateInput:
+      type: object
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email }
+        status: { $ref: '#/components/schemas/SubscriberStatus' }
+        mailchimp_status: { $ref: '#/components/schemas/MailchimpSubscriberStatus' }
+        consent_source: { $ref: '#/components/schemas/ConsentSource' }
+        consent_timestamp: { type: string, format: date-time }
+        custom_fields: { type: object, additionalProperties: true }
+        merge_fields: { type: object, additionalProperties: true }
+        tags: { type: array, maxItems: 50, items: { type: string } }
+        groups: { type: array, items: { type: object, additionalProperties: true } }
+        gdpr_permissions: { type: array, items: { type: object, additionalProperties: true } }
+        signup_ip: { type: string }
+        unsubscribe_reason: { type: string }
+        mailchimp_last_changed: { type: string, format: date-time, nullable: true }
+        activity_summary: { type: object, additionalProperties: true }
+        source_id: { type: string }
+        source_platform: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        full_name: { type: string }
+        display_name: { type: string }
+        locale: { type: string, maxLength: 35 }
+        language: { type: string, minLength: 2, maxLength: 2 }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        region: { type: string }
+        data_region: { type: string }
+        gpp_sections: { type: object, additionalProperties: { type: string } }
+        prediction_model_version: { type: string }
+        prediction_confidence: { type: number, minimum: 0, maximum: 1 }
+        prediction_score_type: { type: string }
+        frequency_preference: { type: string, enum: [default, weekly, monthly, paused] }
+        paused_until: { type: string, format: date-time }
+        clear_paused_until: { type: boolean }
+        pause_days: { type: integer, minimum: 1, maximum: 365 }
+
+    SubscriberSuppressInput:
+      type: object
+      additionalProperties: false
+      properties:
+        reason: { type: string, default: manual }
+        source: { type: string, default: manual }
+        provider_event_id: { type: string }
+        campaign_id: { type: string, format: uuid }
+        metadata: { type: object, additionalProperties: true }
+        expires_at: { type: string, format: date-time }
+
+    SubscriberPage:
+      type: object
+      required: [items, total, page, per_page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Subscriber' }
+        total: { type: integer }
+        page: { type: integer }
+        per_page: { type: integer }
+        next_cursor: { type: string }
+
+    ProfileTransformRuleTransform:
+      type: string
+      enum: [copy, lowercase, uppercase, trim, date, number, boolean, json_path]
+
+    ProfileTransformRuleStatus:
+      type: string
+      enum: [active, paused, archived]
+
+    ProfileTransformRuleInput:
+      type: object
+      additionalProperties: false
+      required: [name, source_path, target_key]
+      properties:
+        name: { type: string, minLength: 1 }
+        source_path: { type: string, minLength: 1 }
+        target_key: { type: string, minLength: 1 }
+        transform:
+          allOf: [{ $ref: '#/components/schemas/ProfileTransformRuleTransform' }]
+          default: copy
+        status:
+          allOf: [{ $ref: '#/components/schemas/ProfileTransformRuleStatus' }]
+          default: active
+
+    ProfileTransformRule:
+      type: object
+      additionalProperties: false
+      required: [id, name, source_path, target_key, transform, status]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        source_path: { type: string }
+        target_key: { type: string }
+        transform: { $ref: '#/components/schemas/ProfileTransformRuleTransform' }
+        status: { $ref: '#/components/schemas/ProfileTransformRuleStatus' }
+
+    ProfileTransformRuleList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ProfileTransformRule' }
+        total: { type: integer, minimum: 0 }
+
+    # -----------------------------------------------------------------
+    # Lists
+    # -----------------------------------------------------------------
+    ListVisibility:
+      type: string
+      enum: [public, private, temporary]
+
+    ListOptin:
+      type: string
+      enum: [single, double]
+
+    List:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, format: int64 }
+        name: { type: string }
+        type: { $ref: '#/components/schemas/ListVisibility' }
+        optin: { $ref: '#/components/schemas/ListOptin' }
+        tags:
+          type: array
+          items: { type: string }
+        description: { type: string }
+        subscriber_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ListCreateInput:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1 }
+        type: { $ref: '#/components/schemas/ListVisibility' }
+        optin: { $ref: '#/components/schemas/ListOptin' }
+        tags:
+          type: array
+          items: { type: string }
+        description: { type: string }
+
+    ListUpdateInput:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1 }
+        type: { $ref: '#/components/schemas/ListVisibility' }
+        optin: { $ref: '#/components/schemas/ListOptin' }
+        tags:
+          type: array
+          items: { type: string }
+        description: { type: string }
+
+    ListPage:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [results]
+          properties:
+            results: { type: array, items: { $ref: '#/components/schemas/List' } }
+            query: { type: string }
+            total: { type: integer, minimum: 0 }
+            page: { type: integer, minimum: 1 }
+            per_page: { type: integer, minimum: 1 }
+
+    ListResponse:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/List' }
+
+    ListDeleteResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          oneOf:
+            - { type: boolean }
+            - { type: object, additionalProperties: true }
+
+    SubscriberListReference:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+
+    SubscriberListMemberships:
+      type: object
+      required: [items, count]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SubscriberListReference' }
+        count: { type: integer, minimum: 0 }
+
+    # -----------------------------------------------------------------
+    # Campaigns
+    # -----------------------------------------------------------------
+    CampaignStatus:
+      type: string
+      enum: [draft, scheduled, sending, sent, paused, cancelled, failed]
+
+    SendTimeStrategy:
+      type: string
+      enum: [none, modal_hour, per_recipient]
+
+    CampaignType:
+      type: string
+      enum: [regular, plain_text, ab_test, rss, automated, transactional]
+
+    CampaignEditorMode:
+      type: string
+      enum: [blocks, html, plain_text, mjml]
+
+    Campaign:
+      type: object
+      required: [id, tenant_id, name, subject, status, campaign_type, editor_mode, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        name: { type: string }
+        subject: { type: string }
+        status: { $ref: '#/components/schemas/CampaignStatus' }
+        campaign_type: { $ref: '#/components/schemas/CampaignType' }
+        editor_mode: { $ref: '#/components/schemas/CampaignEditorMode' }
+        preview_text: { type: string }
+        body_html: { type: string }
+        body_mjml: { type: string }
+        plain_text: { type: string }
+        from_name: { type: string }
+        reply_to: { type: string, format: email }
+        content_blocks: { type: array, items: { type: object, additionalProperties: true } }
+        reusable_section_ids: { type: array, items: { type: string, format: uuid } }
+        variants: { type: array, items: { type: object, additionalProperties: true } }
+        tracking_settings: { type: object, additionalProperties: true }
+        delivery_settings: { type: object, additionalProperties: true }
+        segment_id: { type: string, format: uuid }
+        folder_id: { type: string, format: uuid }
+        list_id: { type: string }
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+        scheduled_at: { type: string, format: date-time, nullable: true }
+        sent_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        open_rate: { type: number }
+        click_rate: { type: number }
+        per_recipient_optimize: { type: boolean }
+        send_window_start: { type: string, format: date-time }
+        send_window_end: { type: string, format: date-time }
+        archive_public: { type: boolean }
+        archive_slug: { type: string }
+        goal_event: { type: string }
+        goal_window_hours: { type: integer, enum: [1, 24, 168, 720] }
+        audience_mode: { type: string, enum: [static, dynamic] }
+        frozen_freeze_id: { type: string, format: uuid }
+
+    CampaignCreateInput:
+      type: object
+      additionalProperties: false
+      required: [name, subject]
+      properties:
+        name: { type: string, minLength: 1 }
+        subject: { type: string, minLength: 1 }
+        campaign_type: { $ref: '#/components/schemas/CampaignType' }
+        editor_mode: { $ref: '#/components/schemas/CampaignEditorMode' }
+        preview_text: { type: string }
+        body_html: { type: string }
+        body_mjml: { type: string }
+        plain_text: { type: string }
+        from_name: { type: string }
+        reply_to: { type: string, format: email }
+        content_blocks: { type: array, items: { type: object, additionalProperties: true } }
+        reusable_section_ids: { type: array, items: { type: string, format: uuid } }
+        variants: { type: array, items: { type: object, additionalProperties: true } }
+        tracking_settings: { type: object, additionalProperties: true }
+        delivery_settings: { type: object, additionalProperties: true }
+        segment_id: { type: string, format: uuid }
+        scheduled_at: { type: string, format: date-time }
+        priority: { type: integer, minimum: 1, maximum: 10 }
+
+    CampaignUpdateInput:
+      type: object
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1 }
+        subject: { type: string, minLength: 1 }
+        status: { $ref: '#/components/schemas/CampaignStatus' }
+        campaign_type: { $ref: '#/components/schemas/CampaignType' }
+        editor_mode: { $ref: '#/components/schemas/CampaignEditorMode' }
+        preview_text: { type: string }
+        body_html: { type: string }
+        body_mjml: { type: string }
+        plain_text: { type: string }
+        from_name: { type: string }
+        reply_to: { type: string, format: email }
+        content_blocks: { type: array, items: { type: object, additionalProperties: true } }
+        reusable_section_ids: { type: array, items: { type: string, format: uuid } }
+        variants: { type: array, items: { type: object, additionalProperties: true } }
+        tracking_settings: { type: object, additionalProperties: true }
+        delivery_settings: { type: object, additionalProperties: true }
+        segment_id: { type: string, format: uuid }
+        scheduled_at: { type: string, format: date-time }
+        priority: { type: integer, minimum: 1, maximum: 10 }
+        goal_event: { type: string }
+        goal_window_hours: { type: integer, enum: [1, 24, 168, 720] }
+        audience_mode: { type: string, enum: [static, dynamic] }
+
+    CampaignPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Campaign' }
+        total: { type: integer, minimum: 0 }
+        page: { type: integer, minimum: 1 }
+        per_page: { type: integer, minimum: 1 }
+
+    CampaignSendInput:
+      type: object
+      additionalProperties: false
+      properties:
+        scheduled_at: { type: string, format: date-time }
+        send_now: { type: boolean }
+
+    CampaignSendAccepted:
+      type: object
+      required: [campaign_id, recipients_queued, status]
+      properties:
+        campaign_id: { type: string, format: uuid }
+        recipients_queued: { type: integer, minimum: 0 }
+        status: { type: string }
+        approval_id: { type: string, format: uuid }
+        approval_status: { type: string }
+        message: { type: string }
+        sandbox: { type: boolean }
+        recipients_skipped_frequency_cap: { type: integer, minimum: 0 }
+        frequency_skip_breakdown:
+          type: array
+          items:
+            type: object
+            required: [rule_id, rule_label, skipped]
+            properties:
+              rule_id: { type: string }
+              rule_label: { type: string }
+              skipped: { type: integer, minimum: 0 }
+        recipients_held_out_control_group: { type: integer, minimum: 0 }
+
+    CampaignLinkStats:
+      type: object
+      required: [url, clicks]
+      properties:
+        url: { type: string, format: uri }
+        clicks: { type: integer, minimum: 0 }
+
+    CampaignReport:
+      type: object
+      required: [campaign_id, sent, delivered, opens, unique_opens, clicks, unique_clicks, bounces, complaints, unsubscribes, open_rate, click_rate, click_to_open_rate, bounce_rate, unsub_rate, top_links]
+      properties:
+        campaign_id: { type: string, format: uuid }
+        sent: { type: integer, minimum: 0 }
+        delivered: { type: integer, minimum: 0 }
+        opens: { type: integer, minimum: 0 }
+        unique_opens: { type: integer, minimum: 0 }
+        clicks: { type: integer, minimum: 0 }
+        unique_clicks: { type: integer, minimum: 0 }
+        bounces: { type: integer, minimum: 0 }
+        complaints: { type: integer, minimum: 0 }
+        unsubscribes: { type: integer, minimum: 0 }
+        open_rate: { type: number, minimum: 0 }
+        click_rate: { type: number, minimum: 0 }
+        click_to_open_rate: { type: number, minimum: 0 }
+        bounce_rate: { type: number, minimum: 0 }
+        unsub_rate: { type: number, minimum: 0 }
+        top_links: { type: [array, 'null'], items: { $ref: '#/components/schemas/CampaignLinkStats' } }
+        human_opens: { type: integer, minimum: 0 }
+        human_unique_opens: { type: integer, minimum: 0 }
+        human_clicks: { type: integer, minimum: 0 }
+        human_unique_clicks: { type: integer, minimum: 0 }
+        human_open_rate: { type: number, minimum: 0 }
+        human_click_rate: { type: number, minimum: 0 }
+        human_click_to_open_rate: { type: number, minimum: 0 }
+        human_top_links: { type: [array, 'null'], items: { $ref: '#/components/schemas/CampaignLinkStats' } }
+        bot_signatures_applied: { type: [array, 'null'], items: { type: string } }
+
+    # -----------------------------------------------------------------
+    # Archive
+    # -----------------------------------------------------------------
+    ArchiveEntry:
+      type: object
+      additionalProperties: false
+      required: [campaign_id, campaign_slug, subject, published_at]
+      properties:
+        campaign_id: { type: string }
+        campaign_slug: { type: string }
+        subject: { type: string }
+        preview_text: { type: string }
+        body_html: { type: string }
+        published_at: { type: string, format: date-time }
+        tenant_slug: { type: string }
+        permalink: { type: string, format: uri }
+
+    PublicArchiveIndex:
+      type: object
+      additionalProperties: false
+      properties:
+        tenant_slug: { type: string }
+        title: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ArchiveEntry' }
+
+    ArchiveIssueSummary:
+      type: object
+      additionalProperties: false
+      required: [slug, subject, excerpt, publishedAt, pinned]
+      properties:
+        slug: { type: string }
+        subject: { type: string }
+        excerpt: { type: string }
+        publishedAt: { type: string, format: date-time }
+        pinned: { type: boolean }
+        viewCount: { type: integer, minimum: 0, description: Present only on the authenticated archive index. }
+        uniqueVisitors: { type: integer, minimum: 0, description: Present only on the authenticated archive index. }
+
+    ArchivePage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ArchiveIssueSummary' }
+        nextCursor: { type: string, description: Opaque cursor for the next page. }
+
+    PublicArchiveEntry:
+      type: object
+      additionalProperties: false
+      required: [slug, subject, htmlBody, publishedAt, pinned]
+      properties:
+        slug: { type: string }
+        subject: { type: string }
+        htmlBody: { type: string }
+        publishedAt: { type: string, format: date-time }
+        pinned: { type: boolean }
+        metaDescription: { type: string }
+        ogImage: { type: string }
+        heroImage: { type: string }
+        authorName: { type: string }
+        excerpt: { type: string }
+
+    # -----------------------------------------------------------------
+    # Send-Time Optimization
+    # -----------------------------------------------------------------
+    SendTimeOptSettings:
+      type: object
+      additionalProperties: false
+      properties:
+        enabled: { type: boolean }
+        strategy: { $ref: '#/components/schemas/SendTimeStrategy' }
+        quiet_hours_start: { type: integer }
+        quiet_hours_end: { type: integer }
+        timezone: { type: string, description: IANA tz id }
+        learning_window_days: { type: integer }
+        updated_at: { type: string, format: date-time }
+
+    SendTimeOptSettingsInput:
+      type: object
+      additionalProperties: false
+      properties:
+        enabled: { type: boolean }
+        strategy: { $ref: '#/components/schemas/SendTimeStrategy' }
+        quiet_hours_start: { type: integer }
+        quiet_hours_end: { type: integer }
+        timezone: { type: string }
+        learning_window_days: { type: integer }
+
+    SendTimeOptHeatmapCell:
+      type: object
+      additionalProperties: false
+      required: [dow, hour, score]
+      properties:
+        dow: { type: integer, description: Day of week. 0=Sunday … 6=Saturday. }
+        hour: { type: integer }
+        score: { type: number, description: Normalised engagement score for the cell (0..1). }
+        sample_size: { type: integer }
+
+    SendTimeOptHeatmap:
+      type: object
+      additionalProperties: false
+      properties:
+        window_days: { type: integer }
+        timezone: { type: string }
+        generated_at: { type: string, format: date-time }
+        cells:
+          type: array
+          items: { $ref: '#/components/schemas/SendTimeOptHeatmapCell' }
+
+    SegmentBestSendTime:
+      type: object
+      additionalProperties: false
+      required: [segment_id, best_hour_utc, confidence, sample_size, computed_at]
+      properties:
+        segment_id: { type: string, format: uuid }
+        best_hour_utc: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):00$', description: Median UTC hour-of-day. }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        sample_size: { type: integer, minimum: 30 }
+        computed_at: { type: string, format: date-time }
+
+    SegmentSendTimeHeatmap:
+      type: object
+      additionalProperties: false
+      required: [segment_id, subscribers_with_data, grid, best_dow, best_hour, has_secondary_window, computed_at]
+      properties:
+        segment_id: { type: string, format: uuid }
+        subscribers_with_data: { type: integer, minimum: 30 }
+        grid:
+          type: array
+          minItems: 7
+          maxItems: 7
+          items:
+            type: array
+            minItems: 24
+            maxItems: 24
+            items: { type: number, minimum: 0, maximum: 1 }
+        best_dow: { type: integer, minimum: 0, maximum: 6 }
+        best_hour: { type: integer, minimum: 0, maximum: 23 }
+        secondary_dow: { type: integer, minimum: 0, maximum: 6 }
+        secondary_hour: { type: integer, minimum: 0, maximum: 23 }
+        has_secondary_window: { type: boolean }
+        computed_at: { type: string, format: date-time }

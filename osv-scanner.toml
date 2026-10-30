@@ -1,0 +1,61 @@
+# osv-scanner configuration for the Moosewave monorepo.
+#
+# CI gates on Trivy (CRITICAL/HIGH fixable) + govulncheck (Go reachability) +
+# CodeQL — osv-scanner is used for the broader manual dependency audit. This
+# file records deliberate, justified suppressions of FALSE POSITIVES and
+# verified backports so a web/backend release scan is actionable. Desktop
+# Rust lifecycle advisories remain visible in a full-repository scan.
+#
+# NOT suppressed here (intentionally left visible):
+#   * Go `stdlib` advisories — osv-scanner reads each module's minimum `go`
+#     directive (some reusable modules intentionally remain below 1.26), but
+#     the workspace and release build toolchain are pinned to go1.26.8
+#     (go.work + Dockerfile.go), so the compiled stdlib is patched. govulncheck
+#     (call-graph reachability) reports 0 reachable across all modules.
+#   * Cargo/RUSTSEC GTK3 + unmaintained-crate advisories — suppressed in
+#     apps/desktop/src-tauri/audit.toml (Linux-gated, not in the shipped
+#     macOS/Windows binaries). See that file for per-advisory justification.
+
+[[IgnoredVulns]]
+id = "GHSA-589f-c66p-hxr4"
+# alias CVE-2022-21802. FALSE POSITIVE: the OSV affected range is malformed
+# (introduced:0 with no `fixed` event), but this grapesjs XSS was patched in
+# 0.19.5 and apps/web pins ^0.21.13 (0.21.13 installed) — well past the fix.
+# GitHub Advisory DB (pnpm audit) correctly does NOT flag it. Re-evaluate if
+# grapesjs is ever downgraded below 0.19.5.
+reason = "Fixed in grapesjs 0.19.5; installed 0.21.13. OSV range missing the fixed boundary (data bug)."
+
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+# MODULE-LEVEL FALSE POSITIVE: this report applies only to the abandoned
+# x/crypto/openpgp packages. No Moosewave Go package or compiled dependency
+# imports that package tree; govulncheck remains the reachability gate.
+reason = "No x/crypto/openpgp package is present in any Moosewave build graph; govulncheck reports no reachable symbol."
+
+[[IgnoredVulns]]
+id = "GO-2022-0635"
+# MODULE-LEVEL FALSE POSITIVE: the collector's upstream SigV4 component keeps
+# aws-sdk-go v1 in its module graph, but the vulnerable CBC padding symbol is
+# not linked. Both govulncheck and the Trivy scan of the shipped scratch-image
+# binaries report zero reachable/shipped findings.
+reason = "The affected aws-sdk-go v1 CBC symbol is not linked into the collector; govulncheck and the release-image scan are clean."
+
+[[IgnoredVulns]]
+id = "GO-2022-0646"
+# MODULE-LEVEL FALSE POSITIVE: same locked collector dependency as above; the
+# vulnerable EC2 metadata helper is not linked into the minimal distribution.
+reason = "The affected aws-sdk-go v1 metadata symbol is not linked into the collector; govulncheck and the release-image scan are clean."
+
+[[IgnoredVulns]]
+id = "GHSA-5p2g-fcmc-qvqq"
+# BACKPORTED FIX: the workspace patches image-size 1.2.1 in
+# patches/image-size@1.2.1.patch and gates that patch with
+# `pnpm test:image-size-patch`; OSV sees the upstream version, not patched
+# package contents.
+reason = "The image-size allocation bound is backported in the checked-in pnpm patch and enforced by test:image-size-patch."
+
+[[IgnoredVulns]]
+id = "GHSA-w3rx-r6r6-pgpr"
+# BACKPORTED FIX: covered by the same content-addressed image-size patch and
+# its decompression/input-bound regression contract.
+reason = "The image-size input/decompression bound is backported in the checked-in pnpm patch and enforced by test:image-size-patch."

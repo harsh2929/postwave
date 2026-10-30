@@ -1,0 +1,88 @@
+diff --git a/dist/esm/shared/lib/lazy-dynamic/preload-chunks.js b/dist/esm/shared/lib/lazy-dynamic/preload-chunks.js
+--- a/dist/esm/shared/lib/lazy-dynamic/preload-chunks.js
++++ b/dist/esm/shared/lib/lazy-dynamic/preload-chunks.js
+@@ -2,7 +2,22 @@
+ import { jsx as _jsx, Fragment as _Fragment } from "react/jsx-runtime";
+ import { preload } from 'react-dom';
+ import { workAsyncStorage } from '../../../server/app-render/work-async-storage.external';
++import { workUnitAsyncStorage } from '../../../server/app-render/work-unit-async-storage.external';
++import { getScriptNonceFromHeader } from '../../../server/app-render/get-script-nonce-from-header';
+ import { encodeURIPath } from '../encode-uri-path';
++// The request's script nonce, read from its Content-Security-Policy exactly as
++// app-render reads it for Next's own scripts. Without it the preload links
++// below are the only framework-emitted <link rel=preload as=script> without a
++// nonce, so a nonce + 'strict-dynamic' policy blocks every one of them
++// (vercel/next.js#64091).
++function requestScriptNonce() {
++    const workUnitStore = workUnitAsyncStorage.getStore();
++    if (!workUnitStore || workUnitStore.type !== 'request') {
++        return undefined;
++    }
++    const csp = workUnitStore.headers.get('content-security-policy') || workUnitStore.headers.get('content-security-policy-report-only');
++    return typeof csp === 'string' ? getScriptNonceFromHeader(csp) : undefined;
++}
+ export function PreloadChunks(param) {
+     let { moduleIds } = param;
+     // Early return in client compilation and only load requestStore on server side
+@@ -28,6 +43,7 @@
+         return null;
+     }
+     const dplId = process.env.NEXT_DEPLOYMENT_ID ? "?dpl=" + process.env.NEXT_DEPLOYMENT_ID : '';
++    const nonce = requestScriptNonce();
+     return /*#__PURE__*/ _jsx(_Fragment, {
+         children: allFiles.map((chunk)=>{
+             const href = workStore.assetPrefix + "/_next/" + encodeURIPath(chunk) + dplId;
+@@ -47,7 +63,8 @@
+                 // If it's script we use ReactDOM.preload to preload the resources
+                 preload(href, {
+                     as: 'script',
+-                    fetchPriority: 'low'
++                    fetchPriority: 'low',
++                    nonce
+                 });
+                 return null;
+             }
+diff --git a/dist/shared/lib/lazy-dynamic/preload-chunks.js b/dist/shared/lib/lazy-dynamic/preload-chunks.js
+--- a/dist/shared/lib/lazy-dynamic/preload-chunks.js
++++ b/dist/shared/lib/lazy-dynamic/preload-chunks.js
+@@ -12,7 +12,22 @@
+ const _jsxruntime = require("react/jsx-runtime");
+ const _reactdom = require("react-dom");
+ const _workasyncstorageexternal = require("../../../server/app-render/work-async-storage.external");
++const _workunitasyncstorageexternal = require("../../../server/app-render/work-unit-async-storage.external");
++const _getscriptnoncefromheader = require("../../../server/app-render/get-script-nonce-from-header");
+ const _encodeuripath = require("../encode-uri-path");
++// The request's script nonce, read from its Content-Security-Policy exactly as
++// app-render reads it for Next's own scripts. Without it the preload links
++// below are the only framework-emitted <link rel=preload as=script> without a
++// nonce, so a nonce + 'strict-dynamic' policy blocks every one of them
++// (vercel/next.js#64091).
++function requestScriptNonce() {
++    const workUnitStore = _workunitasyncstorageexternal.workUnitAsyncStorage.getStore();
++    if (!workUnitStore || workUnitStore.type !== 'request') {
++        return undefined;
++    }
++    const csp = workUnitStore.headers.get('content-security-policy') || workUnitStore.headers.get('content-security-policy-report-only');
++    return typeof csp === 'string' ? (0, _getscriptnoncefromheader.getScriptNonceFromHeader)(csp) : undefined;
++}
+ function PreloadChunks(param) {
+     let { moduleIds } = param;
+     // Early return in client compilation and only load requestStore on server side
+@@ -38,6 +53,7 @@
+         return null;
+     }
+     const dplId = process.env.NEXT_DEPLOYMENT_ID ? "?dpl=" + process.env.NEXT_DEPLOYMENT_ID : '';
++    const nonce = requestScriptNonce();
+     return /*#__PURE__*/ (0, _jsxruntime.jsx)(_jsxruntime.Fragment, {
+         children: allFiles.map((chunk)=>{
+             const href = workStore.assetPrefix + "/_next/" + (0, _encodeuripath.encodeURIPath)(chunk) + dplId;
+@@ -57,7 +73,8 @@
+                 // If it's script we use ReactDOM.preload to preload the resources
+                 (0, _reactdom.preload)(href, {
+                     as: 'script',
+-                    fetchPriority: 'low'
++                    fetchPriority: 'low',
++                    nonce
+                 });
+                 return null;
+             }

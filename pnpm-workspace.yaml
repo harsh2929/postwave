@@ -1,0 +1,47 @@
+packages:
+  - "apps/*"
+  - "docs-site"
+  # Browser QA is a first-class release gate. Keep it in the workspace so CI's
+  # frozen install resolves the same Playwright runtime used to discover specs;
+  # an out-of-workspace package silently fell back to the root CLI while local
+  # imports could resolve a different, independently installed version.
+  - "tests/playwright"
+  - "packages/ai-disclosure"
+  - "packages/audit-portal-react"
+  - "packages/claude-code-plugin"
+  - "packages/cli"
+  - "packages/design-tokens"
+  - "packages/email-react"
+  - "packages/errors"
+  - "packages/mcp-server"
+  - "packages/nav"
+  - "packages/offline-outbox"
+  - "packages/notifications"
+  - "packages/onboarding-schema"
+  - "packages/openapi"
+  - "packages/query-contract"
+  - "packages/route-map"
+  - "packages/schema"
+  - "packages/sdk-ts"
+  # The client half of apps/api/internal/stepup, consumed by web, desktop AND
+  # mobile. Listed here for the same reason packages/track had to be: every CI
+  # packages step is `pnpm -r --filter './packages/**'`, and a non-member is
+  # silently skipped by all of them — its build, lint, typecheck and tests
+  # would never run, which for a shared SECURITY protocol is the worst place to
+  # have a gate that only looks green.
+  - "packages/step-up"
+  - "packages/telemetry"
+  # packages/track is a published SDK with no in-repo consumer (its consumers
+  # are customer websites), which is why it was left out. Membership is not
+  # about consumers though: every CI packages step is
+  # `pnpm -r --filter './packages/**'`, and a non-member is silently skipped by
+  # all of them — so its build, typecheck and tests never ran, and
+  # publish-packages' `pnpm --filter "./packages/track" run build` printed
+  # "No projects matched the filters" and exited 0, leaving dist/ (gitignored)
+  # absent and the packed tarball without its own entrypoint.
+  - "packages/track"
+  - "packages/vscode-extension"
+  # NOTE: packages/sdk-py is intentionally excluded — it's the Python SDK
+  # (Poetry-managed) and lives outside the JS workspace.
+  # NOTE: packages/migrate is intentionally excluded — it's a Go module
+  # (registered via go.work) and lives outside the JS workspace.

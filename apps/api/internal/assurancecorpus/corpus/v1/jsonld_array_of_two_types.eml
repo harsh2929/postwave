@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-array-of-two-types.v1@example.com>
+Subject: Order 4412 with offer
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-ldarray-v1"
+
+--pw-ldarray-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Order 4412 confirmed - 30.00 USD, 10% applied. https://shop.example.com/o/4412
+--pw-ldarray-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><script type="application/ld+json">[{"@context":"https://schema.org","@type":"Order","orderNumber":"4412","price":"30.00","priceCurrency":"USD","url":"https://shop.example.com/o/4412"},{"@context":"https://schema.org","@type":"DiscountOffer","description":"10% applied","url":"https://shop.example.com/o/4412"}]</script></head><body><h1>Order 4412 confirmed</h1><p>Total 30.00 USD with 10% applied.</p><p><a href="https://shop.example.com/o/4412">View your order</a></p></body></html>
+--pw-ldarray-v1--

@@ -1,0 +1,20 @@
+{
+  "name": "postwave-e2e-playwright",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Real end-to-end Playwright golden-path journeys for Moosewave. Drives the docker-compose test stack with mailpit so signup, campaign, and public archive flows can assert real delivery.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install --with-deps chromium",
+    "stack:up": "docker compose -f ../../../infra/docker-compose.yml -f ../../../infra/docker-compose.full.yml -f ../../../infra/docker-compose.test.yml up -d --build",
+    "stack:down": "docker compose -f ../../../infra/docker-compose.yml -f ../../../infra/docker-compose.full.yml -f ../../../infra/docker-compose.test.yml down --volumes --remove-orphans",
+    "stack:logs": "docker compose -f ../../../infra/docker-compose.yml -f ../../../infra/docker-compose.full.yml -f ../../../infra/docker-compose.test.yml logs --tail=200"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}

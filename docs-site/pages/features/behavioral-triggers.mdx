@@ -1,0 +1,153 @@
+---
+title: Behavioral Triggers
+---
+
+# Behavioral Triggers
+
+A behavioral trigger is an automation entry condition that fires on a subscriber event: an open, a click, or the absence of either within a window. They sit alongside the existing `list_join` and `tag_added` triggers in the automation runtime and use the same step graph, the same guardrails, and the same delivery worker.
+
+This page covers the event ingester, the storage shape, the qualifier model, the special-case handling for the "did not open" trigger, and a few worked examples.
+
+## The Listmonk webhook ingester
+
+Open and click events originate in the separately running upstream Listmonk
+process. Listmonk fires a webhook on every tracked open and click, signed with a
+per-tenant HMAC. Moosewave's automation service exposes a single internal
+endpoint that consumes this stream:
+
+```
+POST /api/internal/listmonk/events
+X-Postwave-Signature: hex(hmac_sha256(secret, body))
+Content-Type: application/json
+
+{
+  "tenant_id": "tnt_abc",
+  "event": "opened" | "clicked" | "complained",
+  "subscriber_id": "sub_42",
+  "campaign_id": "cmp_98",
+  "url": "https://example.com/post",   // clicked only
+  "occurred_at": "2026-04-30T12:01:14Z"
+}
+```
+
+The handler verifies the signature, drops the event into the `subscriber_events` table, and enqueues an Asynq task that walks the trigger index. The verification step is constant-time; replays are detected by the `occurred_at` timestamp plus a per-event UUID held in a 24-hour Redis dedupe key.
+
+A rejected signature returns 401 and logs to the `webhook_failures` table with the offending header. We do not return any detail in the body; an attacker probing the endpoint gets nothing back.
+
+## The `subscriber_events` table
+
+```sql
+CREATE TABLE subscriber_events (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  subscriber_id   UUID NOT NULL,
+  event           TEXT NOT NULL CHECK (event IN ('opened','clicked','complained','bounced')),
+  campaign_id     UUID,
+  url             TEXT,
+  occurred_at     TIMESTAMPTZ NOT NULL,
+  ingested_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX ON subscriber_events (tenant_id, subscriber_id, occurred_at DESC);
+CREATE INDEX ON subscriber_events (tenant_id, campaign_id, event, occurred_at);
+```
+
+Events are append-only. The two indexes back the two access patterns: per-subscriber recency lookup (used by the segment builder's `last_opened_at` and `last_clicked_at` fields) and per-campaign aggregation (used by the trigger evaluator).
+
+We retain events for 18 months by default and aggregate older rows into a per-subscriber summary row before pruning.
+
+## Trigger qualifiers
+
+A trigger is a row in `automation_triggers` shaped like this:
+
+```ts
+type Trigger = {
+  automation_id: string;
+  kind: "opened" | "clicked" | "did_not_open";
+  qualifiers: {
+    campaign_id?: string; // any campaign if absent
+    url_pattern?: string; // glob; only valid for "clicked"
+    within_days?: number; // for "opened"/"clicked", upper bound on age
+    after_days?: number; // for "did_not_open", the wait window
+  };
+};
+```
+
+Validation rules:
+
+- `url_pattern` is rejected on non-`clicked` triggers.
+- `within_days` is in `[1, 90]`.
+- `after_days` is in `[1, 90]` and is **required** for `did_not_open`.
+- A given automation can only have one entry trigger; mixing a `tag_added` and a `clicked` trigger on the same automation is not supported (use two automations).
+
+## How `did_not_open` is scheduled
+
+The two positive triggers (`opened`, `clicked`) are evaluated when their event arrives at the ingester. The negative trigger is harder: there is no event to react to. We schedule a one-time evaluator instead.
+
+When a campaign is sent, the worker enqueues one Asynq task per recipient at `send_time + after_days`. The task body is `{ automation_id, subscriber_id, campaign_id }`. When it fires, the evaluator runs a single SQL query:
+
+```sql
+SELECT 1 FROM subscriber_events
+WHERE tenant_id = $1 AND subscriber_id = $2
+  AND campaign_id = $3 AND event = 'opened'
+  AND occurred_at <= $4   -- the scheduled fire time
+LIMIT 1;
+```
+
+If the row exists, the task is a no-op. If it does not, the trigger fires and the subscriber is enrolled in the automation.
+
+This design has two useful properties:
+
+- **No polling.** We do not scan the entire subscriber base looking for non-openers; the work is bounded by the campaign's recipient count.
+- **Cancel-friendly.** If the subscriber unsubscribes before the task fires, the enrollment guardrail in the automation runtime drops them at enrollment time, so we do not need to chase down scheduled tasks.
+
+The downside is one Asynq task per recipient per active `did_not_open` automation. At 100K recipients with 30-day windows that is fine; at 10M with several active automations, you should batch by cohort. The runtime falls back to a daily scan when scheduled tasks for a single send exceed 500K.
+
+## Examples
+
+### Send a follow-up to subscribers who did not open issue 12 within 7 days
+
+```ts
+{
+  kind: "did_not_open",
+  qualifiers: {
+    campaign_id: "cmp_98",
+    after_days: 7
+  }
+}
+```
+
+The follow-up automation typically has one step: a `send_email` action with a softer subject line. Keep the body short; the recipient already saw issue 12 in some form (preview pane, notification) and ignored it.
+
+### Tag every subscriber who clicked the pricing link in any campaign in the last 30 days
+
+```ts
+{
+  kind: "clicked",
+  qualifiers: {
+    url_pattern: "https://example.com/pricing*",
+    within_days: 30
+  }
+}
+```
+
+The automation step is `tag_add: "interest:pricing"`. This is the bread and butter of behavioral segmentation; use it sparingly so your tag namespace does not balloon.
+
+### Move every subscriber who opened the welcome email into a 5-step onboarding sequence
+
+```ts
+{
+  kind: "opened",
+  qualifiers: {
+    campaign_id: "cmp_welcome_v3"
+  }
+}
+```
+
+There is no `within_days` here because the welcome email is sent once per subscriber, so age is implicit.
+
+## Deduplication and rate limits
+
+The ingester drops events with the same `(tenant_id, subscriber_id, campaign_id, event, occurred_at)` tuple as one already in Redis. The dedupe window is 24 hours; opens reported by both the tracking pixel and a webhook from a forwarder will not double-fire.
+
+The trigger evaluator is also idempotent at the automation layer: if the same subscriber qualifies twice in quick succession, the automation runtime's enrollment guardrail rejects the second enrollment unless the automation explicitly allows re-entry. This protects against pathological cases like a click that fires a webhook, then re-fires from the same subscriber's mail client opening the message again.

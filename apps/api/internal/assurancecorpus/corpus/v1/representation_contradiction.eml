@@ -1,0 +1,21 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <representation-contradiction.v1@example.com>
+Subject: Contradictory synthetic offer
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-contradiction-v1"
+
+--pw-contradiction-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Pay USD 20.00 before 2026-08-10T17:00:00Z (UTC).
+--pw-contradiction-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><h1>Synthetic offer</h1>=
+<p>Pay EUR 25.00 before 2026-08-11T17:00:00+02:00 =
+(Europe/Paris).</p></body></html>
+--pw-contradiction-v1--

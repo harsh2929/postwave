@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <button-image-inside-anchor.v1@example.com>
+Subject: Confirm your booking
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-btnimg-v1"
+
+--pw-btnimg-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Confirm your booking: https://travel.example.com/confirm/8
+--pw-btnimg-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Confirm your booking</h1><p><a href="https://travel.example.com/confirm/8"><img src="https://cdn.example.com/confirm-button.png" alt="Confirm your booking" width="240" height="48"></a></p><p>Or copy this link: https://travel.example.com/confirm/8</p></body></html>
+--pw-btnimg-v1--

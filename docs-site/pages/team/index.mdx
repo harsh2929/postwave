@@ -1,0 +1,52 @@
+---
+title: Team & roles
+---
+
+import { Callout } from 'nextra/components';
+
+# Team & roles
+
+A Moosewave workspace is multi-user. Access is governed by two complementary models:
+
+- **Roles** — a durable band on each user (`owner` / `admin` / `editor` / `viewer`) that the session-cookie dashboard enforces.
+- **Scopes** — fine-grained permissions (`read:campaigns`, `write:campaigns`, `send:transactional`, `admin`, the `audit:*` family, …) carried by API keys and assignable to custom roles.
+
+<Callout type="info">
+The dashboard (cookie session) checks the **role** band; the API ([API keys](/api-reference/authentication)) checks **scopes**. Privileged routes enforce both: a session user must be `owner`/`admin` for any admin-tier scope, and an API key must carry the scope outright.
+</Callout>
+
+## Sections
+
+- [**Roles & RBAC**](/team/roles) — the role bands, the scope catalog, and the role-scope matrix API.
+- [**Sessions**](/team/sessions) — list active sessions, revoke one, log out everywhere, and preview as a viewer.
+
+## How users get into a workspace
+
+Moosewave supports two provisioning paths:
+
+1. **OAuth login** — a user signs in with a previously linked Google identity. A matching email does not create a link automatically; the user first signs in locally and explicitly connects Google from Security settings.
+2. **SCIM v2 provisioning** — your IdP pushes users and groups to Moosewave's SCIM endpoint, which creates/updates the user rows. This is the canonical way to manage seats at scale. See [Enterprise auth → SCIM](/security/scim).
+
+Either way, the result is a user row with a role. The role bands determine what they can do.
+
+## Identity endpoints
+
+| Method | Path                   | Returns                                                       |
+| ------ | ---------------------- | ------------------------------------------------------------- |
+| GET    | `/api/v1/me`           | Minimal identity for the current session (MFA-exempt).        |
+| GET    | `/api/v1/auth/me`      | Full session identity incl. `effective_role` (viewer-mode).   |
+| GET    | `/api/v1/audit/my-scopes` | The caller's effective scopes + `isAdmin` flag.            |
+
+```bash
+curl https://api.moosewave.com/api/v1/auth/me \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+`effective_role` reflects [viewer-mode](/team/sessions#preview-as-a-viewer): an admin previewing as a viewer sees `viewer` here without their durable role changing.
+
+## See also
+
+- [Roles & RBAC](/team/roles).
+- [Sessions](/team/sessions).
+- [Enterprise auth](/security) — SSO, SCIM, MFA.
+- [API authentication](/api-reference/authentication) — the scope catalog for API keys.

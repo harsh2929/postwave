@@ -1,0 +1,6 @@
+email,status,first_name,last_name,tags,segment,referral_count,custom_company,custom_role,subscription_tier,created_at
+maya@example.com,active,Maya,Angelou,"daily|referral|paid",champions,12,Example Press,editor,premium,2026-01-04T11:20:00Z
+bell@example.org,inactive,Bell,Hooks,"weekly|education",educators,1,Example School,teacher,free,2025-09-09T16:25:00Z
+audre@example.net,bounced,Audre,Lorde,"daily|poetry",writers,0,Example Arts,writer,free,2025-12-21T07:40:00Z
+june@example.com,active,June,Jordan,"daily|paid|vip",champions,5,Example Studio,founder,premium,2026-02-17T13:45:00Z
+adrienne@example.org,active,Adrienne,Rich,"weekly|vip",writers,3,Example Review,critic,free,2026-03-03T10:10:00Z

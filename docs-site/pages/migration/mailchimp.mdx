@@ -1,0 +1,76 @@
+---
+title: Migrate from Mailchimp
+---
+
+import { Callout } from "nextra/components";
+
+# Migrating from Mailchimp
+
+This archived guide mirrors the migration contract used by the Moosewave application. The application guide is authoritative.
+
+## Connect with OAuth
+
+Choose **Migrations → Mailchimp → Connect Mailchimp** and approve access in Mailchimp. Mailchimp OAuth access follows the approving user's account role; there is no granular migration-specific scope picker. Use a user that can read all intended audiences and archive surfaces.
+
+Moosewave does not write to Mailchimp during migration. Revoke the app in Mailchimp when the rollback/certification window is complete and no further source reads are required.
+
+## Choose audiences explicitly
+
+Unscoped discovery lists the audiences Mailchimp returned. Select one, many, or all of them. Scoped discovery is a preview for that selection; dry-run is the authoritative review step and persists the selected IDs. Submit the same `selected_audience_ids` to commit. A changed or omitted commit scope is rejected and requires a new dry-run.
+
+Audience scope applies to audience-bound members and merge data, groups/interests, saved/static segments, signup-form and audience-schema evidence, list-triggered Classic Automations, campaigns, and reports. Templates, landing pages, and ecommerce evidence are account-wide. Other source-archive guidance is either account-global or a non-detected capability gap; all of it must be reviewed as such before commit.
+
+## Coverage
+
+| Source data                             | Destination behavior                                                                                                                                                                                      |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Members and source statuses             | Tenant-scoped subscribers, consent/suppression state, attributes, and tags                                                                                                                                |
+| Native tags and interests               | Tags with source IDs preserved                                                                                                                                                                            |
+| Static segments                         | Membership-backed destination segments                                                                                                                                                                    |
+| Supported saved-segment predicates      | Validated destination segment queries                                                                                                                                                                     |
+| Editable templates                      | Destination templates with source-to-destination ID mapping                                                                                                                                               |
+| Supported Classic Automations           | `welcomeSeries` workflows without unrepresentable runtime windows become executable records, paused until template references and behavior are reviewed; other workflow types remain rebuild-review items |
+| Sent campaigns and reports              | Read-only campaign archive/evidence                                                                                                                                                                       |
+| Forms, landing pages, ecommerce records | Draft, paused, source-archive, or rebuild-review evidence, depending on the surface                                                                                                                       |
+
+Overlapping audience members are merged by normalized destination email. The report records duplicate source IDs and conflicting fields rather than silently choosing an arbitrary source row.
+
+## Boundaries
+
+- Customer Journey / Automation Flow graphs cannot be listed or exported through Mailchimp's supported public Marketing API. Moosewave emits one generic, non-detected parity gap, not an inventory. Inventory Journeys in Mailchimp and attach rebuild or waiver evidence; none become executable Moosewave automations.
+- Mailchimp-specific saved-segment rules that depend on rating, engagement history, dates, or ecommerce data are manual rebuild items unless the imported fields and membership semantics can be validated.
+- Mandrill, Mailchimp webhook subscriptions, social posts, ads, and provider-side configuration are outside the migration.
+- Historical recipient activity is limited to what the Mailchimp endpoints return. Read the resource completeness and warning rows instead of assuming a full event history.
+
+<Callout type="warning">
+  Do not activate imported Classic Automations until their triggers, destination
+  templates, branch semantics, and suppression behavior have been tested against
+  a small internal audience.
+</Callout>
+
+## Throttling and retries
+
+Mailchimp limits simultaneously processing requests. Adapter instances within
+one migration-service process share a conservative 10-request ceiling for the
+verified account. Separate replicas rely on Mailchimp's authoritative HTTP 429
+response; the job pauses according to `Retry-After` when provided and resumes
+from durable progress. A failed or warning-marked collection is not silently
+treated as complete.
+
+Mailchimp collection pagination is offset-based rather than a transactionally consistent snapshot. Pause source audience/configuration changes during the reviewed dry-run and commit window. If anything changes in Mailchimp, run and approve a new dry-run before cutover.
+
+## Reconnect
+
+If the encrypted source session is missing or unavailable, choose **Reconnect this migration**. The OAuth state is tenant-, source-, and job-bound and replaces the saved session for the same job, preserving its dry-run and audience scope.
+
+## Verify and roll back
+
+Before commit, review subscribers, consent provenance, suppressions, duplicate merges, segment warnings, automation rebuild gaps, templates, source archive warnings, and every `resource_completeness` row.
+
+During the displayed rollback window, rollback removes records created by the migration and restores recorded before-images for pre-existing records that it updated. Before any mutation, it checks the tracked destination after-images and ownership across the whole job. A later edit, ownership change, missing fingerprint, or ambiguous resource makes rollback stop with a conflict instead of overwriting or deleting that state. Failed or operator-cancelled commits with tracked partial writes can also be eligible for cleanup.
+
+Rollback does not change Mailchimp, undo sends, or remove DNS/provider configuration. Append-only consent and audit history remains for compliance, with compensating rollback evidence; rollback restores operational destination state rather than erasing that history.
+
+Live Mailchimp commit requires `LISTMONK_TENANT_MODE=dedicated` and a `LISTMONK_DEDICATED_TENANT_ID` that exactly matches the authenticated migration tenant. Shared mode is fail-closed and cannot be used for commit; it also cannot store two tenant-owned copies of one email in the same subscriber table.
+
+See [Verification report](/migration/verification-report) and [Rollback](/migration/rollback).

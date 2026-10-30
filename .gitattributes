@@ -1,0 +1,8 @@
+# Real tuned asset packs belong only in private/internal checkouts and selected
+# private Moosewave Cloud images. `git archive` source exports must use the
+# redistributable stubs instead. See LICENSE-BOUNDARY.md.
+/proprietary export-ignore
+/proprietary/** export-ignore
+
+# Campaign Assurance benchmark messages are exact RFC 5322 wire fixtures.
+/apps/api/internal/assurancecorpus/corpus/v1/*.eml -text

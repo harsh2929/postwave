@@ -1,0 +1,398 @@
+@media (max-width: 1600px) {
+  .dhw-tab-index {
+    display: none;
+  }
+
+  .dhw-tabs > button {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 7px;
+    padding-inline: 8px;
+  }
+
+  .dhw-grid-thirds {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dhw-grid-thirds > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1480px) and (min-width: 761px) {
+  .dhw-tabs > button {
+    min-height: 70px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 6px;
+    padding-inline: 7px;
+  }
+
+  .dhw-tab-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .dhw-tab-copy strong {
+    overflow: visible;
+    font-size: 11px;
+    line-height: 1.18;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .dhw-tab-copy small {
+    display: none;
+  }
+}
+
+@media (max-width: 1240px) {
+  .dhw-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 0.78fr);
+    gap: 32px;
+  }
+}
+
+@media (max-width: 1020px) {
+  .dhw-page {
+    padding: 22px;
+  }
+
+  .dhw-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dhw-model {
+    width: min(100%, 670px);
+    justify-self: stretch;
+  }
+
+  .dhw-grid-feature,
+  .dhw-grid-halves {
+    grid-template-columns: 1fr;
+  }
+
+  .dhw-tab-copy small {
+    display: none;
+  }
+
+  .dhw-workspace-heading {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dhw-workspace-heading > p {
+    max-width: 720px;
+    text-align: left;
+  }
+}
+
+@media (max-width: 760px) {
+  .dhw-page {
+    padding: 16px;
+  }
+
+  .dhw-hero {
+    gap: 26px;
+    padding: 25px;
+    border-radius: 21px;
+  }
+
+  .dhw-hero h1 {
+    margin-top: 19px;
+    font-size: clamp(34px, 9vw, 48px);
+  }
+
+  .dhw-hero-copy > p {
+    margin-top: 17px;
+  }
+
+  .dhw-hero-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 17px;
+    margin-top: 26px;
+  }
+
+  .dhw-hero-facts > div:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .dhw-workspaces {
+    --dhw-tab-rail-gutter: 16px;
+
+    container-type: inline-size;
+    margin-right: -16px;
+    margin-left: -16px;
+    padding: 6px 16px;
+    overflow-x: auto;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    scrollbar-width: thin;
+    scroll-padding-inline: var(--dhw-tab-rail-gutter);
+    scroll-snap-type: x mandatory;
+  }
+
+  .dhw-tabs {
+    width: max-content;
+    display: flex;
+    gap: 5px;
+    /* Keep enough trailing runway for the final workspace to snap to the
+       readable leading edge instead of leaving a clipped tab at that edge. */
+    padding-right: max(0px, calc(100cqw - 212px));
+  }
+
+  .dhw-tabs > button {
+    width: 180px;
+    min-height: 58px;
+    flex: 0 0 180px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .dhw-tab-copy small {
+    display: block;
+  }
+
+  .dhw-workspace-heading {
+    margin-top: 25px;
+  }
+
+  .dhw-grid-thirds {
+    grid-template-columns: 1fr;
+  }
+
+  .dhw-grid-thirds > :last-child {
+    grid-column: auto;
+  }
+
+  .dhw-surface-error {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .dhw-surface-error > .btn {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 42px;
+  }
+
+  .dhw-canonical-owner {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .dhw-canonical-owner > .btn {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 520px) {
+  .dhw-page {
+    padding: 12px;
+  }
+
+  .dhw-hero {
+    padding: 22px;
+  }
+
+  .dhw-hero h1 {
+    font-size: clamp(32px, 11vw, 43px);
+  }
+
+  .dhw-hero-actions,
+  .dhw-hero-actions .dhw-refresh {
+    width: 100%;
+  }
+
+  .dhw-hero-actions .dhw-refresh {
+    justify-content: center;
+  }
+
+  .dhw-model {
+    padding: 18px;
+  }
+
+  .dhw-model-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dhw-model-body {
+    grid-template-columns: 118px minmax(0, 1fr);
+    gap: 17px;
+  }
+
+  .dhw-score-ring {
+    width: 118px;
+    height: 118px;
+  }
+
+  .dhw-score-ring strong {
+    font-size: 36px;
+  }
+
+  .dhw-model-summary > strong {
+    font-size: 35px;
+  }
+
+  .dhw-signal-path {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dhw-signal-path > i {
+    display: none;
+  }
+
+  .dhw-signal-path > span {
+    align-items: center;
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+  }
+
+  .dhw-model-provenance {
+    text-align: left;
+  }
+
+  .dhw-workspaces {
+    --dhw-tab-rail-gutter: 12px;
+
+    margin-right: -12px;
+    margin-left: -12px;
+    padding-inline: 12px;
+  }
+
+  .dhw-tabs {
+    padding-right: max(0px, calc(100cqw - 204px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dhw-refresh-glyph.is-spinning,
+  .dhw-signal-path > i::after,
+  .dhw-stack {
+    animation: none;
+  }
+
+  .dhw-tabs > button,
+  .dhw-tabs > button::after {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .dhw-hero,
+  .dhw-model,
+  .dhw-workspaces,
+  .dhw-component-shell,
+  .dhw-surface-error {
+    border-color: var(--pw-border-strong, var(--pw-fg));
+  }
+
+  .dhw-tabs > button.is-active {
+    border-color: var(--pw-accent);
+  }
+}
+
+@media (forced-colors: active) {
+  .dhw-page,
+  .dhw-page * {
+    color: CanvasText !important;
+  }
+
+  .dhw-page a {
+    color: LinkText !important;
+  }
+
+  .dhw-hero,
+  .dhw-model,
+  .dhw-workspaces,
+  .dhw-component-shell,
+  .dhw-surface-error,
+  .dhw-score-ring::before {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .dhw-hero::before,
+  .dhw-hero::after,
+  .dhw-signal-path > i::after {
+    display: none;
+  }
+
+  .dhw-tabs > button {
+    border-color: ButtonBorder;
+    color: ButtonText !important;
+    background: Canvas;
+  }
+
+  .dhw-tabs > button[aria-selected="true"] {
+    border: 2px solid Highlight;
+    color: HighlightText !important;
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+
+  .dhw-tabs > button[aria-selected="true"] .dhw-tab-index,
+  .dhw-tabs > button[aria-selected="true"] .dhw-tab-copy strong,
+  .dhw-tabs > button[aria-selected="true"] .dhw-tab-copy small,
+  .dhw-tabs > button[aria-selected="true"] .dhw-tab-icon {
+    color: HighlightText !important;
+  }
+
+  .dhw-tabs > button[aria-selected="true"] .dhw-tab-icon {
+    border-color: HighlightText;
+    background: Highlight;
+  }
+
+  .dhw-tabs > button[aria-selected="true"]::after {
+    background: HighlightText;
+  }
+
+  .dhw-tabs > button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .dhw-score-ring {
+    border: 7px solid Highlight;
+    background: Canvas;
+    box-shadow: none;
+  }
+}
+
+@media print {
+  .dhw-page {
+    width: 100%;
+    padding: 0;
+    /* stylelint-disable-next-line color-no-hex -- deterministic monochrome print foreground */
+    color: #000;
+  }
+
+  .dhw-hero,
+  .dhw-model,
+  .dhw-workspaces,
+  .dhw-component-shell,
+  .dhw-surface-error {
+    break-inside: avoid;
+    /* stylelint-disable-next-line color-no-hex -- deterministic print-only separator */
+    border-color: #aaa;
+    /* stylelint-disable-next-line color-no-hex -- deterministic print paper background */
+    background: #fff;
+    box-shadow: none;
+  }
+
+  .dhw-hero::before,
+  .dhw-hero::after,
+  .dhw-hero-actions,
+  .dhw-workspaces {
+    display: none;
+  }
+
+  .dhw-panel[hidden] {
+    display: none !important;
+  }
+}

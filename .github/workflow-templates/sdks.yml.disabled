@@ -1,0 +1,169 @@
+name: SDKs
+
+# Builds + tests every official client SDK on a runner that actually has the
+# toolchain — this is where the Go/Ruby/Rust/PHP SDKs are re-verified and where
+# the Java/Elixir/.NET SDKs get compiled and smoke-tested.
+#
+# Third-party actions are pinned by commit SHA (repo policy). Update pins
+# deliberately during dependency maintenance.
+
+on:
+  pull_request:
+    paths:
+      - "packages/sdk-go/**"
+      - "packages/sdk-ruby/**"
+      - "packages/sdk-rust/**"
+      - "packages/sdk-java/**"
+      - "packages/sdk-elixir/**"
+      - "packages/sdk-dotnet/**"
+      - "packages/sdk-php/**"
+      - ".github/workflows/sdks.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/sdk-go/**"
+      - "packages/sdk-ruby/**"
+      - "packages/sdk-rust/**"
+      - "packages/sdk-java/**"
+      - "packages/sdk-elixir/**"
+      - "packages/sdk-dotnet/**"
+      - "packages/sdk-php/**"
+      - ".github/workflows/sdks.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php:
+    name: PHP SDK (${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Latest patch in each supported branch; Composer enforces the
+        # CVE-2026-109618 / CVE-2026-109619 security floors before tests run.
+        php-version: ["8.2", "8.3", "8.4", "8.5"]
+    defaults:
+      run:
+        working-directory: packages/sdk-php
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: curl, json, pcntl
+          ini-values: session.upload_progress.enabled=0
+          coverage: none
+          tools: composer:v2
+        env:
+          fail-fast: true
+      - run: composer validate --strict --no-check-publish
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: composer check-platform-reqs
+      - name: Syntax check
+        run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Test without silent quality exceptions
+        run: vendor/bin/phpunit tests --fail-on-skipped --fail-on-warning --fail-on-risky --fail-on-deprecation
+      - run: composer audit --no-interaction
+
+  go:
+    name: Go SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-go
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+      - run: go vet ./...
+        env:
+          GOWORK: "off"
+      - run: go test ./...
+        env:
+          GOWORK: "off"
+
+  ruby:
+    name: Ruby SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-ruby
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: ruby/setup-ruby@9eb537ca036ebaed86729dcb9309076e4c5c3b74
+        with:
+          ruby-version: "3.3"
+      - run: ruby -Ilib -Itest test/test_postwave.rb
+
+  rust:
+    name: Rust SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-rust
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        with:
+          toolchain: stable
+      - run: cargo build --verbose
+      - run: cargo test --verbose
+
+  java:
+    name: Java SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-java
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Compile (main + smoke test)
+        run: |
+          mapfile -d '' sources < <(find src/main/java test -name '*.java' -print0)
+          javac -Xlint:all -d out "${sources[@]}"
+      - name: Run smoke test
+        run: java -cp out com.moosewave.Smoke
+
+  elixir:
+    name: Elixir SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-elixir
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93
+        with:
+          otp-version: "26"
+          elixir-version: "1.16"
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - run: mix compile
+      - run: mix test
+
+  dotnet:
+    name: .NET SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-dotnet
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: "6.0.x"
+      - run: dotnet build Moosewave.csproj -c Release
+      - name: Run smoke test
+        run: dotnet run --project tests/Smoke/Smoke.csproj -c Release

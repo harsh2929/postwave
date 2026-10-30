@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <visibility-hidden-layout-spacer.v1@example.com>
+Subject: Invoice 7742
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-vishidden-v1"
+
+--pw-vishidden-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Invoice 7742 - 88.00 USD. https://billing.example.com/7742
+--pw-vishidden-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Invoice 7742</h1><table role="presentation"><tr><td>Amount</td><td>88.00 USD</td></tr><tr><td colspan="2" style="visibility:hidden;line-height:8px">.</td></tr><tr><td>Due</td><td>30 September</td></tr></table><p><a href="https://billing.example.com/7742">Pay the invoice</a></p></body></html>
+--pw-vishidden-v1--

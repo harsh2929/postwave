@@ -1,0 +1,227 @@
+.audience-sync-run-subtitle,
+.audience-sync-run-subtitle > span,
+.audience-sync-run-history,
+.audience-sync-run-history-header,
+.audience-sync-run-loading,
+.audience-sync-run-evidence dl,
+.audience-sync-run-evidence dl > div,
+.audience-sync-run-table td:last-child {
+  min-width: 0;
+}
+
+.audience-sync-run-subtitle {
+  display: grid;
+  gap: 2px;
+  max-width: min(58rem, 72vw);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.audience-sync-run-subtitle > span {
+  overflow-wrap: anywhere;
+}
+
+.audience-sync-run-history {
+  margin-top: 14px;
+}
+
+.audience-sync-run-history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.audience-sync-run-history-header h3,
+.audience-sync-run-history-header p,
+.audience-sync-run-empty h4,
+.audience-sync-run-empty p {
+  margin: 0;
+}
+
+.audience-sync-run-history-header h3 {
+  font-size: 13px;
+}
+
+.audience-sync-run-history-header p {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.audience-sync-run-loading {
+  display: grid;
+  gap: 6px;
+  padding: 10px 0;
+  color: var(--pw-fg-muted);
+  font-size: 11.5px;
+}
+
+.audience-sync-run-empty {
+  padding: 16px;
+  border: 1px solid var(--pw-border);
+  border-radius: 7px;
+  text-align: center;
+}
+
+.audience-sync-run-empty h4 {
+  font-size: 13px;
+}
+
+.audience-sync-run-empty p {
+  margin-top: 4px;
+  color: var(--pw-fg-muted);
+  font-size: 11.5px;
+}
+
+.audience-sync-run-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--pw-border);
+  border-radius: 7px;
+}
+
+.audience-sync-run-table {
+  width: 100%;
+  min-width: 64rem;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.audience-sync-run-table th,
+.audience-sync-run-table td {
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--pw-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.audience-sync-run-table th {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg-muted);
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.audience-sync-run-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.audience-sync-run-table th:nth-child(1) {
+  width: 7rem;
+}
+
+.audience-sync-run-table th:nth-child(2) {
+  width: 26rem;
+}
+
+.audience-sync-run-table th:nth-child(3),
+.audience-sync-run-table th:nth-child(4) {
+  width: 6rem;
+}
+
+.audience-sync-run-table th:nth-child(5) {
+  width: 18rem;
+}
+
+.audience-sync-run-table td > strong {
+  display: block;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.audience-sync-run-evidence {
+  margin-top: 5px;
+}
+
+.audience-sync-run-evidence summary {
+  width: fit-content;
+  color: var(--pw-accent);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.audience-sync-run-evidence dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 10px;
+  margin: 8px 0 0;
+  padding: 8px;
+  border: 1px solid var(--pw-border);
+  border-radius: 5px;
+}
+
+.audience-sync-run-evidence dt {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.audience-sync-run-evidence dd {
+  margin: 1px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.audience-sync-run-table td:last-child {
+  display: grid;
+  gap: 5px;
+}
+
+.audience-sync-run-table td:last-child > span {
+  overflow-wrap: anywhere;
+}
+
+.audience-sync-run-table td:last-child > .btn {
+  width: fit-content;
+  margin-top: 3px;
+}
+
+.audience-sync-run-table td:last-child > .pw-action-status {
+  max-width: 17rem;
+}
+
+.audience-sync-run-verified,
+.audience-sync-run-provenance {
+  margin: 8px 0 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.audience-sync-run-provenance {
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--pw-border);
+}
+
+@media (max-width: 720px) {
+  .audience-sync-run-subtitle {
+    max-width: 100%;
+  }
+
+  .audience-sync-run-history-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .audience-sync-run-history-header > .btn {
+    width: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .audience-sync-run-empty,
+  .audience-sync-run-table-wrap,
+  .audience-sync-run-evidence dl {
+    border-color: CanvasText;
+  }
+
+  .audience-sync-run-table th {
+    background: Canvas;
+  }
+}

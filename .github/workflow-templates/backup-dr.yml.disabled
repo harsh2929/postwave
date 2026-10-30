@@ -1,0 +1,248 @@
+name: Backup and disaster recovery
+
+on:
+  pull_request:
+    paths:
+      - "infra/backup/**"
+      - "scripts/backup/**"
+      - "scripts/check-backup-dr.sh"
+      - "scripts/update/preflight.sh"
+      - "docs/DISASTER-RECOVERY.md"
+      - "docs/runbooks/backup-quarterly-test.md"
+      - "docs/runbooks/disaster-recovery.md"
+      - "docs/runbooks/rds-cross-region-backup.md"
+      - ".github/workflows/backup-dr.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/backup/**"
+      - "scripts/backup/**"
+      - "scripts/check-backup-dr.sh"
+      - "scripts/update/preflight.sh"
+      - "docs/DISASTER-RECOVERY.md"
+      - "docs/runbooks/backup-quarterly-test.md"
+      - "docs/runbooks/disaster-recovery.md"
+      - "docs/runbooks/rds-cross-region-backup.md"
+      - ".github/workflows/backup-dr.yml"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: backup-dr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Install CloudFormation validator
+        run: pipx install cfn-lint==1.53.0
+
+      - name: ShellCheck backup and recovery scripts
+        run: >-
+          docker run --rm -v "$PWD:/mnt" -w /mnt
+          koalaman/shellcheck:stable@sha256:bb596a0d169b85ddd81d8b6d3a2ff6d5baf5fca10b97f575ebc647c3dff62b3d
+          -S warning scripts/check-backup-dr.sh scripts/backup/*.sh
+          scripts/update/preflight.sh infra/backup/*.sh infra/backup/image/*.sh
+
+      - name: Static backup and DR gate
+        run: scripts/check-backup-dr.sh
+
+      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Build exact local test image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: infra/backup/image
+          load: true
+          platforms: linux/amd64
+          tags: postwave-backup:local-test
+          build-args: BUILD_REVISION=${{ github.sha }}
+          cache-from: type=gha,scope=backup-image
+          cache-to: type=gha,mode=max,scope=backup-image
+
+      - name: Exercise base backup, WAL archive, and isolated PITR
+        env:
+          LOCAL_BACKUP_IMAGE: postwave-backup:local-test
+        run: scripts/backup/test-walg-local.sh
+
+      - name: Exercise independent base-evidence signing and fail-closed health
+        env:
+          LOCAL_BACKUP_IMAGE: postwave-backup:local-test
+        run: scripts/backup/test-base-evidence-signer.sh
+
+      - name: Build and smoke-test the arm64 runtime
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: infra/backup/image
+          load: true
+          platforms: linux/arm64
+          tags: postwave-backup:local-test-arm64
+          build-args: BUILD_REVISION=${{ github.sha }}
+          cache-from: type=gha,scope=backup-image-arm64
+          cache-to: type=gha,mode=max,scope=backup-image-arm64
+
+      - name: Exercise pinned tools and restore exit semantics on arm64
+        run: |
+          docker run --rm --platform linux/arm64 postwave-backup:local-test-arm64 sh -ceu '
+            wal-g --version
+            aws --version
+            pg_dump --version
+            test ! -e /usr/local/bin/gosu
+            test "$USER" = postgres
+            mkdir -p /tmp/aws-sync-check
+            set +e
+            aws s3 sync s3://postwave-build-check/sync /tmp/aws-sync-check \
+              --checksum-mode ENABLED --dryrun --endpoint-url http://127.0.0.1:9
+            status=$?
+            set -e
+            test "$status" -ne 252
+          '
+          docker run --rm --platform linux/arm64 --user 999:999 --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m,uid=999,gid=999 \
+            --env WALG_FILE_PREFIX=/tmp/empty --entrypoint /bin/bash \
+            postwave-backup:local-test-arm64 -c '
+              mkdir -p /tmp/empty
+              set +e
+              /usr/local/bin/postwave-wal-fetch 0000000100000000000000FF /tmp/fetched
+              status=$?
+              set -e
+              test "$status" -eq 74
+            '
+
+      - name: Scan the tested amd64 image
+        id: scan-amd64
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: postwave-backup:local-test
+          format: sarif
+          output: trivy-backup-image-amd64.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+
+      - name: Scan the tested arm64 image
+        id: scan-arm64
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: postwave-backup:local-test-arm64
+          format: sarif
+          output: trivy-backup-image-arm64.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+
+      - name: Enforce both architecture vulnerability gates
+        if: always()
+        env:
+          AMD64_SCAN_OUTCOME: ${{ steps.scan-amd64.outcome }}
+          ARM64_SCAN_OUTCOME: ${{ steps.scan-arm64.outcome }}
+        run: |
+          test "${AMD64_SCAN_OUTCOME}" = success
+          test "${ARM64_SCAN_OUTCOME}" = success
+
+      - name: Upload scan report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: backup-image-trivy-${{ github.sha }}
+          path: trivy-backup-image-*.sarif
+          if-no-files-found: warn
+
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+        with:
+          platforms: arm64
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute immutable image name
+        id: image
+        shell: bash
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/postwave-backup" >>"${GITHUB_OUTPUT}"
+
+      - name: Publish multi-architecture backup image
+        id: publish
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: infra/backup/image
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.image.outputs.name }}:${{ github.sha }}
+          build-args: BUILD_REVISION=${{ github.sha }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=backup-image
+          cache-to: type=gha,mode=max,scope=backup-image
+
+      - name: Exercise the published digest before signing
+        env:
+          LOCAL_BACKUP_IMAGE: ${{ steps.image.outputs.name }}@${{ steps.publish.outputs.digest }}
+        run: scripts/backup/test-walg-local.sh
+
+      - name: Smoke-test the published arm64 manifest member before signing
+        env:
+          PUBLISHED_BACKUP_IMAGE: ${{ steps.image.outputs.name }}@${{ steps.publish.outputs.digest }}
+        run: |
+          docker run --rm --platform linux/arm64 "${PUBLISHED_BACKUP_IMAGE}" sh -ceu '
+            wal-g --version
+            aws --version
+            pg_dump --version
+            test ! -e /usr/local/bin/gosu
+            test "$USER" = postgres
+          '
+          docker run --rm --platform linux/arm64 --user 999:999 --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m,uid=999,gid=999 \
+            --env WALG_FILE_PREFIX=/tmp/empty --entrypoint /bin/bash \
+            "${PUBLISHED_BACKUP_IMAGE}" -c '
+              mkdir -p /tmp/empty
+              set +e
+              /usr/local/bin/postwave-wal-fetch 0000000100000000000000FF /tmp/fetched
+              status=$?
+              set -e
+              test "$status" -eq 74
+            '
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+
+      - name: Sign immutable image digest with GitHub OIDC
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.publish.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: Record deployable image reference
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          DIGEST: ${{ steps.publish.outputs.digest }}
+        run: printf "### Backup image\n\n\`%s@%s\`\n" "${IMAGE}" "${DIGEST}" >>"${GITHUB_STEP_SUMMARY}"

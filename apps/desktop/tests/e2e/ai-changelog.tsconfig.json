@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test", "vite/client"]
+  },
+  "include": [
+    "ai-changelog-evidence-harness.ts",
+    "ai-changelog-maturity.spec.ts",
+    "ai-changelog.playwright.config.ts"
+  ],
+  "exclude": ["../../node_modules", "../../dist", "../../src-tauri"],
+  "references": []
+}

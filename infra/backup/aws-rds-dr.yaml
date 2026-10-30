@@ -1,0 +1,885 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Moosewave canonical RDS PostgreSQL recovery controls: compliance-locked AWS
+  Backup vaults, an explicit daily RDS selection, cross-Region snapshot copy,
+  and freshness/failure alarms. Deploy replica mode in the recovery Region
+  before primary mode in the database Region.
+
+Metadata:
+  DeploymentOrder:
+    Description: >-
+      Deploy Mode=replica in the recovery Region. Pass its vault ARN and name
+      to Mode=primary in the RDS Region. Enable native RDS automated-backup
+      replication separately with scripts/backup/configure-rds-cross-region-pitr.sh.
+
+Parameters:
+  Mode:
+    Type: String
+    AllowedValues: [replica, primary]
+  Environment:
+    Type: String
+    Default: prod
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{0,30}$"
+  RdsDbArn:
+    Type: String
+    Default: arn:aws:rds:us-east-1:000000000000:db:postwave-unused
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:rds:[a-z0-9-]+:[0-9]{12}:db:[a-zA-Z0-9-]+$"
+    Description: Exact ARN of the canonical RDS DB instance; clusters are intentionally rejected.
+  RdsStorageKmsKeyArn:
+    Type: String
+    Default: arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000001
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:kms:[a-z0-9-]+:[0-9]{12}:key/[A-Za-z0-9-]+$"
+    Description: Exact customer-managed KMS key ARN used by the source RDS DB instance.
+  ReplicaBackupVaultArn:
+    Type: String
+    Default: arn:aws:backup:us-east-1:000000000000:backup-vault:postwave-unused
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:backup:[a-z0-9-]+:[0-9]{12}:backup-vault:[A-Za-z0-9_-]{2,50}$"
+  ReplicaBackupVaultName:
+    Type: String
+    Default: postwave-unused
+    AllowedPattern: "^[A-Za-z0-9_-]{2,50}$"
+  ReplicaVaultKmsKeyArn:
+    Type: String
+    Default: arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000002
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:kms:[a-z0-9-]+:[0-9]{12}:key/[A-Za-z0-9-]+$"
+  AlarmTopicArn:
+    Type: String
+    Default: arn:aws:sns:us-east-1:000000000000:postwave-unused
+    AllowedPattern: "^arn:aws[a-zA-Z-]*:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]+$"
+    Description: >-
+      Operator-owned on-call topic in the Region where this stack is deployed.
+      Its topic policy must permit CloudWatch alarm delivery.
+  RetentionDays:
+    Type: Number
+    Default: 35
+    MinValue: 35
+    MaxValue: 365
+  NativeReplicationRetentionDays:
+    Type: Number
+    Default: 14
+    MinValue: 1
+    MaxValue: 35
+    Description: Retention configured by configure-rds-cross-region-pitr.sh.
+  NativeReplicationMaxLagSeconds:
+    Type: Number
+    Default: 1800
+    MinValue: 300
+    MaxValue: 86400
+  ReplicaCopyMaxAgeSeconds:
+    Type: Number
+    Default: 172800
+    MinValue: 86400
+    MaxValue: 604800
+    Description: Maximum age of the newest fully validated recovery-Region AWS Backup copy.
+  VaultLockChangeableForDays:
+    Type: Number
+    Default: 7
+    MinValue: 3
+    MaxValue: 30
+    Description: >-
+      Compliance-mode grace period. After it expires, even the account root
+      cannot change or remove Vault Lock until all recovery points expire.
+  BackupScheduleExpression:
+    Type: String
+    Default: "cron(0 2 * * ? *)"
+    AllowedPattern: "^cron\\([0-9*/?, -]+\\)$"
+    Description: UTC AWS Backup schedule; keep it outside the RDS 08:00-09:00 UTC backup window.
+
+Rules:
+  ReplicaInputs:
+    RuleCondition: !Equals [!Ref Mode, replica]
+    Assertions:
+      - Assert: !Not
+          - !Equals
+            - !Ref RdsDbArn
+            - "arn:aws:rds:us-east-1:000000000000:db:postwave-unused"
+        AssertDescription: Replica mode requires the source RDS DB ARN for native PITR monitoring.
+      - Assert: !Not
+          - !Equals
+            - !Ref AlarmTopicArn
+            - "arn:aws:sns:us-east-1:000000000000:postwave-unused"
+        AssertDescription: Replica mode requires an on-call SNS topic in the recovery Region.
+  PrimaryInputs:
+    RuleCondition: !Equals [!Ref Mode, primary]
+    Assertions:
+      - Assert: !Not
+          - !Equals
+            - !Ref RdsDbArn
+            - "arn:aws:rds:us-east-1:000000000000:db:postwave-unused"
+        AssertDescription: Primary mode requires the canonical RDS DB instance ARN.
+      - Assert: !Not
+          - !Equals
+            - !Ref RdsStorageKmsKeyArn
+            - "arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000001"
+        AssertDescription: Primary mode requires the source RDS storage KMS key ARN.
+      - Assert: !Not
+          - !Equals
+            - !Ref ReplicaBackupVaultArn
+            - "arn:aws:backup:us-east-1:000000000000:backup-vault:postwave-unused"
+        AssertDescription: Primary mode requires the recovery-Region vault ARN.
+      - Assert: !Not
+          - !Equals [!Ref ReplicaBackupVaultName, postwave-unused]
+        AssertDescription: Primary mode requires the recovery-Region vault name.
+      - Assert: !Not
+          - !Equals
+            - !Ref ReplicaVaultKmsKeyArn
+            - "arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000002"
+        AssertDescription: Primary mode requires the recovery-Region vault KMS key ARN.
+      - Assert: !Not
+          - !Equals
+            - !Ref AlarmTopicArn
+            - "arn:aws:sns:us-east-1:000000000000:postwave-unused"
+        AssertDescription: Primary mode requires an on-call SNS topic in the database Region.
+
+Conditions:
+  IsReplica: !Equals [!Ref Mode, replica]
+  IsPrimary: !Equals [!Ref Mode, primary]
+
+Resources:
+  ReplicaVaultKey:
+    Type: AWS::KMS::Key
+    Condition: IsReplica
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Moosewave RDS recovery-Region AWS Backup vault key
+      EnableKeyRotation: true
+      PendingWindowInDays: 30
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: RootAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: EncryptNativeReplicationMonitorLogs
+            Effect: Allow
+            Principal:
+              Service: !Sub logs.${AWS::Region}.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: "*"
+            Condition:
+              ArnEquals:
+                kms:EncryptionContext:aws:logs:arn: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/postwave-${Environment}-rds-backup-monitor
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+        - Key: purpose
+          Value: rds-backup-replica
+
+  ReplicaVaultKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: IsReplica
+    Properties:
+      AliasName: !Sub alias/postwave-${Environment}-rds-backup-replica
+      TargetKeyId: !Ref ReplicaVaultKey
+
+  ReplicaBackupVault:
+    Type: AWS::Backup::BackupVault
+    Condition: IsReplica
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BackupVaultName: !Sub postwave-${Environment}-rds-replica
+      EncryptionKeyArn: !GetAtt ReplicaVaultKey.Arn
+      LockConfiguration:
+        ChangeableForDays: !Ref VaultLockChangeableForDays
+        MinRetentionDays: 35
+        MaxRetentionDays: 365
+      BackupVaultTags:
+        project: postwave
+        environment: !Ref Environment
+        purpose: rds-backup-replica
+
+  PrimaryVaultKey:
+    Type: AWS::KMS::Key
+    Condition: IsPrimary
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Moosewave RDS primary-Region AWS Backup vault key
+      EnableKeyRotation: true
+      PendingWindowInDays: 30
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: RootAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: "kms:*"
+            Resource: "*"
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+        - Key: purpose
+          Value: rds-backup-primary
+
+  PrimaryVaultKeyAlias:
+    Type: AWS::KMS::Alias
+    Condition: IsPrimary
+    Properties:
+      AliasName: !Sub alias/postwave-${Environment}-rds-backup-primary
+      TargetKeyId: !Ref PrimaryVaultKey
+
+  PrimaryBackupVault:
+    Type: AWS::Backup::BackupVault
+    Condition: IsPrimary
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BackupVaultName: !Sub postwave-${Environment}-rds-primary
+      EncryptionKeyArn: !GetAtt PrimaryVaultKey.Arn
+      LockConfiguration:
+        ChangeableForDays: !Ref VaultLockChangeableForDays
+        MinRetentionDays: 35
+        MaxRetentionDays: 365
+      BackupVaultTags:
+        project: postwave
+        environment: !Ref Environment
+        purpose: rds-backup-primary
+
+  BackupServiceRole:
+    Type: AWS::IAM::Role
+    Condition: IsPrimary
+    Properties:
+      Description: RDS-only AWS Backup service role for the explicit Moosewave DB selection
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: backup.amazonaws.com
+            Action: sts:AssumeRole
+            # AWS Backup documents only the service principal for this
+            # customer-passed role; it does not guarantee source-account/ARN
+            # context on sts:AssumeRole. The exact resource policy below and
+            # iam:PassRole controls on deployers provide the boundary.
+      Policies:
+        - PolicyName: CanonicalRdsBackupOnly
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: DescribeRdsBackupState
+                Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - rds:DescribeDBSnapshots
+                Resource: "*"
+              - Sid: CreateAndTagBackupSnapshots
+                Effect: Allow
+                Action:
+                  - rds:CreateDBSnapshot
+                  - rds:AddTagsToResource
+                  - rds:ListTagsForResource
+                Resource:
+                  - !Ref RdsDbArn
+                  - !Sub arn:${AWS::Partition}:rds:*:${AWS::AccountId}:snapshot:awsbackup:*
+              - Sid: CopyAwsBackupSnapshots
+                Effect: Allow
+                Action: rds:CopyDBSnapshot
+                Resource: !Sub arn:${AWS::Partition}:rds:*:${AWS::AccountId}:snapshot:awsbackup:*
+              - Sid: MaintainOnlyAwsBackupSnapshots
+                Effect: Allow
+                Action:
+                  - rds:DeleteDBSnapshot
+                  - rds:ModifyDBSnapshotAttribute
+                Resource: !Sub arn:${AWS::Partition}:rds:*:${AWS::AccountId}:snapshot:awsbackup:*
+              - Sid: UseOnlyPostwaveBackupVaults
+                Effect: Allow
+                Action:
+                  - backup:DescribeBackupVault
+                  - backup:CopyIntoBackupVault
+                Resource:
+                  - !GetAtt PrimaryBackupVault.BackupVaultArn
+                  - !Ref ReplicaBackupVaultArn
+              - Sid: CopyOnlyFromPostwavePrimaryVault
+                Effect: Allow
+                Action: backup:CopyFromBackupVault
+                Resource: !GetAtt PrimaryBackupVault.BackupVaultArn
+              - Sid: TagBackupRecoveryPoints
+                Effect: Allow
+                Action: backup:TagResource
+                Resource: !Sub arn:${AWS::Partition}:backup:*:${AWS::AccountId}:recovery-point:*
+              - Sid: DiscoverResourcesForExplicitSelection
+                Effect: Allow
+                Action: tag:GetResources
+                Resource: "*"
+              - Sid: DescribeOnlyPostwaveBackupKeys
+                Effect: Allow
+                Action: kms:DescribeKey
+                Resource:
+                  - !Ref RdsStorageKmsKeyArn
+                  - !GetAtt PrimaryVaultKey.Arn
+                  - !Ref ReplicaVaultKmsKeyArn
+              - Sid: GrantOnlyPostwaveBackupKeys
+                Effect: Allow
+                Action: kms:CreateGrant
+                Resource:
+                  - !Ref RdsStorageKmsKeyArn
+                  - !GetAtt PrimaryVaultKey.Arn
+                  - !Ref ReplicaVaultKmsKeyArn
+                Condition:
+                  Bool:
+                    kms:GrantIsForAWSResource: "true"
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+
+  RdsBackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Condition: IsPrimary
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Sub postwave-${Environment}-rds-cross-region
+        BackupPlanRule:
+          - RuleName: DailyRdsSnapshotAndCrossRegionCopy
+            TargetBackupVault: !Ref PrimaryBackupVault
+            ScheduleExpression: !Ref BackupScheduleExpression
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 720
+            Lifecycle:
+              DeleteAfterDays: !Ref RetentionDays
+            CopyActions:
+              - DestinationBackupVaultArn: !Ref ReplicaBackupVaultArn
+                Lifecycle:
+                  DeleteAfterDays: !Ref RetentionDays
+            RecoveryPointTags:
+              project: postwave
+              environment: !Ref Environment
+              recovery-class: rds-cross-region
+      BackupPlanTags:
+        project: postwave
+        environment: !Ref Environment
+
+  RdsBackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Condition: IsPrimary
+    Properties:
+      BackupPlanId: !Ref RdsBackupPlan
+      BackupSelection:
+        SelectionName: !Sub postwave-${Environment}-canonical-rds
+        IamRoleArn: !GetAtt BackupServiceRole.Arn
+        Resources:
+          - !Ref RdsDbArn
+
+  PrimaryBackupFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: Moosewave canonical RDS AWS Backup job failed
+      Namespace: AWS/Backup
+      MetricName: NumberOfBackupJobsFailed
+      Dimensions:
+        - Name: BackupVaultName
+          Value: !Ref PrimaryBackupVault
+        - Name: ResourceType
+          Value: RDS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  PrimaryBackupExpiredAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: Moosewave canonical RDS AWS Backup job expired before it could start
+      Namespace: AWS/Backup
+      MetricName: NumberOfBackupJobsExpired
+      Dimensions:
+        - Name: BackupVaultName
+          Value: !Ref PrimaryBackupVault
+        - Name: ResourceType
+          Value: RDS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  PrimaryBackupFreshnessAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: No completed Moosewave RDS AWS Backup recovery point in two daily windows
+      Namespace: AWS/Backup
+      MetricName: NumberOfBackupJobsCompleted
+      Dimensions:
+        - Name: BackupVaultName
+          Value: !Ref PrimaryBackupVault
+        - Name: ResourceType
+          Value: RDS
+      Statistic: Sum
+      Period: 86400
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  PrimaryCopyFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsPrimary
+    Properties:
+      AlarmDescription: Moosewave RDS cross-Region AWS Backup copy failed
+      Namespace: AWS/Backup
+      MetricName: NumberOfCopyJobsFailed
+      Dimensions:
+        - Name: BackupVaultName
+          Value: !Ref ReplicaBackupVaultName
+        - Name: ResourceType
+          Value: RDS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  ReplicaCopyFreshnessAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsReplica
+    Properties:
+      AlarmDescription: No recent fully validated Moosewave RDS recovery point in the recovery vault
+      Namespace: Postwave/Backup
+      MetricName: RdsBackupReplicaAgeSeconds
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+        - Name: SourceDbIdentifier
+          Value: !Select [1, !Split [":db:", !Ref RdsDbArn]]
+      Statistic: Maximum
+      Period: 900
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: !Ref ReplicaCopyMaxAgeSeconds
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  ReplicaCopyConfigurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsReplica
+    Properties:
+      AlarmDescription: Recovery vault, key, lock, or copied RDS recovery point is invalid
+      Namespace: Postwave/Backup
+      MetricName: RdsBackupReplicaValid
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+        - Name: SourceDbIdentifier
+          Value: !Select [1, !Split [":db:", !Ref RdsDbArn]]
+      Statistic: Minimum
+      Period: 900
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  ReplicaRestoreFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsReplica
+    Properties:
+      AlarmDescription: An RDS restore from the recovery-Region AWS Backup vault failed
+      Namespace: AWS/Backup
+      MetricName: NumberOfRestoreJobsFailed
+      Dimensions:
+        - Name: BackupVaultName
+          Value: !Ref ReplicaBackupVault
+        - Name: ResourceType
+          Value: RDS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  NativeReplicationMonitorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: IsReplica
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub /aws/lambda/postwave-${Environment}-rds-backup-monitor
+      RetentionInDays: 365
+      KmsKeyId: !GetAtt ReplicaVaultKey.Arn
+
+  NativeReplicationMonitorRole:
+    Type: AWS::IAM::Role
+    Condition: IsReplica
+    Properties:
+      Description: Read-only RDS automated-backup monitor and custom-metric publisher
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: MonitorNativeRdsReplication
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: DescribeAutomatedBackups
+                Effect: Allow
+                Action: rds:DescribeDBInstanceAutomatedBackups
+                Resource: "*"
+              - Sid: InspectOnlyReplicaBackupVault
+                Effect: Allow
+                Action:
+                  - backup:DescribeBackupVault
+                  - backup:ListRecoveryPointsByBackupVault
+                Resource: !GetAtt ReplicaBackupVault.BackupVaultArn
+              - Sid: InspectOnlyReplicaVaultKey
+                Effect: Allow
+                Action: kms:DescribeKey
+                Resource: !GetAtt ReplicaVaultKey.Arn
+              - Sid: PublishOnlyPostwaveBackupMetrics
+                Effect: Allow
+                Action: cloudwatch:PutMetricData
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    cloudwatch:namespace: Postwave/Backup
+              - Sid: WriteOnlyMonitorLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub ${NativeReplicationMonitorLogGroup.Arn}:*
+      Tags:
+        - Key: project
+          Value: postwave
+        - Key: environment
+          Value: !Ref Environment
+
+  NativeReplicationMonitorFunction:
+    Type: AWS::Lambda::Function
+    Condition: IsReplica
+    Properties:
+      FunctionName: !Sub postwave-${Environment}-rds-backup-monitor
+      Description: Fail-closed freshness and configuration monitor for native RDS cross-Region PITR
+      Runtime: python3.13
+      Handler: index.handler
+      Architectures: [arm64]
+      MemorySize: 128
+      Timeout: 30
+      ReservedConcurrentExecutions: 1
+      Role: !GetAtt NativeReplicationMonitorRole.Arn
+      Environment:
+        Variables:
+          SOURCE_DB_ARN: !Ref RdsDbArn
+          EXPECTED_KMS_KEY_ARN: !GetAtt ReplicaVaultKey.Arn
+          EXPECTED_RETENTION_DAYS: !Ref NativeReplicationRetentionDays
+          EXPECTED_SNAPSHOT_RETENTION_DAYS: !Ref RetentionDays
+          REPLICA_BACKUP_VAULT_ARN: !GetAtt ReplicaBackupVault.BackupVaultArn
+          REPLICA_BACKUP_VAULT_NAME: !Ref ReplicaBackupVault
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          import datetime
+          import os
+
+          import boto3
+
+          MISSING_AGE = 2147483647
+          SOURCE_ARN = os.environ["SOURCE_DB_ARN"]
+          IDENTIFIER = SOURCE_ARN.split(":db:", 1)[1]
+          EXPECTED_KMS = os.environ["EXPECTED_KMS_KEY_ARN"]
+          EXPECTED_RETENTION = int(os.environ["EXPECTED_RETENTION_DAYS"])
+          EXPECTED_SNAPSHOT_RETENTION = int(
+              os.environ["EXPECTED_SNAPSHOT_RETENTION_DAYS"]
+          )
+          REPLICA_VAULT_ARN = os.environ["REPLICA_BACKUP_VAULT_ARN"]
+          REPLICA_VAULT_NAME = os.environ["REPLICA_BACKUP_VAULT_NAME"]
+          ENVIRONMENT = os.environ["ENVIRONMENT"]
+          RDS = boto3.client("rds")
+          BACKUP = boto3.client("backup")
+          KMS = boto3.client("kms")
+          CLOUDWATCH = boto3.client("cloudwatch")
+
+          def handler(_event, _context):
+              now = datetime.datetime.now(datetime.timezone.utc)
+              records = []
+              paginator = RDS.get_paginator("describe_db_instance_automated_backups")
+              # A source DB instance does not exist in this recovery Region.
+              # Listing and then matching the immutable source ARN is the
+              # documented way to discover its replicated automated backup.
+              for page in paginator.paginate():
+                  records.extend(
+                      item for item in page.get("DBInstanceAutomatedBackups", [])
+                      if item.get("DBInstanceArn") == SOURCE_ARN
+                  )
+
+              valid = len(records) == 1
+              age = MISSING_AGE
+              status = "missing"
+              if valid:
+                  record = records[0]
+                  status = record.get("Status", "missing")
+                  valid = all((
+                      status == "active",
+                      record.get("Engine") == "postgres",
+                      record.get("Encrypted") is True,
+                      record.get("KmsKeyId") == EXPECTED_KMS,
+                      record.get("BackupRetentionPeriod") == EXPECTED_RETENTION,
+                  ))
+                  latest = record.get("RestoreWindow", {}).get("LatestTime")
+                  if latest is not None:
+                      age = max(0, int((now - latest).total_seconds()))
+                  else:
+                      valid = False
+
+              source_parts = SOURCE_ARN.split(":")
+              expected_source_vault = (
+                  f"arn:{source_parts[1]}:backup:{source_parts[3]}:"
+                  f"{source_parts[4]}:backup-vault:"
+                  f"postwave-{ENVIRONMENT}-rds-primary"
+              )
+              recovery_points = []
+              paginator = BACKUP.get_paginator(
+                  "list_recovery_points_by_backup_vault"
+              )
+              for page in paginator.paginate(
+                  BackupVaultName=REPLICA_VAULT_NAME,
+                  ByResourceArn=SOURCE_ARN,
+                  ByResourceType="RDS",
+              ):
+                  recovery_points.extend(page.get("RecoveryPoints", []))
+
+              valid_points = [
+                  point for point in recovery_points
+                  if all((
+                      point.get("BackupVaultArn") == REPLICA_VAULT_ARN,
+                      point.get("ResourceArn") == SOURCE_ARN,
+                      point.get("ResourceType") == "RDS",
+                      point.get("Status") == "COMPLETED",
+                      point.get("VaultType") == "BACKUP_VAULT",
+                      point.get("IsEncrypted") is True,
+                      point.get("EncryptionKeyArn") == EXPECTED_KMS,
+                      point.get("EncryptionKeyType")
+                          == "CUSTOMER_MANAGED_KMS_KEY",
+                      point.get("SourceBackupVaultArn")
+                          == expected_source_vault,
+                      point.get("Lifecycle", {}).get("DeleteAfterDays")
+                          == EXPECTED_SNAPSHOT_RETENTION,
+                      point.get("CompletionDate") is not None,
+                  ))
+              ]
+              replica_valid = bool(valid_points)
+              replica_age = MISSING_AGE
+              if replica_valid:
+                  latest_copy = max(
+                      point["CompletionDate"] for point in valid_points
+                  )
+                  replica_age = max(0, int((now - latest_copy).total_seconds()))
+
+              vault = BACKUP.describe_backup_vault(
+                  BackupVaultName=REPLICA_VAULT_NAME
+              )
+              key = KMS.describe_key(KeyId=EXPECTED_KMS)["KeyMetadata"]
+              replica_valid = replica_valid and all((
+                  vault.get("BackupVaultArn") == REPLICA_VAULT_ARN,
+                  vault.get("EncryptionKeyArn") == EXPECTED_KMS,
+                  vault.get("VaultType") == "BACKUP_VAULT",
+                  vault.get("VaultState") == "AVAILABLE",
+                  vault.get("Locked") is True,
+                  vault.get("MinRetentionDays") == 35,
+                  vault.get("MaxRetentionDays") == 365,
+                  vault.get("LockDate") is not None,
+                  key.get("Arn") == EXPECTED_KMS,
+                  key.get("Enabled") is True,
+                  key.get("KeyState") == "Enabled",
+                  key.get("KeyManager") == "CUSTOMER",
+                  key.get("KeyUsage") == "ENCRYPT_DECRYPT",
+              ))
+
+              dimensions = [
+                  {"Name": "Environment", "Value": ENVIRONMENT},
+                  {"Name": "SourceDbIdentifier", "Value": IDENTIFIER},
+              ]
+              CLOUDWATCH.put_metric_data(
+                  Namespace="Postwave/Backup",
+                  MetricData=[
+                      {
+                          "MetricName": "NativeRdsReplicationLagSeconds",
+                          "Dimensions": dimensions,
+                          "Unit": "Seconds",
+                          "Value": age,
+                      },
+                      {
+                          "MetricName": "NativeRdsReplicationValid",
+                          "Dimensions": dimensions,
+                          "Unit": "Count",
+                          "Value": 1 if valid else 0,
+                      },
+                      {
+                          "MetricName": "RdsBackupReplicaAgeSeconds",
+                          "Dimensions": dimensions,
+                          "Unit": "Seconds",
+                          "Value": replica_age,
+                      },
+                      {
+                          "MetricName": "RdsBackupReplicaValid",
+                          "Dimensions": dimensions,
+                          "Unit": "Count",
+                          "Value": 1 if replica_valid else 0,
+                      },
+                  ],
+              )
+              if not valid or not replica_valid:
+                  raise RuntimeError(
+                      "RDS recovery controls are invalid: "
+                      f"native_matches={len(records)} native_status={status} "
+                      f"valid_recovery_points={len(valid_points)}"
+                  )
+              return {
+                  "valid": True,
+                  "native_lag_seconds": age,
+                  "replica_copy_age_seconds": replica_age,
+                  "native_status": status,
+              }
+
+  NativeReplicationMonitorSchedule:
+    Type: AWS::Events::Rule
+    Condition: IsReplica
+    Properties:
+      Description: Check native RDS cross-Region PITR every fifteen minutes
+      ScheduleExpression: rate(15 minutes)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt NativeReplicationMonitorFunction.Arn
+          Id: NativeReplicationMonitor
+          RetryPolicy:
+            MaximumEventAgeInSeconds: 900
+            MaximumRetryAttempts: 2
+
+  NativeReplicationMonitorPermission:
+    Type: AWS::Lambda::Permission
+    Condition: IsReplica
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref NativeReplicationMonitorFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt NativeReplicationMonitorSchedule.Arn
+      SourceAccount: !Ref AWS::AccountId
+
+  NativeReplicationConfigurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsReplica
+    Properties:
+      AlarmDescription: Native RDS cross-Region backup replication is missing or misconfigured
+      Namespace: Postwave/Backup
+      MetricName: NativeRdsReplicationValid
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+        - Name: SourceDbIdentifier
+          Value: !Select [1, !Split [":db:", !Ref RdsDbArn]]
+      Statistic: Minimum
+      Period: 900
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  NativeReplicationMonitorFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsReplica
+    Properties:
+      AlarmDescription: Recovery-Region RDS backup monitor invocation failed
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NativeReplicationMonitorFunction
+      Statistic: Sum
+      Period: 900
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+  NativeReplicationLagAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsReplica
+    Properties:
+      AlarmDescription: Native RDS cross-Region latest restore time exceeds the recovery threshold
+      Namespace: Postwave/Backup
+      MetricName: NativeRdsReplicationLagSeconds
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+        - Name: SourceDbIdentifier
+          Value: !Select [1, !Split [":db:", !Ref RdsDbArn]]
+      Statistic: Maximum
+      Period: 900
+      EvaluationPeriods: 2
+      DatapointsToAlarm: 2
+      Threshold: !Ref NativeReplicationMaxLagSeconds
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref AlarmTopicArn]
+      OKActions: [!Ref AlarmTopicArn]
+
+Outputs:
+  ReplicaBackupVaultArn:
+    Condition: IsReplica
+    Description: Pass this ARN to the primary-mode stack.
+    Value: !GetAtt ReplicaBackupVault.BackupVaultArn
+  ReplicaBackupVaultName:
+    Condition: IsReplica
+    Description: Pass this name to the primary-mode stack for copy-job alarms.
+    Value: !Ref ReplicaBackupVault
+  ReplicaVaultKmsKeyArn:
+    Condition: IsReplica
+    Description: Use this recovery-Region key for native RDS automated-backup replication.
+    Value: !GetAtt ReplicaVaultKey.Arn
+  PrimaryBackupVaultArn:
+    Condition: IsPrimary
+    Value: !GetAtt PrimaryBackupVault.BackupVaultArn
+  RdsBackupPlanArn:
+    Condition: IsPrimary
+    Value: !GetAtt RdsBackupPlan.BackupPlanArn
+  BackupServiceRoleArn:
+    Condition: IsPrimary
+    Value: !GetAtt BackupServiceRole.Arn

@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <quoted-testimonial-italic-grey.v1@example.com>
+Subject: What customers say
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-quote-v1"
+
+--pw-quote-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+"It cut our reporting time in half." - Priya, operations lead
+Read more: https://www.example.com/stories
+--pw-quote-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>What customers say</h1><blockquote style="color:#555555;font-style:italic;font-size:15px">&ldquo;It cut our reporting time in half.&rdquo;</blockquote><p style="color:#555555;font-size:14px">Priya, operations lead</p><p><a href="https://www.example.com/stories">Read more stories</a></p></body></html>
+--pw-quote-v1--

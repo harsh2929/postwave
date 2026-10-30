@@ -1,0 +1,48 @@
+---
+title: Source and independent operation
+---
+
+import { Callout } from "nextra/components";
+
+# Source and independent operation
+
+<Callout type="warning">
+  Moosewave does not currently offer an approved or supported self-host
+  distribution. There is no verified self-host price, license key, installer,
+  download bundle, customer image registry, update channel, or support SLA.
+</Callout>
+
+The checked-in source has several distinct license and release boundaries:
+
+- `apps/`, `services/`, and `infra/` are AGPL-3.0-only.
+- Each immediate `packages/*` root carries its own MIT license.
+- `proprietary/` contains separately controlled Moosewave Cloud packs and must
+  not enter a public, customer, self-host, or corresponding-source artifact.
+- `proprietary-stubs/` contains MIT-licensed, uncalibrated placeholders.
+- Moosewave talks to a separately running upstream Listmonk process. The source
+  tree contains no Moosewave Listmonk fork or submodule.
+
+The repository's Docker Compose files are development and test references.
+They are not a hardened installer, supported production topology, or evidence
+that a customer distribution exists. The source licenses grant the rights in
+their text; they do not promise installation assistance, hosting, continuity,
+maintenance, migration services, an SLA, or support.
+
+See the root `LICENSE`, `LICENSE-AGPL.md`, and `LICENSE-BOUNDARY.md` files for
+the authoritative path policy. Before any external distribution, Moosewave must
+complete counsel review, create an immutable and reproducible release, verify
+notices and corresponding-source handling, prove registry access controls, and
+rehearse installation, backup, restore, upgrade, and rollback.
+
+## Commercial requests
+
+Sales may discuss a proposed independent-operation arrangement, but no feature,
+price, artifact, support level, or delivery date is committed unless it appears
+in an executed agreement and references a reviewed release artifact.
+
+## Related pages
+
+- [Distribution availability](/self-host/install)
+- [Release and upgrade requirements](/self-host/upgrades)
+- [Backup and recovery responsibilities](/self-host/backup)
+- [Capability boundaries](/self-host/limits)

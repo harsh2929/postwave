@@ -1,0 +1,124 @@
+---
+title: Segments
+---
+
+# Segments
+
+A segment in Moosewave is a saved query over your subscriber list, expressed as a `SegmentNode` AST. The same AST drives the drag-drop builder in the dashboard, the `segment_eval` MCP tool, and the entry filter on every automation. There is one definition; the UI, the API, and the runtime all read it.
+
+This page covers the AST shape, the supported fields, how comparators behave, the live preview count, and how segments are persisted.
+
+## The `SegmentNode` AST
+
+```ts
+type SegmentNode =
+  | { op: "and"; children: SegmentNode[] }
+  | { op: "or"; children: SegmentNode[] }
+  | { op: "not"; child: SegmentNode }
+  | LeafNode;
+
+type LeafNode = {
+  op: "eq" | "neq" | "lt" | "lte" | "gt" | "gte" | "in" | "nin"
+       | "contains" | "starts_with" | "ends_with" | "exists" | "not_exists";
+  field: string;          // dotted path; see "Supported fields" below
+  value?: unknown;        // type depends on op + field
+};
+```
+
+A leaf is a single field-comparator-value triple. A boolean node combines leaves and other boolean nodes; it is fully recursive. The validator caps depth at 8 and total leaf count at 64 to keep query plans bounded.
+
+Example: subscribers who joined in the last 30 days, are still subscribed, and have either the `paid` tag or a custom `plan` field equal to `"team"`.
+
+```json
+{
+  "op": "and",
+  "children": [
+    { "op": "gte", "field": "consent_timestamp", "value": "now-30d" },
+    { "op": "eq", "field": "status", "value": "subscribed" },
+    {
+      "op": "or",
+      "children": [
+        { "op": "in", "field": "tag", "value": ["paid"] },
+        { "op": "eq", "field": "custom.plan", "value": "team" }
+      ]
+    }
+  ]
+}
+```
+
+## The drag-drop builder
+
+The builder lives at **Subscribers → Segments → New** and renders the same AST. Each row is a leaf; nesting groups are bracketed and indented. Adding an "AND" or "OR" group pushes a boolean node into the tree at the chosen position. Dragging a row across groups reparents the leaf; dropping it on the canvas root pulls it out of its current group.
+
+The builder publishes the AST to a hidden form field on every change, which means the dashboard never round-trips through a string DSL. The builder is the AST, just laid out two-dimensionally.
+
+The expression bar at the top shows a read-only string view (`status = subscribed AND consent_timestamp >= now-30d AND ...`) for users who prefer to read code. It is generated from the AST every render; you cannot type into it.
+
+## Supported fields
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `email` | string | Lowercased on read. Use `contains`, `starts_with`, `ends_with` for domain filters. |
+| `status` | enum | `subscribed`, `unsubscribed`, `bounced`, `complained`, `suppressed`. |
+| `tag` | string list | Match with `in` or `nin`. |
+| `consent_source` | enum | `form`, `import`, `migration`, `api`, `manual`. |
+| `consent_timestamp` | timestamp | When the subscriber confirmed consent. |
+| `last_opened_at` | timestamp | Backed by `subscriber_events` aggregate. Null if never opened. |
+| `last_clicked_at` | timestamp | Same source. |
+| `last_event_at` | timestamp | Maximum of the two above. |
+| `custom.*` | typed | Any custom field defined on the workspace; type taken from the schema. |
+
+Timestamps support both ISO-8601 strings and the relative form `now-7d`, `now+12h`, `now-30d`. Relative values are resolved at evaluation time, so a saved segment slides forward as time passes.
+
+The `tag` field is a multi-valued column under the hood. `eq` on `tag` is a footgun (it would only match subscribers with exactly one tag, that one), so the validator rejects `eq`/`neq` and asks for `in`/`nin`.
+
+## Comparator semantics
+
+- `eq`, `neq`, strict equality on the field's native type. Strings are case-sensitive; lowercase the value if you want a loose match (`email` is already lowercased on write).
+- `lt`, `lte`, `gt`, `gte`, numeric and timestamp only. The validator rejects them on string and enum fields.
+- `in`, `nin`, set membership. `value` must be an array.
+- `contains`, `starts_with`, `ends_with`, string only. Case-insensitive. Backed by trigram indexes on the searchable text columns.
+- `exists`, `not_exists`, null-check, useful on `custom.*` fields and on `last_opened_at`.
+
+Null handling follows three-valued logic: a leaf that compares against null returns false rather than null, and `not_exists` is the only way to find subscribers without a value for a field.
+
+```sql
+-- A leaf like { op: "eq", field: "custom.plan", value: "team" }
+-- compiles to roughly:
+SELECT 1 WHERE (custom->>'plan') = 'team'
+```
+
+The compiler hoists boolean nodes into nested CTEs. We benchmarked this against a hand-written join model and found the planner does the right thing on workspaces up to a few million subscribers; above that we partition by tenant.
+
+## Live preview count
+
+The footer of the builder shows a count of matched subscribers, updated debounced 400ms after each AST change. It is computed by the same compiler as the eventual full evaluation but with `LIMIT 1` short-circuiting the result rows; only the count matters.
+
+The count is approximate when the segment hits more than 100K subscribers: the planner switches to an `EXPLAIN`-derived estimate to keep the preview snappy. A small banner notes "estimated" when this fallback kicks in. The exact count is recomputed when you save the segment and again on every campaign send.
+
+There is also a sample button that returns up to 100 matching subscribers. The sample is reservoir-sampled so the rows are uniformly distributed, not the first 100 by id; otherwise sampling a "joined recently" segment would always return the same accidental cohort.
+
+## Persistence
+
+Segments are rows in the `segments` table:
+
+```sql
+CREATE TABLE segments (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id       UUID NOT NULL REFERENCES tenants(id),
+  name            TEXT NOT NULL,
+  ast             JSONB NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  cached_count    INTEGER,
+  cached_count_at TIMESTAMPTZ
+);
+
+CREATE UNIQUE INDEX ON segments (tenant_id, name);
+```
+
+`ast` is stored as JSONB so the AST shape can evolve without an off-line migration. We keep two cached values, the count and the timestamp it was computed at, for the segment list page; both are blown away on save.
+
+A segment referenced by a running automation or scheduled campaign is locked against destructive edits; you can rename it but you cannot re-shape the AST until the dependent send completes. The dashboard surfaces the dependent objects when an edit is blocked so you know what to wait on.
+
+Segments referenced by no live object are otherwise free to edit. Old versions are not retained; if you need the prior shape, you can find it in the audit log under **Settings → API → Audit log**.

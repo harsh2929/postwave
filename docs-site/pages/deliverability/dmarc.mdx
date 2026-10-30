@@ -1,0 +1,79 @@
+---
+title: DMARC
+---
+
+import { Callout } from 'nextra/components';
+
+# DMARC — the policy layer
+
+DMARC builds on SPF and DKIM. It tells receivers two things: (1) what to do when SPF and DKIM both fail (`p=` policy), and (2) where to send aggregate forensic reports about who's sending using your domain (`rua=`).
+
+Without DMARC, SPF and DKIM are advisory. With DMARC, they become enforceable.
+
+## Policy strength
+
+The `p=` tag has three values:
+
+| Policy        | What receivers do on failure                                            | When to use                                                           |
+| ------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `p=none`      | Nothing — but they still send aggregate reports.                        | **Monitoring mode.** Always start here. Use for 1–2 weeks minimum.    |
+| `p=quarantine` | Mark the message as suspicious — typically routed to spam folder.       | After monitoring shows no legitimate `fail`s, promote to this.        |
+| `p=reject`    | Bounce the message at SMTP time. The sender sees a hard delivery failure. | The endgame for protected brands. Required by Gmail/Yahoo bulk-sender rules at &gt;5k/day. |
+
+## Alignment
+
+DMARC requires the domain in the visible `From:` header to **align** with either:
+
+- The domain that signed via DKIM (`d=` in the DKIM-Signature header), or
+- The `MAIL FROM` (envelope-sender / Return-Path) domain that SPF validated.
+
+Alignment can be `relaxed` (subdomain match, default) or `strict` (exact match).
+
+> Example of relaxed alignment passing:
+> - `From: alice@news.yourdomain.com`
+> - DKIM `d=yourdomain.com`
+> - → relaxed alignment passes (organizational domain matches).
+
+## Aggregate reports (RUA)
+
+Set `rua=mailto:dmarc@yourdomain.com` (or any address). Receiving providers will send you a daily XML report listing every IP that sent mail claiming to be your domain, plus per-IP SPF/DKIM/DMARC pass/fail counts.
+
+Moosewave's DMARC dashboard (under **Deliverability → DMARC**) **parses these reports automatically** if you point `rua=` at `dmarc@<your-workspace>.dmarc.moosewave.com`. You'll see:
+
+- Daily volume by source IP.
+- SPF/DKIM pass rates per source.
+- Forwarders, third-party senders (e.g., calendar invites, helpdesk), and *spoofers* — clearly separated.
+- "Ready to promote to p=quarantine" indicator when 14+ consecutive days show 100% pass on legitimate sources.
+
+## Promoting from p=none to p=quarantine — safely
+
+The point of `p=none` is to discover senders you didn't know about (your CRM, your support desk, calendar invites, your CFO's vacation auto-responder). Promoting too early breaks legitimate mail.
+
+A safe promotion path:
+
+1. **Week 0** — publish `p=none; rua=mailto:dmarc@<workspace>.dmarc.moosewave.com`.
+2. **Weeks 1–2** — Moosewave parses inbound aggregate reports. Review the **Senders** tab. For every legitimate source that's failing alignment, fix it (add an SPF include, or get DKIM signing enabled at that source).
+3. **Week 3** — when the dashboard shows 14 days of green across all known legitimate senders, promote to `p=quarantine; pct=25`. The `pct=25` means only 25% of failing mail is quarantined — a partial rollout that limits blast radius.
+4. **Week 4** — bump to `pct=100`.
+5. **Week 6+** — once `quarantine` is uneventful, promote to `p=reject`.
+
+<Callout type="warning">
+**Don't skip the monitoring window.** Going straight from no DMARC to `p=reject` will quietly break mail you didn't realise was being sent on your behalf. Recovery is a week of customer-support pain.
+</Callout>
+
+## Subdomain policy (`sp=`)
+
+By default, subdomains inherit the parent's policy. If you want a stricter policy on subdomains (e.g., your apex sends marketing but your subdomains should never send), explicitly set `sp=reject`.
+
+## What Moosewave's validator checks
+
+1. Record exists at `_dmarc.<your-domain>`.
+2. Exactly one record.
+3. Policy strength (yellow for `none`, green for `quarantine`/`reject`).
+4. RUA address present and points somewhere monitored (preferably us, so the dashboard works).
+5. Alignment of recent Moosewave sends — sampled from the receiving side.
+
+## Next steps
+
+- [BIMI](/deliverability/bimi) — requires `p=quarantine` or `p=reject` to display.
+- [Improving placement](/deliverability/improving-placement) — operational playbook once auth is locked down.

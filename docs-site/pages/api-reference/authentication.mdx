@@ -1,0 +1,73 @@
+---
+title: Authentication
+---
+
+import { Callout } from 'nextra/components';
+
+# Authentication
+
+Moosewave API keys are workspace-scoped bearer tokens.
+
+## Creating a key
+
+**Settings → API keys → New key**:
+
+1. Name the key (visible only to you; e.g., `production-zapier`, `dev-laptop`).
+2. Pick scopes (defaults to read-only).
+3. Pick expiry (default: never; configurable to 30/90/365 days).
+4. Copy the displayed key. **You won't see it again.** Moosewave only stores a hashed version.
+
+Keys are prefixed:
+
+- `pk_live_*` — production.
+- `pk_test_*` — test mode (no real sending; sandboxed).
+
+## Scopes
+
+| Scope                | Permissions                                                |
+| -------------------- | ---------------------------------------------------------- |
+| `subscribers:read`   | Read subscribers, lists, segments.                         |
+| `subscribers:write`  | Create / update / delete subscribers, lists, segments.     |
+| `campaigns:read`     | Read campaigns + reports.                                  |
+| `campaigns:write`    | Create / send campaigns.                                   |
+| `automations:read`   | Read automations + runs.                                   |
+| `automations:write`  | Create / update / pause automations; trigger custom events. |
+| `migrations:read`    | Read migration status + verification reports.              |
+| `migrations:write`   | Start migrations, commit, rollback.                        |
+| `forms:read` / `:write` | Forms admin.                                            |
+| `*` (full)           | Everything. Owner-only.                                    |
+
+Pick the narrowest scope that works. Most integrations need only one or two.
+
+## Revoking a key
+
+**Settings → API keys → \<key\> → Revoke**. Effective within 60 seconds across all regions.
+
+<Callout type="warning">
+Revocation is irreversible. Ensure dependent integrations have a replacement before revoking production keys.
+</Callout>
+
+## Rotation
+
+Rotation is **add-then-remove**:
+
+1. Generate a new key with the same scopes.
+2. Update integrations to use the new key.
+3. Verify they work.
+4. Revoke the old key.
+
+There is no automated key rotation; rotate manually every 6–12 months for keys held by humans, more often for keys in CI / shared environments.
+
+## Security best practices
+
+- **Never commit keys to git.** Use environment variables, secret managers, or vault solutions.
+- **Use test-mode keys** (`pk_test_*`) in development and CI.
+- **Scope per integration.** A key for Zapier doesn't need `migrations:write`.
+- **Rotate after personnel changes.** When a team member leaves, rotate any keys they had access to.
+- **Monitor usage.** **Settings → API keys → \<key\> → Activity** shows recent calls; unexpected geography or volume is a signal.
+
+## Test mode
+
+Test-mode keys (`pk_test_*`) operate against a **sandbox tenant** that mirrors your workspace's structure but never sends real email. Subscribers created via test mode are isolated; they don't affect billing or your real list.
+
+Useful for CI, staging environments, and SDK development.

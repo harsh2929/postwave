@@ -1,0 +1,6 @@
+email,status,first_name,last_name,tags,consent_source,consent_timestamp,custom_company,custom_role,custom_plan,custom_timezone
+samira@example.com,subscribed,Samira,Wiley,"weekly|beta",csv_import,2026-01-02T10:00:00Z,Example Media,creator,growth,America/New_York
+mindy@example.org,unsubscribed,Mindy,Kaling,"weekly|legacy",manual_export,2025-10-14T16:00:00Z,Example Studio,producer,starter,America/Los_Angeles
+ali@example.net,bounced,Ali,Wong,"events|vip",csv_import,2025-12-07T08:30:00Z,Example Comedy,performer,growth,America/Los_Angeles
+kumail@example.com,subscribed,Kumail,Nanjiani,"vip|beta",hosted_form,2026-02-09T19:10:00Z,Example Games,founder,plus,America/Chicago
+hasan@example.org,subscribed,Hasan,Minhaj,"weekly|events",api,2026-03-16T13:25:00Z,Example News,host,starter,America/New_York

@@ -1,0 +1,189 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-08-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "title": "Moosewave Audit Log (CCF Polling Connector)",
+    "publisher": "Moosewave, Inc.",
+    "descriptionMarkdown": "Polls the Moosewave Audit API (REST polling-pull pattern) for newly-emitted audit events and ingests them into Microsoft Sentinel via the Codeless Connector Framework (CCF). Supports Standard Webhooks (RFC 9499) signature verification so the Sentinel ingestion pipeline can reject any payload whose `webhook-signature` does not match the JWKS-published kid. Designed for Sentinel customers who run Moosewave's compliance audit stream — SOC2, ISO 27001, HIPAA — under a tenant-isolated Codeless poller.",
+    "graphQueriesTableName": "PostwaveAudit_CL",
+    "graphQueries": [
+      {
+        "metricName": "Moosewave audit rows ingested",
+        "legend": "PostwaveAudit_CL",
+        "baseQuery": "PostwaveAudit_CL"
+      }
+    ],
+    "sampleQueries": [
+      {
+        "description": "List the latest 50 audit events",
+        "query": "PostwaveAudit_CL\n| order by at_t desc\n| take 50"
+      },
+      {
+        "description": "All admin-initiated subscriber deletions (last 24h)",
+        "query": "PostwaveAudit_CL\n| where action_s == 'subscriber.delete' and actor_type_s == 'human'\n| where TimeGenerated > ago(24h)\n| project TimeGenerated, tenant_id_g, user_id_g, resource_id_s, ip_s, user_agent_s"
+      },
+      {
+        "description": "Failed audit-sink deliveries (correlated)",
+        "query": "PostwaveAudit_CL\n| where action_s startswith 'audit_sink.'\n| summarize count() by action_s, bin(TimeGenerated, 1h)"
+      }
+    ],
+    "connectivityCriteria": [
+      {
+        "type": "HasDataConnectors",
+        "value": null
+      }
+    ],
+    "dataTypes": [
+      {
+        "name": "PostwaveAudit_CL",
+        "lastDataReceivedQuery": "PostwaveAudit_CL\n| summarize Time = max(TimeGenerated)\n| where isnotempty(Time)"
+      }
+    ],
+    "permissions": {
+      "resourceProvider": [
+        {
+          "provider": "Microsoft.OperationalInsights/workspaces",
+          "permissionsDisplayText": "read and write permissions on the workspace are required.",
+          "providerDisplayName": "Workspace",
+          "scope": "Workspace",
+          "requiredPermissions": {
+            "write": true,
+            "read": true,
+            "delete": true
+          }
+        },
+        {
+          "provider": "Microsoft.OperationalInsights/workspaces/sharedKeys",
+          "permissionsDisplayText": "read permissions to shared keys for the workspace are required.",
+          "providerDisplayName": "Keys",
+          "scope": "Workspace",
+          "requiredPermissions": {
+            "action": true
+          }
+        }
+      ],
+      "customs": [
+        {
+          "name": "Moosewave API token",
+          "description": "A Moosewave API key with `audit:read` scope. Mint one at Settings → API Keys; treat as a secret."
+        },
+        {
+          "name": "Moosewave JWKS endpoint",
+          "description": "Sentinel needs read access to /api/v1/audit-sinks/{id}/.well-known/jwks.json to verify webhook-signature headers across key rotations."
+        }
+      ]
+    },
+    "instructionSteps": [
+      {
+        "title": "Configure the Moosewave Audit poller",
+        "description": "Provide the Moosewave API base URL (e.g. https://api.postwave.app), a scoped API key, and the tenant id. The connector polls /api/v1/audit (paginated via `since_id` cursor) every 5 minutes and parses the Standard Webhooks signature on every batch before ingestion.",
+        "instructions": [
+          {
+            "parameters": {
+              "fillWith": ["PostwaveBaseUrl", "PostwaveApiKey", "PostwaveTenantId"],
+              "label": "Connection"
+            },
+            "type": "OAuthForm"
+          }
+        ]
+      }
+    ]
+  },
+  "pollingConfig": {
+    "auth": {
+      "authType": "APIKey",
+      "APIKeyName": "Authorization",
+      "APIKeyIdentifier": "Bearer",
+      "IsAPIKeyInPostPayload": "false"
+    },
+    "request": {
+      "apiEndpoint": "{{PostwaveBaseUrl}}/api/v1/audit",
+      "rateLimitQps": 5,
+      "queryWindowInMin": 5,
+      "queryTimeFormat": "UnixTimestamp",
+      "retryCount": 3,
+      "timeoutInSeconds": 60,
+      "httpMethod": "GET",
+      "queryParameters": {
+        "tenant_id": "{{PostwaveTenantId}}",
+        "limit": 200
+      },
+      "queryParametersTemplate": "{\"since_id\": {{lastSavedTime}}}"
+    },
+    "paging": {
+      "pagingType": "NextPageToken",
+      "nextPageTokenJsonPath": "$.next_cursor",
+      "nextPageParaName": "since_id"
+    },
+    "response": {
+      "eventsJsonPaths": ["$.rows"],
+      "successStatusJsonPath": "$.ok",
+      "successStatusValue": "true"
+    },
+    "signatureVerification": {
+      "format": "standard_webhooks",
+      "spec": "RFC 9499 / standardwebhooks.com",
+      "headers": {
+        "id": "webhook-id",
+        "timestamp": "webhook-timestamp",
+        "signature": "webhook-signature"
+      },
+      "jwksEndpoint": "{{PostwaveBaseUrl}}/api/v1/audit-sinks/{{PostwaveSinkId}}/.well-known/jwks.json",
+      "jwksCacheMinutes": 30,
+      "rejectIfMissing": true,
+      "rejectIfExpired": true,
+      "maxClockSkewSeconds": 300
+    }
+  },
+  "dcrConfig": {
+    "streamName": "Custom-PostwaveAudit_CL",
+    "dataCollectionEndpoint": "{{DataCollectionEndpoint}}",
+    "dataCollectionRuleImmutableId": "{{DataCollectionRuleImmutableId}}"
+  },
+  "dataCollectionRulesApiVersion": "2022-06-01",
+  "dataCollectionRulesTemplate": {
+    "properties": {
+      "streamDeclarations": {
+        "Custom-PostwaveAudit_CL": {
+          "columns": [
+            { "name": "TimeGenerated", "type": "datetime" },
+            { "name": "event_id", "type": "string" },
+            { "name": "tenant_id", "type": "string" },
+            { "name": "user_id", "type": "string" },
+            { "name": "action", "type": "string" },
+            { "name": "resource_type", "type": "string" },
+            { "name": "resource_id", "type": "string" },
+            { "name": "actor_type", "type": "string" },
+            { "name": "actor_label", "type": "string" },
+            { "name": "ip", "type": "string" },
+            { "name": "user_agent", "type": "string" },
+            { "name": "at", "type": "datetime" },
+            { "name": "row_hash", "type": "string" },
+            { "name": "prev_hash", "type": "string" },
+            { "name": "metadata", "type": "dynamic" }
+          ]
+        }
+      },
+      "destinations": {
+        "logAnalytics": [
+          {
+            "workspaceResourceId": "{{WorkspaceResourceId}}",
+            "name": "PostwaveAuditDestination"
+          }
+        ]
+      },
+      "dataFlows": [
+        {
+          "streams": ["Custom-PostwaveAudit_CL"],
+          "destinations": ["PostwaveAuditDestination"],
+          "transformKql": "source\n| extend TimeGenerated = todatetime(at)\n| project TimeGenerated, event_id, tenant_id, user_id, action, resource_type, resource_id, actor_type, actor_label, ip, user_agent, row_hash, prev_hash, metadata",
+          "outputStream": "Custom-PostwaveAudit_CL"
+        }
+      ]
+    }
+  },
+  "notes": {
+    "idempotency": "Sentinel deduplicates ingestion on `event_id` (Moosewave's UUIDv5 over the row identity tuple). Replays via the Moosewave DLQ carry the same event_id end-to-end, so a re-shipped row will overwrite (not duplicate) the existing entry.",
+    "rotation": "When Moosewave rotates the signing key, the JWKS endpoint returns BOTH the old (revoked, within 30m grace) and the new key. The connector picks the right one via webhook-key-id header. No connector restart required."
+  }
+}

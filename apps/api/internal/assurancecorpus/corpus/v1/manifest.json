@@ -1,0 +1,3126 @@
+{
+  "schema_version": "postwave.assurance-eml-corpus-manifest.v1",
+  "corpus_version": "2026-08-09.1",
+  "published_at": "2026-08-09T12:00:00Z",
+  "synthetic_data_only": true,
+  "taxonomy_version": "2026-08-09.1",
+  "cases": [
+    {
+      "id": "compiler_preheader_allowlist",
+      "file": "compiler_preheader_allowlist.eml",
+      "message_sha256": "a65ef13d54801aed49675ee24ef20ecf80f6434a6b16e902adde3781b18706d9",
+      "description": "A legitimate compiler-owned hidden preheader that is allowlisted only when its exact bytes and provenance match an immutable compiler receipt.",
+      "tags": [
+        "compiler_preheader_allowlist",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": true,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "COMPILER_PREHEADER_MISSING",
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED",
+          "PREHEADER_PROVENANCE_INVALID"
+        ],
+        "allow_additional_findings": false
+      },
+      "expected_primary_action": "https://events.example.com/register"
+    },
+    {
+      "id": "date_timezone_price_valid",
+      "file": "date_timezone_price_valid.eml",
+      "message_sha256": "38f4cf494d760bc3b75a19f8a02afd7c66883cf1cba32ac5cd2ce68ab45622a2",
+      "description": "Unicode copy with an explicit ISO date, IANA timezone, currency, and price that agree across both alternatives.",
+      "tags": [
+        "date",
+        "price",
+        "timezone",
+        "unicode",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "FACT_REPRESENTATION_DIVERGENCE"
+        ],
+        "allow_additional_findings": true
+      },
+      "expected_primary_action": "https://offers.example.com/checkout",
+      "expected_facts": [
+        {
+          "field": "currency",
+          "value": "INR"
+        },
+        {
+          "field": "date",
+          "value": "2026-08-15T18:30:00+05:30"
+        },
+        {
+          "field": "price",
+          "value": "1299.00"
+        },
+        {
+          "field": "timezone",
+          "value": "Asia/Kolkata"
+        }
+      ]
+    },
+    {
+      "id": "footer_cta_trap",
+      "file": "footer_cta_trap.eml",
+      "message_sha256": "436f9c0c41c910737e9963dc7dcc67d2bff9225d19cd49d0207c60bb061fecba",
+      "description": "A visible primary action followed by legal and unsubscribe links that must never be promoted as the campaign action.",
+      "tags": [
+        "footer_cta_trap",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "PRIMARY_ACTION_RECOVERY_FAILED"
+        ],
+        "allow_additional_findings": true
+      },
+      "expected_primary_action": "https://events.example.com/reserve",
+      "forbidden_primary_actions": [
+        "https://legal.example.com/privacy",
+        "https://preferences.example.com/unsubscribe"
+      ]
+    },
+    {
+      "id": "hidden_prompt_display_none",
+      "file": "hidden_prompt_display_none.eml",
+      "message_sha256": "bbce0bbe295c569f6a0a04e7c2ccb3a367d96a4c9055690ad2ea00cf89c7a77b",
+      "description": "Instruction-like text hidden with display:none attempts to manipulate a downstream summarizer.",
+      "tags": [
+        "prompt_injection_hidden",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "html_only",
+      "file": "html_only.eml",
+      "message_sha256": "0e17c5924bfce9308e8da7dd0a977b4f0c3ac7542cc40814687b37f42ab1ba5a",
+      "description": "A parseable HTML-only message that violates the certified semantic multipart contract.",
+      "tags": [
+        "html_only"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "MIME_ALTERNATIVE_INVALID",
+          "PLAIN_TEXT_REPRESENTATION_MISSING"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "image_only_critical_meaning",
+      "file": "image_only_critical_meaning.eml",
+      "message_sha256": "08844856b939992edc8a52c1b6b40ebc822c221c1207ba14eca9c8870abefa7d",
+      "description": "The offer, deadline, and only clickable action are carried by an image with no alt decision.",
+      "tags": [
+        "image_only_critical_meaning",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "FACT_MEANING_IMAGE_ONLY",
+          "IMAGE_ALT_MISSING",
+          "PRIMARY_ACTION_IMAGE_ONLY"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      },
+      "expected_primary_action": "https://offers.example.com/claim"
+    },
+    {
+      "id": "jsonld_invalid",
+      "file": "jsonld_invalid.eml",
+      "message_sha256": "57b9761a16d8f2f0a45a35874571b52b4c25db050efad89aa560c9f3ecbae063",
+      "description": "Visible copy is ordinary, but the application/ld+json object is syntactically malformed.",
+      "tags": [
+        "jsonld_invalid",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "STRUCTURED_DATA_INVALID"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_mismatch",
+      "file": "jsonld_mismatch.eml",
+      "message_sha256": "a584b82786f2f93cdcd6f150b3ae94937392948f5882ac62e2295b16ec6c2a74",
+      "description": "Valid JSON-LD contradicts the visible offer price and points to a different action destination.",
+      "tags": [
+        "jsonld_mismatch",
+        "price",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "FACT_STRUCTURED_DATA_CONTRADICTION",
+          "PRIMARY_ACTION_SCHEMA_CONTRADICTION"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      },
+      "expected_primary_action": "https://offers.example.com/buy",
+      "forbidden_primary_actions": [
+        "https://offers.example.com/renew"
+      ],
+      "expected_facts": [
+        {
+          "field": "currency",
+          "value": "USD"
+        },
+        {
+          "field": "price",
+          "value": "20.00"
+        }
+      ]
+    },
+    {
+      "id": "malformed_multipart",
+      "file": "malformed_multipart.eml",
+      "message_sha256": "23b76d76a546944c41f0dbbaef37ef6488640a7b615fa529d472f627c61064a8",
+      "description": "A multipart message whose closing boundary and final part are truncated.",
+      "tags": [
+        "malformed_mime"
+      ],
+      "mime_expectation": "invalid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "MIME_PART_INVALID"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "prompt_offscreen",
+      "file": "prompt_offscreen.eml",
+      "message_sha256": "4070d6ac8c92edee92d7b88d42059705a147b4f626cc7cedba4963764b7ac0a2",
+      "description": "Instruction-like text is positioned far outside the visible canvas.",
+      "tags": [
+        "prompt_injection_offscreen",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "prompt_tiny",
+      "file": "prompt_tiny.eml",
+      "message_sha256": "fb75e961f07cd6d1ab6e7b8dbd3bb38747afd2771117e4dec25dedf1a8c860d7",
+      "description": "Instruction-like text is rendered at a sub-legible font size.",
+      "tags": [
+        "prompt_injection_tiny",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "TINY_TEXT_DETECTED",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "prompt_transparent",
+      "file": "prompt_transparent.eml",
+      "message_sha256": "1dc42f58833527d9af9d4cebf5269a59f8a6cb6263c8aebd9a586ff01a155542",
+      "description": "Instruction-like text is made transparent while remaining in the HTML source.",
+      "tags": [
+        "prompt_injection_transparent",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "representation_contradiction",
+      "file": "representation_contradiction.eml",
+      "message_sha256": "c91ac968144308409a983aff3d42d3f1ab56cbddb94c3f0214d2339a07183c40",
+      "description": "Plain text and visible HTML disagree about the deadline, timezone, and price.",
+      "tags": [
+        "date",
+        "price",
+        "representation_contradiction",
+        "timezone",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "FACT_REPRESENTATION_DIVERGENCE"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      },
+      "expected_facts": [
+        {
+          "field": "currency",
+          "value": "USD"
+        },
+        {
+          "field": "date",
+          "value": "2026-08-10T17:00:00Z"
+        },
+        {
+          "field": "price",
+          "value": "20.00"
+        },
+        {
+          "field": "timezone",
+          "value": "UTC"
+        }
+      ]
+    },
+    {
+      "id": "unicode_obfuscation",
+      "file": "unicode_obfuscation.eml",
+      "message_sha256": "a103a37f69dda6f749b0540a9d1f2fc5c61fbcd0c0c8cae9c60f2c0b148e8aa4",
+      "description": "A bidirectional override and zero-width controls obscure instruction-like source text.",
+      "tags": [
+        "unicode",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "forbidden_codes": [],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "valid_multipart",
+      "file": "valid_multipart.eml",
+      "message_sha256": "cc61c7a35608363cbd13d411eba4fb920890041d4304252301d1a33783371b1c",
+      "description": "A minimal semantic multipart/alternative message with agreeing plain-text and HTML representations.",
+      "tags": [
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "FACT_REPRESENTATION_DIVERGENCE",
+          "MIME_ALTERNATIVE_INVALID",
+          "PLAIN_TEXT_REPRESENTATION_MISSING"
+        ],
+        "allow_additional_findings": false
+      },
+      "expected_primary_action": "https://events.example.com/register"
+    },
+    {
+      "id": "emoji_presentation_selectors",
+      "file": "emoji_presentation_selectors.eml",
+      "message_sha256": "a01940e167220d991ab725e64fa204a1ef078d97abaa9195caf75ecc96de4430",
+      "description": "Legitimate emoji presentation selectors (U+FE0F). A detector treating every variation selector as smuggling flags ordinary marketing copy.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "privacy_copy_not_injection",
+      "file": "privacy_copy_not_injection.eml",
+      "message_sha256": "65c6318b93508a8ce0d7a74c932107896e41785a40ae2a008cdebeffb163fe6b",
+      "description": "Ordinary privacy copy containing phrases a single-phrase prompt-injection matcher would fire on.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "footer_unsubscribe_not_primary_action",
+      "file": "footer_unsubscribe_not_primary_action.eml",
+      "message_sha256": "0418fe99d80d71aedd9e4bdfd4a912ab16d6fb108275f4a9746d0e537367ee7a",
+      "description": "Several ordinary links with one semantic primary action and a footer unsubscribe that must never win action extraction.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "PRIMARY_ACTION_IMAGE_ONLY",
+          "PRIMARY_ACTION_RECOVERY_FAILED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "small_but_readable_legal_text",
+      "file": "small_but_readable_legal_text.eml",
+      "message_sha256": "eaa7dc0ee2f2f2cc81bf03173125eb97970b38dbf77f8e6639e19f128817da4e",
+      "description": "Legal text at a small but readable size and adequate contrast, which a naive tiny-font or contrast rule would flag as concealed.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "decorative_icon_aria_hidden",
+      "file": "decorative_icon_aria_hidden.eml",
+      "message_sha256": "22de0da7715e55cbaf5ed7a2cd0fc15a310d9ed7c203dcd2c113edbaf29db0ba",
+      "description": "A correctly marked decorative image with empty alt and aria-hidden, which must not be read as concealed meaning.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "FACT_MEANING_IMAGE_ONLY",
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "rtl_arabic_body",
+      "file": "rtl_arabic_body.eml",
+      "message_sha256": "a3ae1f149a68d48c74edc9cf1db39ee978e8d38d094e644c0f536f1a771c592e",
+      "description": "Right-to-left script rendered naturally, with no bidi control characters. Real RTL copy must not read as reordering obfuscation.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "outlook_conditional_variant",
+      "file": "outlook_conditional_variant.eml",
+      "message_sha256": "d8a7d2f66e99cd64d1ea93f3c260f13ccaa2d18baef02fe5b7d1b277ed6ab7e6",
+      "description": "An Outlook-only responsive variant duplicating text that is also visible, which is a client-compatibility technique rather than concealed meaning.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "stop_reply_instructions",
+      "file": "stop_reply_instructions.eml",
+      "message_sha256": "f62cc2bec6545699ae9e66e24bd63adc3aa3257957246c7a0e0f8f6dfc4cc50d",
+      "description": "Imperative recipient instructions of the ordinary transactional kind, which a naive prompt-pattern matcher can mistake for instruction injection.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "ignore_if_already_paid",
+      "file": "ignore_if_already_paid.eml",
+      "message_sha256": "5d9dda6e2074c08692b5889a5dd0d01815e4c7b9897f132d5bffa7b1b5a1c88b",
+      "description": "Ordinary billing copy containing the word 'ignore', which a single-keyword injection matcher fires on.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "informative_hero_alt",
+      "file": "informative_hero_alt.eml",
+      "message_sha256": "d6eee72fd524ee728a34a81df9dae011ff77964af2167955c20c6d7bcce386ca",
+      "description": "A hero image carrying informative alt text beside equivalent live text, which must not read as a missing alt or as image-only meaning.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "footer_grey_on_white_adequate",
+      "file": "footer_grey_on_white_adequate.eml",
+      "message_sha256": "34b552b0a9a52d83bef0a5a2282adbaec7d2760c46d42b811037227924f9d120",
+      "description": "A grey-on-white footer at 13px and adequate contrast: quieter than the body, not concealed.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "visible_preview_line",
+      "file": "visible_preview_line.eml",
+      "message_sha256": "1b782f99590ba03dd617257586482e213070b05aa8cc0408abe73c3e062d6bce",
+      "description": "A preview line that is genuinely visible rather than a hidden preheader, so no provenance or hidden-content rule should apply.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "uppercase_marketing_copy",
+      "file": "uppercase_marketing_copy.eml",
+      "message_sha256": "49a01cab55cec77ce98cab88a6ac4426e698c47f85489261079362133dc2ce6e",
+      "description": "Loud but ordinary promotional copy in capitals, which must not be treated as manipulation.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "accented_and_emoji_names",
+      "file": "accented_and_emoji_names.eml",
+      "message_sha256": "d3c887d184cb8a382f49ab64705d424d8c872bc2f647bb1d573a8dd507825063",
+      "description": "Accented Latin text with a decorative emoji, exercising the obfuscation rule against ordinary non-ASCII content.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "nested_list_many_links",
+      "file": "nested_list_many_links.eml",
+      "message_sha256": "824a48fa82acaadc1e682df763ca247621b106445066c971a09dfa6daabed63c",
+      "description": "Many equally-weighted links with one clear primary action, exercising action extraction without a hidden-content trigger.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "dark_background_light_text",
+      "file": "dark_background_light_text.eml",
+      "message_sha256": "a2fc8f173418e60756f1c95013663ebf12f256f3f96f36d1d81b82bed2fd42e8",
+      "description": "Light text on a dark canvas: high contrast in the inverted direction, which a rule comparing text colour to an assumed white background would read as concealed.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "table_layout_spacer_cells",
+      "file": "table_layout_spacer_cells.eml",
+      "message_sha256": "51feca9e31065ef8d94f7a05a08406dae2e86bf2688fa2bf57fd790420ed9981",
+      "description": "Classic table layout with empty spacer cells, the dominant email technique. Empty presentational cells are structure, not concealed content.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "aria_label_icon_button",
+      "file": "aria_label_icon_button.eml",
+      "message_sha256": "8fe4e4d72c08abda498198744f9c79f27ba8c7ecf90e8990c343d68d44e6983e",
+      "description": "An accessible link-button with an aria-label and a logo carrying real alt text.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "bilingual_sections",
+      "file": "bilingual_sections.eml",
+      "message_sha256": "26c3986ad0e522993ae5b2028aa7f13459acee73a26f444ff555e45efaa7b8d1",
+      "description": "One message carrying two language sections, each visible, exercising duplicate-meaning and action-extraction rules on legitimate localisation.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "quoted_testimonial_italic_grey",
+      "file": "quoted_testimonial_italic_grey.eml",
+      "message_sha256": "a40f6d9d354d3d12f27a637d0dbf0666eb5ba13825ab10ae5228ba7ccb7b2c43",
+      "description": "A styled pull-quote and attribution in grey italics at readable sizes, a common design treatment rather than de-emphasised concealment.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "deadline_and_prices",
+      "file": "deadline_and_prices.eml",
+      "message_sha256": "5772a05fa0fe9ac320d8793a6ba0cd492bfdc16ee0139984401a0f218ea8cec3",
+      "description": "Dates and prices stated identically in both representations, exercising fact-recovery rules on a message with nothing hidden.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "unsubscribe_word_in_url_path",
+      "file": "unsubscribe_word_in_url_path.eml",
+      "message_sha256": "9f44974ffbf83172bdef5af751bf0dbb7320e3f2327fece36df01923b0fdbad3",
+      "description": "A content link whose path contains the word unsubscribe alongside a real footer unsubscribe, which action extraction must tell apart.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "long_plain_paragraphs",
+      "file": "long_plain_paragraphs.eml",
+      "message_sha256": "12b9a65e235b5870405bc2804fe6d3e285b731b7fee9e0ee5a0d8994313710fa",
+      "description": "Long prose about keys, rotation and required action: security vocabulary that keyword-based manipulation matchers are prone to firing on.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "nbsp_and_entities",
+      "file": "nbsp_and_entities.eml",
+      "message_sha256": "1712ff704e39abba90e3876672a99803631e4ae6e661a7d789cc5081b2327264",
+      "description": "Non-breaking spaces and HTML entities used for typography, which must not be counted as invisible-character obfuscation.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "logo_plus_heading_no_image_meaning",
+      "file": "logo_plus_heading_no_image_meaning.eml",
+      "message_sha256": "0694c1385e1e098bd4fc6fae5758f2cd26f21c4e99c626fc0aed8fdb017309bb",
+      "description": "A wordmark with alt text above live text that carries the whole message, so no fact or action depends on the image.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "legal_disclaimer_12px",
+      "file": "legal_disclaimer_12px.eml",
+      "message_sha256": "6b4b5eef3cdfc0a0bd2b58d52c8c4d3de5126a52996a74fe093aa6c5ebdb3bcb",
+      "description": "A legal disclaimer at 12px, comfortably above the concealment floor, in the position disclaimers always occupy.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "badge_label_10px",
+      "file": "badge_label_10px.eml",
+      "message_sha256": "284753efb9b50bd5a05e960c0bc5b1e25f06e65ac119e126b41a392993c6b85d",
+      "description": "A 10px badge label with a background, a standard UI treatment rather than text hidden from a reader.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "footnote_marker_9px",
+      "file": "footnote_marker_9px.eml",
+      "message_sha256": "3f02be4edf85b97b02d53f2ab421b237ea55a14b2968aceba7b194fb8b2f03ef",
+      "description": "A superscript footnote marker at 9px with its note at 11px, the ordinary way a caveat is attached to a price.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "table_header_small_caps",
+      "file": "table_header_small_caps.eml",
+      "message_sha256": "d01dc5a7f17d3dfd670199b947137b3d4bc2c61cd4d951b60e682d0f62dddd66",
+      "description": "Small-caps table headers at 11px in grey, a table convention rather than de-emphasis to hide meaning.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "cjk_body_text",
+      "file": "cjk_body_text.eml",
+      "message_sha256": "b5da2ab044b045b85106ef47a573f2b9d8e1ecd1361d4a7beb9be8eb4a1f75ce",
+      "description": "Japanese body copy with no control characters, exercising the obfuscation rule against ordinary CJK content.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "currency_and_math_symbols",
+      "file": "currency_and_math_symbols.eml",
+      "message_sha256": "c069c5814da0a4379cb30780ff3bee06093ea532d1fb5a25b74c9eb6ea2416e8",
+      "description": "Currency, multiplication, minus, approximation, plus-minus and superscript-two symbols in a quotation, all legitimate non-ASCII typography.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "greek_and_scientific_notation",
+      "file": "greek_and_scientific_notation.eml",
+      "message_sha256": "e5d8ee9a74862d261fe68aa6d4c26b0fa184e1390f7ccfca9206426c7ca6e9e1",
+      "description": "Greek letters used as scientific notation, which a rule scanning for unusual codepoints could mistake for smuggling.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "em_dashes_and_quotes",
+      "file": "em_dashes_and_quotes.eml",
+      "message_sha256": "961a53a97a7aa52097ee0e40baacfc89d3165c666828a1d2819827587ba1fdba",
+      "description": "Curly quotes, em dashes and ellipses: typographic punctuation that is non-ASCII but entirely ordinary.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "cyrillic_body_text",
+      "file": "cyrillic_body_text.eml",
+      "message_sha256": "67b56a47d9d0b2c8f419bb895190c7a182991cb8910518a434a5cc962e22d6d0",
+      "description": "Cyrillic body copy, exercising the obfuscation rule against a script whose characters resemble Latin ones.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "mixed_script_brand_name",
+      "file": "mixed_script_brand_name.eml",
+      "message_sha256": "8479fbe3307eb66411546ed6755ccbc431251480628b9574c913fdad28b82414",
+      "description": "A brand name deliberately mixing a Greek capital omega into Latin text, the honest version of a pattern that also appears in spoofing.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "background_image_with_live_text",
+      "file": "background_image_with_live_text.eml",
+      "message_sha256": "942bc35a8173a6e3900fa61b93994b482ddb79182f8743fc0c5cc87fa5ce6eed",
+      "description": "A background image behind live text, so the meaning survives when images are blocked and no alt is owed.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "tracking_pixel_decorative",
+      "file": "tracking_pixel_decorative.eml",
+      "message_sha256": "7256af888b0bb9cb046595b94f4b39f9276dff2b4980035f10d33514c3b4033a",
+      "description": "An open-tracking pixel marked decorative, which carries no meaning and must not be reported as a missing alt.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "image_with_title_and_alt",
+      "file": "image_with_title_and_alt.eml",
+      "message_sha256": "8ce806b8b844f85c55f9bb791790ca37dfa0ff7ad5f72a8cf969e876aa6c1dba",
+      "description": "An image carrying both alt and title, where the alt is the accessible name and the title is supplementary.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "srcset_responsive_image",
+      "file": "srcset_responsive_image.eml",
+      "message_sha256": "555f555daecbeb98ce455b7e4ea8286635e5976850af6ce591e5e051e855c203",
+      "description": "A responsive image with srcset and a single informative alt, which must be read once rather than per candidate.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "icon_list_all_decorative",
+      "file": "icon_list_all_decorative.eml",
+      "message_sha256": "b6ad7e8e40e3ebd383669b2be8afb67f3f47c5ff8ac38e09540582ef45942bdb",
+      "description": "Repeated decorative bullet icons beside text that carries the meaning, the commonest legitimate use of empty alt.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "do_not_reply_notice",
+      "file": "do_not_reply_notice.eml",
+      "message_sha256": "8b159d132ca0b4382ffd7fb86a08710a6f85fa1267b46fca1b1406e55aa16ad1",
+      "description": "A no-reply notice: an explicit instruction to the reader that transactional mail carries constantly.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "follow_the_steps_below",
+      "file": "follow_the_steps_below.eml",
+      "message_sha256": "320376d850471fe8662c70910f9b9c82351d549e6c3c9694ae28bae459797e1c",
+      "description": "Onboarding copy instructing the reader to follow steps, which is instruction-shaped and entirely ordinary.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "disregard_if_actioned",
+      "file": "disregard_if_actioned.eml",
+      "message_sha256": "17c1b9be74a58eec4706c394a77f13cb6204a8d8286b257d90b09228a477418f",
+      "description": "Workflow copy containing the word 'disregard', one of the exact verbs an injection matcher keys on.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "forward_to_a_colleague",
+      "file": "forward_to_a_colleague.eml",
+      "message_sha256": "d45cbc4f35e9aebc34574a51c67449f8360de2bd9387a5d1a0158dc1e8a7690c",
+      "description": "A forward-to-a-colleague prompt, an instruction to the human reader rather than to any agent.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "system_status_vocabulary",
+      "file": "system_status_vocabulary.eml",
+      "message_sha256": "4108355336f04bed0440bcde4d950a31ba3dc132f1fa5e6ac4add9fb11a70b4f",
+      "description": "Operational copy using the words system, instructions and action, the vocabulary a keyword matcher is most likely to trip on.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "postal_address_footer",
+      "file": "postal_address_footer.eml",
+      "message_sha256": "134325e04ea280d24083bf7750cdd5d6335a494c7c5a571664c3c84734be7c66",
+      "description": "The CAN-SPAM postal address block at 12px grey, which every compliant bulk message carries in exactly this treatment.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "copyright_line",
+      "file": "copyright_line.eml",
+      "message_sha256": "d6f79d8ad019df66a893e0e2675fd6caf3246ca18b9342fba9d87a22f2d124c6",
+      "description": "A copyright line at 11px, the smallest text a legitimate message routinely carries.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "image_caption_small",
+      "file": "image_caption_small.eml",
+      "message_sha256": "b02ed2ed1e813dc04b8ed29e98bde482e429cd4c669821eccfc2273e9d1a382d",
+      "description": "An image caption at 12px beneath its figure, a typographic convention rather than de-emphasis.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "unsubscribe_footer_block",
+      "file": "unsubscribe_footer_block.eml",
+      "message_sha256": "283fffc606eb2562d49402408cf6672083ca34ca4e574dd998c051db04e473af",
+      "description": "The standard unsubscribe footer at 11px grey with its two links, present in essentially every marketing message.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "zwj_emoji_sequence",
+      "file": "zwj_emoji_sequence.eml",
+      "message_sha256": "f96051af03a8f1469ea7768222c656bae2ec7e46fa361f875c546307102f669f",
+      "description": "Emoji sequences joined with U+200D ZERO WIDTH JOINER, which is how family and profession emoji are formed. The joiner is in the invisible-character set, so this is the case that decides whether ordinary emoji are readable as smuggling.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "thai_body_text",
+      "file": "thai_body_text.eml",
+      "message_sha256": "d36b2f3fa86bddd63a20fd537c03ed7229ebc11ec1b9384506a929ed38179d45",
+      "description": "Thai body copy, a script with combining marks and no spaces between words.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "hebrew_body_text",
+      "file": "hebrew_body_text.eml",
+      "message_sha256": "65ea34f401faeb74c647f8127cb9a1101087daabe2189333c874bd85521661f3",
+      "description": "Hebrew body copy rendered by natural bidirectionality with no explicit bidi control characters.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "devanagari_body_text",
+      "file": "devanagari_body_text.eml",
+      "message_sha256": "0e300dd625c6f6e15b1b6edee8a9c988cfcd2ff9abdf5881a6dd8bcc37e107cf",
+      "description": "Devanagari body copy, a script built from combining vowel signs and conjuncts.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "skin_tone_modifier_emoji",
+      "file": "skin_tone_modifier_emoji.eml",
+      "message_sha256": "82240a06abbcfcb4f10299f50319adf921683c5cf4228cce45656867633a3304",
+      "description": "An emoji carrying a Fitzpatrick skin-tone modifier, a multi-codepoint sequence that is entirely ordinary.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "flag_emoji_regional_indicators",
+      "file": "flag_emoji_regional_indicators.eml",
+      "message_sha256": "582794f2659d31c8ccaa1cd0ba4884c219f50f32bf9781348c086e45e1221f26",
+      "description": "A flag emoji built from paired regional-indicator codepoints, another multi-codepoint sequence with no visible components.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "button_image_inside_anchor",
+      "file": "button_image_inside_anchor.eml",
+      "message_sha256": "fcbcb3dfb433aadac19f03f5e0e9feaab2d5468c0dbbee42d0c457b32fbe2c1f",
+      "description": "An image button whose alt carries the action label, with the same URL repeated as live text so nothing depends on the picture.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "picture_source_element",
+      "file": "picture_source_element.eml",
+      "message_sha256": "5aa4f7ac67c15906605652b81f8bdca633c4c80d643e9556a542dec8d713e3bd",
+      "description": "A picture element with a source candidate and one informative alt on the fallback img, which is where the accessible name belongs.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "lazy_loaded_role_img",
+      "file": "lazy_loaded_role_img.eml",
+      "message_sha256": "5f69e5653491623c41b8f3ed91090a92da14f2692cd7a10636a0d4a06ad4c426",
+      "description": "A lazily loaded chart with an explicit role and an alt that states the figure, restated in live text beside it.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "avatar_images_with_names",
+      "file": "avatar_images_with_names.eml",
+      "message_sha256": "24bc520571286d217ce88d46639892d45bb07db2bda0b22c953dfa8edf4b32a9",
+      "description": "Avatar images marked decorative beside names given in text, so the picture repeats nothing the reader needs.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "logo_linked_to_home",
+      "file": "logo_linked_to_home.eml",
+      "message_sha256": "b59727d25e66a5e645802c3dfed64d0948d71f76d07e5af1e6e8d378dc0e941f",
+      "description": "A linked logo whose alt names the destination rather than describing the graphic, which is the correct alt for a linked image.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "password_reset_ignore_line",
+      "file": "password_reset_ignore_line.eml",
+      "message_sha256": "220d93b1dfd5660f69ef0680e94687374f25912113559fa889072446c8eeccb5",
+      "description": "The universal password-reset sentence, which pairs 'ignore' with an instruction and appears in essentially every account system.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "meeting_invite_accept_decline",
+      "file": "meeting_invite_accept_decline.eml",
+      "message_sha256": "499507dc3c65d19f4786dde4d5d972c4a494e393e7e7fbb8164cb1c4fd42d530",
+      "description": "A calendar invitation telling the reader to accept or decline, an imperative that is the entire purpose of the message.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "survey_prompt",
+      "file": "survey_prompt.eml",
+      "message_sha256": "f56908d4a054b52e400f7ebb4a0c1d853795bd0c9618fce69ede43b99ef45999",
+      "description": "A survey request phrased as a direct instruction to the reader.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "verification_code_do_not_share",
+      "file": "verification_code_do_not_share.eml",
+      "message_sha256": "101eee5c135192193beb690b8029a976bbc5f1b3385ac6437e82d74f6ed4c39b",
+      "description": "A one-time-code message instructing the reader not to share it and stating what the sender will never do \u2014 instruction-dense security copy.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "policy_change_action_required",
+      "file": "policy_change_action_required.eml",
+      "message_sha256": "7c2021b01e1df8701d707b88e9b28b259357498d05a9b680fcdf7b0eb153cabc",
+      "description": "Compliance copy leading with 'action required' and combining instruction, deadline and reassurance in one paragraph.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "screen_reader_only_label",
+      "file": "screen_reader_only_label.eml",
+      "message_sha256": "1e96390f8ade5ff9c2ca8696eb49c6576dd937477cec54dc0031cc814332ac51",
+      "description": "A visually-hidden span extending a link's accessible name. It IS flagged, and correctly: \u00a711 states that unknown hidden content is not trusted, and a sender-authored sr-only label is indistinguishable from a sender-authored hidden instruction. Only the compiler's own preheader is allowlisted, and only with provenance. This case records that policy rather than the intuition that accessibility markup should be exempt.",
+      "tags": [
+        "policy_hidden_content",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "mobile_only_variant_display_none",
+      "file": "mobile_only_variant_display_none.eml",
+      "message_sha256": "88aa7fec306343d5614d9806497251f0a3ddc91eaedec9bbd246b1979d809866",
+      "description": "A responsive variant hidden only inside a media query, so the default rendering shows it. Media-query visibility is layout, not concealment.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "visibility_hidden_layout_spacer",
+      "file": "visibility_hidden_layout_spacer.eml",
+      "message_sha256": "a44f32675c34f9deea12377bbf87bdc099e2c3d67b49b5a0a899dc9993fa43f5",
+      "description": "A visibility:hidden spacer row holding vertical rhythm in a table, containing a single period rather than meaning.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "aria_describedby_helper_text",
+      "file": "aria_describedby_helper_text.eml",
+      "message_sha256": "e3028506baa67e55d1477010d21887781aa09a00f3ce8f0af40781fee1ed1387",
+      "description": "Helper text referenced by aria-describedby and also visible at 12px, which is the accessible way to attach an explanation to a link.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "skip_link_offscreen",
+      "file": "skip_link_offscreen.eml",
+      "message_sha256": "d62bf3123f9acdc471070cfbe2fe26cce7e36d037f8b3a1fa0be9055f4da26ea",
+      "description": "An off-screen skip link. Flagged for the same reason as the sr-only label: the content is present and invisible, which is exactly the shape the policy distrusts. Recorded as expected so a future exemption has to change this case deliberately.",
+      "tags": [
+        "policy_hidden_content",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "table_caption_visually_hidden",
+      "file": "table_caption_visually_hidden.eml",
+      "message_sha256": "ee636f861978f151522cacbc937216a9c0976f83d56332281261b7d016deb3bc",
+      "description": "A visually-hidden table caption. Flagged as unknown hidden content; the recommended alternative is a visible caption or an aria-label carrying no additional prose.",
+      "tags": [
+        "policy_hidden_content",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "preheader_then_visible_repeat",
+      "file": "preheader_then_visible_repeat.eml",
+      "message_sha256": "fef9c768d414e4eb24b2bbbb74bc72ca8ba31eedcdc6a53baa1aa95a1aa1582d",
+      "description": "A hidden preheader whose text is repeated verbatim in the visible body, so nothing is said only in the hidden element.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "opacity_one_explicit",
+      "file": "opacity_one_explicit.eml",
+      "message_sha256": "887469c5f66cadd096f6a19803351fb769e56fe2b59671e18d77c2f623aa22ca",
+      "description": "Explicit near-full opacity values, which a rule matching on the presence of an opacity property rather than its value would flag.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "hidden_attribute_on_template_row",
+      "file": "hidden_attribute_on_template_row.eml",
+      "message_sha256": "76d21e8d41bbb78c8b93cc79bd2b90d8145fc35f84db1acccd7cb0a71a25e7ef",
+      "description": "An unfilled template row left hidden by the hidden attribute, containing placeholders rather than content.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "high_contrast_grey_on_light",
+      "file": "high_contrast_grey_on_light.eml",
+      "message_sha256": "2cca080b496baacfa966281191b810b87deab49c85f63c8f90226f97acd784af",
+      "description": "Dark text on a light grey canvas at comfortable contrast, exercising the ancestor-background contrast resolver on a legitimate palette.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "price_strikethrough_and_sale",
+      "file": "price_strikethrough_and_sale.eml",
+      "message_sha256": "971a3410654622eca1430e911cdb74900aebb0fdf129af09500847bf8368e8de",
+      "description": "A struck-through original price in smaller grey type beside the sale price, the standard retail treatment.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "small_element_terms",
+      "file": "small_element_terms.eml",
+      "message_sha256": "23060a534ab8673dc15df09ded60cbbc13c06f7a70f36f68cd55c4c9a9838710",
+      "description": "Terms in a <small> element with no explicit size, which renders around 13px and is the semantic element for fine print.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "scientific_sub_superscript",
+      "file": "scientific_sub_superscript.eml",
+      "message_sha256": "8fd92320f310b12ec0de36ade0a8ad85e1ab899275b97a10ed956faa7b16c9b3",
+      "description": "Chemical and mathematical sub/superscripts, which browsers render smaller by default without any authored font-size.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "table_footnote_row",
+      "file": "table_footnote_row.eml",
+      "message_sha256": "8e2fb6587854e24d80fa7414350f3bf37969eee57c222d010cb809ca9f9078cf",
+      "description": "A footnote row inside a comparison table at 11px, qualifying the figures above it.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "view_in_browser_line",
+      "file": "view_in_browser_line.eml",
+      "message_sha256": "5de0baf20ef5271002c442c422cf62c22a852ab220e17c7542ba7996d819fcbc",
+      "description": "The view-in-browser line at 11px above the masthead, present in most bulk mail and always de-emphasised.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "currency_superscript_cents",
+      "file": "currency_superscript_cents.eml",
+      "message_sha256": "2fab2234e143b784c05135a5fd2b9b212db09118ede4e205ca763bc9abb48204",
+      "description": "A price with superscript cents at 12px, the typographic convention for headline pricing.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "figure_with_figcaption",
+      "file": "figure_with_figcaption.eml",
+      "message_sha256": "52e890179ff621871169ff9b167a036f3ed6dfc5a2657b4fa7def4f7d8ab667c",
+      "description": "A figure whose figcaption repeats the alt text, which is the recommended pairing even though it duplicates meaning across representations.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "alt_duplicates_adjacent_heading",
+      "file": "alt_duplicates_adjacent_heading.eml",
+      "message_sha256": "4ea6f2fb2fb5a1e2604c19d2c5bd19121c93d1301da87e07d013e7390e11b388",
+      "description": "An image whose alt duplicates the adjacent heading, the case that decides whether duplicate-meaning rules and alt-text rules interfere with each other.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "two_images_one_decorative",
+      "file": "two_images_one_decorative.eml",
+      "message_sha256": "0eca98beace706c0368b1508b88955fed2b1c13770fd4f2176fe27d64165bbee",
+      "description": "One decorative divider and one informative product image in the same message, so the two alt rules must apply per-image rather than per-message.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "emoji_in_heading_and_alt",
+      "file": "emoji_in_heading_and_alt.eml",
+      "message_sha256": "7c1cab867c5bd8554968d9eaf4b38456fbd918c16884fa4ad54355c98d96df3f",
+      "description": "Emoji inside both a heading and an alt attribute, exercising the obfuscation scan over attribute text as well as body text.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "customs_action_needed",
+      "file": "customs_action_needed.eml",
+      "message_sha256": "babacf66ea08887b35ea7db8768378e1d0b9db94d6d674e55be038374bfea802",
+      "description": "A customs-hold notice combining urgency, a required action and a link \u2014 the exact shape of both a legitimate logistics mail and a phishing lure, which is why the detector must judge concealment rather than tone.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "legal_respond_within_14_days",
+      "file": "legal_respond_within_14_days.eml",
+      "message_sha256": "37bbbea48cbb7892c3f8df31804bfd2680cb03a1ac33ae4f33fb3b20455aebb3",
+      "description": "Formal legal language imposing a deadline and describing a consequence, phrased as an instruction throughout.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "event_confirm_attendance",
+      "file": "event_confirm_attendance.eml",
+      "message_sha256": "1361e3772ac20d35ddc0d289093924ac6f5ba239a0b1c6c032779e74cf948844",
+      "description": "An event reminder pairing an imperative with an 'ignore this if' clause, two patterns a matcher keys on in one short message.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "approval_pending_review",
+      "file": "approval_pending_review.eml",
+      "message_sha256": "eb51aa46d0c9f7a41661c9b4b1418bc83064ce27020a39344b99635cd8542e54",
+      "description": "An internal-tool alert instructing the reader to review, approve or reject, with system vocabulary throughout.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "subscription_ending_override",
+      "file": "subscription_ending_override.eml",
+      "message_sha256": "1dcde06e3755029d0dab9c2d85476e8df91b46ecb2a01d8718d15fe35f2cadc8",
+      "description": "Billing copy using the word 'override', one of the verbs an injection matcher treats as a control instruction.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "korean_body_text",
+      "file": "korean_body_text.eml",
+      "message_sha256": "b4940ce0ec837a5b0da8112a48b47d7f5c51f29b98ce963be3a5f55572c62238",
+      "description": "Korean body copy, a script composed from conjoining jamo.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "greek_body_text",
+      "file": "greek_body_text.eml",
+      "message_sha256": "5a60d3d79b389dc0713dae393da5ef9019b9dd451347fee0efc17809e6555352",
+      "description": "Greek body copy, distinct from the earlier fixture that used Greek letters as mathematical notation.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "vietnamese_stacked_diacritics",
+      "file": "vietnamese_stacked_diacritics.eml",
+      "message_sha256": "2ce8efdc2e27174c7d78fd263007f92518bde61e6d3b0fe17192658fd192f4a5",
+      "description": "Vietnamese, which stacks tone marks on already-accented vowels and produces long combining sequences.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "arabic_presentation_and_digits",
+      "file": "arabic_presentation_and_digits.eml",
+      "message_sha256": "3286b06637921bbdecfcb72f7db21ae2febcccf613fb3b33d7037e2a49af08f4",
+      "description": "Arabic with Arabic-Indic digits, whose codepoints differ from ASCII digits while reading identically to the audience.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "mixed_language_quoted_name",
+      "file": "mixed_language_quoted_name.eml",
+      "message_sha256": "ba95853a17b41ecaae27542aee06ba32691130a1b8f3fff275b635358a3957e0",
+      "description": "German umlauts and an eszett inside otherwise English copy, the commonest form of mixed-script legitimate text.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_valid_order",
+      "file": "jsonld_valid_order.eml",
+      "message_sha256": "21ea11fbb652480857c577e6689a342916906ff28f7e5a66b9fe3889b6d6fde7",
+      "description": "Valid Order markup of an allowlisted type, matching the visible order number and total.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_valid_discount_offer",
+      "file": "jsonld_valid_discount_offer.eml",
+      "message_sha256": "1731d354c70bdff7f15b1147a1b719446b266b07e23429ebf8f66ab1d6fbfb74",
+      "description": "Valid DiscountOffer markup, the Promotions annotation type, matching the visible offer.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_valid_event_reservation",
+      "file": "jsonld_valid_event_reservation.eml",
+      "message_sha256": "0da27274ee18e84178efc97ed753f5fd80f403d1f85a293eb3b1b009b3922ffa",
+      "description": "Valid EventReservation markup matching the visible reservation number.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_valid_promotion_card",
+      "file": "jsonld_valid_promotion_card.eml",
+      "message_sha256": "dca063c4918135508572663429df76d23b1015ac00559102165d4f3691b3d88d",
+      "description": "Valid PromotionCard markup, the second Promotions annotation type.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_http_schema_context",
+      "file": "jsonld_http_schema_context.eml",
+      "message_sha256": "9789fa7a938b175ccceb37ab4181e16545c1831a9c28d5481698e3133c904edf",
+      "description": "The http:// form of the schema.org context, which the registry accepts alongside https:// and which older tooling still emits.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_array_of_two_types",
+      "file": "jsonld_array_of_two_types.eml",
+      "message_sha256": "3c4f9a4f786959b982d6bc5c9d3dd50cc65d6b00ea2c9c9b1a9d3e73da85d322",
+      "description": "An array of two allowlisted root objects, which the validator accepts and which real senders emit when a message carries both an order and an offer.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_order_with_nested_offer",
+      "file": "jsonld_order_with_nested_offer.eml",
+      "message_sha256": "399f9cb4dc637fe29c90c26f285fc37cb1810e576415f2aa14c532935f607114",
+      "description": "An Order carrying a nested Offer and Product, the shape a real receipt uses. Nested types are not root types and must not be judged against the root allowlist.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_order_with_merchant",
+      "file": "jsonld_order_with_merchant.eml",
+      "message_sha256": "97fd6750f6d7c9de89e6af2c7782978a92ffa3cdc13a2d72ac363e1da0596383",
+      "description": "An Order naming its merchant as a nested Organization.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_order_with_action",
+      "file": "jsonld_order_with_action.eml",
+      "message_sha256": "ab97c8bb31ce57036c7656fbe5b8ade921ed10a024f85e8d0698e2a3f92a890c",
+      "description": "An Order carrying a ViewAction, the documented way to attach a primary action to transactional markup.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_order_with_delivery",
+      "file": "jsonld_order_with_delivery.eml",
+      "message_sha256": "5d67f5c034456b00c95feba1265ead556f3f7b1ccc16baf944b72f11696a97dd",
+      "description": "An Order carrying a ParcelDelivery with a tracking number.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_order_minimal_fields",
+      "file": "jsonld_order_minimal_fields.eml",
+      "message_sha256": "6649e3918037339040e0eb5fd5a7f916f4cc43068b757cc64d4aa84b7f0fe8b0",
+      "description": "The minimal valid Order: context, type and an order number, with no optional fields at all.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_whitespace_formatted",
+      "file": "jsonld_whitespace_formatted.eml",
+      "message_sha256": "0d64d90d688c889233115dd58df624dc77d44c331c4c8de46a1b3bc85d34e026",
+      "description": "Pretty-printed JSON-LD with newlines and indentation, which is how most senders emit it. Formatting is not a validity question.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_in_body_not_head",
+      "file": "jsonld_in_body_not_head.eml",
+      "message_sha256": "11ffde9de636d0f6084cc37aa325a4ddf6599856121c24e6ee18914977f793ac",
+      "description": "JSON-LD placed in the body rather than the head, which mail clients accept and senders commonly do.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_reservation_with_place",
+      "file": "jsonld_reservation_with_place.eml",
+      "message_sha256": "1252d685013f0e1616627f583e42b270d040aed45a355803c13831a05b85b4e4",
+      "description": "An EventReservation with a nested Event and Place, the full documented shape.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_and_decorative_image",
+      "file": "jsonld_and_decorative_image.eml",
+      "message_sha256": "693068f465f96dea01cf7a5bcf555d11b1aeca837e69941014293242d2ad2889",
+      "description": "Valid structured data alongside a decorative divider, so the structured and image rules are exercised on one message.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "IMAGE_ALT_MISSING",
+          "INFORMATIVE_IMAGE_ALT_EMPTY",
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "jsonld_with_small_print",
+      "file": "jsonld_with_small_print.eml",
+      "message_sha256": "f2dae98ed3aee64d3b785add7aaf3a3a3f9a084aeac1c8357c3e2bc97db0c9d7",
+      "description": "Valid structured data beside a 12px VAT note, exercising the structured and small-type rules together.",
+      "tags": [
+        "structured_data",
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "STRUCTURED_DATA_INVALID",
+          "STRUCTURED_DATA_TYPE_UNSUPPORTED",
+          "TINY_TEXT_DETECTED",
+          "UNDECLARED_STRUCTURED_DATA"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "newsletter_multi_section",
+      "file": "newsletter_multi_section.eml",
+      "message_sha256": "67555d578704d4904cfa1f8a68a4d33b1e8a74c1fcdd5bfbad45ace66357b49f",
+      "description": "A multi-section newsletter with a heading hierarchy and one primary action.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "abandoned_cart_urgency",
+      "file": "abandoned_cart_urgency.eml",
+      "message_sha256": "ea9d11cc64d63a01022ba69d90c641273c3d521b5936ccd4a3bdf745959598a3",
+      "description": "Abandoned-basket copy with a soft deadline, the commonest promotional urgency pattern.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "back_in_stock",
+      "file": "back_in_stock.eml",
+      "message_sha256": "5e05db9d998245d6a0b8c0d5536f1592feaf2012c6dffe427e18a81a0b0c8feb",
+      "description": "A back-in-stock notification, a triggered transactional-promotional hybrid.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "shipping_delay_apology",
+      "file": "shipping_delay_apology.eml",
+      "message_sha256": "0a6d3d2973cf8a40f53862421d7f4a88a06ba64c8598806651531b3b6aebea4b",
+      "description": "A delay apology stating that no action is needed, which pairs a negation with an instruction.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "double_optin_confirm",
+      "file": "double_optin_confirm.eml",
+      "message_sha256": "ba42b9fde635c3e2f08b1dd13ae1bae4d76e7d651e44d1b7a201eb98103e7e22",
+      "description": "Double opt-in confirmation, which by design pairs an imperative with an ignore-if-not-you clause.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "receipt_with_line_items",
+      "file": "receipt_with_line_items.eml",
+      "message_sha256": "1c9edcb95e01193ca40ff7bc57399d1c1b3cb60d273e446be9a3e09cf63acf0f",
+      "description": "A tabular receipt with line items and a total, all in live text.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "welcome_series_step_two",
+      "file": "welcome_series_step_two.eml",
+      "message_sha256": "11e98115b875f972e4c77056e2b4367bd4cdb9813bd01a3cb1b8bf0602d36038",
+      "description": "A numbered onboarding step, instruction-shaped by its nature.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "re_engagement_still_there",
+      "file": "re_engagement_still_there.eml",
+      "message_sha256": "def2327175b323db837a0fdae19133116e508810db8af1556788890a2d3ffa62",
+      "description": "A re-engagement message offering two opposed actions plus a small-type unsubscribe.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "TINY_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "referral_share_link",
+      "file": "referral_share_link.eml",
+      "message_sha256": "79f072c64e1f971d2d72bebd3ae3e35ec0b4d54a340a7033f4d72d3576e018ca",
+      "description": "A referral prompt instructing the reader to forward the message to someone else.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "nps_survey_single_question",
+      "file": "nps_survey_single_question.eml",
+      "message_sha256": "e7a181d17960b9e26ef2c748b6c8e724b85c3a0f5ff809c68f0711d9ba193160",
+      "description": "A single-question NPS prompt.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "webinar_reminder_one_hour",
+      "file": "webinar_reminder_one_hour.eml",
+      "message_sha256": "00cc8af7e36fb0990da45a216fc5799475851d730895ee45eff42711c850294b",
+      "description": "A time-sensitive event reminder with a precise deadline.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "invoice_overdue_notice",
+      "file": "invoice_overdue_notice.eml",
+      "message_sha256": "0e677df417e82f69d9f67eb8ebea566f24c3a72da84497c2c3cfe25a1e189b00",
+      "description": "An overdue notice stating a consequence, the most phishing-adjacent legitimate message a business sends.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "two_factor_enabled",
+      "file": "two_factor_enabled.eml",
+      "message_sha256": "0de0584b108cc66b17afb250aefe87d55e8cab22b271bdf2a0f0997a473c1cae",
+      "description": "A security-change notice with an urgent conditional instruction.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "data_export_ready",
+      "file": "data_export_ready.eml",
+      "message_sha256": "28de3ab2315ae68607f8187f9cccd5e0eba989b1d10138ddc3bc9e6570d0dae0",
+      "description": "An export-ready notice with an expiry, mixing deadline and instruction.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "seat_added_to_team",
+      "file": "seat_added_to_team.eml",
+      "message_sha256": "d58750d9f6eff6d36fedd454b617ae7e12266029db1d57f0c029c0e1deaa845f",
+      "description": "A team-membership change notification.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "quota_warning_80_percent",
+      "file": "quota_warning_80_percent.eml",
+      "message_sha256": "44a131a3baccb8374e672bd1e9e48ae83f35232317f6d1b92943a3de44de1ee6",
+      "description": "A usage-threshold warning stating a figure and deferring action.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "feature_deprecation_notice",
+      "file": "feature_deprecation_notice.eml",
+      "message_sha256": "881ba87a96fe2a5f8d2a5bfc06dc7c6fca93b802b8d4206ded2fcb3ea9e2ebac",
+      "description": "A deprecation notice combining a deadline with a required migration.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "birthday_offer_emoji",
+      "file": "birthday_offer_emoji.eml",
+      "message_sha256": "7abd034c7bc51aee746d41971518313bf4af2c4c781a1589d0815c880da731f3",
+      "description": "A birthday offer with an emoji in the heading.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "localised_currency_jpy",
+      "file": "localised_currency_jpy.eml",
+      "message_sha256": "15f802f959079add5c875ef5d6b75160b9263f8fd7d7bf85578fae9cb64ebd15",
+      "description": "A Japanese invoice with a yen symbol and full-width punctuation.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "TEXT_OBFUSCATION_CONTROL"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "plain_text_heavy_announcement",
+      "file": "plain_text_heavy_announcement.eml",
+      "message_sha256": "6241a9977f9ce6e14f8c7a17e2c473b057fbf469a10da15559d7f56ffc6344de",
+      "description": "A prose-heavy pricing announcement with several conditional clauses.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED",
+          "VISIBLE_PROMPT_MANIPULATION_PATTERN"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "accessibility_landmark_roles",
+      "file": "accessibility_landmark_roles.eml",
+      "message_sha256": "c4f89c7bcc0e3d0d019fbfada9e7c94e69df8bffaef1cbe0dd13a474983fa966",
+      "description": "A landmark role on a container, an accessibility affordance that hides nothing.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "nested_blockquote_reply",
+      "file": "nested_blockquote_reply.eml",
+      "message_sha256": "0aba696130f904b1bbb25dd78c989f6561acced3f0bbb81098c95a6569cb3c4c",
+      "description": "A quoted previous message inside a reply, which duplicates text by design.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "preformatted_code_block",
+      "file": "preformatted_code_block.eml",
+      "message_sha256": "b3ea378fe51553e34c5b1f3bc1de4e064e100606c13773c9a128c58ab45981d5",
+      "description": "A monospaced code block showing a header example, which a rule scanning for credential-shaped strings could misread.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_PROMPT_MANIPULATION",
+          "HIDDEN_TEXT_DETECTED"
+        ],
+        "allow_additional_findings": true
+      }
+    },
+    {
+      "id": "definition_list_glossary",
+      "file": "definition_list_glossary.eml",
+      "message_sha256": "1c159b197f4411278a5422a74ce6f46f53637dd3620222372d21d602f8a0cdee",
+      "description": "A definition list, a semantic structure the walker must traverse without treating dt/dd as hidden.",
+      "tags": [
+        "true_negative",
+        "valid_multipart"
+      ],
+      "mime_expectation": "valid",
+      "requires_compiler_receipt": false,
+      "finding_assertions": {
+        "required_codes": [],
+        "forbidden_codes": [
+          "HIDDEN_TEXT_DETECTED",
+          "INFORMATIVE_IMAGE_ALT_EMPTY"
+        ],
+        "allow_additional_findings": true
+      }
+    }
+  ]
+}

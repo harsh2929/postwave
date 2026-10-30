@@ -1,0 +1,82 @@
+---
+title: Sequences API
+---
+
+# Sequences API
+
+Programmatic generation, listing, and regeneration of [Voice AI](/voice-ai) sequences.
+
+## Endpoints
+
+| Method | Path                                                | Purpose                                  |
+| ------ | --------------------------------------------------- | ---------------------------------------- |
+| POST   | `/api/v1/sequences:generate`                            | Generate a new sequence from a template. |
+| GET    | `/api/v1/sequences`                                     | List sequences.                          |
+| GET    | `/api/v1/sequences/{id}`                                | Get one.                                 |
+| POST   | `/api/v1/sequences/{id}/emails/{email_id}:regenerate`   | Regenerate a single email.               |
+| PATCH  | `/api/v1/sequences/{id}/emails/{email_id}`              | Edit an email's content.                 |
+| POST   | `/api/v1/sequences/{id}:save-as-automation`             | Convert into a runnable automation.      |
+
+## Generate
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/sequences:generate \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{
+    "template_id":  "welcome-5-email",
+    "voice_profile_id": "vp_01HK...",
+    "variables": {
+      "newsletter_name": "Postscript",
+      "founder_first_name": "Alex"
+    },
+    "sliders": { "formality": 30, "length": 50, "urgency": 20, "personalisation": 60 }
+  }'
+```
+
+Response:
+
+```json
+{
+  "id": "seq_01HK...",
+  "template_id": "welcome-5-email",
+  "emails": [
+    {
+      "id": "email_01HK...",
+      "subject": "Hey — quick hello and what to expect",
+      "html": "...",
+      "fidelity": { "score": 78, "components": { "embedding": 0.82, "stylistic": 0.75, ... } }
+    }
+    // ... 4 more
+  ]
+}
+```
+
+## Regenerate
+
+```bash
+curl -X POST .../sequences/seq_.../emails/email_.../regenerate \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{ "hint": "Open with a personal anecdote, not a stat." }'
+```
+
+Response: the regenerated email object with a new fidelity score.
+
+## Save as automation
+
+```bash
+curl -X POST .../sequences/seq_.../save-as-automation \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{
+    "name": "Welcome — Postscript readers",
+    "trigger": { "type": "list_join", "config": { "list_id": "lst_01HK..." } },
+    "wait_between_emails_days": 2
+  }'
+```
+
+Returns the `automation_id`. The automation is created in **paused** state — review and activate via the Automations API or UI.
+
+## See also
+
+- [Voice AI overview](/voice-ai)
+- [Templates list](/voice-ai/templates)
+- [Fidelity scoring](/voice-ai/fidelity-scoring)

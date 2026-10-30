@@ -1,0 +1,191 @@
+/* Route-scoped replacement for @tailwindcss/typography. Only pages that render
+   long-form content pay for these selectors. */
+.base {
+  --body: #1a1a1a;
+  --heading: #0f0f0f;
+  --link: #9f0c24;
+  --muted: #5c5c5c;
+  --rule: #e0ddd3;
+  color: var(--body);
+  line-height: 1.75;
+}
+.root {
+  composes: base;
+  max-width: 65ch;
+  font-size: 1rem;
+}
+.small {
+  composes: base;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+.invert,
+:global(.dark) .invertDark {
+  --body: rgb(255 255 255 / 0.72);
+  --heading: #fff;
+  --link: #f08591;
+  --muted: rgb(255 255 255 / 0.62);
+  --rule: rgb(255 255 255 / 0.16);
+}
+:where(.base)
+  :where(p, ul, ol, blockquote, pre, table, figure):not(
+    :where(:global(.not-prose), :global(.not-prose) *)
+  ) {
+  margin-block: 1.1em;
+}
+:where(.base)
+  :where(h1, h2, h3, h4):not(
+    :where(:global(.not-prose), :global(.not-prose) *)
+  ) {
+  color: var(--heading);
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+:where(.base) h1 {
+  margin-block: 0 0.9em;
+  font-size: 2.25em;
+}
+:where(.base) h2 {
+  margin-block: 1.8em 0.75em;
+  font-size: 1.5em;
+}
+:where(.base) h3 {
+  margin-block: 1.5em 0.55em;
+  font-size: 1.25em;
+}
+:where(.base) h4 {
+  margin-block: 1.35em 0.45em;
+  font-size: 1em;
+}
+:where(.base) a:not(:global(.not-prose) *) {
+  color: var(--link);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+:where(.base) strong:not(:global(.not-prose) *) {
+  color: var(--heading);
+  font-weight: 650;
+}
+:where(.base) :where(ul, ol):not(:global(.not-prose) *) {
+  padding-inline-start: 1.5em;
+}
+:where(.base) ul:not(:global(.not-prose) *) {
+  list-style: disc;
+}
+:where(.base) ol:not(:global(.not-prose) *) {
+  list-style: decimal;
+}
+:where(.base) li:not(:global(.not-prose) *) {
+  margin-block: 0.35em;
+  padding-inline-start: 0.25em;
+}
+:where(.base) li::marker {
+  color: var(--muted);
+}
+:where(.base) blockquote:not(:global(.not-prose) *) {
+  border-inline-start: 0.25rem solid #c8102e;
+  padding-inline-start: 1em;
+  font-style: italic;
+}
+:where(.base) hr:not(:global(.not-prose) *) {
+  margin-block: 2em;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+:where(.base) code:not(:global(.not-prose) *) {
+  color: var(--heading);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  font-weight: 600;
+}
+:where(.base) pre:not(:global(.not-prose) *) {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #0f0f0f;
+  padding: 0.9em 1.1em;
+  color: #f5f5f5;
+  font-size: 0.875em;
+  line-height: 1.7;
+}
+:where(.base) pre code {
+  color: inherit;
+  font-size: inherit;
+  font-weight: 400;
+}
+:where(.base) table:not(:global(.not-prose) *) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875em;
+  text-align: start;
+}
+:where(.base) :where(th, td):not(:global(.not-prose) *) {
+  border-bottom: 1px solid var(--rule);
+  padding: 0.65em 0.75em;
+  text-align: inherit;
+  vertical-align: top;
+}
+:where(.base) th:not(:global(.not-prose) *) {
+  color: var(--heading);
+  font-weight: 650;
+}
+:where(.base) :where(img, video):not(:global(.not-prose) *) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+:where(.base) figcaption:not(:global(.not-prose) *) {
+  margin-top: 0.65em;
+  color: var(--muted);
+  font-size: 0.875em;
+}
+:where(.base) > :first-child:not(:global(.not-prose)) {
+  margin-top: 0;
+}
+:where(.base) > :last-child:not(:global(.not-prose)) {
+  margin-bottom: 0;
+}
+.changelog :where(h1, h2, h3, h4) {
+  scroll-margin-top: 6rem;
+}
+.changelog h3 {
+  font-size: 1rem;
+}
+.changelog h4 {
+  font-size: 0.875rem;
+}
+.changelog pre {
+  background: #09090b;
+}
+.forge :where(h1, h2, h3, h4) {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+.forge h1 {
+  font-size: 2.25rem;
+}
+.forge h2 {
+  margin-block: 4rem 1rem;
+  scroll-margin-top: 7rem;
+  font-size: 1.5rem;
+}
+.forge h3 {
+  margin-top: 2rem;
+  font-size: 1.125rem;
+}
+.forge :where(p, li) {
+  color: rgb(255 255 255 / 0.7);
+}
+.forge code {
+  color: #e55262;
+}
+.forge pre {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(0 0 0 / 0.6);
+}
+@media (min-width: 768px) {
+  .forge h2 {
+    scroll-margin-top: 6rem;
+  }
+}

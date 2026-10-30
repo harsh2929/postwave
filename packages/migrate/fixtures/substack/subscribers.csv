@@ -1,0 +1,6 @@
+email,status,first_name,last_name,subscription_type,paid_amount_cents,source,created_at
+isabel@example.com,active,Isabel,Allende,paid,800,substack_checkout,2026-01-15T12:00:00Z
+amy@example.org,active,Amy,Tan,free,0,substack_import,2025-11-05T09:20:00Z
+maxine@example.net,unsubscribed,Maxine,Kingston,free,0,substack_unsubscribe,2025-12-10T17:45:00Z
+chimamanda@example.com,active,Chimamanda,Adichie,paid,1200,substack_checkout,2026-02-19T07:15:00Z
+zora@example.org,active,Zora,Hurston,free,0,manual,2026-03-22T18:30:00Z

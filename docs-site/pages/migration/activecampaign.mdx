@@ -1,0 +1,110 @@
+---
+title: ActiveCampaign migration
+---
+
+import { Callout } from "nextra/components";
+
+# ActiveCampaign migration
+
+ActiveCampaign is a controlled cutover path. Moosewave imports the contact and campaign surfaces that are safe to materialize, then preserves higher-risk surfaces as source evidence for rebuild or explicit sign-off.
+
+<Callout type="warning">
+  ActiveCampaign automations do not become live Moosewave automations
+  automatically. Source definitions are preserved as rebuild-review items;
+  activate a Moosewave replacement only after the owner rebuilds, tests, or
+  explicitly waives it.
+</Callout>
+
+## Authentication
+
+Use the account API URL and API token from **Settings -> Developer -> API Access** in ActiveCampaign. Use a dedicated migration user because ActiveCampaign API tokens follow that user's account access.
+
+Moosewave accepts the API URL as `account_id` or `extra.api_url`. Bare account hosts are normalized to `/api/3`; every production URL must use HTTPS/443 and the exact Developer-tab hostname. One-label `api-us1.com` and `activehosted.com` account hosts work by default. Other provider-issued hostnames must be added to the deployment's exact `ACTIVECAMPAIGN_ALLOWED_API_HOSTS` allowlist; IPs, localhost, redirects, userinfo, queries, and fragments are rejected.
+
+## What imports
+
+| ActiveCampaign surface | Moosewave result                                                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contacts               | Email-addressable subscribers with phone, custom fields, source IDs, tags, list provenance, and active email-list targeting tags; incomplete consent/exclusion evidence remains unconfirmed |
+| Lists                  | Tag-backed executable Moosewave segments                                                                                                                                                     |
+| Saved segment logic    | Preserved for review when predicates cannot safely compile into executable targeting                                                                                                        |
+| Sent campaigns         | Read-only campaign archive with available content and aggregate metrics                                                                                                                     |
+| Changed contacts       | Source-event replay during the shadow window                                                                                                                                                |
+
+List status and subscription time are provenance, not channel-specific consent. Active membership in a known email list preserves targeting structure, but it does not make the subscriber sendable. A non-active or conflicting status on that list suppresses its tag. ActiveCampaign can separately exclude an address that remains active on a list, and API v3 has no documented complete exclusion inventory, so affected subscribers stay unconfirmed until the operator reconciles email/SMS consent, exclusions, and targeting tags. Email-less and phone-only contacts are preserved as review evidence rather than receiving fabricated email identities.
+
+Changed-contact replay uses the provider's date-only `updated_after` and `updated_before` filters conservatively, then applies the exact immutable UTC timestamp window after hydrating each contact. It paginates by ascending contact ID, binds the cursor to the authenticated account and fixed window, and commits the upper watermark only after every page succeeds.
+
+Polling cannot prove that a previously imported contact still exists. A
+hard-deleted contact may produce no changed-contact row, and equal totals can
+hide a deletion behind a new contact. The final shadow check blocks on a lower
+email-addressable count, while strict cutover always requires a reviewed final
+source export/audit to reconcile imported source IDs and disable destination
+subscribers whose source contact was removed or whose prior email identity is
+stale. Returned same-source contacts replace provider-owned tags, list-targeting
+tags, and custom fields while preserving local data, but that does not discover
+a hard-deleted contact.
+
+## Preserved for rebuild or sign-off
+
+| ActiveCampaign surface  | Moosewave result                                                                                                                                                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Automations             | Source definitions and rebuild ledger evidence; no runtime activation until rebuilt/tested/waived                                                                                                                         |
+| Messages/templates      | Source archive records for template rebuild                                                                                                                                                                               |
+| Forms                   | Source archive evidence; rebuild hosted and embedded forms before switching capture points                                                                                                                                |
+| CRM deals and pipelines | Read-only source archive context; keep the CRM system of record explicit                                                                                                                                                  |
+| Custom-object schemas   | Rebuild evidence for workflows that depend on custom objects                                                                                                                                                              |
+| Ecommerce evidence      | Attribution/rebuild evidence; executable ecommerce triggers require review                                                                                                                                                |
+| SMS inventory           | Source archive evidence for review only; it is not SMS consent, a sendable campaign, or a passable readiness gate. Hosted SMS remains HOLD / NO-GO under the structural effect holds. |
+
+If an optional preservation endpoint is unavailable, the verification report records `source_archive_warnings` and pilot acceptance blocks until permissions are fixed, a rerun preserves the data, or an operator records explicit cutover sign-off.
+
+## Cutover sequence
+
+1. Connect ActiveCampaign with the API URL and token.
+2. Run discovery and compare contact, list/tag, campaign, automation rebuild, CRM, ecommerce, custom-object, and SMS counts.
+3. Run a dry run and review the resource-completeness table.
+4. Rebuild, test, or waive the tracked automations and review saved-segment, audience-schema, campaign-fidelity, template, form, CRM, custom-object, ecommerce, and SMS evidence.
+5. Keep ActiveCampaign live for a 7-14 day shadow window and enable source-event replay. For every phone-only/email-less `manual_review` event, use the migration dashboard to record reconciliation detail and a non-secret evidence reference. This leaves `applied=false` truthful while setting a separate row-level review state; automatic subscriber replay failures still require a fix and replay, and later source changes create new pending reviews.
+6. Freeze edits, run final delta import, reconcile email consent and ActiveCampaign exclusions, compare imported source-ID-to-email and source-owned tag/list mappings with a reviewed final source export/audit, disable removed or stale-email identities, remove excluded targeting tags, and record the post-delta consent/exclusion evidence reference. Retain SMS rows as non-sendable archive evidence only.
+7. Run the post-delta shadow check. SMS cannot enter this pilot: a readiness projection cannot override `sms_campaign_dispatch_release_held`, `sms_provider_callback_release_held`, or the provider-vault boundary. Then require email pilot acceptance to pass.
+8. Run rollback rehearsal and preserve the evidence.
+9. Reset or revoke the dedicated ActiveCampaign migration user's API token and preserve a non-secret evidence reference.
+
+## API example
+
+```bash
+curl -X POST "https://api.moosewave.com/api/v1/migrations/activecampaign/credentials" \
+  -H "Authorization: Bearer $POSTWAVE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "api_key": "$ACTIVECAMPAIGN_API_TOKEN",
+    "extra": { "api_url": "https://account.api-us1.com/api/3" }
+  }'
+```
+
+## Common blockers
+
+- **Missing account API URL**: paste the account API URL from Settings -> Developer.
+- **Token rejected by ActiveCampaign**: generate a fresh token from the dedicated migration user.
+- **Provider-issued API hostname rejected**: have the deployment operator add the exact Developer-tab hostname to `ACTIVECAMPAIGN_ALLOWED_API_HOSTS`; never use a wildcard or substitute an account-name-derived URL.
+- **Consent/exclusion/contact-identity review required**: compare channel-specific consent and ActiveCampaign's exclusion list, reconcile source-ID-to-email and source-owned tag/list mappings against a reviewed final source export/audit, keep unresolved contacts unconfirmed, disable removed or stale-email identities, and remove list-targeting tags covered by exclusions before recording post-delta evidence.
+- **Manual source-event review required**: open the migration dashboard, reconcile each phone-only/email-less changed-contact event, and attach both a non-secret evidence reference and handling detail. The event remains truthfully unapplied; this workflow cannot waive an automatic subscriber replay failure.
+- **Automation rebuild required**: rebuild and test the automation, or explicitly waive it in pilot acceptance.
+- **Campaign archive fidelity review required**: fix and rerun partial message/content/metric preservation, or attach explicit post-delta historical-parity review evidence.
+- **SMS inventory present**: keep it archive-only and record **HOLD / NO-GO**;
+  there is no live SMS pilot-readiness bypass or manual sign-off path.
+- **Source archive warnings**: fix endpoint permissions, rerun preservation, or attach owner sign-off for missing evidence.
+- **Credential cleanup evidence missing**: reset/revoke the dedicated migration API token and attach a non-secret evidence reference.
+
+## Readiness claim
+
+Do not call an ActiveCampaign migration 100% production ready until a
+representative real account has passed URL/account binding, discovery, full
+pagination, dry-run, commit, continuous source-event overlap and resume, final
+delta import, email consent/exclusion/contact-identity and tag/list
+reconciliation, post-delta shadow check, pilot acceptance, rollback rehearsal,
+rollback cleanup, rate-limit/reconnect behavior, and credential cleanup proof
+in an isolated destination tenant. SMS remains excluded and archive-only until
+its separate HOLD / NO-GO decision is promoted. The repository currently
+contains local contract evidence, not that live certification artifact.

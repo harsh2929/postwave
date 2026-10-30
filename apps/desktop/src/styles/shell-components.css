@@ -1,0 +1,1968 @@
+/* ---------- app shell ----------------------------------------------- */
+
+.app-shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--pw-sidebar-w) 1fr;
+  /* Pin the single row to the shell's height (with a 0 minimum) instead of
+     letting it auto-size to content. Without this the row grows to the
+     tallest page, `.main`/`.content` inflate past the viewport, and the
+     `.content { overflow-y:auto }` scroller never engages — body's
+     overflow:hidden then just clips everything below the fold. */
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  /* The macOS title bar overlays the WebView. Reserve that native inset once
+     on the shell's border box so both columns begin on the same line. Because
+     global border-box sizing includes this padding in the shell's flexed
+     height, the bottom edge (and status bar) stays flush with the viewport. */
+  padding-top: var(--pw-titlebar-h);
+  overflow: hidden;
+}
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1000;
+  padding: 8px 12px;
+  border: 2px solid var(--pw-ring);
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg);
+  font-size: var(--pw-text-body);
+  font-weight: 600;
+  transform: translateY(calc(-100% - 16px));
+  transition: transform var(--pw-dur-fast) var(--pw-ease-out);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+.content:focus {
+  outline: none;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--pw-bg);
+}
+
+/* ---------- sidebar ------------------------------------------------- */
+
+.sidebar {
+  background: var(--pw-bg-sidebar);
+  border-right: 1px solid var(--pw-border);
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  /* Grid/flex items default to a content-based minimum block size. At high
+     browser zoom the workspace header + navigation + account chrome could
+     therefore force the entire shell taller than the CSS-pixel viewport.
+     Keep the sidebar bounded; `.sidebar-scroll` remains its scroll owner. */
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-workspace {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  padding: var(--pw-sp-3) var(--pw-sp-3);
+  border-bottom: 1px solid var(--pw-border);
+  cursor: pointer;
+  height: 44px;
+}
+.sidebar-workspace:hover {
+  background: var(--pw-bg-elev);
+}
+.sidebar-workspace-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--pw-radius-sm);
+  /* stylelint-disable-next-line color-no-hex -- brand-identity workspace avatar gradient (ember), intentionally identical in both themes */
+  background: linear-gradient(135deg, #f08591 0%, #c8102e 100%);
+  color: var(--pw-solid-fg);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.sidebar-workspace-name {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-workspace-chev {
+  color: var(--pw-fg-subtle);
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--pw-sp-2) 0;
+}
+
+.sidebar-section {
+  padding: var(--pw-sp-2) 0;
+}
+.sidebar-section-label {
+  padding: 0 var(--pw-sp-3);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.06em;
+  color: var(--pw-fg-subtle);
+  margin-bottom: var(--pw-sp-1);
+}
+.sidebar-domain-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-1);
+  width: 100%;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+}
+.sidebar-domain-toggle:hover {
+  color: var(--pw-fg-muted);
+}
+.sidebar-domain-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.sidebar-domain-chev {
+  width: 11px;
+  height: 11px;
+  transition: transform var(--pw-dur-fast) var(--pw-ease-out);
+}
+.sidebar-domain-chev.is-collapsed {
+  transform: rotate(-90deg);
+}
+.sidebar-item-status {
+  margin-left: auto;
+  color: var(--pw-warning);
+  font-size: var(--pw-text-xs);
+  line-height: 1.2;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-item-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 1px var(--pw-sp-2);
+}
+
+.sidebar-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  padding: 6px var(--pw-sp-3);
+  margin: 0;
+  border-radius: var(--pw-radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--pw-fg);
+  width: auto;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  border: none;
+  background: transparent;
+}
+.sidebar-item:hover {
+  background: var(--pw-bg-elev);
+}
+.sidebar-item:focus-visible,
+.sidebar-domain-toggle:focus-visible,
+.sidebar-favorite:focus-visible,
+.sidebar-collapse:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+@media (forced-colors: active) {
+  .sidebar-item:focus,
+  .sidebar-item:focus-visible,
+  .sidebar-domain-toggle:focus,
+  .sidebar-domain-toggle:focus-visible,
+  .sidebar-favorite:focus,
+  .sidebar-favorite:focus-visible,
+  .sidebar-collapse:focus,
+  .sidebar-collapse:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+}
+.sidebar-item.is-restricted .sidebar-item-icon {
+  color: var(--pw-warning);
+}
+.sidebar-item.is-active {
+  background: var(--pw-bg-elev-2);
+}
+.sidebar-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: var(--pw-accent);
+  border-radius: 0 2px 2px 0;
+}
+.sidebar-item-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--pw-fg-muted);
+}
+.sidebar-item.is-active .sidebar-item-icon {
+  color: var(--pw-fg);
+}
+.sidebar-item-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-item-kbd {
+  font-family: var(--pw-font-mono);
+  font-size: 11px;
+  /* Shortcut hints become visible on hover/active, so their foreground must
+   * remain readable instead of relying on the intentionally softer decorative
+   * token. */
+  color: var(--pw-fg-muted);
+  opacity: 0;
+  transition: opacity 80ms;
+}
+.sidebar-item:hover .sidebar-item-kbd,
+.sidebar-item.is-active .sidebar-item-kbd {
+  opacity: 1;
+}
+.sidebar-favorite {
+  display: grid;
+  width: 24px;
+  height: 28px;
+  flex: 0 0 24px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--pw-radius-sm);
+  background: transparent;
+  color: var(--pw-fg-subtle);
+  font-size: 13px;
+  opacity: 0;
+}
+.sidebar-item-row:hover .sidebar-favorite,
+.sidebar-favorite:focus-visible,
+.sidebar-favorite.is-favorite {
+  opacity: 1;
+}
+.sidebar-favorite:hover {
+  background: var(--pw-bg-elev);
+  color: var(--pw-warning);
+}
+.sidebar-collapse {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  margin: var(--pw-sp-1) var(--pw-sp-2);
+  padding: 6px var(--pw-sp-2);
+  border: 0;
+  border-radius: var(--pw-radius-sm);
+  background: transparent;
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+}
+.sidebar-collapse:hover {
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg);
+}
+
+@supports selector(:has(*)) {
+  .app-shell:has(.sidebar[data-collapsed="true"]) {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+}
+.sidebar[data-collapsed="true"] {
+  min-width: 64px;
+}
+.sidebar[data-collapsed="true"] .sidebar-workspace {
+  justify-content: center;
+  padding-inline: 0;
+}
+.sidebar[data-collapsed="true"] .sidebar-workspace-name,
+.sidebar[data-collapsed="true"] .sidebar-workspace-chev,
+.sidebar[data-collapsed="true"] .sidebar-section-label,
+.sidebar[data-collapsed="true"] .sidebar-item-label,
+.sidebar[data-collapsed="true"] .sidebar-item-kbd,
+.sidebar[data-collapsed="true"] .sidebar-item-status,
+.sidebar[data-collapsed="true"] .sidebar-favorite,
+.sidebar[data-collapsed="true"] .sidebar-account-email,
+.sidebar[data-collapsed="true"] .sidebar-callout,
+.sidebar[data-collapsed="true"] .sidebar-collapse-label {
+  display: none;
+}
+.sidebar[data-collapsed="true"] .sidebar-section {
+  padding-block: var(--pw-sp-1);
+}
+.sidebar[data-collapsed="true"] .sidebar-item-row {
+  width: 44px;
+  margin-inline: 10px;
+}
+.sidebar[data-collapsed="true"] .sidebar-item {
+  justify-content: center;
+  width: 44px;
+  min-height: 36px;
+  padding-inline: 0;
+}
+.sidebar[data-collapsed="true"] .sidebar-item.is-active::before {
+  left: -10px;
+}
+.sidebar[data-collapsed="true"] .sidebar-collapse,
+.sidebar[data-collapsed="true"] .sidebar-account {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.sidebar-account {
+  border-top: 1px solid var(--pw-border);
+  padding: var(--pw-sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-2);
+}
+.sidebar-account-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pw-success);
+  flex-shrink: 0;
+}
+.sidebar-account-email {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- destination capability boundary ------------------------ */
+
+.capability-gate {
+  max-width: 680px;
+  margin: clamp(24px, 8vh, 88px) auto;
+  padding: var(--pw-sp-6);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg);
+  background: var(--pw-bg-elev);
+}
+.capability-gate-eyebrow {
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.capability-gate h1 {
+  margin: var(--pw-sp-2) 0;
+  font-size: var(--pw-text-title);
+}
+.capability-gate p {
+  max-width: 62ch;
+  color: var(--pw-fg-muted);
+}
+.capability-gate-assurance {
+  padding-top: var(--pw-sp-3);
+  border-top: 1px solid var(--pw-border);
+  font-size: var(--pw-text-sm);
+}
+.capability-gate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+  margin-top: var(--pw-sp-4);
+}
+.capability-gate-skeleton {
+  width: min(100%, 440px);
+  height: 12px;
+  margin-top: var(--pw-sp-6);
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg-elev-2);
+}
+.capability-disclosure {
+  display: flex;
+  align-items: center;
+  gap: var(--pw-sp-3);
+  margin-bottom: var(--pw-sp-4);
+  padding: var(--pw-sp-3);
+  border: 1px solid var(--pw-border);
+  border-left: 3px solid var(--pw-warning);
+  border-radius: var(--pw-radius-sm);
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+}
+.capability-disclosure > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+.capability-disclosure strong {
+  color: var(--pw-fg);
+}
+.capability-disclosure-limited-offline {
+  border-left-color: var(--pw-advisor);
+}
+
+/* ---------- topbar -------------------------------------------------- */
+
+.topbar {
+  height: var(--pw-topbar-h);
+  border-bottom: 1px solid var(--pw-border);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--pw-sp-4);
+  gap: var(--pw-sp-3);
+  background: var(--pw-bg);
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+}
+.topbar-crumb {
+  font-size: 12px;
+  color: var(--pw-fg-subtle);
+}
+.topbar-search {
+  position: relative;
+  flex: 0 1 320px;
+  min-width: 160px;
+  max-width: 320px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 56px 0 30px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg-subtle);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 80ms,
+    box-shadow 80ms,
+    background 80ms;
+}
+.topbar-search-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-search:hover {
+  border-color: color-mix(in srgb, var(--pw-accent) 60%, var(--pw-border));
+  background: color-mix(in srgb, var(--pw-accent) 4%, var(--pw-bg-elev));
+}
+.topbar-search:focus-visible {
+  outline: none;
+  border-color: var(--pw-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pw-accent) 18%, transparent);
+}
+.topbar-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pw-fg-subtle);
+  pointer-events: none;
+}
+.topbar-search-kbd {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--pw-font-mono);
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+  background: var(--pw-bg-elev-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.topbar-iconbtn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg-muted);
+}
+.topbar-iconbtn:hover {
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg);
+}
+
+/* ---------- content area ------------------------------------------- */
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  /* Generous bottom breathing room keeps the final actionable row clear of
+   * the status bar and gives keyboard/trackpad scrolling a stable end stop. */
+  padding: var(--pw-sp-6) var(--pw-sp-6) calc(var(--pw-sp-6) + 80px);
+  min-height: 0;
+  /* Reserve the scrollbar gutter so the page width doesn't jump 8px
+   * when content tips over from "fits" to "overflows". */
+  scrollbar-gutter: stable;
+  /* Trackpad / touch users expect smooth inertia; keyboard PageDown /
+   * End also benefits. */
+  scroll-behavior: smooth;
+  /* Avoid scroll-anchor reflows when an async insertion happens mid-
+   * scroll — the dashboard list endpoints update rows in place and
+   * the browser's anchor logic can fight the user's scroll position. */
+  overflow-anchor: none;
+}
+.content.no-pad {
+  padding: 0;
+}
+
+@media (max-width: 1000px) {
+  .app-shell {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .sidebar {
+    min-width: 64px;
+  }
+  .sidebar-workspace {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .sidebar-workspace-name,
+  .sidebar-workspace-chev,
+  .sidebar-section-label,
+  .sidebar-item-label,
+  .sidebar-item-kbd,
+  .sidebar-item-status,
+  .sidebar-favorite,
+  .sidebar-account-email,
+  .sidebar-callout {
+    display: none;
+  }
+  .sidebar-section {
+    padding-block: var(--pw-sp-1);
+  }
+  .sidebar-item-row {
+    width: 44px;
+    margin-inline: 10px;
+  }
+  .sidebar-item {
+    justify-content: center;
+    width: 44px;
+    min-height: 36px;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+  .sidebar-item.is-active::before {
+    left: -10px;
+  }
+  .sidebar-account {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .topbar {
+    padding-inline: var(--pw-sp-3);
+    gap: var(--pw-sp-2);
+  }
+  .topbar-crumb,
+  .topbar-livesubs {
+    display: none;
+  }
+  .topbar-search {
+    flex: 1 1 180px;
+    max-width: none;
+  }
+  .content {
+    padding: var(--pw-sp-4) var(--pw-sp-4) calc(var(--pw-sp-4) + 64px);
+  }
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--pw-sp-4);
+  gap: var(--pw-sp-3);
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--pw-fg-muted);
+  margin-top: 2px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--pw-sp-3);
+  color: var(--pw-fg);
+}
+
+/* ---------- cards --------------------------------------------------- */
+
+.card {
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-4);
+  box-shadow: var(--pw-elev-1);
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--pw-sp-3);
+  margin-bottom: var(--pw-sp-6);
+}
+.stat-card {
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  padding: var(--pw-sp-3) var(--pw-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--pw-elev-1);
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pw-fg-subtle);
+}
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.stat-delta {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.stat-delta.up {
+  color: var(--pw-success);
+}
+.stat-delta.down {
+  color: var(--pw-danger);
+}
+.stat-delta.flat {
+  color: var(--pw-fg-subtle);
+}
+
+/* Refined Dashboard PR 2: topbar live subs chip */
+.topbar-livesubs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  margin-right: 4px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  color: var(--pw-fg);
+  transition:
+    border-color 80ms,
+    background 80ms;
+}
+.topbar-livesubs:hover {
+  border-color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 6%, var(--pw-bg-elev));
+}
+.topbar-livesubs-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pw-accent);
+}
+.topbar-livesubs-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.topbar-livesubs-delta {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.topbar-livesubs-delta.up {
+  color: var(--pw-success);
+}
+.topbar-livesubs-delta.down {
+  color: var(--pw-danger);
+}
+
+/* Refined Dashboard PR 2: statusbar send strip */
+.statusbar-send-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  margin-left: 10px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  color: var(--pw-fg);
+}
+.statusbar-send-strip:hover {
+  color: var(--pw-accent);
+}
+.statusbar-send-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--pw-accent);
+}
+.statusbar-send-click-rate {
+  margin-left: 6px;
+}
+.statusbar-send-name {
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@keyframes pw-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .statusbar-send-dot {
+    animation: pw-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+/* Refined Dashboard PR 4: per-row mini "rate bar" on Campaigns/Sequences */
+.dash-rate-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--pw-fg-subtle) 18%, transparent);
+  overflow: hidden;
+}
+.dash-rate-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--pw-accent);
+}
+.dash-rate-bar.is-bad > span {
+  background: var(--pw-danger);
+}
+
+/* Refined Dashboard PR 2 follow-up: drill-down highlight on the
+   Analytics KpiCard the user just jumped to. The pulse plays once
+   and fades; the JS clears the class after ~2.5s. */
+.stat-card.is-drilldown-highlight {
+  animation: pw-drilldown-pulse 1.6s ease-out 1;
+  border-color: var(--pw-accent);
+}
+@keyframes pw-drilldown-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--pw-accent) 60%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 12px color-mix(in srgb, var(--pw-accent) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--pw-accent) 0%, transparent);
+  }
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--pw-sp-3);
+  margin-bottom: var(--pw-sp-3);
+}
+@media (max-width: 1000px) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- list rows ---------------------------------------------- */
+
+.list {
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  /* `clip` (not `hidden`) still clips the rounded corners but does NOT
+     establish a scroll container, so .list-header can stick to the page
+     scroll area (.content) instead of being trapped in this box. */
+  overflow: clip;
+  background: var(--pw-bg-elev);
+}
+.list-header {
+  /* Pin the column labels to the top of the scroll area so long tables
+     keep their header on scroll (Phase-3, Stripe-grade). */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  align-items: center;
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  background: var(--pw-bg-sidebar);
+  border-bottom: 1px solid var(--pw-border-strong);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pw-fg-subtle);
+  gap: var(--pw-sp-3);
+}
+.list-row {
+  display: grid;
+  align-items: center;
+  padding: var(--pw-sp-2) var(--pw-sp-3);
+  border-bottom: 1px solid var(--pw-border-soft);
+  cursor: pointer;
+  font-size: 13px;
+  gap: var(--pw-sp-3);
+}
+.list-row:last-child {
+  border-bottom: none;
+}
+.list-row:hover {
+  background: var(--pw-bg-elev-2);
+}
+/* Crisp keyboard focus on rows. An INSET ring — the global outset focus ring
+   (Phase-1) is clipped by `.list { overflow: hidden }` on edge-to-edge rows,
+   so rows get their own non-clipped ring here. */
+.list-row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--pw-selection-ring);
+}
+
+.list-empty {
+  padding: var(--pw-sp-6);
+  text-align: center;
+  color: var(--pw-fg-muted);
+  font-size: 13px;
+}
+
+/* ---------- buttons / inputs --------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--pw-radius-sm);
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 80ms,
+    border-color 80ms;
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--pw-bg-elev-2);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--pw-ring);
+  outline-offset: 2px;
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+.btn:disabled:hover,
+.btn[aria-disabled="true"]:hover {
+  background: var(--pw-bg-elev);
+  border-color: var(--pw-border);
+}
+.btn-primary {
+  background: var(--pw-accent);
+  border-color: var(--pw-accent);
+  color: var(--pw-accent-fg);
+  font-weight: 600;
+  box-shadow: var(--pw-highlight-top-strong);
+}
+.btn-primary:active:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--pw-accent-active);
+}
+.btn-primary:hover {
+  background: var(--pw-accent-hover);
+}
+.btn-primary:disabled:hover,
+.btn-primary[aria-disabled="true"]:hover {
+  background: var(--pw-accent);
+  border-color: var(--pw-accent);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--pw-fg-muted);
+}
+.btn-ghost:hover {
+  background: var(--pw-bg-elev);
+  color: var(--pw-fg);
+}
+.btn-danger {
+  background: transparent;
+  border-color: var(--pw-border);
+  color: var(--pw-danger);
+}
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--pw-danger) 8%, transparent);
+}
+.btn-danger:disabled,
+.btn-danger[aria-disabled="true"] {
+  color: var(--pw-fg-subtle);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.btn-sm {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+.btn-link {
+  background: transparent;
+  border: 0;
+  padding: 4px 6px;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.btn-link:hover {
+  color: var(--pw-fg);
+}
+/* Button loading state (Phase-2): add `is-loading` to any .btn to hide its
+   label and show a spinner. Pair with disabled while the action is in
+   flight. The label keeps its width so the button doesn't jump. */
+.btn.is-loading {
+  color: transparent;
+  pointer-events: none;
+  position: relative;
+}
+.btn.is-loading::after {
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: var(--pw-accent);
+  animation: pw-spin 0.6s linear infinite;
+}
+.btn-primary.is-loading::after {
+  border-color: color-mix(in srgb, var(--pw-accent-fg) 35%, transparent);
+  border-top-color: var(--pw-accent-fg);
+}
+@keyframes pw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Canonical switch (Phase-2). The Settings switch (.settings-toggle-input,
+   styles-settings-v2.css) already implements this pattern; .pw-switch
+   promotes it to the core sheet, and the selector adopts the previously
+   un-styled SendTime toggle (a bare native checkbox inside .stx-toggle)
+   so every on/off control reads the same. */
+.pw-switch,
+.stx-toggle > input[type="checkbox"] {
+  flex: none;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  background: var(--pw-bg-elev-2);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-pill);
+  cursor: pointer;
+  transition:
+    background var(--pw-dur-base) var(--pw-ease-out),
+    border-color var(--pw-dur-base) var(--pw-ease-out);
+}
+.pw-switch::after,
+.stx-toggle > input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--pw-fg-muted);
+  transition:
+    transform var(--pw-dur-base) var(--pw-ease-out),
+    background var(--pw-dur-base) var(--pw-ease-out);
+}
+.pw-switch:checked,
+.stx-toggle > input[type="checkbox"]:checked {
+  background: var(--pw-accent);
+  border-color: var(--pw-accent);
+}
+.pw-switch:checked::after,
+.stx-toggle > input[type="checkbox"]:checked::after {
+  transform: translateX(16px);
+  background: var(--pw-accent-fg);
+}
+.pw-switch:disabled,
+.stx-toggle > input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input {
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 80ms;
+}
+.input:focus {
+  border-color: var(--pw-accent);
+}
+.input.mono {
+  font-family: var(--pw-font-mono);
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pw-fg-subtle);
+  margin-bottom: 6px;
+}
+
+.field {
+  margin-bottom: var(--pw-sp-4);
+}
+.field-help {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--pw-fg-subtle);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg-muted);
+  white-space: nowrap;
+}
+/* Integrations-catalog provider logo / monogram tile. White backdrop is the
+   conventional logo display surface and reads cleanly in light + dark. */
+.brand-icon-tile {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pw-email-canvas);
+  border: 1px solid color-mix(in srgb, var(--pw-bg) 10%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--pw-bg) 6%, transparent);
+  overflow: hidden;
+  line-height: 1;
+  user-select: none;
+}
+.brand-icon-tile img {
+  display: block;
+}
+
+.badge.success {
+  background: color-mix(in srgb, var(--pw-success) 12%, transparent);
+  color: var(--pw-success);
+}
+.badge.danger {
+  background: color-mix(in srgb, var(--pw-danger) 12%, transparent);
+  color: var(--pw-danger);
+}
+.badge.warning {
+  background: color-mix(in srgb, var(--pw-warning) 12%, transparent);
+  color: var(--pw-warning);
+}
+.badge.accent {
+  background: color-mix(in srgb, var(--pw-accent) 12%, transparent);
+  color: var(--pw-accent);
+}
+.badge.info {
+  background: color-mix(in srgb, var(--pw-info) 12%, transparent);
+  color: var(--pw-info);
+}
+
+/* ---------- chips / filter row -------------------------------------- */
+
+.chips {
+  display: inline-flex;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+.chip {
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  white-space: nowrap;
+}
+.chip:hover {
+  color: var(--pw-fg);
+}
+.chip.is-active {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+}
+
+/* ---------- empty state -------------------------------------------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+  gap: var(--pw-sp-3);
+  color: var(--pw-fg-muted);
+}
+.empty-state h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  margin-bottom: 2px;
+}
+.empty-state p {
+  max-width: 360px;
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+.empty-state-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  display: grid;
+  place-items: center;
+  color: var(--pw-fg-subtle);
+}
+
+/* ---------- SUB-085 · filtered no-match recovery state ------------- */
+
+.sub-nomatch {
+  max-width: 520px;
+}
+.sub-nomatch-didyoumean {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+.sub-nomatch-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  width: 100%;
+}
+.sub-nomatch-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+}
+.sub-nomatch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+  justify-content: center;
+}
+.sub-nomatch-chip {
+  font-variant-numeric: tabular-nums;
+}
+.sub-nomatch-ops {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--pw-sp-2);
+  width: 100%;
+}
+.sub-nomatch-op {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 10px;
+  text-align: left;
+  background: var(--pw-bg-elev);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-sm, 6px);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+.sub-nomatch-op:hover {
+  border-color: var(--pw-accent);
+  background: color-mix(in srgb, var(--pw-accent) 6%, transparent);
+}
+.sub-nomatch-op-code {
+  font-size: 12px;
+  color: var(--pw-fg);
+}
+.sub-nomatch-op-hint {
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+
+/* ---------- hero empty state (UI/UX audit) ------------------------- */
+/*
+ * Replaces deficit-framed "no items yet" empty states with a
+ * value-prop hero panel: pastel tinted bg, outcome-framed headline,
+ * primary + secondary CTA, photographic illustration on the right.
+ * Renders ONLY when the underlying list is empty AND no filter is
+ * active — when the user has searched, the existing
+ * .list-empty / .empty-state pattern still applies.
+ */
+.hero-empty {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 32px;
+  align-items: center;
+  padding: 48px 40px;
+  border-radius: var(--pw-radius-lg);
+  background: var(--pw-hero-bg-neutral);
+  overflow: hidden;
+  margin-bottom: var(--pw-sp-6);
+}
+.hero-empty.tone-blue {
+  background: var(--pw-hero-bg-blue);
+}
+.hero-empty.tone-mint {
+  background: var(--pw-hero-bg-mint);
+}
+.hero-empty.tone-blush {
+  background: var(--pw-hero-bg-blush);
+}
+.hero-empty.tone-sand {
+  background: var(--pw-hero-bg-sand);
+}
+.hero-empty.tone-neutral {
+  background: var(--pw-hero-bg-neutral);
+}
+
+.hero-empty-text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.hero-empty-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pw-fg-muted);
+}
+.hero-empty-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+  color: var(--pw-fg);
+}
+.hero-empty-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--pw-fg-muted);
+  max-width: 56ch;
+}
+.hero-empty-actions {
+  display: flex;
+  gap: var(--pw-sp-2);
+  align-items: center;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.hero-empty-meta {
+  font-size: 11px;
+  /* AA contrast audit (2026-05-27): `--pw-fg-subtle` (#6b7280) on the
+   * pastel hero backgrounds (--pw-hero-bg-blue/mint/blush/sand) ranges
+   * 4.20:1 – 4.31:1 in light mode — fails WCAG 2.1 AA for normal text
+   * (4.5:1). Bumping to `--pw-fg-muted` lifts it to ~6.85:1 – 7.03:1. */
+  color: var(--pw-fg-muted);
+  margin-top: 4px;
+}
+.hero-empty-image {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  min-height: 220px;
+  position: relative;
+}
+.hero-empty-image img {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--pw-radius-md);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--pw-shadow-color) 18%, transparent),
+    0 12px 32px color-mix(in srgb, var(--pw-shadow-color) 22%, transparent);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* P3 polish (audit 2026-06-02): photographic hero images "float" in
+ * light mode because the photo's natural edges blend into the light
+ * page background. Add a 1px hairline border + a deeper soft shadow so
+ * the photo reads as a framed object instead of a stray crop. */
+:root[data-theme="light"] .hero-empty-image img {
+  border: 1px solid color-mix(in srgb, var(--pw-fg-muted) 12%, transparent);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--pw-shadow-color) 22%, transparent),
+    0 16px 40px color-mix(in srgb, var(--pw-shadow-color) 18%, transparent);
+}
+@media (max-width: 880px) {
+  .hero-empty {
+    grid-template-columns: 1fr;
+    padding: 32px 24px;
+    gap: 20px;
+  }
+  .hero-empty-image {
+    order: 2;
+  }
+  .hero-empty-image img {
+    max-width: 280px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-empty {
+    animation: hero-rise 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes hero-rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ---------- inline promo card ------------------------------------- */
+/*
+ * Horizontal banner card used between the hero and the list/table
+ * to nudge the user toward the next-best action without nagging.
+ */
+.promo-card {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--pw-radius-md);
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev);
+  transition:
+    border-color 80ms,
+    transform 120ms ease-out,
+    box-shadow 120ms ease-out;
+  margin-bottom: var(--pw-sp-4);
+}
+.promo-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--pw-shadow-tile-hover);
+  border-color: color-mix(in srgb, var(--pw-accent) 35%, var(--pw-border));
+}
+.promo-card-thumb {
+  width: 88px;
+  height: 66px;
+  border-radius: var(--pw-radius-sm);
+  overflow: hidden;
+  background: var(--pw-bg-elev-2);
+  display: grid;
+  place-items: center;
+}
+.promo-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.promo-card-text {
+  min-width: 0;
+}
+.promo-card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+  margin-bottom: 2px;
+}
+.promo-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  margin-bottom: 2px;
+}
+.promo-card-body {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+  line-height: 1.45;
+}
+.promo-card-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--pw-fg-subtle);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.promo-card-dismiss:hover {
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+}
+
+/* ---------- "New" badge ------------------------------------------- */
+/*
+ * Auto-expiring sidebar / nav badge — see lib/newFeatures.ts for the
+ * source-of-truth registry. Uses the brand accent (not Mailchimp's pink) so
+ * it stays inside Moosewave's palette.
+ */
+.new-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 14px;
+  padding: 0 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--pw-accent) 16%, transparent);
+  color: var(--pw-accent);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ---------- sidebar callout slot ---------------------------------- */
+/*
+ * Single persistent callout anchored to the bottom of the sidebar.
+ * Surfaces one priority-queue item at a time (trial expiry, billing
+ * failure, unverified domain, product announcement). Renders nothing
+ * if the queue is empty.
+ */
+.sidebar-callout {
+  margin: 8px 10px 12px;
+  padding: 10px 12px;
+  border-radius: var(--pw-radius-md);
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--pw-fg-muted);
+}
+.sidebar-callout.kind-warn {
+  background: color-mix(in srgb, var(--pw-warning) 8%, var(--pw-bg-elev));
+  border-color: color-mix(in srgb, var(--pw-warning) 30%, var(--pw-border));
+}
+.sidebar-callout.kind-promo {
+  background: color-mix(in srgb, var(--pw-accent) 8%, var(--pw-bg-elev));
+  border-color: color-mix(in srgb, var(--pw-accent) 30%, var(--pw-border));
+}
+.sidebar-callout-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--pw-fg-subtle);
+}
+.sidebar-callout-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--pw-fg);
+  line-height: 1.4;
+}
+.sidebar-callout-cta {
+  align-self: stretch;
+  height: 24px;
+  border-radius: var(--pw-radius-sm);
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev-2);
+  color: var(--pw-fg);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: background 80ms;
+}
+.sidebar-callout-cta:hover {
+  background: color-mix(in srgb, var(--pw-fg) 8%, var(--pw-bg-elev-2));
+}
+.sidebar-callout-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--pw-fg-subtle);
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+/* The compact-shell rule appears after the callout's base declaration so the
+   cascade cannot accidentally resurrect a full-width promo inside the 64px
+   navigation rail. The actionable announcement remains available from its
+   canonical destination and What's New surfaces. */
+@media (max-width: 1000px) {
+  .sidebar-callout {
+    display: none;
+  }
+}
+
+/* ---------- onboarding checklist ---------------------------------- */
+/*
+ * The home-page checklist. Promoted from a modal-only wizard to a
+ * primary surface on Dashboard. Shows until ALL steps are complete
+ * (not "until any data exists"). Each step has a skip affordance.
+ */
+.checklist {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 22px 24px 16px;
+  border-radius: var(--pw-radius-lg);
+  border: 1px solid var(--pw-border);
+  background: var(--pw-bg-elev);
+  margin-bottom: var(--pw-sp-6);
+}
+.checklist-content {
+  min-width: 0;
+}
+.checklist-dismiss {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: var(--pw-radius-sm);
+  color: var(--pw-fg-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.checklist-dismiss:hover {
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev-2);
+}
+.checklist-restore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 10px 8px 14px;
+  margin-bottom: var(--pw-sp-4);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  color: var(--pw-fg-muted);
+  background: color-mix(in srgb, var(--pw-bg-elev) 70%, transparent);
+  font-size: 13px;
+}
+.checklist-ring {
+  width: 56px;
+  height: 56px;
+  position: relative;
+  flex-shrink: 0;
+}
+.checklist-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.checklist-ring-track {
+  stroke: var(--pw-bg-elev-2);
+  fill: none;
+  stroke-width: 4;
+}
+.checklist-ring-fill {
+  stroke: var(--pw-accent);
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.checklist-ring-text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  font-variant-numeric: tabular-nums;
+}
+.checklist-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+.checklist-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-right: 30px;
+}
+.checklist-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--pw-fg);
+}
+.checklist-subtitle {
+  font-size: 12px;
+  color: var(--pw-fg-muted);
+}
+.checklist-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* ---- tiered grouping (schema tier metadata) ----------------------- */
+.checklist-group {
+  margin-top: 14px;
+}
+.checklist-group:first-of-type {
+  margin-top: 8px;
+}
+.checklist-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.checklist-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pw-fg-muted);
+}
+.checklist-group-hint {
+  font-size: 11px;
+  color: var(--pw-fg-faint, var(--pw-fg-muted));
+}
+/* Hero the path-to-send spine: a tinted accent rail + bolder labels. */
+.checklist-group-primary {
+  border-left: 2px solid color-mix(in srgb, var(--pw-accent) 55%, transparent);
+  padding-left: 12px;
+}
+.checklist-group-primary .checklist-group-label {
+  color: var(--pw-accent);
+}
+.checklist-group-primary .checklist-step-label {
+  font-weight: 600;
+}
+/* Recess the hardening work: muted label + slightly lower emphasis. */
+.checklist-group-secondary {
+  padding-left: 12px;
+  border-left: 2px solid var(--pw-border-soft);
+}
+.checklist-group-secondary
+  .checklist-step:not(.is-active)
+  .checklist-step-label {
+  color: var(--pw-fg-muted);
+}
+.checklist-step {
+  padding: 12px 0;
+  border-top: 1px solid var(--pw-border-soft);
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+}
+.checklist-step:first-child {
+  border-top: none;
+  padding-top: 4px;
+}
+.checklist-step.is-complete .checklist-step-label {
+  color: var(--pw-fg-muted);
+}
+.checklist-step-bullet {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pw-border);
+  background: var(--pw-bg);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pw-fg-subtle);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.checklist-step.is-complete .checklist-step-bullet {
+  background: var(--pw-accent);
+  border-color: var(--pw-accent);
+  color: var(--pw-accent-fg);
+}
+.checklist-step.is-active .checklist-step-bullet {
+  border-color: var(--pw-accent);
+  color: var(--pw-accent);
+}
+.checklist-step-main {
+  min-width: 0;
+}
+.checklist-step-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 32px;
+  padding: 3px 4px 3px 0;
+  border: 0;
+  border-radius: var(--pw-radius-sm);
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.checklist-step-toggle:hover:not(:disabled) {
+  color: var(--pw-accent);
+}
+.checklist-step-toggle:disabled {
+  cursor: default;
+}
+.checklist-step-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pw-fg);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.checklist-step-unlocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--pw-success) 14%, transparent);
+  color: var(--pw-success);
+}
+.checklist-step-body {
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg);
+  border: 1px solid var(--pw-border-soft);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+.checklist-step-body[hidden] {
+  display: none;
+}
+.checklist-step-body-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.checklist-step-body-desc {
+  font-size: 13px;
+  color: var(--pw-fg-muted);
+  line-height: 1.5;
+}
+.checklist-step-body-actions {
+  display: flex;
+  gap: var(--pw-sp-2);
+  align-items: center;
+}
+.checklist-step-body-illustration {
+  width: 140px;
+  flex-shrink: 0;
+}
+.checklist-step-body-illustration img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--pw-radius-sm);
+}
+.checklist-step-skip {
+  background: none;
+  border: none;
+  color: var(--pw-fg-subtle);
+  min-height: 32px;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--pw-radius-sm);
+}
+.checklist-step-skip:hover {
+  color: var(--pw-fg-muted);
+  text-decoration: underline;
+}
+.checklist-step-chevron {
+  flex: none;
+  color: var(--pw-fg-subtle);
+  transition: transform 120ms ease-out;
+}
+.checklist-step.is-active .checklist-step-chevron {
+  transform: rotate(180deg);
+}
+
+/* The 200% reflow layout leaves roughly 376 CSS px beside the compact
+   navigation rail. Preserve every essential top-bar action without allowing
+   the live count and command label to force the shell wider than the
+   viewport. This block intentionally follows the feature styles above so the
+   responsive display decisions win the cascade. */
+@media (max-width: 560px) {
+  .topbar {
+    min-width: 0;
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .topbar-livesubs {
+    display: none;
+  }
+
+  .topbar-search {
+    flex: 0 0 36px;
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+  }
+
+  .topbar-search-icon {
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .topbar-search-label,
+  .topbar-search-kbd {
+    display: none;
+  }
+
+  .content {
+    min-width: 0;
+    padding-inline: 12px;
+  }
+}
+
+/* A 320px native window leaves 256px beside the compact navigation rail.
+ * Keep every global control reachable without letting the duplicated route
+ * title force the document wider; the page's h1 remains visible and named. */
+@media (max-width: 360px) {
+  .topbar-title {
+    display: none;
+  }
+}

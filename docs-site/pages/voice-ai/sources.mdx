@@ -1,0 +1,78 @@
+---
+title: Sources
+---
+
+import { Callout } from 'nextra/components';
+
+# Voice sources
+
+A voice profile is only as good as the content you feed it. Moosewave supports five source types. **More is better, but quality matters more than quantity** — feeding a single great essay beats feeding a hundred lukewarm tweets.
+
+## The 5 source types
+
+| Source             | Ideal volume         | Minimum useful  | What it captures                              |
+| ------------------ | -------------------- | --------------- | --------------------------------------------- |
+| **Past campaigns** | 20+ campaigns        | 5               | Email-shaped voice — the closest match.       |
+| **Tweets / X posts** | 500+ posts          | 100             | Concise voice, hooks, humour register.        |
+| **Blog posts**     | 10+ long-form posts  | 3               | Argument structure, paragraph cadence.        |
+| **Podcast transcripts** | 5+ episodes      | 2               | Spoken cadence, conversational fillers.       |
+| **LinkedIn posts** | 100+ posts           | 20              | Professional register, hook patterns.         |
+| **Paste-in fallback** | 3,000+ words       | 3,000 words     | When you have nothing else.                   |
+
+## How to add each
+
+### Past campaigns
+
+If you migrated via [Mailchimp](/migration/mailchimp), [ConvertKit](/migration/convertkit), or any source that brought your campaign archive — they're already attached. Moosewave auto-suggests them when you build a profile.
+
+For sources without API access (Substack), upload the `.eml` or HTML files manually under **Voice AI → Sources → Add campaigns**.
+
+### Tweets / X posts
+
+Two ways:
+
+1. **X data export** — request your archive at [x.com/settings/your_archive](https://x.com/settings/your_archive). Drop the `.zip` into Moosewave; we extract `tweets.js`.
+2. **Public scrape (limited)** — provide your handle; we pull the most recent 500 public posts via the X API.
+
+Replies and quote-tweets are excluded by default (they're often reactive, not voice-representative). Toggleable.
+
+### Blog posts
+
+- **RSS feed URL** — Moosewave fetches the full feed and ingests posts.
+- **Direct upload** — paste URLs or upload `.md` / `.html` files.
+- **WordPress export** — drop a `WordPress.xml` file.
+
+### Podcast transcripts
+
+- Paste a transcript directly (Otter.ai, Descript, Riverside exports work).
+- Provide an `.mp3` URL — Moosewave runs Whisper transcription server-side (~$0.30 per hour of audio, billed at cost).
+
+<Callout type="info">
+Podcast transcripts add **spoken cadence** to your profile — useful if you want your emails to sound less corporate. If you don't podcast, skip; the other sources cover everything else.
+</Callout>
+
+### LinkedIn posts
+
+- **LinkedIn data export** — request from `linkedin.com/mypreferences/d/download-my-data`. Drop `Shares.csv`.
+- We don't scrape LinkedIn (their TOS prohibits it).
+
+### Paste-in fallback
+
+If you have nothing else (brand-new newsletter), paste 3,000+ words of your writing — anything from old emails to a notes app dump. Below 3,000 words, Moosewave will refuse to build a profile; the result would be too generic.
+
+## Volume guidelines
+
+For a *strong* profile across all dimensions:
+
+- **20+ campaigns** OR **10+ blog posts** OR **(5 campaigns + 200 tweets + 5 LinkedIn)** is the sweet spot.
+- Single-source profiles (only tweets, only LinkedIn) work but skew tonally — Moosewave will warn.
+- Refreshing the profile monthly with the latest content keeps it from drifting from current you.
+
+## Privacy
+
+All source content is stored encrypted at rest, scoped to your workspace, and **never used to train shared models or other tenants' profiles**. See the [FAQ](/faq) for the full data-use posture.
+
+## Next steps
+
+- [Profile](/voice-ai/profile) — what we build from these sources.
+- [Templates](/voice-ai/templates) — what to do with the profile once it exists.

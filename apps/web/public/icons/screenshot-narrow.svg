@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1334" viewBox="0 0 750 1334" role="img" aria-label="Moosewave on mobile">
+  <rect width="750" height="1334" fill="#0f172a"/>
+  <rect x="32" y="48" width="686" height="60" rx="10" fill="#1e293b"/>
+  <rect x="48" y="66" width="180" height="24" rx="6" fill="#2563eb"/>
+  <rect x="32" y="140" width="686" height="180" rx="14" fill="#111827"/>
+  <rect x="32" y="340" width="686" height="180" rx="14" fill="#111827"/>
+  <rect x="32" y="540" width="686" height="180" rx="14" fill="#111827"/>
+  <rect x="32" y="740" width="686" height="180" rx="14" fill="#111827"/>
+  <rect x="32" y="940" width="686" height="180" rx="14" fill="#111827"/>
+</svg>

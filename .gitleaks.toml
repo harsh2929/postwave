@@ -1,0 +1,1141 @@
+title = "Postwave public source secret scan"
+minVersion = "8.25.0"
+[extend]
+useDefault = true
+
+
+[[allowlists]]
+description = "Public-source review: Kubernetes secret-key reference name, not its value"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)infra/backup/postgres\-statefulset\-patch\.yaml$''']
+regexes = ['''^key:\ WALG_S3_PREFIX$''']
+
+[[allowlists]]
+description = "Public-source review: MD5 template-body checksums"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)infra/migrations/2055_platform_template_drafts_and_mobile_layout\.sql$''']
+regexes = ['''^transactional\-password\-reset\-timed',\ 'c8eb2c30b415b73290fde837a09f9c10'$''']
+
+[[allowlists]]
+description = "Public-source review: MD5 template-body checksums"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)infra/migrations/2055_platform_template_drafts_and_mobile_layout\.sql$''']
+regexes = ['''^transactional\-password\-reset\-timed',\ 'dd9bfef30773eabc75b33778b428f746'$''']
+
+[[allowlists]]
+description = "Public-source review: OAuth teardown documentation prose"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)docs/integrations/surveymonkey\.md$''']
+regexes = ['''^OAuth\ token\ revocation,\ survey/collector/app\ $''']
+
+[[allowlists]]
+description = "Public-source review: SQL column projection, not a credential"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/conversions/signed_ingest\.go$''']
+regexes = ['''^secret_envelope,\ legacy_v1_until$''']
+
+[[allowlists]]
+description = "Public-source review: SQL privilege predicate, not a credential"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/conversions/email_hmac_projection\.go$''']
+regexes = ['''^public\.conversion_ingest_secrets',\ 'legacy_v1_until'$''']
+
+[[allowlists]]
+description = "Public-source review: browser local-storage key name"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/components/ai/SavedPromptsCard\.tsx$''']
+regexes = ['''^LS_KEY,\ "saved\-prompts\.v1"$''']
+
+[[allowlists]]
+description = "Public-source review: browser local-storage key name"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/hooks/useSidebarCallout\.ts$''']
+regexes = ['''^dismissKey:\ "anc\-compliance\-2026\-05"$''']
+
+[[allowlists]]
+description = "Public-source review: credential cleanup evidence reference label in fixtures"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)scripts/validate\-live\-migrations\.mjs$''']
+regexes = ['''^credentialCleanupEvidenceRef:\ "BEEHIIV\-KEY\-ROTATION\-123"$''']
+
+[[allowlists]]
+description = "Public-source review: credential cleanup evidence reference label in fixtures"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)scripts/validate\-live\-migrations\.mjs$''']
+regexes = ['''^credentialCleanupEvidenceRef:\ "KLAVIYO\-KEY\-ROTATION\-123"$''']
+
+[[allowlists]]
+description = "Public-source review: ellipsis API-key placeholder in a curl example"
+targetRules = ["curl-auth-header"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)docs\-site/pages/api\-reference/index\.mdx$''']
+regexes = ['''^curl\ https://api\.moosewave\.com/api/v1/subscribers\ \\\
+\ \ \-H\ "Authorization:\ Bearer\ pk_live_\.\.\."$''']
+
+[[allowlists]]
+description = "Public-source review: environment-variable documentation prose"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)docs/integrations/webhook\-ingest\-certification\.md$''']
+regexes = ['''^creds:\
+\ \ \ `LOYALTY_LIVE_CERTIFICATION=1\ $''']
+
+[[allowlists]]
+description = "Public-source review: example idempotency request ID"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)docs\-site/pages/api\-reference/errors\.mdx$''']
+regexes = ['''^Idempotency\-Key:\ launch\-2026\-04\-30\-abc123$''']
+
+[[allowlists]]
+description = "Public-source review: generated OpenAPI source SHA-256 checksum"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/routeauth/manifest\.json$''']
+regexes = ['''^openapi_yaml_sha256":\ "1e63b2c406c682698fcd262698b0ea790174e166bd71660e570e13a3539dbc0c"$''']
+
+[[allowlists]]
+description = "Public-source review: hostile-URL validation unit-test fixture"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src\-tauri/src/api_broker\.rs$''']
+regexes = ['''^api\.moosewave\.com:8443/api/v1/campaigns"$''']
+
+[[allowlists]]
+description = "Public-source review: invalid PEM-format test string containing only the word fixture; no key material"
+targetRules = ["private-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/easSubmitProfileScript\.test\.ts$''']
+regexes = ['''^\-\-\-\-\-BEGIN\ PRIVATE\ KEY\-\-\-\-\-\\nfixture\\n\-\-\-\-\-END\ PRIVATE\ KEY\-\-\-\-\-\\n";\
+\ \ \ \ await\ prepareSubmitProfile\(\{\
+\ \ \ \ \ \ platform:\ "ios",\
+\ \ \ \ \ \ \.\.\.paths,\
+\ \ \ \ \ \ env:\ \{\
+\ \ \ \ \ \ \ \ ASC_API_KEY_P8_BASE64:\ Buffer\.from\(privateKey\)\.toString\("base64"\),\
+\ \ \ \ \ \ \ \ ASC_API_KEY_ID:\ "KEY123",\
+\ \ \ \ \ \ \ \ ASC_API_KEY_ISSUER_ID:\ "issuer\-123",\
+\ \ \ \ \ \ \ \ ASC_APP_ID:\ "1234567890",\
+\ \ \ \ \ \ \ \ APPLE_TEAM_ID:\ "ABCDE12345",\
+\ \ \ \ \ \ \},\
+\ \ \ \ \}\);\
+\
+\ \ \ \ const\ config\ =\ JSON\.parse\(await\ readFile\(paths\.easPath,\ "utf8"\)\);\
+\ \ \ \ const\ profile\ =\ config\.submit\.production\.ios;\
+\ \ \ \ expect\(profile\)\.toMatchObject\(\{\
+\ \ \ \ \ \ ascApiKeyId:\ "KEY123",\
+\ \ \ \ \ \ ascApiKeyIssuerId:\ "issuer\-123",\
+\ \ \ \ \ \ ascAppId:\ "1234567890",\
+\ \ \ \ \ \ appleTeamId:\ "ABCDE12345",\
+\ \ \ \ \}\);\
+\ \ \ \ expect\(await\ readFile\(profile\.ascApiKeyPath,\ "utf8"\)\)\.toBe\(privateKey\);\
+\ \ \ \ expect\(\(await\ stat\(profile\.ascApiKeyPath\)\)\.mode\ \&\ 0o777\)\.toBe\(0o600\);\
+\ \ \}\);\
+\
+\ \ it\("writes\ a\ validated\ Android\ service\ account\ and\ preserves\ release\ track",\ async\ \(\)\ =>\ \{\
+\ \ \ \ const\ paths\ =\ await\ fixture\(\);\
+\ \ \ \ const\ credential\ =\ \{\
+\ \ \ \ \ \ type:\ "service_account",\
+\ \ \ \ \ \ client_email:\ "release@example\.iam\.gserviceaccount\.com",\
+\ \ \ \ \ \ private_key:\ "\-\-\-\-\-BEGIN\ PRIVATE\ KEY\-\-\-\-\-$''']
+
+[[allowlists]]
+description = "Public-source review: placeholder form field path in documentation"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)docs/integrations/formidable\-forms\.md$''']
+regexes = ['''^api_key":\ "95SX\-LM4Z\-DDTC\-HP8A"$''']
+
+[[allowlists]]
+description = "Public-source review: query-cache key name"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/hooks/useSmsInbox\.ts$''']
+regexes = ['''^SMS_CONVERSATIONS_KEY\ =\ "sms\-conversations\-v2"$''']
+
+[[allowlists]]
+description = "Public-source review: sequential hexadecimal build-fixture value"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)scripts/release/verify\-aws\-deployment\-contracts\.mjs$''']
+regexes = ['''^NEXT_PUBLIC_POSTWAVE_CONSENT_SITE_KEY=pwk_0123456789abcdef0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: sequential hexadecimal non-published build fixture"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)\.github/workflow\-templates/trivy\.yml\.disabled$''']
+regexes = ['''^NEXT_PUBLIC_POSTWAVE_CONSENT_SITE_KEY=pwk_0123456789abcdef0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Public-source review: sequential hexadecimal shell-test credentials"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)infra/aws/staging/scripts/tests/run\.sh$''']
+regexes = ['''^CONSENT_SITE_KEY=pwk_0123456789abcdef0123456789abcdef0123456789abcdef\ $''']
+
+[[allowlists]]
+description = "Public-source review: sequential hexadecimal shell-test credentials"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)infra/aws/staging/scripts/tests/run\.sh$''']
+regexes = ['''^PGPASSWORD=0123456789abcdef0123456789abcdef\ $''']
+
+[[allowlists]]
+description = "Public-source review: sequential hexadecimal shell-test credentials"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)infra/aws/staging/scripts/tests/run\.sh$''']
+regexes = ['''^token\ api:fedcba9876543210fedcba9876543210'$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic CAPTCHA schema example"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/apidocs/openapi\.json$''']
+regexes = ['''^captchaToken":\ "0\.AbCDE\-fghijKlmnopq"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic CAPTCHA schema example"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/openapi/openapi\.json$''']
+regexes = ['''^captchaToken":\ "0\.AbCDE\-fghijKlmnopq"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic CAPTCHA schema example"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/openapi/openapi\.yaml$''']
+regexes = ['''^captchaToken:\ 0\.AbCDE\-fghijKlmnopq$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/audit_alerts/audit_alerts_test\.go$''']
+regexes = ['''^routing_key":\ "abcdef1234567890abcdef1234567890"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/campaignassuranceapi/handlers_test\.go$''']
+regexes = ['''^Idempotency\-Key",\ "0192a3b4\-c5d6\-7e8f\-9a0b\-1c2d3e4f5a6b"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/campaigndelivery/coordinator_test\.go$''']
+regexes = ['''^IdempotencyKey:\ "recipient\-103\-plan\-104"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/campaigndelivery/repo_test\.go$''']
+regexes = ['''^IdempotencyKey:\ \ "\ \ recipient\-103\-plan\-104\ $''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/commerce/squarespace_test\.go$''']
+regexes = ['''^webhook_secret=abcdef0123456789"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/conversions/email_hmac_projection_db_test\.go$''']
+regexes = ['''^public\.conversion_ingest_secrets',\ 'legacy_v1_until'$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/conversions/signed_ingest_test\.go$''']
+regexes = ['''^testSecret\ =\ "sk_test_a5f2c9d1e8b47306a5f2c9d1e8b47306"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/crm_integrations/handlers_test\.go$''']
+regexes = ['''^credentials_ref":"sk_live_1234567890abcdef1234567890abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/inboxreality/dispatch_worker_test\.go$''']
+regexes = ['''^HeaderToken:\ "0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/middleware/logger_test\.go$''']
+regexes = ['''^token\ =\ "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/mobilepush/devices_test\.go$''']
+regexes = ['''^auth\.new_device_sign_in:0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/mobilepush/devices_test\.go$''']
+regexes = ['''^auth\.new_device_sign_in:MDEyMzQ1Njc4OWFiY2RlZg"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/observability/sentry_test\.go$''']
+regexes = ['''^token\ =\ "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^idempotency_key":"018F4F4C\-53DE\-7C12\-AE4D\-FBBAC8F7C105"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^idempotency_key":"018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c105"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^idempotency_key":"\ 018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c105"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^key\ :=\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c106"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^testActionAuditKey\ \ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c104"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^testActionFailKey\ \ \ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c102"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^testActionPanicKey\ \ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c103"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^testActionReplayKey\ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c101"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^testSnoozeKey\ \ \ \ \ \ \ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c201"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^testSnoozeRaceKey\ \ \ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c203"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/actions_test\.go$''']
+regexes = ['''^testSnoozeReplayKey\ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f7c202"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/ops/views/incidents_handlers_test\.go$''']
+regexes = ['''^testIntentKey\ \ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f735b2"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/outbound_webhooks/playground_redaction_test\.go$''']
+regexes = ['''^MTLSKeyPEM:\ \ "private\-key\-secret\-012"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/outbound_webhooks/playground_redaction_test\.go$''']
+regexes = ['''^certificate\-secret\-789",\ "private\-key\-secret\-012"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/preferences/one_click_test\.go$''']
+regexes = ['''^wrong\-key":\ \ \ "Unsubscribe=One\-Click"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/pushsend/sender_test\.go$''']
+regexes = ['''^Token:\ "ambiguous\-second\-01234"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/pushsuppressions/pushsuppressions_test\.go$''']
+regexes = ['''^DeviceTokenHash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/pushsuppressions/pushsuppressions_test\.go$''']
+regexes = ['''^DeviceTokenHash:\ "abcdef0123456789"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/pushsuppressions/pushsuppressions_test\.go$''']
+regexes = ['''^device_token":"0123456789abcdefghij"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/pushsuppressions/pushsuppressions_test\.go$''']
+regexes = ['''^device_token":"\ 0123456789abcdefghij"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/pushsuppressions/pushsuppressions_test\.go$''']
+regexes = ['''^testToken\ \ \ \ =\ "0123456789abcdefghij"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/replies/inbound_object_test\.go$''']
+regexes = ['''^objectKey":\ "inbound/s3nq1k4p9v8g0m2b"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/server/tenant_governance_test\.go$''']
+regexes = ['''^key:\ \ "privacy\-transition\-1"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/support_integrations/handlers_test\.go$''']
+regexes = ['''^credentials_ref":"xoxb\-1234567890\-abcdef1234567890abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/webvitals/handler_test\.go$''']
+regexes = ['''^token\ =\ "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/__tests__/components/playground\-codegen\.test\.ts$''']
+regexes = ['''^SYNTHETIC_REAL_SECRET\ =\ "pw_live_route44_must_never_be_copied"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/__tests__/lib/push\-suppressions\-api\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/__tests__/lib/push\-suppressions\-api\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "fedcba9876543210"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/__tests__/lib/verification\-api\-containment\.test\.ts$''']
+regexes = ['''^Idempotency\-Key":\ "verification\-attempt\-1"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/__tests__/pages/push\-suppression\-model\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/__tests__/pages/push\-suppressions\-authority\.test\.tsx$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/tests/visual/push\-suppressions\-99p9\.spec\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/__tests__/login\-api\-key\-submit\.native\.test\.tsx$''']
+regexes = ['''^apiKey:\ "\ \ pw_live_abc123\ $''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/__tests__/login\-api\-key\-submit\.native\.test\.tsx$''']
+regexes = ['''^apiKey:\ "pw_live_abc123"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/__tests__/login\-api\-key\-submit\.native\.test\.tsx$''']
+regexes = ['''^apiKey:\ "sk_live_abc123"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/__tests__/push\-suppression\-hook\.native\.test\.tsx$''']
+regexes = ['''^deviceTokenHash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/__tests__/push\-suppression\-hook\.native\.test\.tsx$''']
+regexes = ['''^device_token_hash:\ "fedcba9876543210"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/__tests__/webhook\-secret\-capture\.native\.test\.tsx$''']
+regexes = ['''^SECRET\ =\ "whsec_live_9f2c4b8a1d6e"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/deliverabilityControls\.test\.ts$''']
+regexes = ['''^deviceTokenHash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/pairingClipboard\.test\.ts$''']
+regexes = ['''^apiKey:\ "pw_live_abcdef0123456789"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/pushSuppressionAdd\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/pushSuppressionTokenRules\.test\.ts$''']
+regexes = ['''^deviceTokenHash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/pushSuppressionTokenRules\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/pushSuppressions\.test\.ts$''']
+regexes = ['''^deviceTokenHash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/pushSuppressions\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/pushSuppressions\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "fedcba9876543210"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/secretClipboard\.test\.ts$''']
+regexes = ['''^SECRET\ =\ "whsec_9f3c1a7e"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/ops/src/lib/opsApi\.test\.ts$''']
+regexes = ['''^INTENT_KEY\ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f735b2"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/ops/src/lib/opsSecurity\.test\.ts$''']
+regexes = ['''^INTENT_KEY\ =\ "018f4f4c\-53de\-7c12\-ae4d\-fbbac8f735b2"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/components/analytics\-anomaly\-brief\.test\.tsx$''']
+regexes = ['''^api_key=sk_live_ABCDEF123456"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/consent\-evidence\-push\-api\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/inbound\-routes\-admin\-api\-row\-verbs\.test\.ts$''']
+regexes = ['''^idempotencyKey:\ "inbound\-route\-toggle\-1"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/inbound\-routes\-admin\-api\-row\-verbs\.test\.ts$''']
+regexes = ['''^idempotencyKey:\ "inbound\-route\-toggle\-2"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/lib/api\-playground\.test\.ts$''']
+regexes = ['''^Idempotency\-Key":\ "0190f5c2\-7b1a\-7c3d\-8e4f\-5a6b7c8d9e0f"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/lib/api\-playground\.test\.ts$''']
+regexes = ['''^idempotencyKey:\ "0190f5c2\-7b1a\-7c3d\-8e4f\-5a6b7c8d9e0f"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/lib/approvals\-api\.test\.ts$''']
+regexes = ['''^idempotencyKey:\ "018f47f2\-approval\-intent"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/lib/approvals\-api\.test\.ts$''']
+regexes = ['''^idempotencyKey:\ "\ 018f47f2\-approval\-intent\ $''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/lib/deliverability\-admin\-api\.test\.ts$''']
+regexes = ['''^idempotencyKey\ =\ "01990a8f\-4d90\-7c11\-8b72\-3d2f2e598301"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/lib/verification\-api\-contract\.test\.ts$''']
+regexes = ['''^key\ =\ "018f47f2\-9f25\-7f73\-8ec6\-3fd483eb51dd"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/lib/verification\-jobs\-api\-contract\.test\.ts$''']
+regexes = ['''^KEY\ =\ "018f47f2\-9f25\-7f73\-8ec6\-3fd483eb51dd"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/pages/governance\-pages\-query\-states\.test\.tsx$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/pages/lists\-id\-extras\.test\.tsx$''']
+regexes = ['''^SECRET\ =\ "whsec_9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/pages/lists\-id\-extras\.test\.tsx$''']
+regexes = ['''^signing_secret:\ "whsec_rotated_0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/push\-suppressions\-management\-api\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/sms\-evidence\-release\-hold\.test\.ts$''']
+regexes = ['''^secret\ =\ "campaign/\+15552345678/private"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/voice\-api\.test\.ts$''']
+regexes = ['''^idempotencyKey:\ "018f1234\-5678\-7abc\-8def\-0123456789ab"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/cli/tests/sequences\.test\.ts$''']
+regexes = ['''^apiKey:\ "pw_1234567890abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/mcp\-server/tests/tools/campaign\-templates\.test\.ts$''']
+regexes = ['''^idempotencyKey:\ "generate\-ai\-weekly\-v1"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/mcp\-server/tests/tools/campaign\-templates\.test\.ts$''']
+regexes = ['''^idempotency_key:\ "generate\-ai\-weekly\-v1"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/runtime/observability/redact_test\.go$''']
+regexes = ['''^token\ =\ "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/runtime/observability/sentry_test\.go$''']
+regexes = ['''^token\ =\ "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-go/conversion_ingest_secrets_test\.go$''']
+regexes = ['''^conversionSecretTestKeyA\ \ =\ "0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-go/conversion_ingest_secrets_test\.go$''']
+regexes = ['''^conversionSecretTestKeyB\ \ =\ "abcdef0123456789abcdef0123456789"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-php/tests/ConversionIngestSecretsResourceTest\.php$''']
+regexes = ['''^KEY_A\ =\ '0123456789abcdef0123456789abcdef'$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-php/tests/ConversionIngestSecretsResourceTest\.php$''']
+regexes = ['''^KEY_B\ =\ 'abcdef0123456789abcdef0123456789'$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-php/tests/PushSuppressionsContractTest\.php$''']
+regexes = ['''^device_token_hash'\ =>\ '0123456789abcdeF'$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-php/tests/PushSuppressionsContractTest\.php$''']
+regexes = ['''^device_token_hash'\ =>\ '0123456789abcdef'$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-py/tests/test_client\.py$''']
+regexes = ['''^secret\ =\ "campaign/\+14155551212/private"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-py/tests/test_conversion_ingest_secrets\.py$''']
+regexes = ['''^KEY_A\ =\ "0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-py/tests/test_conversion_ingest_secrets\.py$''']
+regexes = ['''^KEY_B\ =\ "abcdef0123456789abcdef0123456789"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-py/tests/test_push_suppressions\.py$''']
+regexes = ['''^device_token_hash="0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-ts/tests/conversion\-ingest\-secrets\.test\.ts$''']
+regexes = ['''^KEY_A\ =\ "0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-ts/tests/conversion\-ingest\-secrets\.test\.ts$''']
+regexes = ['''^KEY_B\ =\ "abcdef0123456789abcdef0123456789"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-ts/tests/push\-suppressions\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/sdk\-ts/tests/push\-suppressions\.test\.ts$''']
+regexes = ['''^device_token_hash:\ "fedcba9876543210"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/telemetry/src/telemetry\.test\.ts$''']
+regexes = ['''^token\ =\ "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)packages/vscode\-extension/tests/lib/cli\-auth\.test\.ts$''']
+regexes = ['''^api_key:\ "pw_1234567890abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)services/deliverability/internal/reportstore/observation_postgres_test\.go$''']
+regexes = ['''^prepared\.testTokenHash\ ==\ "irt_0123456789abcdef0123456789abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["slack-legacy-bot-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/support_integrations/handlers_test\.go$''']
+regexes = ['''^xoxb\-1234567890\-abcdef1234567890abcdef$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/aichat/aichat_test\.go$''']
+regexes = ['''^sk_live_51PromptSecretValue"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/aicompose/pii_gateway_strict_test\.go$''']
+regexes = ['''^sk_live_51StrictGatewaySecret"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/billing/handlers_test\.go$''']
+regexes = ['''^sk_live_configured"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/billing/public_checkout_test\.go$''']
+regexes = ['''^sk_live_configured"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/conversions/signed_ingest_test\.go$''']
+regexes = ['''^sk_test_a5f2c9d1e8b47306a5f2c9d1e8b47306"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/crm_integrations/handlers_test\.go$''']
+regexes = ['''^sk_live_1234567890abcdef1234567890abcdef"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/api/internal/pii_gateway/text_sanitizer_test\.go$''']
+regexes = ['''^sk_live_51VerySensitiveToken"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/desktop/src/__tests__/pages/native\-provider\-form\.test\.ts$''']
+regexes = ['''^sk_live_51rawcredential"$''']
+
+[[allowlists]]
+description = "Public-source review: synthetic unit-test input, ID, or redaction assertion"
+targetRules = ["stripe-access-token", "generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/web/src/__tests__/components/analytics\-anomaly\-brief\.test\.tsx$''']
+regexes = ['''^sk_live_ABCDEF123456"$''']
+
+[[allowlists]]
+description = "Public-source review: unsigned synthetic JWT fixture with alphabetic dummy signature"
+targetRules = ["jwt"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)apps/mobile/src/lib/mcpExecutionDetail\.test\.ts$''']
+regexes = ['''^eyJhbGciOiJIUzI1NiJ9\.eyJzdWIiOiIxMjM0NTY3ODkwIn0\.abcdefghijklmnop"$''']

@@ -1,0 +1,127 @@
+/*
+ * Authoritative application-layer scale.
+ *
+ * This extension intentionally loads after every global foundation. Some
+ * route-local stylesheets are loaded later with their lazy chunks, so the
+ * `:root .selector` form also has enough specificity to keep the shared
+ * ordering authoritative without priority overrides.
+ *
+ * A layer number is not an interaction policy. Modal isolation, top-layer
+ * Escape handling and focus restoration remain owned by dialogStack and the
+ * relevant composite. These tokens only make the painted order agree with
+ * that logical order.
+ */
+
+:root {
+  --pw-layer-content: 0;
+  --pw-layer-sticky: 10;
+  --pw-layer-raised-ui: 300;
+  --pw-layer-popover: 400;
+  --pw-layer-attention: 500;
+  --pw-layer-drawer-backdrop: 600;
+  --pw-layer-drawer: 601;
+  --pw-layer-tour: 700;
+  --pw-layer-tour-content: 701;
+  --pw-layer-modal: 800;
+  --pw-layer-command: 900;
+  --pw-layer-tooltip: 950;
+  --pw-layer-toast: 1000;
+  --pw-layer-diagnostics: 1100;
+  --pw-layer-shortcut-hud: 1200;
+}
+
+/* Shell popups stay below every surface that isolates the application. */
+:root .ws-menu,
+:root .account-menu,
+:root .notif-panel,
+:root .transfer-center-panel,
+:root .hint-popover-panel,
+:root .tour-launcher,
+:root .tour-launcher-panel {
+  z-index: var(--pw-layer-popover);
+}
+
+/* Drawers precede tours and modals; nested modals therefore paint above. */
+:root .slideover-overlay,
+:root .queue-tray-backdrop {
+  z-index: var(--pw-layer-drawer-backdrop);
+}
+
+:root .slideover,
+:root .queue-tray {
+  z-index: var(--pw-layer-drawer);
+}
+
+/* A product tour is non-modal relative to a later modal or command palette. */
+:root .tour-overlay {
+  z-index: var(--pw-layer-tour);
+}
+
+:root .tour-tooltip {
+  z-index: var(--pw-layer-tour-content);
+}
+
+:root .modal-backdrop,
+:root .onboarding-backdrop,
+:root .lib-quicklook-backdrop {
+  z-index: var(--pw-layer-modal);
+}
+
+/* CommandPalette is registered after the surface that launched it. */
+:root .cmdk-overlay {
+  --pw-command-top-offset: clamp(12px, 12vh, 96px);
+
+  z-index: var(--pw-layer-command);
+  padding-block: var(--pw-command-top-offset) 12px;
+  overflow-y: auto;
+}
+
+:root .cmdk {
+  max-height: min(
+    480px,
+    calc(100dvh - var(--pw-command-top-offset) - 12px)
+  );
+}
+
+/* A portalled tooltip must remain visible for a trigger inside any dialog. */
+:root .inline-help-tooltip {
+  z-index: var(--pw-layer-tooltip);
+}
+
+:root .toast-host {
+  z-index: var(--pw-layer-toast);
+}
+
+:root .desktop-diagnostics-notice {
+  z-index: var(--pw-layer-diagnostics);
+}
+
+:root .shortcut-chord-hud {
+  z-index: var(--pw-layer-shortcut-hud);
+}
+
+/* Focus affordances and route-level attention remain below modal isolation. */
+:root .skip-link {
+  z-index: var(--pw-layer-attention);
+}
+
+:root .lib-upload-tray,
+:root .lib-selection-bar {
+  z-index: var(--pw-layer-raised-ui);
+}
+
+:root .lib-dropzone-overlay {
+  z-index: var(--pw-layer-attention);
+}
+
+/* Keep the two global dialog shells inside short/high-zoom viewports. */
+:root .modal-backdrop {
+  --pw-modal-top-offset: clamp(12px, 10vh, 96px);
+
+  padding: var(--pw-modal-top-offset) 12px 12px;
+  overflow-y: auto;
+}
+
+:root .modal-card {
+  max-height: calc(100dvh - var(--pw-modal-top-offset) - 12px);
+}

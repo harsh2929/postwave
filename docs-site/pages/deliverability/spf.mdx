@@ -1,0 +1,63 @@
+---
+title: SPF
+---
+
+import { Callout } from 'nextra/components';
+
+# SPF — Sender Policy Framework
+
+SPF lets a domain owner declare — via a DNS TXT record — which IP addresses are allowed to send mail "from" that domain. Receiving mailservers look up the SPF record and check the connecting IP against it.
+
+## The mechanism
+
+An SPF record is a single DNS TXT record at the apex of your domain (or a subdomain you send from):
+
+```
+yourdomain.com.   IN  TXT   "v=spf1 include:_spf.moosewave.com include:_spf.google.com -all"
+```
+
+Components:
+
+- `v=spf1` — version. Always this.
+- `include:<domain>` — delegate authorization to another domain's SPF record (e.g., Moosewave, Google Workspace, your transactional ESP).
+- `ip4:1.2.3.4` / `ip6:...` — explicit IPs you also send from.
+- `a` / `mx` — authorize the domain's `A` or `MX` records.
+- `~all` — **softfail**: anything not listed is suspicious but should still be accepted.
+- `-all` — **hardfail**: anything not listed should be rejected. **Recommended for established domains.**
+
+## The 10-DNS-lookup limit
+
+SPF allows a maximum of **10 DNS lookups** during evaluation (RFC 7208 §4.6.4). Every `include:`, `a`, `mx`, `ptr`, and `exists:` mechanism counts. If you exceed it, mailservers return `permerror` and most treat the message as if SPF failed entirely.
+
+This is the **single most common SPF problem**. Each big SaaS sender's `include:` often expands into 2–4 nested lookups internally, so you can blow the limit with as few as 4–5 includes.
+
+Moosewave's SPF validator counts the *real* lookup cost (recursing into your includes) and warns at 8 to give you a margin.
+
+## Common mistakes
+
+<Callout type="warning">
+**Multiple SPF records.** A domain can have **only one** SPF TXT record. Two records = `permerror`. If you need to authorize multiple senders, merge them into one record with multiple `include:` mechanisms.
+</Callout>
+
+- **Using `+all`**: this authorises every IP on the internet to send as you. Never do this.
+- **Forgetting the include for your transactional ESP**: order confirmations and password resets start landing in spam.
+- **Hardfailing too early**: switch to `-all` only after you've watched DMARC aggregate reports for 1–2 weeks with no legitimate `softfail` traffic.
+- **Subdomain confusion**: `mail.yourdomain.com` does NOT inherit SPF from `yourdomain.com`. If you send from a subdomain, it needs its own SPF record (or its own `include:`).
+
+## What Moosewave's validator checks
+
+Run from **Deliverability → SPF**:
+
+1. **Record exists** at the sending domain.
+2. **Exactly one** record (no duplicates).
+3. **Includes Moosewave** (`_spf.moosewave.com`).
+4. **Lookup count ≤ 10** (we count the real recursion, not just top-level mechanisms).
+5. **Qualifier strength** — green for `-all`, yellow for `~all`, red for `+all` or no qualifier.
+6. **No deprecated mechanisms** (`ptr` is allowed but penalised).
+
+The validator runs on every page load and on a 6-hour background schedule. Failures trigger a [Diagnostician](/deliverability/diagnostician) entry with a ranked fix.
+
+## Next steps
+
+- [DKIM](/deliverability/dkim) — the second leg of email auth.
+- [DMARC](/deliverability/dmarc) — the policy layer that ties SPF and DKIM together.

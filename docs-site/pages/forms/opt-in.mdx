@@ -1,0 +1,77 @@
+---
+title: Opt-in
+---
+
+import { Callout } from 'nextra/components';
+
+# Opt-in: single vs double
+
+Every Moosewave form picks one of two opt-in modes. The choice has real implications for list quality and deliverability.
+
+## Single opt-in
+
+The submitter enters their email and is **immediately** added to your list as `subscribed`. They can unsubscribe via every email's unsubscribe link.
+
+**When to use:**
+
+- High-trust contexts: your own product onboarding, your existing-customer database.
+- When you have strong [spam protection](/forms/spam-protection) (honeypot + reCAPTCHA) and confidence the form isn't being scraped/spammed.
+
+**Risks:**
+
+- Bad actors can sign up other people's emails (subscription bombing).
+- Mistyped emails become hard bounces or — worse — land at the wrong real person.
+- Deliverability impact: a single bad email harvested into your list costs you reputation.
+
+## Double opt-in (recommended for most cases)
+
+The submitter enters their email and is added as `pending`. They receive a **confirmation email** with a unique tokenised link. Clicking the link flips them to `subscribed`.
+
+**When to use:**
+
+- Public forms where anyone on the internet could submit.
+- Any form embedded on your blog / homepage / public landing page.
+- GDPR/CASL contexts where explicit opt-in is required.
+- Any time list quality matters more than top-of-funnel volume (almost always).
+
+**Tradeoffs:**
+
+- Conversion drops 10–30% (depending on industry, audience). Some submitters never confirm.
+- The lost confirms were almost all noise — dropped emails, accidental submits, abandoned-tab signups.
+
+<Callout type="info">
+**Default to double opt-in.** The single opt-in lift is rarely worth the deliverability and list-hygiene cost. Moosewave defaults forms to double opt-in for this reason.
+</Callout>
+
+## The confirmation token flow
+
+When a submitter signs up to a double-opt-in form:
+
+1. Moosewave creates a `pending` subscriber record.
+2. A confirmation token (32-byte URL-safe random) is generated and stored hashed.
+3. A confirmation email is sent immediately. The link looks like:
+   ```
+   https://forms.moosewave.com/confirm?t=<token>
+   ```
+4. On click, Moosewave verifies the token, flips the subscriber to `subscribed`, fires the `subscriber.confirmed` [webhook](/webhooks/events), and shows your configured thank-you page.
+5. Tokens expire after **14 days**. Unconfirmed pending subscribers are auto-purged after 30 days.
+
+## Customising the confirmation email
+
+Under **Forms → \<form\> → Confirmation email**:
+
+- **Subject line** — defaults to `Confirm your subscription to {workspace_name}`.
+- **Body** — MJML editor. The default is intentionally plain ("Click to confirm") because plain confirmation emails have the highest click-through.
+- **From identity** — defaults to the workspace's primary [sender identity](/getting-started/account-setup); overridable.
+- **Confirmation button text** — default "Confirm subscription".
+- **Post-confirm redirect** — URL to send the subscriber to after they click confirm.
+
+<Callout type="warning">
+**Don't oversell the confirmation email.** Treating it as a marketing email ("Welcome! Here's everything we do!") drops confirm-rates significantly. Keep it minimal — confirm + done. Save the welcome content for the actual welcome email triggered by `subscriber.confirmed`.
+</Callout>
+
+## Next steps
+
+- [Embedding](/forms/embedding) — how to deploy the form.
+- [Spam protection](/forms/spam-protection) — make single opt-in safer if you must use it.
+- [Automation triggers](/automation/triggers) — wire `subscriber.confirmed` to your welcome sequence.

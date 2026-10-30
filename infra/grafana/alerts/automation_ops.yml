@@ -1,0 +1,23 @@
+groups:
+  - name: postwave-automation-ops
+    interval: 1m
+    rules:
+      - alert: AutomationDeadLetterSpike
+        expr: sum(increase(postwave_automation_task_executions_total{result=~"deadletter_.*"}[15m])) > 0
+        for: 5m
+        labels:
+          severity: page
+          service: automation
+        annotations:
+          summary: "Automation tasks are entering terminal failure"
+          description: "At least one automation execution dead-lettered in the last 15 minutes. Check automation.failed events and Asynq dead queue before more journeys stall."
+
+      - alert: AutomationRetryStorm
+        expr: sum(increase(postwave_automation_task_executions_total{result="retry"}[10m])) > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: automation
+        annotations:
+          summary: "Automation task retry volume is elevated"
+          description: "The automation worker is repeatedly retrying transient failures. Inspect Listmonk/API dependencies and recent deploys."

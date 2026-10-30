@@ -1,0 +1,178 @@
+---
+title: MCP Recipes
+---
+
+# MCP Recipes
+
+Five worked agent workflows. Each recipe shows the prompt you would type, the tool calls the agent will make in order, and the outputs you can expect along the way. Tool names link out to the full [reference](/mcp/tools).
+
+These transcripts assume Claude Code is the host, but every step works the same in Cursor, Claude Desktop, or Continue. The format `tool_name(input) -> output` is shorthand; on the wire each call is a JSON-RPC message.
+
+## 1. Migrate from Mailchimp
+
+**Prompt:** "Migrate my Mailchimp account into Moosewave. Run a dry-run first and tell me what would change before committing."
+
+The agent walks the four-stage migration lifecycle. It will pause and ask for your confirmation before the commit step, because that is the first call with a permanent side effect.
+
+```
+1. migrate_start({ source: "mailchimp" })
+   -> { authorize_url: "https://login.mailchimp.com/oauth2/authorize?...", state: "..." }
+
+   Agent presents the URL. After OAuth, the Moosewave callback page supplies
+   the migration job id (`mig_42`).
+
+2. migrate_discover({ source: "mailchimp", session_id: "mig_42" })
+   -> { audiences: [{ id: "aud_main", name: "Main", subscribers_total: 18244 }], ... }
+
+   Agent asks which audience(s) are in scope, then repeats discovery with the
+   explicit selection for an informative audience-scoped inventory. The
+   dry-run, not this planning call, persists the authoritative reviewed scope.
+
+3. migrate_discover({ source: "mailchimp", session_id: "mig_42",
+                      selected_audience_ids: ["aud_main"] })
+   -> { subscribers_count: 18244, segments_count: 27, automations_count: 2, ... }
+
+4. migrate_dry_run({ source: "mailchimp", session_id: "mig_42",
+                     selected_audience_ids: ["aud_main"] })
+   -> { job_id: "mig_42" }
+
+5. migrate_status({ job_id: "mig_42" }) (polled every ~30s)
+   -> { id: "mig_42", source: "mailchimp", status: "dry_run",
+        progress: { subscribers_total: 18244, subscribers_done: 8100, ... },
+        selected_audience_ids: ["aud_main"], verification_report: null,
+        error: null, ... }
+   -> { id: "mig_42", source: "mailchimp", status: "awaiting_confirmation",
+        progress: { subscribers_total: 18244, subscribers_done: 18244, ... },
+        selected_audience_ids: ["aud_main"],
+        verification_report: { subscribers_imported: 18244, ... },
+        error: null, ... }
+
+   Agent verifies the job's authoritative selected_audience_ids, surfaces the
+   verification report, calls out unsupported Classic workflows and the
+   Customer Journey manual-rebuild gap, then asks: "Commit this exact scope?"
+
+6. migrate_commit({ source: "mailchimp", session_id: "mig_42",
+                    selected_audience_ids: ["aud_main"] })
+   -> { job_id: "mig_42" }
+
+7. migrate_status({ job_id: "mig_42" }) (polled every ~30s)
+   -> { id: "mig_42", source: "mailchimp", status: "importing",
+        progress: { subscribers_total: 18244, subscribers_done: 7479, ... },
+        verification_report: { ... }, error: null, ... }
+   -> { id: "mig_42", source: "mailchimp", status: "completed",
+        progress: { subscribers_total: 18244, subscribers_done: 18244, ... },
+        rollback_until: "2026-07-22T12:00:00Z",
+        verification_report: { ... }, error: null, ... }
+```
+
+**Expected output:** the verification report reconciles the selected audience's supported resources. Supported Classic welcome-series automations remain paused. The generic, non-detected Customer Journey gap is not inventory; attach a manual Mailchimp Journey rebuild/waiver checklist. Other unsafe semantics remain explicit rebuild work. `migrate_rollback` is available for tracked destination writes for 7 days and refuses to overwrite later edits. If invoked, it returns `{ job_id, state: "running" }`; poll `migrate_rollback_status` until `completed` or `failed`.
+
+## 2. Diagnose the last campaign
+
+**Prompt:** "My last campaign had a bad open rate. What happened?"
+
+```
+1. subscribers_search({ query: "" }) is not the right tool here, agent skips.
+
+2. campaign_ab_results is not relevant; the campaign was a single send.
+
+3. inbox_report({ campaign_id: "cmp_98" })
+   -> { providers: [
+        { provider: "gmail", total: 10, placements: { promotions: 8, primary: 2 } },
+        { provider: "outlook_com", total: 5, placements: { junk: 3, primary: 2 } }
+      ], overall_pct: { primary: 0.27, promotions: 0.53, junk: 0.20 } }
+
+4. diagnose_campaign({ campaign_id: "cmp_98" })
+   -> { diagnosis: "Gmail routed 80% to Promotions on a body with image_text_ratio 0.81; Outlook junked 60% with DMARC alignment failures...",
+        fixes: [
+          { title: "Reduce image-to-text ratio below 0.6", action: "image_swap", estimated_impact: 0.18 },
+          { title: "Tighten DMARC: add aligned subdomain selector", action: "dns_record", estimated_impact: 0.22 }
+        ],
+        predicted_impact: { primary: 0.27, promotions: 0.53, junk: 0.20 } }
+```
+
+**Expected output:** a one-paragraph diagnosis plus a ranked fix list, each with its own estimated impact and concrete next step.
+
+## 3. Write a welcome sequence
+
+**Prompt:** "Write me a 5-email welcome sequence for new signups. Use my voice."
+
+```
+1. voice_profile_get({})
+   -> { profile_id: "vp_1", version: 4, features: {...}, sources: [...] }
+   (if the profile is missing, agent walks through voice_source_add + voice_profile_build first)
+
+2. sequence_generate({
+     template_id: "welcome-5-email",
+     variables: { product: "Moosewave", first_link: "https://moosewave.com/start" }
+   })
+   -> { sequence_id: "seq_77",
+        emails: [...5 entries...],
+        fidelity_scores: [82, 71, 58, 79, 84] }
+
+3. sequence_regenerate_email({ sequence_id: "seq_77", position: 3, notes: "previous draft scored 58, target ≥ 70" })
+   -> { position: 3, email: {...}, fidelity_score: 75 }
+```
+
+**Expected output:** a draft sequence in your workspace with every email at fidelity ≥ 70, ready for you to edit and schedule.
+
+## 4. Improve deliverability
+
+**Prompt:** "I want to improve my inbox placement before the next launch. What should I fix?"
+
+```
+1. check_auth({ domain: "news.example.com" })
+   -> { spf: { status: "ok" }, dkim: { status: "ok" },
+        dmarc: { status: "warn", detail: "p=none, no rua reporting" },
+        bimi: { status: "fail", detail: "no record" }, ptr: { status: "ok" } }
+
+2. check_reputation({ domain: "news.example.com" })
+   -> { google_score: "medium", microsoft_score: "high", sender_score: 84, blacklist_hits: [] }
+
+3. inbox_report({ campaign_id: "cmp_98" })   // most recent send
+   -> { ..., overall_pct: { primary: 0.62, promotions: 0.30, junk: 0.08 } }
+
+4. diagnose_campaign({ campaign_id: "cmp_98" })
+   -> ranked fixes including DMARC tightening + a copy_change action.
+```
+
+**Expected output:** a prioritised fix list spanning auth, reputation, and content, with each fix carrying an estimated impact you can use to decide what to ship first.
+
+## 5. Audit list hygiene
+
+**Prompt:** "Audit my list. Tell me which subscribers I should be suppressing or re-engaging before my next send."
+
+```
+1. subscribers_list({ status: "subscribed", limit: 200 })
+   -> { items: [...], next_cursor: "..." }
+   (agent paginates until exhausted or until ~10K, then samples)
+
+2. segment_eval({
+     ast: {
+       op: "and",
+       children: [
+         { op: "lte", field: "last_opened_at", value: "now-180d" },
+         { op: "lte", field: "last_clicked_at", value: "now-180d" }
+       ]
+     }
+   })
+   -> { count: 4193, sample: [...] }
+
+3. segment_eval({
+     ast: { op: "eq", field: "status", value: "complained" }
+   })
+   -> { count: 7, sample: [...] }
+
+4. For each complained subscriber:
+   subscriber_suppress({ email, reason: "complaint" })
+   -> { subscriber_id, suppressed_at }
+```
+
+**Expected output:** a written summary the agent produces from the counts and samples, with concrete batches: "Suppress 7 complainers now. Run a re-engagement campaign at 4,193 cold subscribers with a 30-day window before sunsetting." The agent will not bulk-unsubscribe without your explicit confirmation, because `subscribers_list` is read-only and the writes happen one at a time.
+
+## Tips for writing your own recipes
+
+- Start with reads. Every recipe in this list begins with a discovery or status call before any write.
+- Confirm before destructive writes. These tools do not accept a generic `confirm` flag, so the MCP host or agent must obtain explicit human confirmation before calling `migrate_commit`, `migrate_rollback`, `campaign_send`, or another consequential write. Migration commit still fails closed unless the required dry-run and scope checks pass.
+- Cache aggressively in the agent layer. The server caches diagnostician calls for 24 hours, but your agent should also avoid re-listing the same subscribers within a single conversation.
+- Watch the audit log. Every write tool emits an event that shows up under **Settings → API → Audit log**, scoped to the API key.

@@ -1,0 +1,856 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# Default to read-only GITHUB_TOKEN. Any job that needs to write to the repo,
+# post PR comments, or push images must opt in explicitly with its own
+# permissions block. Strips a class of supply-chain attacks where a
+# compromised dependency in pnpm install would otherwise inherit write scope.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Third-party actions in this workflow are pinned by commit SHA. Update pins deliberately during dependency maintenance.
+
+jobs:
+  workflow-contracts:
+    name: Workflow syntax and release-gate contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Go for pinned actionlint
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: false
+
+      - name: Validate every GitHub Actions workflow
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color=false
+
+      - name: Validate release-gate wiring
+        run: |
+          node scripts/check-ci-release-contracts.mjs
+          node scripts/check-security-scan-coverage.mjs
+
+      - name: Prove release gates fail closed
+        run: |
+          node scripts/check-ci-release-contracts.mjs --self-test
+          node scripts/check-security-scan-coverage.mjs --self-test
+          node scripts/check-load-target.mjs --self-test
+
+  ops-console:
+    name: Ops console — lint, test, typecheck, build
+    runs-on: ubuntu-latest
+    env:
+      OPS_API_ORIGIN: https://api.invalid
+      OPS_API_ALLOWED_HOSTS: api.invalid
+      OPS_PUBLIC_ORIGIN: https://ops.invalid
+      OPS_RUNBOOK_BASE_URL: https://runbooks.invalid/production/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.16.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The console's tests import @postwave/design-tokens from its dist, so
+      # the workspace packages it depends on are built first (the web and
+      # mobile jobs do the same for theirs).
+      - name: Build ops workspace dependencies
+        run: pnpm --filter '@postwave/ops^...' --if-present run build
+
+      - name: Lint
+        run: pnpm --filter @postwave/ops lint
+
+      - name: Unit tests
+        run: pnpm --filter @postwave/ops test
+
+      - name: Typecheck
+        run: pnpm --filter @postwave/ops typecheck
+
+      - name: Production build
+        run: pnpm --filter @postwave/ops build
+
+      - name: Build pinned non-root container
+        run: docker build -f apps/ops/Dockerfile -t postwave-ops:${{ github.sha }} .
+
+  lint-typecheck-web:
+    name: Web — lint, typecheck, build
+    runs-on: ubuntu-latest
+    # Sentry source-map upload runs IN-LINE during `next build` via
+    # `withSentryConfig` in apps/web/next.config.mjs. The build step
+    # below picks up SENTRY_* env vars and uploads automatically; when
+    # SENTRY_AUTH_TOKEN is unset (forks, dependabot PRs) the plugin
+    # no-ops cleanly. We expose POSTWAVE_RELEASE for the runtime to
+    # tag events with the same commit SHA the source-maps are uploaded
+    # under, so backend + frontend events share a release identifier.
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: postwave-web
+      POSTWAVE_RELEASE: ${{ github.sha }}
+      # next-sentry-webpack-plugin reads SENTRY_RELEASE for the
+      # release tag; sharing it with POSTWAVE_RELEASE keeps the
+      # cross-surface tag consistent.
+      SENTRY_RELEASE: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web workspace dependencies
+        run: pnpm --filter '@postwave/web^...' --if-present run build
+
+      # The web suite's published-dist freshness test reads every package's
+      # dist, so the packages are built before the unit tests (as js-packages
+      # does for its own checks).
+      - name: Build packages
+        run: pnpm -r --filter './packages/**' --if-present run build
+
+      - name: Lint
+        run: pnpm --filter @postwave/web lint
+
+      - name: Environment contract
+        run: pnpm --filter @postwave/web env:check
+
+      - name: Public claims register
+        run: pnpm audit:claims
+
+      - name: Third-party license policy
+        run: pnpm licenses:check
+
+      - name: Typecheck
+        run: pnpm --filter @postwave/web typecheck
+
+      - name: Unit tests
+        run: pnpm --filter @postwave/web test
+
+      - name: Build
+        # `next build` invokes the Sentry webpack plugin (configured
+        # in next.config.mjs). Source-maps are uploaded ONLY when
+        # SENTRY_AUTH_TOKEN is present in the env — the plugin's own
+        # `sourcemaps.disable: !process.env.SENTRY_AUTH_TOKEN` gate
+        # makes this a no-op for forks / PRs without the secret.
+        run: pnpm --filter @postwave/web build
+
+      - name: Bundle budgets
+        run: pnpm --filter @postwave/web bundle:check
+
+      - name: Upload bundle report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: web-bundle-report
+          path: apps/web/.next/postwave-bundle-report.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Confirm Sentry source-map upload (web)
+        # Cheap post-build sanity check: when the auth token is set,
+        # the .next build must have invoked the Sentry plugin. We
+        # don't fail CI when the token is missing (forks); we just
+        # surface a notice so operators see why upload was skipped.
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        run: |
+          echo "::notice::Sentry source-maps uploaded for web (release=${POSTWAVE_RELEASE})"
+
+      - name: Build docs site
+        # The standalone Nextra tree is an archived migration reference. This
+        # explicit preview build validates it without making a deployable
+        # production artifact; the canonical docs ship in @postwave/web.
+        run: pnpm --filter @postwave/docs build:archive-preview
+
+  js-packages:
+    name: JS packages — lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate every workspace quality gate
+        run: pnpm audit:workspace-quality
+
+      - name: Prove workspace policy fails closed
+        run: pnpm test:workspace-quality
+
+      # A test that skips when its own fixture fails reports PASS, so a suite
+      # can be green over code it never executed. This locks the count at
+      # today's enumerated set and fails on any NEW one.
+      - name: Check test skips are about the environment, not the fixture
+        run: pnpm audit:test-skip-honesty
+
+      # Two migrations on one number both apply, in filename order — so the
+      # ordering between them is alphabetical accident, and "migration 1839"
+      # names two different things in every review comment that references it.
+      # The one pair that already shipped is recorded as an exemption; this
+      # fails on the next one.
+      - name: Check migration numbering is unique
+        run: pnpm audit:migration-numbering
+
+      # Eleven `const ... = false` release locks withhold shipped surface, while
+      # manifest.json and openapi.json still declare the routes they withhold.
+      # Flipping one therefore makes a batch of routes live carrying policies
+      # nobody has re-read since they were gated. This fails on any flip, so the
+      # re-read happens in the same change rather than after the release.
+      - name: Check release locks are registered and unchanged
+        run: pnpm audit:release-locks
+
+      # The context epoch is a chain of single call sites, and a deleted line is
+      # invisible to the behavioural tests either side of it — the guard's own
+      # header records five deletions that left every suite green. It existed in
+      # scripts/ with no caller, so it caught none of them; a step-up refactor
+      # then moved one call site and nothing noticed until it was run by hand.
+      - name: Check context-epoch wiring
+        run: pnpm audit:context-epoch
+
+      # The audit filter listed two actor types the server never writes, so those
+      # filters returned an empty page every time — indistinguishable from a
+      # clean audit log — while "human", the default and commonest value, could
+      # not be filtered at all. The list is a hand-maintained copy of a Go
+      # vocabulary; this makes the Go source the authority.
+      - name: Check audit actor vocabulary matches the server
+        run: pnpm audit:audit-actor-vocabulary
+
+      # Five gates that existed and CI never ran. Each passes today, which is
+      # exactly why they are worth wiring: a gate nobody runs cannot tell you it
+      # has started failing, and the two parity registers below are the declared
+      # source of truth for competitive-parity work — drift in them is invisible
+      # until someone re-reads the register by hand.
+      - name: Check Klaviyo parity register
+        run: pnpm audit:klaviyo
+
+      - name: Check Mailchimp parity register
+        run: pnpm audit:mailchimp
+
+      - name: Check SDK tier manifest matches disk
+        run: pnpm audit:sdk-tiers
+
+      - name: Check tenant-abuse hardening
+        run: pnpm audit:tenant-abuse
+
+      - name: Check observability contract
+        run: pnpm audit:observability
+
+      - name: Test npm release planning
+        run: pnpm test:npm-release-plan
+
+      - name: Validate documentation governance
+        run: pnpm test:docs-contracts
+
+      - name: Execute documentation command contracts
+        run: POSTWAVE_EXECUTE_DOCUMENT_CONTRACTS=1 pnpm docs:contracts
+
+      - name: Validate distribution hygiene
+        run: pnpm audit:distribution
+
+      - name: Build packages
+        run: pnpm -r --filter './packages/**' --if-present run build
+
+      - name: Lint packages
+        run: pnpm -r --filter './packages/**' run lint
+
+      - name: Typecheck packages
+        run: pnpm -r --filter './packages/**' run typecheck
+
+      - name: Test packages
+        run: pnpm -r --filter './packages/**' --if-present run test
+
+      - name: Verify packed npm artifacts and clean consumers
+        run: node scripts/release/verify-npm-package-set.mjs
+
+      - name: Verify VS Code Marketplace artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./packages/vscode-extension/package.json').version")"
+          artifact_dir="$RUNNER_TEMP/postwave-vscode-ci"
+          filename="postwave-vscode-${version}.vsix"
+          mkdir -p "$artifact_dir"
+          pnpm --dir packages/vscode-extension exec vsce ls --no-dependencies
+          pnpm --dir packages/vscode-extension exec vsce package \
+            --no-dependencies \
+            --githubBranch main \
+            --out "$artifact_dir/$filename"
+          scripts/release/verify-vscode-vsix.sh \
+            "$artifact_dir/$filename" \
+            "$version" \
+            harsh2929/postwave
+
+  mobile:
+    name: Mobile — source, config, export budgets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20.19.5
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build mobile workspace dependencies
+        run: pnpm --filter '@postwave/mobile^...' --if-present run build
+
+      - name: Typecheck
+        run: pnpm --filter @postwave/mobile typecheck
+
+      - name: Unit tests
+        run: pnpm --filter @postwave/mobile test:coverage
+
+      - name: Lint
+        run: pnpm --filter @postwave/mobile lint
+
+      - name: Source size and complexity ratchets
+        run: pnpm --filter @postwave/mobile quality:source-budgets
+
+      - name: Generated runtime documentation
+        run: pnpm --filter @postwave/mobile docs:runtime-check
+
+      - name: Expo dependency alignment
+        run: pnpm --filter @postwave/mobile exec expo install --check
+
+      - name: Expo config validation
+        run: pnpm --filter @postwave/mobile exec expo config --type public
+
+      - name: Expo Doctor
+        run: pnpm --filter @postwave/mobile quality:doctor
+
+      - name: Deterministic iOS and Android export with budgets
+        run: pnpm --filter @postwave/mobile build
+
+      - name: Retain mobile export budget evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mobile-export-budget-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/mobile/.expo/mobile-export-budget.json
+          if-no-files-found: error
+          retention-days: 14
+
+  js-audit:
+    name: JavaScript dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      # scripts/audit-js.mjs runs a pinned pnpm 11 for the bulk advisory
+      # endpoint, and pnpm 11 requires Node 22.13 or newer.
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.20.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test dependency-audit policy parser
+        run: pnpm test:audit-js
+
+      - name: Audit production dependencies
+        run: pnpm audit:js
+
+  agent-surface-audit:
+    name: Agent surface — tool registry + SDK parity drift gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: true
+
+      - name: Sync Go workspace
+        run: go work sync
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The canonical agent-tool registry is the single source of truth;
+      # this fails the build if the checked-in manifest drifts from it.
+      - name: Agent tool registry drift gate
+        run: pnpm audit:tools
+
+      # The ops check registry must never carry a check nobody can act on:
+      # every check requires a Why and a Remediation, and IDs must be unique.
+      - name: Ops registry guard
+        run: pnpm audit:ops
+
+      # First-party SDK parity gate — previously existed but ran in no
+      # workflow; now enforced.
+      - name: SDK parity gate
+        run: pnpm audit:sdk-parity
+
+      # Realtime event→cache-invalidation contract: every client derives from
+      # the one shared authority, no adapter entry silently maps to nothing,
+      # and the Go/TypeScript wire topic grammars stay character-identical. The
+      # last of those is not academic — the two drifted on `_`, so a client
+      # could name a real topic and have the gateway discard it with no error
+      # on either side.
+      - name: Event-map parity gate
+        run: pnpm test:event-map-parity && pnpm audit:event-map-parity
+
+      # Every destination @postwave/route-map claims must be a screen that
+      # exists on that surface. A wrong entry here is a 404 or a dead deep link
+      # for a user who was told to go there — this has already shipped twice
+      # (a stale mobile flag, and a web route that never existed).
+      - name: Route-map destination gate
+        run: pnpm test:route-map-destinations && pnpm audit:route-map-destinations
+
+      # The nav manifest is the canonical IA. A route it claims must exist (three
+      # desktop entries pointed at sections the router rejects), and a shipped
+      # screen nothing reaches is invisible to nav, search and the palette.
+      - name: Nav manifest destination gate
+        run: pnpm test:nav-destinations && pnpm audit:nav-destinations
+
+      # Account-security surface parity. An endpoint no client calls is
+      # indistinguishable from one that does not exist: route auth proves a
+      # request is authorised, never that anyone makes it. Desktop shipped for
+      # a long time with no way to see or revoke your own sessions, and nothing
+      # failed. The gate also refuses to be satisfied by an API method that no
+      # screen calls, because scaffolding passing a scaffolding-detector is
+      # worse than no detector.
+      - name: Identity surface parity gate
+        run: pnpm test:identity-parity && pnpm audit:identity-parity
+
+      # Optimistic-concurrency posture. A lost update leaves no error and no
+      # log line — the quiet class of failure — so whether a mutable resource
+      # refuses a stale write has to be a RECORDED decision rather than an
+      # accident of which helper a handler happened to call. Also surfaces that
+      # the repo has three separate implementations of the same rule.
+      - name: Optimistic concurrency gate
+        run: pnpm test:optimistic-concurrency && pnpm audit:optimistic-concurrency
+
+      # Entitlement denials. A refusal a client cannot CLASSIFY is one it has to
+      # guess at, and the guess is what shows a paywall to someone who actually
+      # needs a role change. Holds the line at the converted sites; ~77 denial
+      # sites and ~65 reason shapes remain, which the gate says out loud rather
+      # than implying it covers them.
+      - name: Entitlement denial contract gate
+        run: pnpm test:entitlement-denials && pnpm audit:entitlement-denials
+
+      # Ecosystem promotion evidence (blueprint §11). A milestone claims
+      # "supported" by shipping a manifest whose evidence CONTAINS the scope it
+      # claims and which dispositions every registered edge case — not by
+      # someone writing it in a table. The self-test runs 11 fixtures (one
+      # valid, ten single-mutation invalids) so the gate is proven to reject,
+      # not just proven to pass.
+      - name: Ecosystem release-evidence gate
+        run: pnpm test:ecosystem-evidence && pnpm audit:ecosystem-evidence
+
+  python-sdk:
+    name: Python SDK — tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e packages/sdk-py pytest pytest-asyncio
+
+      - name: Test
+        run: python -m pytest packages/sdk-py
+
+  go-build-test:
+    name: Go — build and test
+    runs-on: ubuntu-latest
+    # Go services don't ship source-maps but DO consume POSTWAVE_RELEASE
+    # at boot so Sentry events tag with the same commit SHA the JS
+    # source-maps are uploaded under. Surfaces line up cross-stack:
+    # a crash report from apps/web and an api error from apps/api both
+    # carry release=<sha>, so triage spans frontend + backend trivially.
+    env:
+      POSTWAVE_RELEASE: ${{ github.sha }}
+      SENTRY_RELEASE: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: true
+
+      - name: Sync Go workspace
+        run: go work sync
+
+      - name: Check formatting
+        # Covers every Go source tree, not a hand-maintained subset. The list
+        # used to read "apps services packages/migrate", which left 8 of the
+        # repo's 13 Go modules ungated — and four committed files unformatted,
+        # in packages/sdk-go and infra/observability, that this gate was
+        # supposed to be the reason we never had.
+        run: test -z "$(gofmt -l apps services packages infra tests)"
+
+      - name: Check bounded request-body contract
+        run: go run ./apps/api/cmd/checkrequestbodies --root apps/api
+
+      - name: Check API source-quality ratchets
+        run: go run ./apps/api/cmd/checksourcequality --root apps/api
+
+      - name: Build
+        run: go build ./apps/api/... ./services/automation/... ./services/voice/... ./services/deliverability/... ./services/migration/... ./packages/migrate/... ./packages/kms/... ./packages/runtime/... ./packages/secrets/...
+
+      - name: Test
+        # `go test` exits 0 when no tests are present in a package, so this
+        # is fine while services are still being scaffolded.
+        run: go test ./apps/api/... ./services/automation/... ./services/voice/... ./services/deliverability/... ./services/migration/... ./packages/migrate/... ./packages/kms/... ./packages/runtime/... ./packages/secrets/...
+
+  go-lint:
+    name: Go — golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: true
+
+      - name: Setup Node for lint ratchet
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+
+      - name: Sync Go workspace
+        run: go work sync
+
+      # v2.9 was the first official release with Go 1.26 support. Pin both the
+      # action commit and exact linter patch so upgrades are deliberate.
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a
+        with:
+          version: v2.12.2
+          install-only: true
+
+      - name: Test Go lint ratchet
+        # The rebase tool is how accepted findings follow a refactor and how a
+        # reviewer admits new ones (config/go-lint-baseline-review-*.json).
+        run: node --test scripts/check-go-lint-baseline.test.mjs scripts/rebase-go-lint-baseline.test.mjs
+
+      - name: Run uncapped Go lint ratchet
+        run: |
+          golangci-lint run \
+            --timeout=5m \
+            --issues-exit-code=0 \
+            --max-issues-per-linter=0 \
+            --max-same-issues=0 \
+            --output.text.path=/dev/null \
+            --output.json.path="$RUNNER_TEMP/go-lint-report.json" \
+            ./apps/api/... \
+            ./services/automation/... \
+            ./services/voice/... \
+            ./services/deliverability/... \
+            ./services/migration/... \
+            ./packages/migrate/... \
+            ./packages/kms/... \
+            ./packages/runtime/... \
+            ./packages/secrets/...
+          node scripts/check-go-lint-baseline.mjs \
+            --report "$RUNNER_TEMP/go-lint-report.json" \
+            --tool-version v2.12.2 \
+            --scope ./apps/api/... \
+            --scope ./services/automation/... \
+            --scope ./services/voice/... \
+            --scope ./services/deliverability/... \
+            --scope ./services/migration/... \
+            --scope ./packages/migrate/... \
+            --scope ./packages/kms/... \
+            --scope ./packages/runtime/... \
+            --scope ./packages/secrets/...
+
+  openapi-lint:
+    name: OpenAPI — spectral lint + parity check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+
+      # Spectral is the de facto OpenAPI linter. We run it without
+      # installing a project dep so the check stays out of the way of
+      # @postwave/openapi consumers.
+      - name: Spectral lint
+        run: |
+          npx --yes @stoplight/spectral-cli@6 lint \
+            --ruleset packages/openapi/.spectral.yaml \
+            --fail-severity error \
+            packages/openapi/openapi.yaml
+
+      - name: Subscriber schema parity (spec ↔ Go API ↔ canonical)
+        run: node scripts/check-subscriber-parity.mjs
+
+      - name: Route parity (gateway ↔ OpenAPI spec)
+        run: |
+          node --test scripts/lib/route-reachability.test.mjs
+          node scripts/check-webhook-event-catalog.mjs --self-test
+          node scripts/check-webhook-event-catalog.mjs
+          node scripts/check-route-reachability-coverage.mjs --self-test
+          node scripts/check-route-reachability-coverage.mjs
+          node scripts/check-route-parity.mjs
+          node scripts/generate-route-capabilities.mjs --check
+
+      # p2-openapi-codegen: fail CI if surfaces/openapi.yaml was
+      # edited without regenerating dist/types.ts. This is the drift
+      # guard that turns the openapi-typescript codegen from a "nice
+      # to have" into the actual contract — once a surface is wired
+      # to the generated types, callers see a compile-time break
+      # whenever the spec changes and the regen step was skipped.
+      - name: OpenAPI codegen drift check
+        run: node packages/openapi/scripts/codegen.mjs --check
+
+  e2e-smoke:
+    name: e2e — local docker compose smoke
+    runs-on: ubuntu-latest
+    # A shipping-on-ship-day failure here should NEVER come from a stack
+    # that boots locally but not in CI. We bound the whole job at 15 min;
+    # anything slower needs investigation, not a higher cap.
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Boot full compose stack
+        run: |
+          docker compose -f infra/docker-compose.yml \
+                         -f infra/docker-compose.full.yml \
+                         up -d --wait
+
+      - name: Run Playwright smoke
+        run: pnpm test:smoke:local
+
+      - name: Compose logs on failure
+        if: failure()
+        run: |
+          docker compose -f infra/docker-compose.yml \
+                         -f infra/docker-compose.full.yml logs --tail=200
+
+  license-boundary-check:
+    name: License and package boundary checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          submodules: false
+
+      - name: Run license-boundary check
+        shell: bash
+        run: |
+          chmod +x scripts/check-license-boundary.sh
+          scripts/check-license-boundary.sh
+
+      - name: Run proprietary-isolation check
+        shell: bash
+        run: |
+          chmod +x scripts/check-proprietary-isolation.sh
+          scripts/check-proprietary-isolation.sh
+
+      - name: Run package-import boundary check
+        shell: bash
+        run: |
+          chmod +x scripts/check-package-imports.sh
+          scripts/check-package-imports.sh
+
+  rls-policy-check:
+    name: RLS policy lint (PERMISSIVE companion check)
+    runs-on: ubuntu-latest
+    # This existing required status owns all database/request boundary static
+    # gates: migration lock/RLS shape, transaction-local worker scope, and
+    # bounded request-body use. Keeping them together prevents a new standalone
+    # job from being omitted accidentally from branch protection.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: "1.26.8"
+          cache: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 9.12.0
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+
+      - name: Run migration lock, RLS, and tenant-FK lint
+        env:
+          POSTWAVE_MIGRATION_LINT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          scripts/lint-migrations.test.sh
+          scripts/lint-migrations.sh
+
+      - name: Run RLS policy check
+        shell: bash
+        run: |
+          scripts/check-rls-policies.sh
+
+      - name: Reject leaked transaction-local database scope
+        run: scripts/check-no-bare-set-config.sh
+
+      - name: Audit worker database scope
+        run: |
+          pnpm test:worker-db-safety
+          pnpm audit:worker-db
+
+      - name: Audit request-body bounds
+        run: pnpm audit:request-bodies
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Reject sensitive handoff identifiers in the current tree
+        run: node scripts/check-sensitive-handoff.mjs
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Required by .gitleaks.toml's rule-scoped AND allowlists.
+          GITLEAKS_VERSION: 8.30.1

@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "color-no-hex": [
+      true,
+      {
+        "message": "Use a design-system token (var(--pw-*)) or color-mix(in srgb, var(--pw-*) N%, transparent) instead of a hex literal. If this color must be hardcoded (brand identity, scrim, contrast-pair, typed icon), add /* stylelint-disable-next-line color-no-hex -- justification */."
+      }
+    ],
+    "function-disallowed-list": [
+      ["/^rgba?$/", "/^hsla?$/"],
+      {
+        "message": "Use a design-system token (var(--pw-*)) or color-mix(in srgb, var(--pw-*) N%, transparent) instead of raw rgb/rgba/hsl. If this color must be hardcoded (scrim, animation keyframe, typed icon), add /* stylelint-disable-next-line function-disallowed-list -- justification */."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.css"],
+      "customSyntax": "postcss"
+    }
+  ]
+}

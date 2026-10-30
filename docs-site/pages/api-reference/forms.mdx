@@ -1,0 +1,68 @@
+---
+title: Forms API
+---
+
+# Forms API
+
+Two surfaces: **admin** (manage forms) and **public submission** (un-authenticated, used by the embed).
+
+## Admin endpoints
+
+| Method | Path                                  | Purpose                                |
+| ------ | ------------------------------------- | -------------------------------------- |
+| GET    | `/api/v1/forms`                           | List forms.                            |
+| GET    | `/api/v1/forms/{id}`                      | Get one.                               |
+| POST   | `/api/v1/forms`                           | Create.                                |
+| PATCH  | `/api/v1/forms/{id}`                      | Update.                                |
+| DELETE | `/api/v1/forms/{id}`                      | Delete.                                |
+| GET    | `/api/v1/forms/{id}/submissions`          | List submissions (filterable).         |
+| GET    | `/api/v1/forms/{id}/submissions.csv`      | CSV export.                            |
+| POST   | `/api/v1/forms/{id}/submissions/{sid}:resend-confirmation` | Re-email confirmation token. |
+
+All admin endpoints require `forms:read` or `forms:write` scope.
+
+## Public submission
+
+The endpoint your form's embed posts to:
+
+```
+POST https://forms.moosewave.com/api/v1/submit/<form-id>
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "first_name": "Alice",
+  "_postwave_meta": {
+    "honeypot": "",
+    "recaptcha_token": "..."
+  }
+}
+```
+
+No auth required. Anti-abuse via [honeypot, reCAPTCHA, IP rate-limit](/forms/spam-protection).
+
+Response:
+
+```json
+{
+  "ok": true,
+  "status": "pending",            // or "confirmed" if single opt-in
+  "submission_id": "sub_..."
+}
+```
+
+## Confirmation endpoint
+
+The link clicked from the double-opt-in email:
+
+```
+GET https://forms.moosewave.com/confirm?t=<token>
+```
+
+Issues a redirect to the form's configured post-confirm URL, or renders a default thank-you page.
+
+## See also
+
+- [Forms overview](/forms)
+- [Embedding](/forms/embedding)
+- [Webhook events](/webhooks/events) — `form.submitted`, `form.confirmed`

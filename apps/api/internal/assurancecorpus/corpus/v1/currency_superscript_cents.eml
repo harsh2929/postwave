@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <currency-superscript-cents.v1@example.com>
+Subject: Now 9.99
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-cents-v1"
+
+--pw-cents-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Now 9.99 USD per month. https://app.example.com/pricing
+--pw-cents-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Now 9.99</h1><p><span style="font-size:22px">9</span><sup style="font-size:12px">.99</sup> USD per month</p><p><a href="https://app.example.com/pricing">See pricing</a></p></body></html>
+--pw-cents-v1--

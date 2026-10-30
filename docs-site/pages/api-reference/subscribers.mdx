@@ -1,0 +1,102 @@
+---
+title: Subscribers API
+---
+
+# Subscribers API
+
+CRUD for subscribers, plus bulk operations and segment evaluation.
+
+## Endpoints
+
+| Method | Path                                  | Purpose                            |
+| ------ | ------------------------------------- | ---------------------------------- |
+| GET    | `/api/v1/subscribers`                     | List (paginated, filterable).      |
+| GET    | `/api/v1/subscribers/{id}`                | Get one.                           |
+| POST   | `/api/v1/subscribers`                     | Create.                            |
+| POST   | `/api/v1/subscribers:upsert`              | Create or update by email.         |
+| POST   | `/api/v1/subscribers:batch`               | Bulk create/update (up to 1,000).  |
+| PATCH  | `/api/v1/subscribers/{id}`                | Partial update.                    |
+| DELETE | `/api/v1/subscribers/{id}`                | Delete (soft, recoverable 30d).    |
+| POST   | `/api/v1/subscribers/{id}:tag`            | Add tags.                          |
+| POST   | `/api/v1/subscribers/{id}:untag`          | Remove tags.                       |
+| POST   | `/api/v1/subscribers/{id}:unsubscribe`    | Mark as unsubscribed.              |
+
+## Create
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/subscribers \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "first_name": "Alice",
+    "tags": ["from-blog"],
+    "attributes": { "plan": "free" },
+    "list_ids": ["lst_01HK..."]
+  }'
+```
+
+## Upsert
+
+Idiomatic for ingestion pipelines:
+
+```bash
+curl -X POST https://api.moosewave.com/api/v1/subscribers:upsert \
+  -H "Authorization: Bearer $POSTWAVE_KEY" \
+  -d '{
+    "email": "alice@example.com",
+    "attributes": { "last_purchase_at": "2026-04-30T10:00:00Z" }
+  }'
+```
+
+If the subscriber exists, attributes merge (existing keys overwritten only by explicit values). If they don't, they're created.
+
+## Batch
+
+```python
+pw.subscribers.batch([
+  {"email": "alice@example.com", "tags": ["webinar-2026-04"]},
+  {"email": "bob@example.com",   "tags": ["webinar-2026-04"]},
+  # ... up to 1000
+])
+```
+
+The batch endpoint is asynchronous — returns a `batch_id` you poll for completion. Per-record errors are reported in the batch result without failing the whole batch.
+
+## List with filtering
+
+```bash
+GET /api/v1/subscribers?status=subscribed&tag=paid&limit=100&cursor=...
+```
+
+Returns:
+
+```json
+{
+  "data": [ { "id": "...", "email": "...", ... } ],
+  "next_cursor": "eyJpZCI6IjAx..."
+}
+```
+
+Use `next_cursor` to page; absent means end of results.
+
+## Code samples
+
+### curl
+
+```bash
+curl https://api.moosewave.com/api/v1/subscribers/sub_01HK... \
+  -H "Authorization: Bearer $POSTWAVE_KEY"
+```
+
+### JS
+
+```js
+const sub = await pw.subscribers.get('sub_01HK...');
+```
+
+### Python
+
+```python
+sub = pw.subscribers.get("sub_01HK...")
+```

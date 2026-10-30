@@ -1,0 +1,74 @@
+{
+  "tier": "studio",
+  "resources": [
+    {
+      "resource": "contacts",
+      "current": 12,
+      "limit": 1000,
+      "percent": 1.2,
+      "exceeded": false
+    },
+    {
+      "resource": "campaigns",
+      "current": 3,
+      "limit": 25,
+      "percent": 12,
+      "exceeded": false
+    },
+    {
+      "resource": "automations",
+      "current": 0,
+      "limit": 3,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "landing_pages",
+      "current": 0,
+      "limit": 2,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "popup_forms",
+      "current": 0,
+      "limit": 1,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "ecommerce_integrations",
+      "current": 0,
+      "limit": 1,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "monthly_sends",
+      "current": 0,
+      "limit": 2000,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "assurance_runs",
+      "current": 0,
+      "limit": 20,
+      "percent": 0,
+      "exceeded": false
+    }
+  ],
+  "sends_projection": {
+    "current": 0,
+    "limit": 2000,
+    "as_of": "<timestamp>",
+    "period_start": "<timestamp>",
+    "period_end": "<timestamp>",
+    "avg_per_day": 0,
+    "days_elapsed": 22,
+    "days_in_period": 31,
+    "projected_end_of_period": 0,
+    "projected_exceed_date": null,
+    "on_track_to_exceed": false
+  }
+}

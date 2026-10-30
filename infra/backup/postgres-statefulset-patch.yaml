@@ -1,0 +1,140 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Strategic-merge patch for the canonical self-managed PostgreSQL StatefulSet.
+# It assumes container name `postgres`, PVC volume name `postgres-data`, and
+# PGDATA `/var/lib/postgresql/data/pgdata`. Verify those three invariants before
+# applying; render-manifests.sh leaves no configurable ambiguity around them.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postwave-postgres
+  namespace: postwave
+spec:
+  replicas: 1
+  template:
+    spec:
+      serviceAccountName: postwave-postgres-backup
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: "__BACKUP_IMAGE__"
+          imagePullPolicy: IfNotPresent
+          args:
+            - postgres
+            - -c
+            - archive_mode=on
+            - -c
+            - wal_level=replica
+            - -c
+            - archive_timeout=60s
+            - -c
+            - archive_command=/usr/local/bin/postwave-wal-push %p
+            - -c
+            - max_wal_senders=10
+            - -c
+            - full_page_writes=on
+            - -c
+            - wal_compression=on
+            - -c
+            - unix_socket_directories=/var/run/postgresql
+          env:
+            - name: POSTGRES_INITDB_ARGS
+              value: --data-checksums
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-walg-config
+                  key: AWS_REGION
+            - name: WALG_S3_PREFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-walg-config
+                  key: WALG_S3_PREFIX
+            - name: WALG_S3_SSE
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-walg-config
+                  key: WALG_S3_SSE
+            - name: WALG_S3_SSE_KMS_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-walg-config
+                  key: WALG_S3_SSE_KMS_ID
+            - name: WALG_COMPRESSION_METHOD
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-walg-config
+                  key: WALG_COMPRESSION_METHOD
+            - name: WALG_PREVENT_WAL_OVERWRITE
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-walg-config
+                  key: WALG_PREVENT_WAL_OVERWRITE
+            - name: POSTGRES_SYSTEM_IDENTIFIER
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-walg-config
+                  key: POSTGRES_SYSTEM_IDENTIFIER
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: postgres-socket
+              mountPath: /var/run/postgresql
+            - name: postgres-tmp
+              mountPath: /tmp
+        - name: walg-base-backup
+          image: "__BACKUP_IMAGE__"
+          imagePullPolicy: IfNotPresent
+          command: ["/usr/local/bin/postwave-base-backup-loop"]
+          envFrom:
+            - configMapRef:
+                name: postgres-walg-config
+          env:
+            - name: PGHOST
+              value: /var/run/postgresql
+            - name: PGUSER
+              value: postgres
+            - name: PGDATABASE
+              value: postwave
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+              readOnly: true
+            - name: postgres-socket
+              mountPath: /var/run/postgresql
+            - name: backup-tmp
+              mountPath: /tmp
+      volumes:
+        - name: postgres-socket
+          emptyDir:
+            sizeLimit: "16Mi"
+        - name: postgres-tmp
+          emptyDir:
+            sizeLimit: "256Mi"
+        - name: backup-tmp
+          emptyDir:
+            sizeLimit: "1Gi"

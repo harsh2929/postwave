@@ -1,0 +1,40 @@
+# check-rls-policies.allow
+#
+# Allowlist of RESTRICTIVE-by-design tables for scripts/check-rls-policies.sh.
+#
+# Format:
+#   - One bare lowercase table name per line.
+#   - '#' starts a comment (whole-line or inline).
+#   - Blank lines are ignored.
+#
+# READ THIS BEFORE ADDING AN ENTRY
+# ---------------------------------
+# The RESTRICTIVE-only-policy pattern looks like a config preference but
+# is almost always a real silent-deny bug. We have 4 production fixup
+# migrations (0077, 0078, 0329, 0336) on file precisely because devs
+# kept assuming "RESTRICTIVE was sufficient on its own." It is NOT.
+#
+# A table belongs in this allowlist iff ALL of the following hold:
+#   1. `postwave_app` is NEVER granted SELECT/INSERT/UPDATE/DELETE on
+#      the table (the role would always be RLS-blocked anyway).
+#   2. Reads/writes only happen via SECURITY DEFINER functions owned by
+#      the postgres superuser (bypasses RLS), background workers using
+#      the migration role, or admin tooling that runs as the owner.
+#   3. Adding a PERMISSIVE policy would actually WIDEN the trust
+#      boundary, not narrow it.
+#
+# If you cannot honestly write that justification next to the entry,
+# the table is a real silent-deny bug. Fix it with a companion
+# PERMISSIVE policy using the 0077/0078/0336 canonical pattern.
+#
+# Each entry MUST carry a justification comment on the same or
+# preceding line, citing the migration that introduced the table and
+# the worker / function that owns access.
+#
+# Example (template — uncomment + edit for a real exemption):
+#
+#   # 9999: only written by the audit-trail SECURITY DEFINER function;
+#   # postwave_app has no GRANT on this table at all.
+#   # audit_trail_immutable
+
+# -- intentionally empty --

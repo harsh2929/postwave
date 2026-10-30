@@ -1,0 +1,79 @@
+---
+title: Event catalog
+---
+
+# Event catalog
+
+Subscribe to one or more of the following canonical event names in the
+`events` array of an outbound webhook. Unknown names are rejected.
+
+| Event | Scope | Typical data |
+| --- | --- | --- |
+| `campaign.sent` | Tenant | Campaign id and send outcome. |
+| `subscriber.added` | Tenant | Subscriber identity and creation source. |
+| `subscriber.removed` | Tenant | Subscriber identity and removal context. |
+| `subscriber.unsubscribed` | Tenant | Email, reason, and source channel for a global opt-out. |
+| `approval.requested` | Tenant | Approval request and subject identifiers. |
+| `approval.decided` | Tenant | Approval decision, actor, and subject identifiers. |
+| `audit.created` | Tenant | Audit-record metadata. |
+| `bounce.received` | Tenant | Subscriber/message identifiers and bounce metadata. |
+| `list.subscriber.added` | Optional list scope | List id, subscriber id, email, and membership context. |
+
+`webhook.test` is reserved for the test endpoint and cannot be selected as a
+production subscription event.
+
+## Envelope
+
+All events share this outer contract:
+
+```json
+{
+  "event": {
+    "id": "aa63bf94-2aa1-4cc7-aaf9-3dc4cf929cf1",
+    "type": "subscriber.unsubscribed",
+    "occurred_at": "2026-07-23T10:14:24.019Z",
+    "data": {
+      "subscriber_id": "06e77b25-243b-4ff0-a7ee-a0181ac13b59",
+      "email": "ada@example.com",
+      "reason": "one_click",
+      "source": "campaign"
+    }
+  },
+  "webhook": { "id": "31f3da3a-a44b-482e-8d54-b8a98b7602b2" },
+  "delivery": {
+    "id": "3b7f2f9a-b028-4b8f-852a-47193770d73c",
+    "attempt": 1
+  }
+}
+```
+
+`event.data` is event-specific and may gain additive fields. Consumers should
+ignore unknown fields.
+
+## List-scoped destinations
+
+Set `list_id` when creating a destination to receive
+`list.subscriber.added` only for that list. Tenant-wide events are not
+filtered by `list_id`. The value must be a UUID for a list owned by the active
+workspace; malformed, missing, or cross-workspace references are rejected.
+
+## Delivery guarantees
+
+Event creation and outbound fanout are recorded transactionally for every
+event in this catalog. A source event has one stable `event.id`; retries and
+manual replays preserve it. Process at least once and deduplicate on that
+identity.
+
+The delivery attempt number can increase during automatic retries. Manual
+replay starts a new delivery record, so its `delivery.id` changes while
+`event.id` remains stable.
+
+RFC 8058 one-click unsubscribe commits the suppression change and the
+`subscriber.unsubscribed` outbound intent in the same tenant transaction.
+This prevents a successful opt-out from being acknowledged without its
+corresponding durable event.
+
+## See also
+
+- [Webhooks overview](/webhooks)
+- [Signature verification](/webhooks/signing)

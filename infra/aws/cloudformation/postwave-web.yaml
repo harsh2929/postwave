@@ -1,0 +1,531 @@
+# Canonical Moosewave web workload for AWS us-west-2 / moosewave.com.
+#
+# Bootstrap sequence:
+#   1. Resolve and verify the signed GHCR multi-platform digest.
+#   2. Deploy this stack with DeployWebService=false. This creates the retained
+#      log group, immutable ECR repository, desired-zero ECS service, and edge
+#      routing without starting unpromoted code.
+#   3. Promote the exact digest to ECR, verify its destination signature and
+#      attestations, then update with WebArtifactVerified=true while keeping the
+#      service at zero.
+#   4. Pass the API/DNS/runtime preflight and update DeployWebService=true.
+#
+# A parameter assertion is not a replacement for signature verification: the
+# executable procedure and evidence requirements live in WEB_DEPLOY_RUNBOOK.md.
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Canonical Moosewave Next.js web service: digest-only ECS Fargate deployment,
+  local process health, retained logs, ALB host routing, optional DNS,
+  deployment rollback, and target-tracking autoscaling. Deployment is disabled
+  until the signed artifact and external prerequisites are verified.
+
+Parameters:
+  WebImageDigest:
+    Type: String
+    AllowedPattern: "^sha256:[0-9a-f]{64}$"
+    Description: >
+      Immutable multi-platform manifest digest for postwave-web. Tags, aliases,
+      and architecture-specific image ids are rejected.
+
+  WebArtifactVerified:
+    Type: String
+    Default: "false"
+    AllowedValues: ["false", "true"]
+    Description: >
+      Operator assertion set true only after the runbook verifies the GHCR and
+      ECR signatures, provenance, SBOM, digest equality, and image contents.
+
+  DeployWebService:
+    Type: String
+    Default: "false"
+    AllowedValues: ["false", "true"]
+    Description: >
+      Bootstrap gate. False forces desired count zero. Enable only after the
+      signed artifact, API, association metadata, and ALB preflight pass.
+
+  ReleaseId:
+    Type: String
+    AllowedPattern: "^[0-9a-f]{40}$"
+    Description: Full Git commit SHA represented by WebImageDigest.
+
+  PublicReleaseApproval:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^approved:[A-Za-z0-9][A-Za-z0-9._/-]{5,127}$"
+    Description: >
+      Fail-closed public-publication gate. Leave empty until the referenced
+      release record approves legal, product, provider, and operational
+      publication. This is an auditable reference, not a secret.
+
+  DomainName:
+    Type: String
+    Default: moosewave.com
+    AllowedValues: [moosewave.com]
+    Description: Canonical production domain. This module owns app.moosewave.com.
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC used by the canonical postwave-prod stack.
+
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnets in at least two availability zones.
+
+  EcsClusterName:
+    Type: String
+    Default: postwave-prod
+    AllowedValues: [postwave-prod]
+    Description: ECS cluster output from postwave-stack.yaml.
+
+  AlbSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: >
+      ALB security group owned by postwave-stack.yaml. The web module creates a
+      distinct task security group that accepts port 3000 only from this group.
+
+  HttpsListenerArn:
+    Type: String
+    AllowedPattern: "^arn:[A-Za-z0-9-]+:elasticloadbalancing:us-west-2:[0-9]{12}:listener/app/.+$"
+    Description: HTTPS listener ARN for postwave-prod-alb.
+
+  AlbDnsName:
+    Type: String
+    MinLength: 1
+    Description: AlbDnsName output from postwave-stack.yaml.
+
+  AlbHostedZoneId:
+    Type: String
+    MinLength: 1
+    Description: AlbHostedZoneId output from postwave-stack.yaml.
+
+  CreateDnsRecord:
+    Type: String
+    Default: "false"
+    AllowedValues: ["false", "true"]
+    Description: >
+      When true, create the app.moosewave.com Route 53 A-alias. Keep false if an
+      approved external DNS provider owns the public zone.
+
+  Route53HostedZoneId:
+    Type: String
+    Default: ""
+    Description: Route 53 public hosted-zone id. Required with CreateDnsRecord=true.
+
+  AppleTeamId:
+    Type: String
+    AllowedPattern: "^[A-Z0-9]{10}$"
+    Description: Apple Developer Team ID served by the universal-link route.
+
+  IosBundleId:
+    Type: String
+    Default: com.moosewave.app
+    AllowedPattern: "^[A-Za-z0-9.-]+$"
+
+  AndroidPackageName:
+    Type: String
+    Default: com.moosewave.app
+    AllowedPattern: "^[A-Za-z][A-Za-z0-9_.]+$"
+
+  AndroidSha256CertFingerprints:
+    Type: String
+    MinLength: 1
+    Description: >
+      Comma-separated SHA-256 signing-certificate fingerprints served by the
+      Android app-link route. Obtain these from the exact release keystore.
+
+  SentryDsnWeb:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Optional server/edge Sentry DSN. Empty keeps Sentry dormant.
+
+Rules:
+  CanonicalRegionOnly:
+    Assertions:
+      - Assert: !Equals [!Ref AWS::Region, us-west-2]
+        AssertDescription: The canonical web stack must be deployed in us-west-2.
+
+  EnabledRolloutRequiresVerifiedArtifact:
+    RuleCondition: !Equals [!Ref DeployWebService, "true"]
+    Assertions:
+      - Assert: !Equals [!Ref WebArtifactVerified, "true"]
+        AssertDescription: >
+          WebArtifactVerified must be true before the service can leave desired
+          count zero.
+
+  ManagedDnsRequiresZone:
+    RuleCondition: !Equals [!Ref CreateDnsRecord, "true"]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref Route53HostedZoneId, ""]]
+        AssertDescription: Route53HostedZoneId is required when DNS is managed here.
+
+Conditions:
+  WebServiceEnabled: !Equals [!Ref DeployWebService, "true"]
+  ManagedDnsEnabled: !Equals [!Ref CreateDnsRecord, "true"]
+  SentryEnabled: !Not [!Equals [!Ref SentryDsnWeb, ""]]
+
+Resources:
+  WebRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      RepositoryName: postwave-web
+      EmptyOnDelete: false
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      EncryptionConfiguration:
+        EncryptionType: AES256
+      ImageTagMutability: IMMUTABLE_WITH_EXCLUSION
+      ImageTagMutabilityExclusionFilters:
+        - ImageTagMutabilityExclusionFilterType: WILDCARD
+          ImageTagMutabilityExclusionFilterValue: latest
+        - ImageTagMutabilityExclusionFilterType: WILDCARD
+          ImageTagMutabilityExclusionFilterValue: main
+      LifecyclePolicy:
+        LifecyclePolicyText: >-
+          {"rules":[{"rulePriority":1,"description":"Expire untagged images after 14 days","selection":{"tagStatus":"untagged","countType":"sinceImagePushed","countUnit":"days","countNumber":14},"action":{"type":"expire"}}]}
+
+  WebLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-web
+      RetentionInDays: 90
+
+  WebTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: Moosewave web tasks; port 3000 only from the production ALB.
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref AlbSecurityGroupId
+          Description: Next.js from the production ALB only
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS API and configured telemetry providers
+        - IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 169.254.169.253/32
+          Description: AmazonProvidedDNS resolver only
+        - IpProtocol: tcp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 169.254.169.253/32
+          Description: AmazonProvidedDNS TCP fallback only
+
+  WebTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Moosewave web runtime role; the Next.js process calls no AWS APIs.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+
+  WebTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Pull only postwave-web and write only its retained log group.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: postwave-web-task-start
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: EcrAuthorization
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Sid: PullWebImage
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: !GetAtt WebRepository.Arn
+              - Sid: WriteWebLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt WebLogGroup.Arn
+
+  WebTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: postwave-web
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Cpu: "512"
+      Memory: "1024"
+      ExecutionRoleArn: !GetAtt WebTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt WebTaskRole.Arn
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      Volumes:
+        - Name: postwave-web-tmp
+        - Name: postwave-web-next-cache
+      ContainerDefinitions:
+        - Name: postwave-web
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/postwave-web@${WebImageDigest}"
+          Essential: true
+          User: "10001:10001"
+          ReadonlyRootFilesystem: true
+          LinuxParameters:
+            InitProcessEnabled: true
+            Capabilities:
+              Drop: [ALL]
+          PortMappings:
+            - ContainerPort: 3000
+              Protocol: tcp
+          MountPoints:
+            - SourceVolume: postwave-web-tmp
+              ContainerPath: /tmp
+              ReadOnly: false
+            - SourceVolume: postwave-web-next-cache
+              ContainerPath: /app/apps/web/.next/cache
+              ReadOnly: false
+          Environment:
+            - Name: NODE_ENV
+              Value: production
+            - Name: NEXT_TELEMETRY_DISABLED
+              Value: "1"
+            - Name: POSTWAVE_ENV
+              Value: production
+            - Name: POSTWAVE_RELEASE
+              Value: !Ref ReleaseId
+            - Name: POSTWAVE_PUBLIC_RELEASE_APPROVAL
+              Value: !Ref PublicReleaseApproval
+            - Name: HOSTNAME
+              Value: 0.0.0.0
+            - Name: PORT
+              Value: "3000"
+            - Name: API_URL
+              Value: !Sub "https://api.${DomainName}"
+            - Name: POSTWAVE_API_URL
+              Value: !Sub "https://api.${DomainName}"
+            - Name: POSTWAVE_API_PROXY_TIMEOUT_MS
+              Value: "15000"
+            - Name: POSTWAVE_API_STREAM_TIMEOUT_MS
+              Value: "310000"
+            - Name: POSTWAVE_API_EXPORT_TIMEOUT_MS
+              Value: "1800000"
+            - Name: POSTWAVE_API_PROXY_MAX_BODY_BYTES
+              Value: "26214400"
+            - Name: POSTWAVE_PUBLIC_PAGE_TIMEOUT_MS
+              Value: "8000"
+            - Name: POSTWAVE_APPLE_TEAM_ID
+              Value: !Ref AppleTeamId
+            - Name: POSTWAVE_IOS_BUNDLE_ID
+              Value: !Ref IosBundleId
+            - Name: POSTWAVE_ANDROID_PACKAGE_NAME
+              Value: !Ref AndroidPackageName
+            - Name: POSTWAVE_ANDROID_SHA256_CERT_FINGERPRINTS
+              Value: !Ref AndroidSha256CertFingerprints
+            - !If
+              - SentryEnabled
+              - Name: SENTRY_DSN_WEB
+                Value: !Ref SentryDsnWeb
+              - !Ref AWS::NoValue
+          StopTimeout: 30
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - wget -qO- http://127.0.0.1:3000/healthz >/dev/null || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 30
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: web
+
+  WebTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      Protocol: HTTP
+      Port: 3000
+      TargetType: ip
+      HealthCheckEnabled: true
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /healthz
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+        - Key: stickiness.enabled
+          Value: "false"
+
+  WebHostListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpsListenerArn
+      Priority: 200
+      Conditions:
+        - Field: host-header
+          HostHeaderConfig:
+            Values:
+              - !Sub "app.${DomainName}"
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref WebTargetGroup
+
+  WebService:
+    Type: AWS::ECS::Service
+    DependsOn: WebHostListenerRule
+    Properties:
+      Cluster: !Ref EcsClusterName
+      ServiceName: postwave-web
+      TaskDefinition: !Ref WebTaskDefinition
+      DesiredCount: !If [WebServiceEnabled, 2, 0]
+      LaunchType: FARGATE
+      PlatformVersion: 1.4.0
+      EnableExecuteCommand: false
+      PropagateTags: SERVICE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref WebTaskSecurityGroup
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: postwave-web
+          ContainerPort: 3000
+          TargetGroupArn: !Ref WebTargetGroup
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+  WebScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: WebServiceEnabled
+    Properties:
+      ServiceNamespace: ecs
+      ScalableDimension: ecs:service:DesiredCount
+      ResourceId: !Join
+        - /
+        - - service
+          - !Ref EcsClusterName
+          - !GetAtt WebService.Name
+      MinCapacity: 2
+      MaxCapacity: 6
+
+  WebCpuScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: WebServiceEnabled
+    Properties:
+      PolicyName: postwave-web-cpu-target
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WebScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        TargetValue: 60
+        ScaleInCooldown: 300
+        ScaleOutCooldown: 60
+
+  WebMemoryScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: WebServiceEnabled
+    Properties:
+      PolicyName: postwave-web-memory-target
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WebScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageMemoryUtilization
+        TargetValue: 70
+        ScaleInCooldown: 300
+        ScaleOutCooldown: 60
+
+  WebDnsRecords:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: ManagedDnsEnabled
+    Properties:
+      HostedZoneId: !Ref Route53HostedZoneId
+      RecordSets:
+        - Name: !Sub "app.${DomainName}."
+          Type: A
+          AliasTarget:
+            DNSName: !Ref AlbDnsName
+            HostedZoneId: !Ref AlbHostedZoneId
+            EvaluateTargetHealth: true
+
+Outputs:
+  WebRepositoryUri:
+    Description: ECR destination for the verified bridge workflow.
+    Value: !GetAtt WebRepository.RepositoryUri
+
+  WebServiceName:
+    Value: !GetAtt WebService.Name
+
+  WebTaskDefinitionArn:
+    Value: !Ref WebTaskDefinition
+
+  WebTaskSecurityGroupId:
+    Description: Dedicated security group attached only to postwave-web tasks.
+    Value: !Ref WebTaskSecurityGroup
+
+  WebTargetGroupArn:
+    Value: !Ref WebTargetGroup
+
+  WebTargetGroupFullName:
+    Description: ApplicationELB CloudWatch dimension for web alarms.
+    Value: !GetAtt WebTargetGroup.TargetGroupFullName
+
+  WebUrl:
+    Value: !Sub "https://app.${DomainName}"
+
+  WebDnsName:
+    Description: >
+      Create an A-alias for this name when CreateDnsRecord=false. The target is
+      AlbDnsName with AlbHostedZoneId, both supplied by the parent stack.
+    Value: !Sub "app.${DomainName}"
+
+  WebDnsAliasTarget:
+    Description: ALB DNS name for an approved external DNS alias/CNAME record.
+    Value: !Ref AlbDnsName
+
+  WebDnsAliasHostedZoneId:
+    Description: ALB canonical hosted-zone id for a Route 53 external alias.
+    Value: !Ref AlbHostedZoneId
+
+  DeploymentQualification:
+    Description: Repository state only; live qualification remains external.
+    Value: !If
+      - WebServiceEnabled
+      - repository-configured-live-evidence-required
+      - bootstrap-desired-zero

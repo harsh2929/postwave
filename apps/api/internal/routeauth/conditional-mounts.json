@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "description": "Manifest routes that mount only when their deployment gate is configured. Consulted ONLY by the reverse completeness check (every manifest route is mounted). The forward security check -- every mounted route must carry a policy -- is never relaxed.",
+  "review": {
+    "owner": "release-engineering-and-database-owner",
+    "review_by": "2026-11-01"
+  },
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/oauth/{provider}/signup",
+      "gate_env": "POSTWAVE_OAUTH_GOOGLE_CLIENT_ID",
+      "reason": "Pending verified Google signup metadata mounts with the OAuth graph. The handler requires an expiring browser capability cookie."
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/oauth/{provider}/signup",
+      "gate_env": "POSTWAVE_OAUTH_GOOGLE_CLIENT_ID",
+      "reason": "Google workspace creation mounts with the OAuth graph and requires the expiring capability plus CSRF proof."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/oauth/{provider}/start",
+      "gate_env": "POSTWAVE_OAUTH_GOOGLE_CLIENT_ID",
+      "reason": "MountOAuthRoutes: 'A nil OAuth graph is the supported password-only deployment mode.' OAuth needs provider-issued credentials, so a public compose file cannot supply them; requiring these routes makes password-only unbootable."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/oauth/{provider}/callback",
+      "gate_env": "POSTWAVE_OAUTH_GOOGLE_CLIENT_ID",
+      "reason": "Callback half of the pair above; the two mount together or not at all."
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/engagement/hp/{token}",
+      "gate_env": "POSTWAVE_ENGAGEMENT_HONEYPOT_SIGNING_SECRET",
+      "reason": "Issuance and ingestion share one switch by design, so a deployment can never collect fetches for decoys it is not sending. An empty secret means this deployment has not opted into embedding decoys in customer mail."
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/inbox-reality/pivot",
+      "gate_env": "POSTWAVE_ENABLE_INBOX_REALITY_LIFECYCLE",
+      "reason": "Inbox Reality additionally requires object storage, a deliverability URL, a bearer token and signing secrets; enabling it without them is refused at startup."
+    },
+    {
+      "method": "POST",
+      "path": "/api/internal/inbox-reality/observations",
+      "gate_env": "POSTWAVE_ENABLE_INBOX_REALITY_LIFECYCLE",
+      "reason": "Second half of the Inbox Reality internal callback pair."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/campaigns/{campaign}/polls",
+      "gate_env": "POSTWAVE_ENABLE_CAMPAIGN_POLLS",
+      "reason": "Campaign polls require a dedicated token secret and an absolute HTTPS base URL, validated at startup."
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/campaigns/{campaign}/polls",
+      "gate_env": "POSTWAVE_ENABLE_CAMPAIGN_POLLS",
+      "reason": "Poll authoring; same gate."
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/campaigns/{campaign}/polls/{poll}/tally",
+      "gate_env": "POSTWAVE_ENABLE_CAMPAIGN_POLLS",
+      "reason": "Poll tally read; same gate."
+    },
+    {
+      "method": "GET",
+      "path": "/api/public/polls/{tenant}/{poll}/{option}",
+      "gate_env": "POSTWAVE_ENABLE_CAMPAIGN_POLLS",
+      "reason": "Public poll preview. The GET/POST split IS the prefetch mitigation, so both mount together."
+    },
+    {
+      "method": "POST",
+      "path": "/api/public/polls/{tenant}/{poll}/{option}",
+      "gate_env": "POSTWAVE_ENABLE_CAMPAIGN_POLLS",
+      "reason": "Public poll record; same gate as its GET preview."
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sending/provision",
+      "gate_env": "POSTWAVE_ALLOW_DIRECT_PROVISION",
+      "reason": "directSendingProvisionRouteEnabled: in production the direct provisioning endpoint mounts only when POSTWAVE_ALLOW_DIRECT_PROVISION is true (an operator escape hatch the launch checklist requires unset), so a production deployment without it must still boot; outside production it always mounts."
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <hidden-attribute-on-template-row.v1@example.com>
+Subject: Order summary
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-template-v1"
+
+--pw-template-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Order summary: 2 items, 41.00 USD. https://shop.example.com/o/9
+--pw-template-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Order summary</h1><table role="presentation"><tr><td>Wool scarf</td><td>26.00</td></tr><tr hidden><td>{{item_name}}</td><td>{{item_price}}</td></tr><tr><td>Cotton socks</td><td>15.00</td></tr></table><p><a href="https://shop.example.com/o/9">View the order</a></p></body></html>
+--pw-template-v1--

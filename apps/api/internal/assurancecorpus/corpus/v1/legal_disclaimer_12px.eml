@@ -1,0 +1,19 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <legal-disclaimer-12px.v1@example.com>
+Subject: Terms update
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-disc-v1"
+
+--pw-disc-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We updated our terms. Read them: https://legal.example.com/terms
+--pw-disc-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Terms update</h1><p>We updated our terms.</p><p style="font-size:12px;color:#444444">This message is intended for the named recipient. <a href="https://legal.example.com/terms">Read the terms</a>.</p></body></html>
+--pw-disc-v1--

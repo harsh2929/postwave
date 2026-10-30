@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "renderer": {
+    "coldShellReadyMs": 4000,
+    "firstContentfulPaintMs": 2500,
+    "coldJsHeapMiB": 64,
+    "coldDomNodes": 3000,
+    "coldMaxLongTaskMs": 300,
+    "coldTotalBlockingTimeMs": 1000,
+    "routeTransitionP95Ms": 2500,
+    "warmRouteCycleHeapMiB": 128,
+    "warmRouteCycleGrowthMiB": 24
+  },
+  "installed": {
+    "requiredTargets": [
+      { "platform": "macos", "architecture": "aarch64" },
+      { "platform": "macos", "architecture": "x86_64" },
+      { "platform": "windows", "architecture": "x86_64" }
+    ],
+    "minimumWebviewVersions": {
+      "macos": "16.2",
+      "windows": "111"
+    },
+    "minimumRuns": 5,
+    "minimumSustainedMinutes": 30,
+    "coldLaunchP95Ms": 5000,
+    "firstInteractionP95Ms": 6500,
+    "idleRssP95MiB": 350,
+    "sustainedRssPeakMiB": 500,
+    "sustainedRssGrowthMiB": 100,
+    "maximumCrashCount": 0
+  }
+}

@@ -1,0 +1,26 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <image-only.v1@example.com>
+Subject: Synthetic image-carried offer
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-image-v1"
+
+--pw-image-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+See the image for this synthetic offer.
+--pw-image-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><h1>Synthetic offer</h1>=
+<a data-postwave-node=3D"primary-action"=
+ data-postwave-role=3D"primary_action"=
+ data-postwave-action-id=3D"claim-offer"=
+ href=3D"https://offers.example.com/claim">=
+<img data-postwave-node=3D"critical-offer-image"=
+ src=3D"https://assets.example.com/offer-deadline-and-button.png"></a>=
+</body></html>
+--pw-image-v1--

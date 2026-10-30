@@ -1,0 +1,4 @@
+Email,Email subscription status,SMS subscription status,Browser push notifications status,Email opt-in date,SMS opt-in date,Date added,Tags
+ada@example.com,subscribed,unsubscribed,unsubscribed,2024-01-02T00:00:00Z,,2024-01-01,VIP
+optout@example.com,unsubscribed,subscribed,subscribed,,2024-01-02,2024-01-01,VIP
+unknown@example.com,non-subscribed,subscribed,subscribed,,2024-01-02,2024-01-01,VIP

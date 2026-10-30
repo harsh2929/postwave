@@ -1,0 +1,38 @@
+{
+  "tenant_id": "<uuid>",
+  "score": 100,
+  "grade": "A",
+  "status": "Insufficient data",
+  "trend": "flat",
+  "trend_delta": 0,
+  "history": [],
+  "bounce_rate": 0,
+  "complaint_rate": 0,
+  "engagement_rate": 0,
+  "opens_machine_pct": 0,
+  "event_rate_scope": "campaigns",
+  "model_version": "campaign-cohort-v2-2026-08-02",
+  "sample_qualified": false,
+  "minimum_sample_sends": 1000,
+  "sample_reason": "fewer than 1,000 successful campaign sends in the 30-day model window",
+  "window_days": 30,
+  "breaches": [
+    {
+      "code": "campaign_sample_insufficient",
+      "severity": "info",
+      "title": "More campaign sends are needed for a qualified rate score",
+      "detail": "Bounce, complaint, and engagement rates remain visible, but they do not affect the score or automated sending caps until the 30-day cohort reaches 1,000 successful campaign sends.",
+      "metric": "campaign_sends_30d",
+      "threshold": 1000,
+      "suggestion": "collect a larger successful campaign-send sample"
+    }
+  ],
+  "dns_health": {},
+  "blocklist_hits": [],
+  "auto_throttled": false,
+  "totals": {
+    "sends_7d": 0,
+    "sends_30d": 0
+  },
+  "computed_at": "<timestamp>"
+}

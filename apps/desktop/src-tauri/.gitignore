@@ -1,0 +1,30 @@
+# Rust build artifacts
+target/
+
+# Tauri-generated files (capabilities schemas, embedded assets, etc.)
+gen/
+
+# Windows installer tooling cache fetched by Tauri at first build
+WixTools/
+WixTools.zip
+
+# Code-signing material — NEVER commit. CI provides these at build time
+# via env / secrets; if any of these slip into a working tree, the
+# .gitignore should make sure they don't end up in a commit.
+*.p12
+*.pfx
+*.cer
+*.cert
+*.crt
+*.key
+apple-key.json
+apple-api-key.json
+AuthKey_*.p8
+
+# Auto-updater signing keys
+*.tauri.key
+*.tauri.pub
+
+# The complete generated icon matrix is intentionally tracked. Release builds
+# must work from a clean checkout without invoking image tooling or fetching
+# brand assets. Regenerate all files from icons/source.svg together.

@@ -1,0 +1,557 @@
+{
+  "brand": {
+    "primary_color": "#1d4ed8",
+    "body_font": "Helvetica, Arial, sans-serif",
+    "heading_font": "Helvetica, Arial, sans-serif",
+    "background_color": "#ffffff"
+  },
+  "blocks": [
+    {
+      "id": "header_logo",
+      "name": "Header — logo",
+      "category": "header",
+      "description": "Brand-color band with centered logo.",
+      "fields": [
+        {
+          "key": "logo_url",
+          "label": "Logo URL",
+          "type": "image_url"
+        },
+        {
+          "key": "alt",
+          "label": "Alt text",
+          "type": "text"
+        },
+        {
+          "key": "background_color",
+          "label": "Background color",
+          "type": "color"
+        }
+      ],
+      "defaults": {
+        "alt": "Brand logo",
+        "logo_url": "https://via.placeholder.com/160x40?text=Logo"
+      }
+    },
+    {
+      "id": "hero_text",
+      "name": "Hero — text",
+      "category": "hero",
+      "description": "Large headline + supporting subhead.",
+      "fields": [
+        {
+          "key": "headline",
+          "label": "Headline",
+          "type": "text"
+        },
+        {
+          "key": "subhead",
+          "label": "Subhead",
+          "type": "text"
+        }
+      ],
+      "defaults": {
+        "headline": "Welcome to our newsletter",
+        "subhead": "We're glad to have you here."
+      }
+    },
+    {
+      "id": "hero_image",
+      "name": "Hero — image",
+      "category": "hero",
+      "description": "Full-width banner image.",
+      "fields": [
+        {
+          "key": "image_url",
+          "label": "Image URL",
+          "type": "image_url"
+        },
+        {
+          "key": "alt",
+          "label": "Alt text",
+          "type": "text"
+        }
+      ],
+      "defaults": {
+        "alt": "Hero image",
+        "image_url": "https://via.placeholder.com/600x300"
+      }
+    },
+    {
+      "id": "text",
+      "name": "Text",
+      "category": "content",
+      "description": "Paragraph with merge-field support.",
+      "fields": [
+        {
+          "key": "text",
+          "label": "Body text",
+          "type": "textarea",
+          "help": "Supports {{ first_name }}-style merge fields."
+        }
+      ],
+      "defaults": {
+        "text": "Type your paragraph here. Use {{ first_name }} for personalization."
+      }
+    },
+    {
+      "id": "button",
+      "name": "Button (CTA)",
+      "category": "content",
+      "description": "Single call-to-action with link.",
+      "fields": [
+        {
+          "key": "label",
+          "label": "Button label",
+          "type": "text"
+        },
+        {
+          "key": "url",
+          "label": "Link URL",
+          "type": "url"
+        },
+        {
+          "key": "background_color",
+          "label": "Background color",
+          "type": "color"
+        }
+      ],
+      "defaults": {
+        "label": "Read more",
+        "url": "https://example.com"
+      }
+    },
+    {
+      "id": "two_column",
+      "name": "Two-column (text + image)",
+      "category": "content",
+      "description": "Text on one side, image on the other.",
+      "fields": [
+        {
+          "key": "text",
+          "label": "Text",
+          "type": "textarea"
+        },
+        {
+          "key": "image_url",
+          "label": "Image URL",
+          "type": "image_url"
+        },
+        {
+          "key": "image_first",
+          "label": "Image on the left",
+          "type": "bool"
+        }
+      ],
+      "defaults": {
+        "image_url": "https://via.placeholder.com/280x200",
+        "text": "Type your paragraph here."
+      }
+    },
+    {
+      "id": "image_and_caption",
+      "name": "Image with caption",
+      "category": "content",
+      "description": "Full-width image with centered caption beneath.",
+      "fields": [
+        {
+          "key": "image_url",
+          "label": "Image URL",
+          "type": "image_url"
+        },
+        {
+          "key": "alt",
+          "label": "Alt text",
+          "type": "text"
+        },
+        {
+          "key": "caption",
+          "label": "Caption",
+          "type": "text"
+        }
+      ],
+      "defaults": null
+    },
+    {
+      "id": "product_recommendations",
+      "name": "Product recommendations",
+      "category": "commerce",
+      "description": "Three-product recommendation grid for ecommerce campaigns.",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Section title",
+          "type": "text"
+        },
+        {
+          "key": "catalog_id",
+          "label": "Catalog ID",
+          "type": "text"
+        },
+        {
+          "key": "feed_id",
+          "label": "Product feed ID",
+          "type": "text"
+        },
+        {
+          "key": "max_items",
+          "label": "Max products",
+          "type": "number"
+        },
+        {
+          "key": "exclude_out_of_stock",
+          "label": "Exclude out-of-stock",
+          "type": "bool"
+        },
+        {
+          "key": "product_1_title",
+          "label": "Product 1 title",
+          "type": "text"
+        },
+        {
+          "key": "product_1_image",
+          "label": "Product 1 image",
+          "type": "image_url"
+        },
+        {
+          "key": "product_1_url",
+          "label": "Product 1 URL",
+          "type": "url"
+        },
+        {
+          "key": "product_1_price",
+          "label": "Product 1 price",
+          "type": "text"
+        },
+        {
+          "key": "product_2_title",
+          "label": "Product 2 title",
+          "type": "text"
+        },
+        {
+          "key": "product_2_image",
+          "label": "Product 2 image",
+          "type": "image_url"
+        },
+        {
+          "key": "product_2_url",
+          "label": "Product 2 URL",
+          "type": "url"
+        },
+        {
+          "key": "product_2_price",
+          "label": "Product 2 price",
+          "type": "text"
+        },
+        {
+          "key": "product_3_title",
+          "label": "Product 3 title",
+          "type": "text"
+        },
+        {
+          "key": "product_3_image",
+          "label": "Product 3 image",
+          "type": "image_url"
+        },
+        {
+          "key": "product_3_url",
+          "label": "Product 3 URL",
+          "type": "url"
+        },
+        {
+          "key": "product_3_price",
+          "label": "Product 3 price",
+          "type": "text"
+        },
+        {
+          "key": "button_label",
+          "label": "Button label",
+          "type": "text"
+        }
+      ],
+      "defaults": {
+        "button_label": "Shop now",
+        "exclude_out_of_stock": true,
+        "max_items": 3,
+        "title": "Recommended for you"
+      }
+    },
+    {
+      "id": "discount_code",
+      "name": "Discount code",
+      "category": "commerce",
+      "description": "Promo-code callout with checkout CTA.",
+      "fields": [
+        {
+          "key": "description",
+          "label": "Description",
+          "type": "text"
+        },
+        {
+          "key": "code",
+          "label": "Code",
+          "type": "text"
+        },
+        {
+          "key": "url",
+          "label": "Offer URL",
+          "type": "url"
+        },
+        {
+          "key": "label",
+          "label": "Button label",
+          "type": "text"
+        },
+        {
+          "key": "background_color",
+          "label": "Button color",
+          "type": "color"
+        }
+      ],
+      "defaults": {
+        "code": "SAVE10",
+        "description": "Use this code at checkout.",
+        "label": "Redeem offer"
+      }
+    },
+    {
+      "id": "survey",
+      "name": "Survey / poll",
+      "category": "engagement",
+      "description": "Hosted survey prompt or quick email poll choices.",
+      "fields": [
+        {
+          "key": "question",
+          "label": "Question",
+          "type": "text"
+        },
+        {
+          "key": "choices",
+          "label": "Choices",
+          "type": "textarea",
+          "help": "Comma-separated choices are supported."
+        },
+        {
+          "key": "url",
+          "label": "Survey URL",
+          "type": "url"
+        }
+      ],
+      "defaults": {
+        "choices": [
+          "Great",
+          "Okay",
+          "Not for me"
+        ],
+        "question": "What did you think?"
+      }
+    },
+    {
+      "id": "social_follow",
+      "name": "Social follow",
+      "category": "social",
+      "description": "Follow links for common social networks.",
+      "fields": [
+        {
+          "key": "facebook_url",
+          "label": "Facebook URL",
+          "type": "url"
+        },
+        {
+          "key": "instagram_url",
+          "label": "Instagram URL",
+          "type": "url"
+        },
+        {
+          "key": "linkedin_url",
+          "label": "LinkedIn URL",
+          "type": "url"
+        },
+        {
+          "key": "x_url",
+          "label": "X URL",
+          "type": "url"
+        }
+      ],
+      "defaults": null
+    },
+    {
+      "id": "social_share",
+      "name": "Social share",
+      "category": "social",
+      "description": "Campaign sharing links for social networks.",
+      "fields": [
+        {
+          "key": "text",
+          "label": "Prompt",
+          "type": "text"
+        },
+        {
+          "key": "share_url",
+          "label": "Share URL",
+          "type": "url"
+        }
+      ],
+      "defaults": {
+        "share_url": "{{ archive_url }}",
+        "text": "Share this"
+      }
+    },
+    {
+      "id": "rss",
+      "name": "RSS",
+      "category": "dynamic",
+      "description": "RSS feed placeholder for recurring newsletter content.",
+      "fields": [
+        {
+          "key": "title",
+          "label": "Title",
+          "type": "text"
+        },
+        {
+          "key": "feed_url",
+          "label": "Feed URL",
+          "type": "url"
+        },
+        {
+          "key": "count",
+          "label": "Item count",
+          "type": "number"
+        }
+      ],
+      "defaults": {
+        "count": 3,
+        "feed_url": "https://example.com/feed.xml",
+        "title": "Latest posts"
+      }
+    },
+    {
+      "id": "video",
+      "name": "Video",
+      "category": "media",
+      "description": "Email-friendly linked thumbnail for embedded videos.",
+      "fields": [
+        {
+          "key": "video_url",
+          "label": "Video URL",
+          "type": "url"
+        },
+        {
+          "key": "thumbnail_url",
+          "label": "Thumbnail URL",
+          "type": "image_url"
+        },
+        {
+          "key": "title",
+          "label": "Title / alt text",
+          "type": "text"
+        },
+        {
+          "key": "label",
+          "label": "Button label",
+          "type": "text"
+        }
+      ],
+      "defaults": {
+        "label": "Watch now",
+        "title": "Watch video"
+      }
+    },
+    {
+      "id": "dynamic_content",
+      "name": "Dynamic content",
+      "category": "dynamic",
+      "description": "Conditional content for merge-data backed personalization.",
+      "fields": [
+        {
+          "key": "condition",
+          "label": "Condition",
+          "type": "text"
+        },
+        {
+          "key": "content",
+          "label": "Content",
+          "type": "textarea"
+        },
+        {
+          "key": "fallback",
+          "label": "Fallback",
+          "type": "textarea"
+        }
+      ],
+      "defaults": {
+        "condition": "is_vip",
+        "content": "VIP offer",
+        "fallback": "General offer"
+      }
+    },
+    {
+      "id": "conditional_content",
+      "name": "Mailchimp conditional content",
+      "category": "dynamic",
+      "description": "Mailchimp-template conditional block using *|IF:...|* syntax.",
+      "fields": [
+        {
+          "key": "condition",
+          "label": "Condition",
+          "type": "text"
+        },
+        {
+          "key": "content",
+          "label": "Content",
+          "type": "textarea"
+        },
+        {
+          "key": "fallback",
+          "label": "Fallback",
+          "type": "textarea"
+        }
+      ],
+      "defaults": {
+        "condition": "FNAME",
+        "content": "Hello *|FNAME|*",
+        "fallback": "Hello"
+      }
+    },
+    {
+      "id": "divider",
+      "name": "Divider",
+      "category": "structure",
+      "description": "Thin horizontal line.",
+      "fields": null,
+      "defaults": null
+    },
+    {
+      "id": "spacer",
+      "name": "Spacer",
+      "category": "structure",
+      "description": "Vertical whitespace.",
+      "fields": [
+        {
+          "key": "height",
+          "label": "Height (e.g. 20px)",
+          "type": "text"
+        }
+      ],
+      "defaults": {
+        "height": "20px"
+      }
+    },
+    {
+      "id": "footer",
+      "name": "Footer",
+      "category": "footer",
+      "description": "Company address + unsubscribe link. Includes the {{ unsubscribe_url }} merge token automatically.",
+      "fields": [
+        {
+          "key": "company_address",
+          "label": "Company address",
+          "type": "textarea"
+        }
+      ],
+      "defaults": {
+        "company_address": "Your Company · 123 Main St · City, ST 12345"
+      }
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "legacyClassBudgets": {
+    "legacyNoticeClass": 355,
+    "legacyAlertClass": 6,
+    "legacyCalloutClass": 24,
+    "legacyCardClass": 222,
+    "rawSkeletonClass": 203
+  },
+  "governedSources": [
+    "pages/Compliance.tsx",
+    "pages/AuditSinks.tsx",
+    "pages/Settings.tsx",
+    "pages/MCP.tsx",
+    "pages/Forms.tsx",
+    "components/abtest/WinnerBanner.tsx",
+    "components/migration/UnsupportedFeatureBanner.tsx",
+    "components/migration/MigrationErrorBanners.tsx",
+    "components/webhooks/AutoDisabledBanner.tsx"
+  ],
+  "inlineSemanticStyleExceptions": [
+    {
+      "source": "pages/AuditSinks.tsx",
+      "contains": "borderTop:",
+      "maxOccurrences": 2,
+      "reason": "Tokenized structural dividers inside the credential and destructive-action forms."
+    },
+    {
+      "source": "pages/AuditSinks.tsx",
+      "contains": "background:",
+      "maxOccurrences": 1,
+      "reason": "Tokenized preformatted receiver-error code surface, not notice/card chrome."
+    },
+    {
+      "source": "pages/AuditSinks.tsx",
+      "contains": "borderRadius:",
+      "maxOccurrences": 1,
+      "reason": "Preformatted receiver-error code surface paired with the allowed background."
+    },
+    {
+      "source": "pages/AuditSinks.tsx",
+      "contains": "color: \"var(--pw-danger)\"",
+      "maxOccurrences": 1,
+      "reason": "Destructive-action field label; the surrounding container is not a notice."
+    },
+    {
+      "source": "pages/Settings.tsx",
+      "contains": "borderRadius:",
+      "maxOccurrences": 2,
+      "reason": "Setup-progress geometry and the connection-status dot are domain data indicators."
+    },
+    {
+      "source": "pages/Settings.tsx",
+      "contains": "background:",
+      "maxOccurrences": 3,
+      "reason": "Setup-progress and connection-status fills encode measured state, not container chrome."
+    },
+    {
+      "source": "pages/MCP.tsx",
+      "contains": "color: classColor(status.class)",
+      "maxOccurrences": 1,
+      "reason": "Categorical DUX-025 chart segment color selected by HTTP status class."
+    }
+  ],
+  "skeletonGroupOwners": [
+    {
+      "source": "pages/Forms.tsx",
+      "requiresAny": ["role=\"status\""],
+      "reason": "Three decorative card placeholders share one named loading-status owner."
+    },
+    {
+      "source": "components/audit/AuditSinkTables.tsx",
+      "requiresAny": ["aria-busy=\"true\"", "Loading audit sinks"],
+      "reason": "Table-cell placeholders are decorative under one busy table and loading caption."
+    },
+    {
+      "source": "components/dataplatform/CdpTransformsSection.tsx",
+      "requiresAny": ["aria-label=\"Loading registered operations\""],
+      "reason": "Three decorative operation-chip placeholders share one named loading-status owner."
+    }
+  ],
+  "primitiveSources": [
+    "components/Notice.tsx",
+    "components/Banner.tsx",
+    "components/Card.tsx",
+    "components/Skeleton.tsx"
+  ],
+  "storySources": [
+    "stories/Notice.stories.tsx",
+    "stories/Banner.stories.tsx",
+    "stories/Card.stories.tsx",
+    "stories/Skeleton.stories.tsx"
+  ]
+}

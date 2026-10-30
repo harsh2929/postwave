@@ -1,0 +1,88 @@
+---
+title: Improving placement
+---
+
+import { Callout } from 'nextra/components';
+
+# Improving placement — the operator's playbook
+
+The five most-impactful habits, in priority order.
+
+## 1. List hygiene cadence
+
+**Weekly** (or after every send for high-volume senders):
+
+- Drop hard-bounced addresses immediately. The Moosewave default suppression list catches these automatically; leave it on.
+- Flag soft-bounced addresses with 3+ consecutive soft bounces and treat as hard-bounced.
+
+**Monthly**:
+
+- Identify subscribers with **0 opens in 90 days**. These are dead weight on your reputation. Run a one-time re-engagement campaign with a clear "still want to hear from me?" CTA. Anyone who doesn't respond — drop or move to a low-frequency cadence.
+
+**Quarterly**:
+
+- Run a "winback" sequence (3 emails over 14 days) to dormant 180-day subscribers. Default to unsubscribing the non-responders.
+
+## 2. Suppression management
+
+Moosewave maintains five suppression lists per workspace:
+
+- **Hard bounces** — never re-mail.
+- **Complaints** — never re-mail.
+- **Unsubscribes** — never re-mail.
+- **Manual** — addresses you've blocked.
+- **Global** — Moosewave-network-wide blocks (e.g., known spam traps that have hit multiple workspaces).
+
+The global list is opt-out. **Leave it on.** Sending to even one spam trap can produce a multi-week reputation hit.
+
+## 3. Content discipline
+
+The Predictor catches the obvious. The non-obvious:
+
+- **Don't paste from Word/Google Docs.** Office HTML drags in proprietary CSS classes that some spam filters score against. Moosewave's MJML editor strips these; the rich-text editor warns.
+- **Use one font family**, not eight. Multi-font HTML correlates with spam-template HTML in filter training data.
+- **Avoid URL shorteners.** `bit.ly`, `tinyurl`, `t.co` are heavily over-represented in spam corpora. Use your own tracking domain ([account setup](/getting-started/account-setup)).
+- **Plain-text alternative matters.** Even if no human reads it, filters check that it exists and is non-trivial. Moosewave auto-generates one; don't disable it.
+
+## 4. Warmup discipline
+
+If you're on a fresh dedicated IP (Sending tier add-on), **don't blast your full list day 1**. The mailbox providers haven't seen this IP send mail before; volume spikes look like a compromised server.
+
+Moosewave's automated warmup ramps:
+
+| Day  | Daily volume cap |
+| ---- | ---------------- |
+| 1    | 50               |
+| 2    | 100              |
+| 3    | 200              |
+| 4    | 500              |
+| 5    | 1,000            |
+| 6    | 2,500            |
+| 7    | 5,000            |
+| 8    | 10,000           |
+| 9    | 20,000           |
+| 10+  | 50,000+ (uncapped past day 14) |
+
+The warmup picks your **most engaged** subscribers first — the ones most likely to open and *not* mark spam. Volume escalates only if engagement holds.
+
+## 5. Complaint rate targets
+
+| Metric                   | Healthy   | Caution    | Crisis      |
+| ------------------------ | --------- | ---------- | ----------- |
+| Complaint rate           | &lt; 0.05%   | 0.05–0.10% | &gt; 0.10%     |
+| Hard bounce rate         | &lt; 0.50%   | 0.50–2.00% | &gt; 2.00%     |
+| Unsubscribe rate         | &lt; 0.50%   | 0.50–1.00% | &gt; 1.00%     |
+| Trailing 30d open rate   | &gt; 25%     | 15–25%     | &lt; 15%       |
+
+<Callout type="warning">
+Gmail and Yahoo's bulk-sender requirements (effective 2024) **mandate** complaint rate &lt; 0.30% — getting close to that threshold will cause reputation damage even before a formal block.
+</Callout>
+
+## Putting it together
+
+If you want one habit to start with: **monthly inactive-subscriber audits**. The single biggest delivery-killer Moosewave sees in customer accounts is operators who keep mailing 60% of their list to people who haven't opened in over a year. Cut them, and placement recovers within 2 sends.
+
+## Next steps
+
+- [Blacklists](/deliverability/blacklists) — what to do if you do get listed.
+- [Diagnostician](/deliverability/diagnostician) — when something is broken, this is your triage.

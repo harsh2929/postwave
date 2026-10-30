@@ -1,0 +1,1015 @@
+# postwave-stack.yaml
+#
+# CloudFormation foundation for the Moosewave production stack on AWS.
+#
+# Foundation resources (VPC/subnets/KMS keys and IAM roles) are supplied as
+# parameters because they outlive an application stack. The API service is
+# omitted during foundation bootstrap and cannot be created until the
+# canonical, digest-pinned task definition ARN is supplied after the migrator
+# succeeds.
+#
+# What's MISSING (deliberately, because it lives in other modules):
+#   - VPC, subnets, route tables, NAT gateway, internet gateway.
+#     Those are foundation; this stack assumes they exist and you
+#     pass IDs as parameters.
+#   - KMS keys (CMKs for Secrets Manager, S3, RDS). Same reason --
+#     keys outlive any single application stack and rotate on their
+#     own cadence.
+#   - The IAM roles. The production runbook creates their ECS task trust
+#     policies and applies the reviewed permission-policy JSON files that
+#     live alongside this template.
+#   - Route 53 records. The ALB DNS name is an output; create the
+#     ALIAS records out-of-band.
+#   - ECR repositories. The release bridge creates them with immutable release
+#     tags (only the documented moving-channel tags are excluded); deployments
+#     consume verified manifest digests, never tags.
+#   - SES identity, configuration set, SNS topic. Lifecycle is
+#     domain-bound, not stack-bound; see ses-domain-setup.md.
+#
+# With those prerequisites supplied, this template deploys:
+#   - Private, KMS-encrypted uploads/assets and tenant-export storage
+#   - RDS Postgres (Multi-AZ, encrypted, deletion-protected)
+#   - ECS cluster, desired-zero service bootstrap, Cloud Map, and retained logs
+#   - ALB + target group + fail-closed listeners + WAF
+#   - Security groups (ALB <- internet, ECS <- ALB, RDS <- ECS)
+#
+# Deploy:
+#   aws cloudformation deploy \
+#     --template-file infra/aws/cloudformation/postwave-stack.yaml \
+#     --stack-name postwave-prod \
+#     --capabilities CAPABILITY_NAMED_IAM \
+#     --parameter-overrides DomainName=moosewave.com DeployApplicationServices=false \
+#     --region us-west-2
+#
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Moosewave production stack -- ECS Fargate API behind ALB, with RDS
+  Postgres, private object storage, and SES integration. Runtime services
+  bootstrap disabled until migrations and the canonical task are verified.
+
+# ---------------------------------------------------------------------
+# Parameters
+# ---------------------------------------------------------------------
+Parameters:
+  DeployApplicationServices:
+    Type: String
+    Default: "false"
+    AllowedValues: ["false", "true"]
+    Description: >
+      Bootstrap safety gate. Keep false until the one-shot migrator exits zero
+      and a canonical digest-pinned ApiTaskDefinitionArn has been registered.
+
+  ApiTaskDefinitionArn:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^arn:[A-Za-z0-9-]+:ecs:[A-Za-z0-9-]+:[0-9]{12}:task-definition/postwave-api:[1-9][0-9]*$"
+    Description: >
+      Canonical postwave-api task definition registered from
+      ecs-task-definition.json. Required when DeployApplicationServices=true.
+
+  DeployCampaignAssuranceService:
+    Type: String
+    Default: "false"
+    AllowedValues: ["false", "true"]
+    Description: >
+      Independent data-plane rollout gate. Enable only after the assurance
+      image, task definition, provider/OCR/scanner identities, versioned
+      buckets, KMS policies, migrations, and shadow probes are certified.
+
+  CampaignAssuranceTaskDefinitionArn:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^arn:[A-Za-z0-9-]+:ecs:[A-Za-z0-9-]+:[0-9]{12}:task-definition/postwave-campaign-assurance:[1-9][0-9]*$"
+    Description: >
+      Canonical digest-pinned data-plane task registered from
+      ecs-campaign-assurance-task-definition.json.
+
+  CampaignAssuranceTaskRoleArn:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^arn:[A-Za-z0-9-]+:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$"
+    Description: >
+      Dedicated runtime role carrying only the reviewed Campaign Assurance S3
+      and KMS policy. It must not carry Secrets Manager, SES, or application
+      service permissions.
+
+  CampaignAssuranceImageEvidenceBucketName:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+    Description: Globally unique private versioned bucket for OCR raster evidence.
+
+  CampaignAssuranceEvidenceKmsKeyArn:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^arn:[A-Za-z0-9-]+:kms:[A-Za-z0-9-]+:[0-9]{12}:key/[A-Za-z0-9-]+$"
+    Description: Dedicated immutable KMS key ARN for Campaign Assurance raster evidence.
+
+  DomainName:
+    Type: String
+    Default: moosewave.com
+    Description: Apex domain. Subdomains api/app/forms.<DomainName>.
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC the stack lands in. Must already exist with public + private subnets.
+
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Public subnets across at least two AZs (for the ALB).
+
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnets across at least two AZs (for ECS tasks + RDS).
+
+  CertificateArn:
+    Type: String
+    Description: ACM certificate ARN covering *.<DomainName> and <DomainName>.
+
+  SecretsManagerKmsKeyArn:
+    Type: String
+    Description: KMS CMK for Secrets Manager encryption. Pre-created.
+    AllowedPattern: "^arn:[A-Za-z0-9-]+:kms:[A-Za-z0-9-]+:[0-9]{12}:key/[A-Za-z0-9-]+$"
+
+  RdsKmsKeyArn:
+    Type: String
+    Description: KMS CMK for RDS storage encryption. Pre-created, separate from secrets-manager key.
+    AllowedPattern: "^arn:[A-Za-z0-9-]+:kms:[A-Za-z0-9-]+:[0-9]{12}:key/[A-Za-z0-9-]+$"
+
+  TaskRoleArn:
+    Type: String
+    Description: >
+      Pre-created IAM role with iam-policy-ecs-task-role.json attached.
+      We don't define it inline so its permissions can be reviewed +
+      rotated independently of stack updates.
+
+  S3KmsKeyArn:
+    Type: String
+    Description: KMS CMK ARN for the private uploads/assets and tenant-export buckets.
+    AllowedPattern: "^arn:[A-Za-z0-9-]+:kms:[A-Za-z0-9-]+:[0-9]{12}:key/[A-Za-z0-9-]+$"
+
+  UploadsBucketName:
+    Type: String
+    Description: Globally unique private bucket name for form uploads and assets.
+    AllowedPattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+
+  ExportsBucketName:
+    Type: String
+    Description: Globally unique private bucket name for tenant export ZIPs; never attach a public CDN origin.
+    AllowedPattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+
+  AlbAccessLogsBucketName:
+    Type: String
+    Description: Pre-created private S3 bucket authorized for ALB access logs.
+    AllowedPattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+
+  DBInstanceClass:
+    Type: String
+    Default: db.t4g.medium
+    Description: >
+      Starter sizing. Upsize to db.r6g.large once auth_sessions row count
+      passes ~100k or query latency degrades.
+    AllowedValues:
+      - db.t4g.medium
+      - db.t4g.large
+      - db.r6g.large
+      - db.r6g.xlarge
+
+  PostgresEngineVersion:
+    Type: String
+    AllowedPattern: '^16\.[0-9]+$'
+    Description: Exact RDS PostgreSQL 16 minor available in the target region.
+
+  DBAllocatedStorage:
+    Type: Number
+    Default: 100
+    Description: GB. gp3 grows in place; start small.
+
+Rules:
+  ApplicationRolloutRequiresCanonicalTask:
+    RuleCondition: !Equals [!Ref DeployApplicationServices, "true"]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref ApiTaskDefinitionArn, ""]]
+        AssertDescription: >
+          DeployApplicationServices=true requires the canonical post-migration
+          postwave-api task-definition ARN.
+  CampaignAssuranceRolloutRequiresCertifiedInputs:
+    RuleCondition: !Equals [!Ref DeployCampaignAssuranceService, "true"]
+    Assertions:
+      - Assert: !Equals [!Ref DeployApplicationServices, "true"]
+        AssertDescription: Campaign Assurance cannot run before application services are enabled.
+      - Assert: !Not [!Equals [!Ref CampaignAssuranceTaskDefinitionArn, ""]]
+        AssertDescription: Campaign Assurance rollout requires its canonical task-definition ARN.
+      - Assert: !Not [!Equals [!Ref CampaignAssuranceTaskRoleArn, ""]]
+        AssertDescription: Campaign Assurance rollout requires its dedicated least-privilege task role.
+      - Assert: !Not [!Equals [!Ref CampaignAssuranceImageEvidenceBucketName, ""]]
+        AssertDescription: Campaign Assurance rollout requires a dedicated image-evidence bucket name.
+      - Assert: !Not [!Equals [!Ref CampaignAssuranceEvidenceKmsKeyArn, ""]]
+        AssertDescription: Campaign Assurance rollout requires a dedicated exact evidence KMS key ARN.
+
+Conditions:
+  ApplicationServicesEnabled: !Equals [!Ref DeployApplicationServices, "true"]
+  CampaignAssuranceEnabled: !And
+    - !Condition ApplicationServicesEnabled
+    - !Equals [!Ref DeployCampaignAssuranceService, "true"]
+
+# ---------------------------------------------------------------------
+# Resources
+# ---------------------------------------------------------------------
+Resources:
+  # -------------------------------------------------------------------
+  # Security groups
+  # -------------------------------------------------------------------
+  # Layered: ALB takes traffic from the internet on 443 only. ECS tasks
+  # accept traffic only from the ALB security group. RDS accepts traffic
+  # only from the ECS security group. Three SGs, three boundaries.
+  # -------------------------------------------------------------------
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: ALB ingress -- internet:443 only.
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS from internet
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP for redirect-to-HTTPS only
+
+  EcsTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: postwave-api ECS tasks -- accept traffic from ALB SG only.
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          Description: API port from ALB
+
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: postwave-prod RDS -- accept traffic from ECS task SG only.
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EcsTaskSecurityGroup
+          Description: Postgres from ECS tasks
+
+  CampaignAssuranceTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CampaignAssuranceEnabled
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: Campaign Assurance data plane -- no inbound network listeners.
+
+  CampaignAssuranceRdsIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CampaignAssuranceEnabled
+    Properties:
+      GroupId: !Ref RdsSecurityGroup
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref CampaignAssuranceTaskSecurityGroup
+      Description: Postgres only from the isolated Campaign Assurance task.
+
+  # Private durable object storage shared by form uploads and the asset
+  # library. Application keys remain namespaced (tenants/... and assets/...).
+  # Public access is blocked; browsers use signed form-upload URLs and asset
+  # reads are streamed through the authenticated API.
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref UploadsBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref S3KmsKeyArn
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: ExpireNoncurrentVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 7
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET, HEAD, PUT]
+            AllowedOrigins:
+              - !Sub "https://app.${DomainName}"
+              - !Sub "https://forms.${DomainName}"
+            ExposedHeaders: [ETag]
+            MaxAge: 3000
+
+  UploadsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UploadsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowTaskRoleBucketMetadata
+            Effect: Allow
+            Principal:
+              AWS: !Ref TaskRoleArn
+            Action:
+              - s3:GetBucketLocation
+              - s3:ListBucket
+            Resource: !GetAtt UploadsBucket.Arn
+          - Sid: AllowTaskRoleEncryptedObjects
+            Effect: Allow
+            Principal:
+              AWS: !Ref TaskRoleArn
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:AbortMultipartUpload
+            Resource: !Sub "${UploadsBucket.Arn}/*"
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt UploadsBucket.Arn
+              - !Sub "${UploadsBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: DenyUnencryptedObjectWrites
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub "${UploadsBucket.Arn}/*"
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyWrongKmsKey
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub "${UploadsBucket.Arn}/*"
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Ref S3KmsKeyArn
+
+  # Tenant portability exports contain a workspace's complete dataset. Keep
+  # them in a separate private bucket with no CORS or public delivery origin,
+  # so application expiry can actually revoke access. Versioning is omitted on
+  # purpose: the retention worker's delete must not leave a recoverable
+  # non-current copy beyond the tenant's configured deadline.
+  ExportsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref ExportsBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref S3KmsKeyArn
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+          # Application retention is authoritative and normally deletes much
+          # sooner. This maximum-policy-plus-one-day backstop removes an
+          # unreferenced attempt object even if a worker dies after upload and
+          # before its fenced database transition can be reconciled.
+          - Id: ExpireOrphanedExportAttempts
+            Status: Enabled
+            Prefix: tenant-exports/
+            ExpirationInDays: 2556
+
+  ExportsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ExportsBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowTaskRoleBucketMetadata
+            Effect: Allow
+            Principal:
+              AWS: !Ref TaskRoleArn
+            Action:
+              - s3:GetBucketLocation
+              - s3:ListBucket
+            Resource: !GetAtt ExportsBucket.Arn
+          - Sid: AllowTaskRoleEncryptedObjects
+            Effect: Allow
+            Principal:
+              AWS: !Ref TaskRoleArn
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:AbortMultipartUpload
+            Resource: !Sub "${ExportsBucket.Arn}/*"
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt ExportsBucket.Arn
+              - !Sub "${ExportsBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: DenyUnencryptedObjectWrites
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub "${ExportsBucket.Arn}/*"
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyWrongKmsKey
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub "${ExportsBucket.Arn}/*"
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Ref S3KmsKeyArn
+
+  CampaignAssuranceImageEvidenceBucket:
+    Type: AWS::S3::Bucket
+    Condition: CampaignAssuranceEnabled
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    # CampaignAssuranceEvidenceKmsKeyArn is deliberately optional while the
+    # entire resource is conditionally disabled. The matching template Rule
+    # requires a concrete key ARN whenever CampaignAssuranceEnabled is true;
+    # cfn-lint cannot carry that cross-field implication into W1030's scalar
+    # property check, so suppress only that false positive on this resource.
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W1030
+    Properties:
+      BucketName: !Ref CampaignAssuranceImageEvidenceBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref CampaignAssuranceEvidenceKmsKeyArn
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+          - Id: ExpireAbandonedNoncurrentEvidence
+            Status: Enabled
+            Prefix: campaign-assurance/image-evidence/v1/
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 45
+            ExpiredObjectDeleteMarker: true
+
+  CampaignAssuranceImageEvidenceBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: CampaignAssuranceEnabled
+    Properties:
+      Bucket: !Ref CampaignAssuranceImageEvidenceBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowAssuranceBucketReadiness
+            Effect: Allow
+            Principal:
+              AWS: !Ref CampaignAssuranceTaskRoleArn
+            Action:
+              - s3:GetBucketVersioning
+            Resource: !GetAtt CampaignAssuranceImageEvidenceBucket.Arn
+          - Sid: AllowAssuranceExactVersionEvidence
+            Effect: Allow
+            Principal:
+              AWS: !Ref CampaignAssuranceTaskRoleArn
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:DeleteObjectVersion
+            Resource: !Sub "${CampaignAssuranceImageEvidenceBucket.Arn}/campaign-assurance/image-evidence/v1/tenants/*"
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt CampaignAssuranceImageEvidenceBucket.Arn
+              - !Sub "${CampaignAssuranceImageEvidenceBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: DenyUnencryptedObjectWrites
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub "${CampaignAssuranceImageEvidenceBucket.Arn}/*"
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyWrongKmsKey
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource: !Sub "${CampaignAssuranceImageEvidenceBucket.Arn}/*"
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Ref CampaignAssuranceEvidenceKmsKeyArn
+
+  # -------------------------------------------------------------------
+  # Secrets Manager values are created exactly once by the bootstrap runbook.
+  # -------------------------------------------------------------------
+  # This stack consumes their ARNs as parameters and never attempts to create
+  # duplicate named secrets.
+  # -------------------------------------------------------------------
+
+  # -------------------------------------------------------------------
+  # RDS
+  # -------------------------------------------------------------------
+
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: postwave-prod private subnets
+      SubnetIds: !Ref PrivateSubnetIds
+
+  DbInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: postwave-prod
+      DBInstanceClass: !Ref DBInstanceClass
+      Engine: postgres
+      EngineVersion: !Ref PostgresEngineVersion
+      DBName: postwave
+      AllocatedStorage: !Ref DBAllocatedStorage
+      MaxAllocatedStorage: 1000
+      StorageType: gp3
+      StorageEncrypted: true
+      KmsKeyId: !Ref RdsKmsKeyArn
+      MasterUsername: postgres
+      ManageMasterUserPassword: true
+      MasterUserSecret:
+        KmsKeyId: !Ref SecretsManagerKmsKeyArn
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RdsSecurityGroup
+      MultiAZ: true
+      PubliclyAccessible: false
+      AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod: 14
+      DeleteAutomatedBackups: false
+      PreferredBackupWindow: "08:00-09:00"
+      PreferredMaintenanceWindow: "sun:09:30-sun:10:30"
+      EnableIAMDatabaseAuthentication: true
+      DeletionProtection: true
+      CopyTagsToSnapshot: true
+      EnablePerformanceInsights: true
+      PerformanceInsightsRetentionPeriod: 7
+      PerformanceInsightsKMSKeyId: !Ref RdsKmsKeyArn
+      EnableCloudwatchLogsExports:
+        - postgresql
+        - upgrade
+
+  # -------------------------------------------------------------------
+  # ECS cluster, task definition, service
+  # -------------------------------------------------------------------
+
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: postwave-prod
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-api
+      RetentionInDays: 90
+
+  DbMigratorLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-db-migrator
+      RetentionInDays: 90
+
+  CampaignAssuranceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: CampaignAssuranceEnabled
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /ecs/postwave-campaign-assurance
+      RetentionInDays: 90
+
+  ServiceDiscoveryNamespace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: postwave.internal
+      Description: Private DNS namespace for Moosewave ECS services.
+      Vpc: !Ref VpcId
+
+  ApiDiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: api
+      Description: Private service-discovery record for the Moosewave API.
+      DnsConfig:
+        NamespaceId: !Ref ServiceDiscoveryNamespace
+        RoutingPolicy: MULTIVALUE
+        DnsRecords:
+          - Type: A
+            TTL: 10
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+
+  ApiTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: tg-postwave-api
+      VpcId: !Ref VpcId
+      Protocol: HTTP
+      Port: 8080
+      TargetType: ip
+      HealthCheckPath: /api/ready
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: "200"
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+        - Key: stickiness.enabled
+          Value: "false"
+
+  ApiService:
+    Type: AWS::ECS::Service
+    Condition: ApplicationServicesEnabled
+    DependsOn: HttpsListener
+    Properties:
+      Cluster: !Ref EcsCluster
+      ServiceName: postwave-api
+      TaskDefinition: !Ref ApiTaskDefinitionArn
+      DesiredCount: 2
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref EcsTaskSecurityGroup
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: postwave-api
+          ContainerPort: 8080
+          TargetGroupArn: !Ref ApiTargetGroup
+      ServiceRegistries:
+        - RegistryArn: !GetAtt ApiDiscoveryService.Arn
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+  CampaignAssuranceService:
+    Type: AWS::ECS::Service
+    Condition: CampaignAssuranceEnabled
+    DependsOn:
+      - CampaignAssuranceLogGroup
+      - CampaignAssuranceRdsIngress
+      - CampaignAssuranceImageEvidenceBucketPolicy
+    Properties:
+      Cluster: !Ref EcsCluster
+      ServiceName: postwave-campaign-assurance
+      TaskDefinition: !Ref CampaignAssuranceTaskDefinitionArn
+      DesiredCount: 2
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups:
+            - !Ref CampaignAssuranceTaskSecurityGroup
+          AssignPublicIp: DISABLED
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      EnableExecuteCommand: false
+      PropagateTags: SERVICE
+      Tags:
+        - Key: WorkloadBoundary
+          Value: campaign-assurance-data-plane
+
+  # -------------------------------------------------------------------
+  # ALB
+  # -------------------------------------------------------------------
+
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: postwave-prod-alb
+      Scheme: internet-facing
+      Type: application
+      Subnets: !Ref PublicSubnetIds
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      LoadBalancerAttributes:
+        # The campaign-progress SSE stream (GET /api/v1/campaigns/{id}/stream)
+        # is long-lived and can have gaps between events longer than the ALB
+        # default 60s idle window — the connection was being truncated
+        # mid-stream. Raise to the ALB maximum so the stream lives as long as
+        # the send does (the app still sends its own keepalives).
+        - Key: idle_timeout.timeout_seconds
+          Value: "4000"
+        - Key: routing.http2.enabled
+          Value: "true"
+        # Reject malformed/ambiguous request headers at the public ingress
+        # before they can reach an application parser or intermediary.
+        - Key: routing.http.drop_invalid_header_fields.enabled
+          Value: "true"
+        - Key: deletion_protection.enabled
+          Value: "true"
+        - Key: access_logs.s3.enabled
+          Value: "true"
+        - Key: access_logs.s3.bucket
+          Value: !Ref AlbAccessLogsBucketName
+        - Key: access_logs.s3.prefix
+          Value: alb
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: "443"
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: HTTP_301
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref Alb
+      Protocol: HTTPS
+      Port: 443
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: "404"
+            ContentType: text/plain
+            MessageBody: unknown host
+
+  # API-backed public hosts. Unknown hosts fail closed at the listener default;
+  # the separate web stack owns app.<DomainName> and its own target group.
+
+  ApiHostListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !Ref HttpsListener
+      Priority: 100
+      Conditions:
+        - Field: host-header
+          Values:
+            - !Sub "api.${DomainName}"
+            - !Sub "forms.${DomainName}"
+            - !Sub "archive.${DomainName}"
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ApiTargetGroup
+
+  # WAF web ACL for the public ALB (previously documented in
+  # alb-listener-rules.md but never declared). REGIONAL scope is required for
+  # an ALB association. DefaultAction Allow + AWS managed rule groups for the
+  # OWASP-common + known-bad-input signatures, plus a per-IP rate limit. The
+  # managed groups run in count-or-block per their own defaults; we block.
+  WebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: postwave-prod-alb-waf
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: postwave-prod-alb-waf
+      Rules:
+        - Name: AWSCommonRuleSet
+          Priority: 0
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: common-rule-set
+        - Name: AWSKnownBadInputs
+          Priority: 1
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: known-bad-inputs
+        - Name: RateLimitPerIp
+          Priority: 2
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              # 3000 requests / 5-minute window per source IP. Generous enough
+              # for legitimate SDK/dashboard bursts; throttles scrapers/abuse.
+              Limit: 3000
+              AggregateKeyType: IP
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: rate-limit-per-ip
+
+  WebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref Alb
+      WebACLArn: !GetAtt WebAcl.Arn
+
+# ---------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------
+Outputs:
+  AlbDnsName:
+    Description: ALB DNS name -- create Route 53 ALIAS record api.<DomainName> pointing here.
+    Value: !GetAtt Alb.DNSName
+    Export:
+      Name: !Sub "${AWS::StackName}-AlbDnsName"
+
+  AlbHostedZoneId:
+    Description: ALB hosted zone ID for Route 53 ALIAS records.
+    Value: !GetAtt Alb.CanonicalHostedZoneID
+    Export:
+      Name: !Sub "${AWS::StackName}-AlbHostedZoneId"
+
+  RdsEndpoint:
+    Description: RDS Postgres endpoint hostname. Plug into the postwave/prod/db-dsn secret.
+    Value: !GetAtt DbInstance.Endpoint.Address
+    Export:
+      Name: !Sub "${AWS::StackName}-RdsEndpoint"
+
+  RdsPort:
+    Value: !GetAtt DbInstance.Endpoint.Port
+
+  EcsClusterName:
+    Value: !Ref EcsCluster
+
+  EcsServiceName:
+    Value: !If [ApplicationServicesEnabled, !Ref ApiService, ""]
+
+  CampaignAssuranceServiceName:
+    Value: !If [CampaignAssuranceEnabled, !Ref CampaignAssuranceService, ""]
+
+  EcsTaskSecurityGroupId:
+    Description: Security group for one-shot private ECS tasks such as the database migrator.
+    Value: !Ref EcsTaskSecurityGroup
+
+  RdsSecurityGroupId:
+    Description: Security group for the production RDS instance.
+    Value: !Ref RdsSecurityGroup
+
+  CampaignAssuranceTaskSecurityGroupId:
+    Value: !If [CampaignAssuranceEnabled, !Ref CampaignAssuranceTaskSecurityGroup, ""]
+
+  UploadsBucketName:
+    Description: Private KMS-encrypted uploads/assets bucket.
+    Value: !Ref UploadsBucket
+
+  UploadsBucketArn:
+    Description: ARN of the private uploads/assets bucket.
+    Value: !GetAtt UploadsBucket.Arn
+
+  ExportsBucketName:
+    Description: Private KMS-encrypted tenant-export bucket; never attach a CDN origin.
+    Value: !Ref ExportsBucket
+
+  ExportsBucketArn:
+    Description: ARN of the private tenant-export bucket.
+    Value: !GetAtt ExportsBucket.Arn
+
+  CampaignAssuranceImageEvidenceBucketName:
+    Value: !If [CampaignAssuranceEnabled, !Ref CampaignAssuranceImageEvidenceBucket, ""]
+
+  CampaignAssuranceImageEvidenceBucketArn:
+    Value: !If [CampaignAssuranceEnabled, !GetAtt CampaignAssuranceImageEvidenceBucket.Arn, ""]
+
+  ServiceDiscoveryNamespaceId:
+    Description: Cloud Map namespace ID consumed by the sidecar stack.
+    Value: !Ref ServiceDiscoveryNamespace
+
+  ServiceDiscoveryNamespaceName:
+    Description: Private Cloud Map namespace name.
+    Value: postwave.internal
+
+  ApiTargetGroupArn:
+    Value: !Ref ApiTargetGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiTargetGroupArn"
+
+  LoadBalancerFullName:
+    Description: CloudWatch ApplicationELB LoadBalancer dimension.
+    Value: !GetAtt Alb.LoadBalancerFullName
+    Export:
+      Name: !Sub "${AWS::StackName}-LoadBalancerFullName"
+
+  ApiTargetGroupFullName:
+    Description: CloudWatch ApplicationELB TargetGroup dimension.
+    Value: !GetAtt ApiTargetGroup.TargetGroupFullName
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiTargetGroupFullName"

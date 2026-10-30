@@ -1,0 +1,312 @@
+{
+  "items": [
+    {
+      "key": "campaign.sent",
+      "label": "Campaign sent",
+      "product_area": "campaign",
+      "source": "campaign_report_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "campaign_id",
+        "channel"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "campaign.delivered",
+      "label": "Campaign delivered",
+      "product_area": "campaign",
+      "source": "campaign_report_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "campaign_id",
+        "channel"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "campaign.opened",
+      "label": "Campaign opens",
+      "product_area": "campaign",
+      "source": "campaign_report_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "campaign_id",
+        "channel"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "campaign.clicked",
+      "label": "Campaign clicks",
+      "product_area": "campaign",
+      "source": "campaign_report_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "campaign_id",
+        "channel"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "campaign.bounced",
+      "label": "Campaign bounces",
+      "product_area": "deliverability",
+      "source": "campaign_report_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "campaign_id"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "campaign.unsubscribed",
+      "label": "Campaign unsubscribes",
+      "product_area": "campaign",
+      "source": "campaign_report_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "campaign_id"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "campaign.delivery_rate",
+      "label": "Delivery rate",
+      "product_area": "deliverability",
+      "source": "",
+      "aggregation": "ratio",
+      "value_type": "rate",
+      "runtime_status": "supported",
+      "computation": "ratio",
+      "numerator": "campaign.delivered",
+      "denominator": "campaign.sent"
+    },
+    {
+      "key": "campaign.open_rate",
+      "label": "Open rate",
+      "product_area": "campaign",
+      "source": "",
+      "aggregation": "ratio",
+      "value_type": "rate",
+      "runtime_status": "supported",
+      "computation": "ratio",
+      "numerator": "campaign.opened",
+      "denominator": "campaign.delivered"
+    },
+    {
+      "key": "campaign.click_rate",
+      "label": "Click rate",
+      "product_area": "campaign",
+      "source": "",
+      "aggregation": "ratio",
+      "value_type": "rate",
+      "runtime_status": "supported",
+      "computation": "ratio",
+      "numerator": "campaign.clicked",
+      "denominator": "campaign.delivered"
+    },
+    {
+      "key": "campaign.click_to_open_rate",
+      "label": "Click-to-open rate",
+      "product_area": "campaign",
+      "source": "",
+      "aggregation": "ratio",
+      "value_type": "rate",
+      "runtime_status": "supported",
+      "computation": "ratio",
+      "numerator": "campaign.clicked",
+      "denominator": "campaign.opened"
+    },
+    {
+      "key": "campaign.bounce_rate",
+      "label": "Bounce rate",
+      "product_area": "deliverability",
+      "source": "",
+      "aggregation": "ratio",
+      "value_type": "rate",
+      "runtime_status": "supported",
+      "computation": "ratio",
+      "numerator": "campaign.bounced",
+      "denominator": "campaign.sent"
+    },
+    {
+      "key": "campaign.unsubscribe_rate",
+      "label": "Unsubscribe rate",
+      "product_area": "campaign",
+      "source": "",
+      "aggregation": "ratio",
+      "value_type": "rate",
+      "runtime_status": "supported",
+      "computation": "ratio",
+      "numerator": "campaign.unsubscribed",
+      "denominator": "campaign.delivered"
+    },
+    {
+      "key": "form.submitted",
+      "label": "Form submissions",
+      "product_area": "form",
+      "source": "form_submissions",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "form_id",
+        "status"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "form.confirmed",
+      "label": "Confirmed form submissions",
+      "product_area": "form",
+      "source": "form_submissions",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "form_id"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "form.confirmation_rate",
+      "label": "Form confirmation rate",
+      "product_area": "form",
+      "source": "",
+      "aggregation": "ratio",
+      "value_type": "rate",
+      "runtime_status": "supported",
+      "computation": "ratio",
+      "numerator": "form.confirmed",
+      "denominator": "form.submitted"
+    },
+    {
+      "key": "onsite.view",
+      "label": "Onsite views",
+      "product_area": "onsite",
+      "source": "growth_surface_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "surface_type"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "onsite.conversion",
+      "label": "Onsite conversions",
+      "product_area": "onsite",
+      "source": "growth_surface_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "surface_type"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "flow.executions",
+      "label": "Flow executions",
+      "product_area": "flow",
+      "source": "automation_journey_executions",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "flow_id"
+      ],
+      "runtime_status": "partial"
+    },
+    {
+      "key": "commerce.product_events",
+      "label": "Commerce product events",
+      "product_area": "commerce",
+      "source": "product_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "event_name"
+      ],
+      "runtime_status": "supported"
+    },
+    {
+      "key": "deliverability.provider_breakdown",
+      "label": "Provider breakdown",
+      "product_area": "deliverability",
+      "source": "subscriber_events",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day",
+        "provider",
+        "campaign_id"
+      ],
+      "runtime_status": "planned"
+    },
+    {
+      "key": "sms.conversations",
+      "label": "SMS conversations",
+      "product_area": "sms",
+      "source": "sms_conversations",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day"
+      ],
+      "runtime_status": "planned"
+    },
+    {
+      "key": "push.sent",
+      "label": "Push sent",
+      "product_area": "push",
+      "source": "mobile_push",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day"
+      ],
+      "runtime_status": "planned"
+    },
+    {
+      "key": "reviews.submitted",
+      "label": "Reviews submitted",
+      "product_area": "reviews",
+      "source": "product_reviews",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day"
+      ],
+      "runtime_status": "planned"
+    },
+    {
+      "key": "helpdesk.tickets",
+      "label": "Helpdesk tickets",
+      "product_area": "helpdesk",
+      "source": "support_tickets",
+      "aggregation": "count",
+      "value_type": "number",
+      "dimensions": [
+        "day"
+      ],
+      "runtime_status": "planned"
+    }
+  ],
+  "schema_version": "klv12.reporting.v1"
+}

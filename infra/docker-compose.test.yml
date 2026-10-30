@@ -1,0 +1,109 @@
+# Moosewave end-to-end test stack.
+#
+# Purpose: this compose file is the "real e2e" target — it brings up the
+# full product surface (api + web + postgres + redis + listmonk) PLUS
+# a Mailpit container that captures all outbound SMTP so the Playwright
+# golden-path journeys (signup → email confirm → first login, campaign
+# send, public archive subscribe round-trip) can verify delivery without
+# touching a real ESP.
+#
+# How it differs from docker-compose.full.yml:
+#   - Adds a `mailpit` container (https://mailpit.axllent.org) listening
+#     on SMTP :1025 and HTTP :8025 (REST API at /api/v1).
+#   - Wires the api + listmonk containers to point their SMTP at mailpit
+#     so every transactional/broadcast send is captured.
+#   - Sets POSTWAVE_DEV_TRANSACTIONAL_SINK=0 so the api actually issues
+#     SMTP rather than no-oping the send (the dev sink mode short-circuits
+#     delivery for fast iteration, which would defeat the purpose here).
+#   - Disables POSTWAVE_LOCAL_AUTH_BYPASS so the signup journey exercises
+#     the real auth path end-to-end.
+#
+# Usage from repo root:
+#   docker compose \
+#     -f infra/docker-compose.yml \
+#     -f infra/docker-compose.full.yml \
+#     -f infra/docker-compose.test.yml \
+#     up -d --build
+#
+# Then point the Playwright config at the stack:
+#   cd tests/e2e/playwright
+#   pnpm install
+#   pnpm test
+#
+# Tear down with:
+#   docker compose \
+#     -f infra/docker-compose.yml \
+#     -f infra/docker-compose.full.yml \
+#     -f infra/docker-compose.test.yml \
+#     down --volumes --remove-orphans
+
+services:
+  # Mailpit is a single-binary SMTP + HTTP UI mail catcher. It accepts any
+  # auth and stores every message in memory; the REST API at /api/v1
+  # is what the Playwright tests poll to assert delivery.
+  mailpit:
+    image: axllent/mailpit:v1.20
+    container_name: postwave-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # HTTP UI + REST API
+    environment:
+      MP_MAX_MESSAGES: "5000"
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8025/readyz >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - default
+
+  # Re-declare api so we can override env vars without losing the build
+  # config from docker-compose.full.yml. Compose merges by service name.
+  api:
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    environment:
+      # Turn OFF the dev sink so transactional sends actually leave the
+      # api container and land in mailpit.
+      POSTWAVE_DEV_TRANSACTIONAL_SINK: "0"
+      # Point the SMTP transport at mailpit. The api reads these to
+      # configure its outbound mailer (see apps/api/internal/mailer).
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+      SMTP_TLS: "false"
+      SMTP_FROM_ADDRESS: "no-reply@e2e.postwave.local"
+      SMTP_FROM_NAME: "Moosewave E2E"
+      # Keep dev tenant headers on — Playwright public-archive flows hit
+      # /api/v1/archive/* without a session, but admin assertions still
+      # need the header bypass.
+      POSTWAVE_DEV_TENANT_SLUG_HEADER: "1"
+      POSTWAVE_DEV_ADMIN_ROLE_HEADER: "1"
+      # Auth bypass OFF — signup journey must exercise the real path.
+      POSTWAVE_LOCAL_AUTH_BYPASS: "0"
+
+  # Listmonk also gets re-pointed at mailpit so campaign sends are caught.
+  listmonk:
+    environment:
+      LISTMONK_smtp__0__enabled: "true"
+      LISTMONK_smtp__0__host: mailpit
+      LISTMONK_smtp__0__port: "1025"
+      LISTMONK_smtp__0__auth_protocol: "none"
+      LISTMONK_smtp__0__tls_type: "none"
+      LISTMONK_smtp__0__email_headers: '[]'
+      LISTMONK_smtp__0__max_conns: "5"
+      LISTMONK_smtp__0__idle_timeout: "30s"
+      LISTMONK_smtp__0__wait_timeout: "5s"
+      LISTMONK_smtp__0__send_timeout: "10s"
+
+  # Web likewise loses the auth bypass for the public archive / subscribe
+  # round-trip tests.
+  web:
+    environment:
+      POSTWAVE_LOCAL_AUTH_BYPASS: "0"
+      NEXT_PUBLIC_E2E_MODE: "1"

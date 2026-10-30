@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "audience": "mobile",
+  "cases": [
+    {
+      "source": "magic_email",
+      "flow": "magic",
+      "token": "magic-token",
+      "state": "desktop_magic_123456",
+      "signature": "HgYTcBCugr1eUp-udWKsvvBxIpr2smXwmmHyGFSkm1g",
+      "native_url": "moosewave://auth/magic?token=magic-token&v=1&flow=magic&aud=mobile&state=desktop_magic_123456&sig=HgYTcBCugr1eUp-udWKsvvBxIpr2smXwmmHyGFSkm1g"
+    },
+    {
+      "source": "oauth_callback",
+      "flow": "magic",
+      "token": "oauth-magic-token",
+      "state": "desktop_oauth_123456",
+      "signature": "kBvqOZN_r5GAgMCvuM_0_LxUoqjQHXn51vtJWB2kC4w",
+      "native_url": "moosewave://auth/magic?token=oauth-magic-token&v=1&flow=magic&aud=mobile&state=desktop_oauth_123456&sig=kBvqOZN_r5GAgMCvuM_0_LxUoqjQHXn51vtJWB2kC4w"
+    },
+    {
+      "source": "password_reset",
+      "flow": "reset",
+      "token": "reset-token",
+      "state": "desktop_reset_123456",
+      "signature": "InyoqsmDwycUKqLOaH-aD5pd5472uHSwWnc__jbw4kE",
+      "native_url": "moosewave://auth/reset?token=reset-token&v=1&flow=reset&aud=mobile&state=desktop_reset_123456&sig=InyoqsmDwycUKqLOaH-aD5pd5472uHSwWnc__jbw4kE"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+---
+title: SMS
+---
+
+import { Callout } from 'nextra/components';
+
+# SMS
+
+Moosewave contains SMS source, draft, consent, suppression, and bounded inbox
+presentation surfaces. That source inventory is not a hosted-provider availability
+claim.
+
+<Callout type="warning">
+**HOLD / NO-GO.** Do not configure customer traffic or provider credentials.
+Reply, test, campaign, and broadcast dispatch; scheduling; A2P submit/poll;
+hosted provider callbacks and tracked-click resolution; financial/MMS evidence;
+and outbound auto-replies are structurally release-held. A configured-looking
+sender, consent record, draft, or inbox row does not override those holds.
+</Callout>
+
+## Current presentation planes
+
+| Plane   | Current bounded surface | This does not prove |
+| ------- | ----------------------- | ------------------- |
+| Desktop | Exact-admin conversation pages, retained message records, context, manual/system suppression authority, and draft broadcast presentation. | Complete provider history, device delivery, current consent authority, or permission to dispatch. |
+| Web     | Route-specific sender/draft, consent, suppression, and configuration records where the protected endpoint is released. | Provider ownership, A2P approval, live callbacks, complete reports, cost, or MMS readiness. |
+| Mobile  | Role-bound, tenant-bound conversation and policy presentation with confidential-state teardown. | Offline-complete history, a carrier receipt, or a released send path. |
+
+Phone selection and message search are sensitive content. Clients must not put
+raw search text in durable URL/history state, telemetry, console output, or
+offline queues. A generic inbox notification destination carries neither a
+phone number nor a message body.
+
+## Structural hold vocabulary
+
+| Effect family | Current result |
+| ------------- | -------------- |
+| Existing-thread reply | `sms_reply_dispatch_release_held` |
+| Broadcast dispatch | `sms_broadcast_dispatch_release_held` |
+| Campaign dispatch / schedule | `sms_campaign_dispatch_release_held` / `sms_campaign_schedule_release_held` |
+| One-recipient test | `sms_test_dispatch_release_held` |
+| A2P brand/campaign submit and poll | `sms_a2p_registration_release_held` |
+| Registration evidence mutation | `sms_registration_evidence_authority_required` |
+| HELP/custom outbound auto-reply | `sms_auto_reply_dispatch_release_held` |
+| Hosted provider callback | `sms_provider_callback_release_held` |
+| Tracked-click redirect | `sms_click_resolver_release_held` |
+| Balance, usage, top-up, cost preview | `sms_financial_ledger_release_held` |
+| MMS readiness | `sms_mms_readiness_release_held` |
+| Private campaign report/export evidence | `sms_evidence_read_release_held` |
+
+These codes describe the current source boundary. They are not deployment
+evidence: the same private, no-store response must be independently verified in
+the promoted build before customer traffic is considered.
+
+## Records that remain useful while held
+
+- [**Two-way inbox**](/sms/inbox) documents bounded retained records and exact
+  read boundaries; reply remains held.
+- [**Broadcasts & campaigns**](/sms/broadcasts) documents draft modeling and
+  unavailable effects; it is not a send guide.
+- [**A2P / 10DLC**](/sms/a2p-10dlc) documents the draft/provider boundary;
+  Moosewave submit and poll are held.
+- [**Compliance**](/sms/compliance) documents evidence and suppression
+  authority; it is not legal certification.
+- [**Credits & billing**](/sms/credits) records why financial claims remain
+  unavailable without an authoritative ledger.
+
+## Provider and deployment boundary
+
+Twilio, Telnyx, and Bandwidth names and sender fields exist in source. Hosted
+operation still requires tenant-owned credential-vault resolution, exact
+provider-account ownership, canonical production configuration, applied and
+rehearsed migrations, public-edge callback safety, durable reconciliation, and
+manual provider acceptance. Process-global provider credentials are not an
+acceptable multi-tenant hosted topology.
+
+## See also
+
+- [Campaigns API](/api-reference/campaigns) — the separate email surface.

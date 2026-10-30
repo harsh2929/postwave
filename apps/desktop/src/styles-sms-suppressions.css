@@ -1,0 +1,475 @@
+/* Route-scoped layout for the private SMS authority and adjacent stored policy
+   tools. Keep the registry visually primary and let every control reflow without
+   horizontal document scrolling at desktop-shell minimum widths. */
+.sms-suppressions-route {
+  display: grid;
+  min-width: 0;
+  gap: 24px;
+}
+
+.sms-suppression-masthead,
+.sms-suppression-registry,
+.sms-suppression-secondary-section,
+.sms-suppression-card-stack,
+.sms-suppression-tools-grid {
+  min-width: 0;
+}
+
+.sms-suppression-masthead {
+  align-items: start;
+  margin: 0;
+}
+
+.sms-suppression-assurances,
+.sms-suppression-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sms-suppression-registry,
+.sms-suppression-secondary-section {
+  padding: clamp(16px, 2.4vw, 24px);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg, 12px);
+  background: var(--pw-bg-elev);
+}
+
+.sms-suppression-registry {
+  border-top: 3px solid var(--pw-accent);
+}
+
+.sms-suppression-secondary-section {
+  background: color-mix(in srgb, var(--pw-bg-elev) 76%, var(--pw-bg));
+}
+
+.sms-suppression-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.sms-suppression-section-heading > div {
+  min-width: 0;
+}
+
+.sms-suppression-section-heading h2 {
+  margin: 0;
+  color: var(--pw-fg);
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+}
+
+.sms-suppression-section-heading p {
+  max-width: 72ch;
+  margin: 6px 0 0;
+  color: var(--pw-fg-muted);
+  line-height: 1.55;
+}
+
+.sms-suppression-sensitivity {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--pw-border-strong, var(--pw-border));
+  border-radius: 999px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sms-suppression-toolbar {
+  display: grid;
+  grid-template-columns: minmax(210px, 310px) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.sms-suppression-search {
+  min-width: 0;
+}
+
+.sms-suppression-refresh {
+  white-space: nowrap;
+}
+
+.sms-suppression-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sms-suppression-list {
+  min-width: 0;
+}
+
+.sms-suppression-list .list-row {
+  cursor: default;
+}
+
+.sms-suppression-list-header,
+.sms-suppression-row {
+  align-items: center;
+  gap: 12px;
+}
+
+.sms-suppression-row > [role="cell"] {
+  min-width: 0;
+}
+
+.sms-suppression-phone,
+.sms-suppression-date {
+  overflow-wrap: anywhere;
+}
+
+.sms-suppression-authority {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+}
+
+/* The shell danger token alone misses 4.5:1 at this badge's 11px size in
+   dark mode. Mix toward the current foreground so both themes retain the
+   semantic hue without sacrificing operator-readable contrast. */
+.sms-suppressions-route .badge.danger {
+  color: color-mix(in srgb, var(--pw-danger) 78%, var(--pw-fg));
+}
+
+.sms-suppression-authority bdi,
+.sms-suppression-phone bdi {
+  unicode-bidi: isolate;
+}
+
+.sms-suppression-row-action {
+  text-align: end;
+}
+
+.sms-suppression-loading {
+  padding: 8px 12px;
+}
+
+.sms-suppression-refreshing {
+  margin: 8px 0 0;
+}
+
+.sms-suppression-registry .pagination {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sms-suppression-registry .pagination > span {
+  min-width: 0;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.sms-suppression-card-stack,
+.sms-suppression-tools-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.sms-suppression-card-stack > .card,
+.sms-suppression-tools-grid > .card {
+  min-width: 0;
+  margin: 0;
+}
+
+.sms-policy-held-note,
+.sms-local-tool-note {
+  margin: 0 0 14px;
+}
+
+.sms-policy-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sms-policy-card-header > :first-child {
+  min-width: 0;
+}
+
+.sms-quiet-time-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.sms-quiet-hours-list-header,
+.sms-quiet-hours-row {
+  gap: 10px;
+}
+
+.sms-quiet-hours-row > [role="cell"],
+.sms-keyword-table td,
+.sms-keyword-table th {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Keep the two short authority columns scannable when the five-column policy
+   table has desktop room. Narrow viewports switch the table to labeled cards
+   below, so these minima never create 720/390 horizontal overflow. */
+@media (min-width: 960px) {
+  .sms-keyword-policy-table > thead > tr > th:first-child,
+  .sms-keyword-policy-table > tbody > tr > th:first-child {
+    min-width: 7.5rem;
+  }
+
+  .sms-keyword-policy-table > thead > tr > th:nth-child(2),
+  .sms-keyword-policy-table > tbody > tr > td:nth-child(2) {
+    min-width: 8rem;
+  }
+
+  .sms-keyword-policy-table > thead > tr > th:nth-child(-n + 2) {
+    overflow-wrap: normal;
+  }
+}
+
+.sms-tap-to-text-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  align-items: start;
+  gap: 24px;
+}
+
+.sms-tap-to-text-fields {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.sms-tap-to-text-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sms-tap-to-text-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  background: var(--pw-bg-elev);
+}
+
+.sms-tap-to-text-preview-box {
+  display: grid;
+  place-items: center;
+  width: min(200px, 100%);
+  aspect-ratio: 1;
+  padding: 8px;
+  border: 1px dashed var(--pw-border);
+  text-align: center;
+}
+
+.sms-tap-to-text-preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 900px) {
+  .sms-suppression-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .sms-suppression-filters {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .sms-tap-to-text-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sms-tap-to-text-preview {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  .sms-suppressions-route {
+    gap: 16px;
+  }
+
+  .sms-suppression-masthead,
+  .sms-suppression-section-heading,
+  .sms-suppression-error,
+  .sms-policy-card-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sms-suppression-masthead .page-header-v2-actions,
+  .sms-suppression-masthead .page-header-v2-action,
+  .sms-suppression-masthead .btn,
+  .sms-suppression-error .btn {
+    width: 100%;
+  }
+
+  .sms-policy-card-header > .btn {
+    width: 100%;
+  }
+
+  .sms-suppression-sensitivity,
+  .sms-suppression-section-heading > .badge {
+    align-self: flex-start;
+  }
+
+  .sms-suppression-list-header,
+  .sms-quiet-hours-list-header {
+    display: none;
+  }
+
+  .sms-suppression-row,
+  .sms-quiet-hours-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--pw-border-soft);
+    border-radius: 8px;
+    margin: 8px;
+    background: var(--pw-bg-elev);
+  }
+
+  .sms-suppression-row [data-label],
+  .sms-quiet-hours-row [data-label] {
+    display: grid;
+    grid-template-columns: minmax(84px, 0.38fr) minmax(0, 1fr);
+    gap: 10px;
+    text-align: start;
+  }
+
+  .sms-suppression-row [data-label]::before,
+  .sms-quiet-hours-row [data-label]::before {
+    content: attr(data-label);
+    color: var(--pw-fg-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .sms-suppression-row-action .list-row-actions {
+    justify-content: flex-start;
+  }
+
+  .sms-keyword-table,
+  .sms-keyword-table tbody,
+  .sms-keyword-table tr,
+  .sms-keyword-table td,
+  .sms-keyword-table th[scope="row"] {
+    display: block;
+    width: 100%;
+  }
+
+  .sms-keyword-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+  }
+
+  .sms-keyword-table tr {
+    padding: 12px;
+    border: 1px solid var(--pw-border-soft);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .sms-keyword-table td,
+  .sms-keyword-table th[scope="row"] {
+    display: grid;
+    grid-template-columns: minmax(84px, 0.38fr) minmax(0, 1fr);
+    gap: 10px;
+    padding: 6px 0;
+    border: 0;
+  }
+
+  .sms-keyword-table td::before,
+  .sms-keyword-table th[scope="row"]::before {
+    content: attr(data-label);
+    color: var(--pw-fg-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+}
+
+@media (max-width: 390px) {
+  .sms-suppression-registry,
+  .sms-suppression-secondary-section {
+    padding: 12px;
+  }
+
+  .sms-suppression-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sms-suppression-refresh,
+  .sms-suppression-filters {
+    grid-column: 1;
+  }
+
+  .sms-suppression-refresh {
+    width: 100%;
+  }
+
+  .sms-suppression-row [data-label],
+  .sms-quiet-hours-row [data-label],
+  .sms-keyword-table td,
+  .sms-keyword-table th[scope="row"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+
+  .sms-tap-to-text-actions .btn {
+    width: 100%;
+  }
+
+  .sms-quiet-time-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (forced-colors: active) {
+  .sms-suppression-registry,
+  .sms-suppression-secondary-section,
+  .sms-suppression-row,
+  .sms-quiet-hours-row,
+  .sms-keyword-table tr,
+  .sms-tap-to-text-preview {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+
+  .sms-suppression-registry {
+    border-top-color: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sms-suppressions-route *,
+  .sms-suppressions-route *::before,
+  .sms-suppressions-route *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

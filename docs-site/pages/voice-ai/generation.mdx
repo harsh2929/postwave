@@ -1,0 +1,80 @@
+---
+title: Generation
+---
+
+import { Callout } from 'nextra/components';
+
+# Generation
+
+Generation is the act of turning a [template](/voice-ai/templates) + a [voice profile](/voice-ai/profile) + your variable inputs into a sequence of email drafts.
+
+## The flow
+
+1. Pick a template.
+2. Moosewave parses out the **variables** the template needs (product name, launch date, audience descriptor, etc.).
+3. Set **style controls** — the 4 sliders.
+4. Click **Generate**. Each email is generated independently with the full template context, your voice profile, and the variables.
+5. Each email is **scored for fidelity** (see [fidelity scoring](/voice-ai/fidelity-scoring)). Anything below 60 auto-retries with stronger profile-anchoring (up to 2 retries).
+6. Final drafts appear with per-email **fidelity badges** (red &lt;60, yellow 60–75, green ≥75).
+7. You review, edit, and approve each email before saving the sequence.
+
+## Variables
+
+Templates declare typed variables. Examples:
+
+```yaml
+variables:
+  - { name: product_name,        type: string,   required: true }
+  - { name: launch_date,         type: date,     required: true }
+  - { name: founder_first_name,  type: string,   required: true,  default: "@profile.persona.first_name" }
+  - { name: discount_pct,        type: number,   required: false, default: 0 }
+  - { name: include_testimonial, type: boolean,  required: false, default: true }
+```
+
+You'll be prompted to fill these in the UI; required-with-defaults are pre-filled and editable.
+
+## The 4 sliders
+
+These four style controls let you steer generation without rewriting the template:
+
+| Slider          | Low                                       | High                                          |
+| --------------- | ----------------------------------------- | --------------------------------------------- |
+| **Formality**   | Conversational, contractions, casual.     | Formal, no contractions, business register.   |
+| **Length**      | Tight — under 150 words per email.        | Long-form — 400+ words per email.             |
+| **Urgency**     | Calm, no scarcity language.               | Time-pressed, scarcity cues, deadline-driven. |
+| **Personalisation** | Generic — works for any subscriber.   | Heavy use of variables, segment-aware framing. |
+
+Each is 0–100. Defaults are inferred from your voice profile (e.g., if your profile's `tonal.formal_casual` is -0.6, formality starts at ~25).
+
+## Fidelity scoring + auto-retry
+
+Every generated email is scored 0–100 for **how well it matches your voice profile**. The score is a weighted sum of 4 components — see [Fidelity scoring](/voice-ai/fidelity-scoring) for the full formula.
+
+- **Score &lt; 60** → auto-retry up to 2 times with stronger profile-anchoring (representative samples added inline, tonal sliders pulled toward profile means).
+- **Score 60–75** → kept; flagged yellow for your attention.
+- **Score ≥ 75** → kept; flagged green.
+
+## Per-email fidelity badges
+
+Each email card in the sequence preview shows:
+
+- The badge (red / yellow / green).
+- A breakdown of the 4 component scores.
+- A "Why this score?" link with concrete examples — e.g., "uses 'leverage' which appears in your `vocabulary.avoided` list".
+
+<Callout type="info">
+A score is a guide, not a verdict. A 58-fidelity email might be exactly right for the campaign — sometimes you *want* a different register for a specific moment. Trust your read over the score.
+</Callout>
+
+## Cost
+
+Generation usage and limits are controlled by the deployed entitlement and
+current order. This archived page does not define free quotas or an unlimited
+plan; confirm billing settings and the approved offer before relying on a
+limit.
+
+## Next steps
+
+- [Regeneration](/voice-ai/regeneration) — single-email regen with hints.
+- [Fidelity scoring](/voice-ai/fidelity-scoring) — the 4-component formula.
+- [Best practices](/voice-ai/best-practices) — when AI-first works and when it doesn't.

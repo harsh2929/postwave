@@ -1,0 +1,71 @@
+---
+title: Migrate from ConvertKit
+---
+
+import { Callout } from 'nextra/components';
+
+# Migrating from ConvertKit (Kit)
+
+ConvertKit (now branded "Kit") is creator-focused and tag-heavy. Moosewave's import preserves the tag-first workflow exactly, plus translates ConvertKit Sequences into Moosewave automations.
+
+## Step 1 — Connect via OAuth
+
+From **Migrate → ConvertKit**, click **Connect**. You'll be sent through ConvertKit's OAuth 2.0 flow.
+
+<Callout type="info">
+</Callout>
+
+Moosewave requests `read` scope only. We do not modify your ConvertKit account.
+
+## What we pull
+
+| ConvertKit                | Moosewave                                          |
+| ------------------------- | ------------------------------------------------- |
+| Subscribers               | Subscribers (canonical schema)                    |
+| Subscriber state          | Mapped to canonical `status`                      |
+| Custom fields             | `attributes.*`                                    |
+| Tags                      | Tags                                              |
+| Segments (tag-based)      | Moosewave segments via tag-condition AST           |
+| Forms                     | Imported as inactive [Forms](/forms); enable per-form |
+| Sequences                 | Moosewave automations (1:1 — both are linear/branching node graphs) |
+| Broadcasts (sent)         | Campaign archive                                  |
+| Visual Automations        | Moosewave automations (node-by-node translation)   |
+| Subscriber events         | Last 90 days only (ConvertKit API limit)          |
+
+## Tag-based segmentation translation
+
+ConvertKit segments are built almost entirely from tag combinations. They map cleanly:
+
+```text
+ConvertKit:  "Has tag 'paid'  AND  Does not have tag 'churned'"
+Moosewave AST:
+  match: all
+  conditions:
+    - { field: "tags", op: "in",     value: ["paid"] }
+    - { field: "tags", op: "not_in", value: ["churned"] }
+```
+
+Date-based and form-source conditions also translate; geographic conditions (which ConvertKit infers from IP) are surfaced as unsupported and require an integration with a geolocation provider.
+
+## Sequences → Automations
+
+ConvertKit sequences are linear by default and Moosewave models each step as a `send_email` node connected by `wait` nodes (the "send X days after" delay). Conditional branches — added in ConvertKit's Visual Automations — use `branch` nodes with the same tag-AST.
+
+## Paid subscribers (Stripe-linked)
+
+If you're using ConvertKit Commerce or have Stripe products tied to your subscribers, those paid relationships use Kit's explicitly supported Stripe path. This is not the [Substack](/migration/substack) contract: the Substack file adapter preserves membership-tier metadata and deliberately does not enumerate or attach live Stripe/Apple subscriptions.
+
+<Callout type="warning">
+ConvertKit Commerce products themselves (paid digital downloads) are **not** migrated. They live on ConvertKit's storefront. Subscribers' billing relationships are preserved; the products you sell are not.
+</Callout>
+
+## Troubleshooting
+
+- **OAuth scope mismatch**: if you previously connected with a narrower scope, revoke and reconnect.
+- **Pagination stalls**: the v3 API uses cursor pagination at 50 records/page; large accounts may take 20+ minutes for the subscriber pull.
+- **Visual Automation with custom HTTP step**: the URL and payload are preserved as a `webhook_dispatch` action; secrets are NOT migrated and must be re-entered.
+
+## Next steps
+
+- [Verification report reference](/migration/verification-report)
+- [Automation triggers](/automation/triggers)

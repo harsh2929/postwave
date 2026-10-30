@@ -1,0 +1,29 @@
+diff --git a/dist/metro/index.js b/dist/metro/index.js
+index 0000000..1111111 100644
+--- a/dist/metro/index.js
++++ b/dist/metro/index.js
+@@ -176,6 +176,11 @@
+                 ? css
+                 : getNativeJS((0, css_to_rn_1.cssToReactNativeRuntime)(css, options), debug)));
+             debug(`virtualStyles.emit ${platform}`);
++            // PATCHED: metro@0.83 expects { changes: {addedFiles, modifiedFiles,
++            // removedFiles}, rootDir } — the original `eventsQueue` shape was
++            // for the older watcher API and crashes the new one with
++            // `Cannot read properties of undefined (reading 'addedFiles')`.
++            // Emit both shapes so older + newer haste-maps both invalidate.
+             haste.emit("change", {
+                 eventsQueue: [
+                     {
+@@ -188,6 +193,12 @@
+                         type: "change",
+                     },
+                 ],
++                changes: {
++                    addedFiles: new Map(),
++                    modifiedFiles: new Map([[filePath, []]]),
++                    removedFiles: new Map(),
++                },
++                rootDir: "",
+             });
+         }).then((css) => {
+             debug(`virtualStyles.initial ${platform}`);

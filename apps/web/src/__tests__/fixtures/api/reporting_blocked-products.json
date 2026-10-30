@@ -1,0 +1,71 @@
+{
+  "items": [
+    {
+      "product_area": "deliverability",
+      "initiative": "KLV-14-deliverability-routing-and-entitlements",
+      "blocked_note": "Provider / domain / country / client breakdowns require deliverability routing reporting.",
+      "metrics": [
+        "deliverability.provider_breakdown"
+      ],
+      "statuses": [
+        "planned"
+      ]
+    },
+    {
+      "product_area": "flow",
+      "initiative": "KLV-03-flow-builder-and-runtime-parity",
+      "blocked_note": "Flow execution metrics require the flow runtime analytics pipeline.",
+      "metrics": [
+        "flow.executions"
+      ],
+      "statuses": [
+        "partial"
+      ]
+    },
+    {
+      "product_area": "helpdesk",
+      "initiative": "KLV-10-customer-hub-helpdesk-and-agent",
+      "blocked_note": "Helpdesk metrics require the customer-hub service suite.",
+      "metrics": [
+        "helpdesk.tickets"
+      ],
+      "statuses": [
+        "planned"
+      ]
+    },
+    {
+      "product_area": "push",
+      "initiative": "KLV-01-omnichannel-control-plane",
+      "blocked_note": "Push metrics require the customer-push channel adapter.",
+      "metrics": [
+        "push.sent"
+      ],
+      "statuses": [
+        "planned"
+      ]
+    },
+    {
+      "product_area": "reviews",
+      "initiative": "KLV-11-reviews-product",
+      "blocked_note": "Review metrics require the reviews product.",
+      "metrics": [
+        "reviews.submitted"
+      ],
+      "statuses": [
+        "planned"
+      ]
+    },
+    {
+      "product_area": "sms",
+      "initiative": "KLV-01-omnichannel-control-plane",
+      "blocked_note": "SMS conversation metrics require the omnichannel control plane SMS surface.",
+      "metrics": [
+        "sms.conversations"
+      ],
+      "statuses": [
+        "planned"
+      ]
+    }
+  ],
+  "schema_version": "klv12.reporting.v1"
+}

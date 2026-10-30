@@ -1,0 +1,13 @@
+{
+  "items": [],
+  "meta": {
+    "generatedAt": "<timestamp>",
+    "limit": 50,
+    "returned": 0,
+    "totalReports": 0,
+    "hasMore": false,
+    "availableDomains": [],
+    "domainInventoryTruncated": false,
+    "scope": {}
+  }
+}

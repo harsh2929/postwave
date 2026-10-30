@@ -1,0 +1,147 @@
+---
+title: MCP Server
+---
+
+# MCP Server
+
+The Moosewave MCP server is a small process that exposes Moosewave's first-party API to any [Model Context Protocol](https://modelcontextprotocol.io) client. It is the same surface the dashboard uses, with the same authentication model, exposed as 30 typed tools across six categories.
+
+If you have ever wanted Claude Code, Cursor, Claude Desktop, or Continue to run a migration, diagnose a stuck campaign, or draft a welcome sequence in your voice without copying and pasting credentials around, this is the integration point.
+
+The server is open source under MIT at [github.com/postwave/mcp-server](https://github.com/postwave/mcp-server). It speaks both stdio and Streamable HTTP, ships as a single Go binary or an `npx` package, and authenticates with a workspace-scoped API key you generate from **Settings → API**.
+
+## What it gives you
+
+- 30 tools covering migration, deliverability, voice, subscribers, forms, and campaigns. The full reference is on the [tools page](/mcp/tools).
+- Five worked recipes that walk through end-to-end agent workflows. See [recipes](/mcp/recipes).
+- Per-tool input and output schemas published as JSON Schema, validated server-side before any side effect runs.
+- Audit log entries on every write, scoped to the API key. Read tools are not logged unless you opt in.
+
+## Install
+
+The server runs anywhere Go 1.23+ runs and is also published as an npm shim that downloads the right binary for your platform.
+
+### Claude Code
+
+```bash
+claude mcp add postwave \
+  --transport stdio \
+  --command npx \
+  --args -y @postwave/mcp-server@latest \
+  --env POSTWAVE_API_KEY=pw_live_xxx
+```
+
+After the command completes, restart Claude Code. The tools show up under the `postwave` namespace.
+
+### Cursor
+
+Open `~/.cursor/mcp.json` and add the entry below. Cursor reloads on save.
+
+```json
+{
+  "mcpServers": {
+    "postwave": {
+      "command": "npx",
+      "args": ["-y", "@postwave/mcp-server@latest"],
+      "env": {
+        "POSTWAVE_API_KEY": "pw_live_xxx"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Edit `claude_desktop_config.json` (Settings → Developer → Edit Config). Same shape as Cursor:
+
+```json
+{
+  "mcpServers": {
+    "postwave": {
+      "command": "npx",
+      "args": ["-y", "@postwave/mcp-server@latest"],
+      "env": { "POSTWAVE_API_KEY": "pw_live_xxx" }
+    }
+  }
+}
+```
+
+### Continue
+
+In `~/.continue/config.yaml`:
+
+```yaml
+mcpServers:
+  - name: postwave
+    command: npx
+    args: ["-y", "@postwave/mcp-server@latest"]
+    env:
+      POSTWAVE_API_KEY: pw_live_xxx
+```
+
+### From source
+
+If you would rather pin a specific build:
+
+```bash
+git clone https://github.com/postwave/mcp-server
+cd mcp-server
+go build -o postwave-mcp ./cmd/postwave-mcp
+./postwave-mcp --help
+```
+
+## Environment variables
+
+| Name                    | Required | Default                    | What it does                                                                                          |
+| ----------------------- | -------- | -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `POSTWAVE_API_KEY`      | yes      | (none)                     | Workspace-scoped API key. Created at **Settings → API**.                                              |
+| `POSTWAVE_API_URL`      | no       | `https://api.moosewave.com` | Override for staging or an independently operated source build.                                       |
+| `POSTWAVE_WORKSPACE_ID` | no       | inferred from key          | Pin a workspace when a key has access to several.                                                     |
+| `POSTWAVE_TIMEOUT`      | no       | `30s`                      | Per-request timeout. Long-running migrations poll asynchronously and are not bounded by this.         |
+| `POSTWAVE_LOG_LEVEL`    | no       | `info`                     | One of `debug`, `info`, `warn`, `error`. Logs go to stderr so they do not collide with stdio framing. |
+| `POSTWAVE_HTTP_LISTEN`  | no       | unset                      | When set (for example `127.0.0.1:7799`), the server runs in HTTP transport mode instead of stdio.     |
+
+API keys are tenant-scoped, never user-scoped. If you rotate one, every client that holds it has to be updated. The server validates the key against the management API on first request and caches the resolved tenant for the duration of the process.
+
+## Transports
+
+The server supports both transports defined in the MCP spec.
+
+### stdio (default)
+
+Standard for desktop clients. The host process spawns the server, the two sides talk JSON-RPC over the child's stdin and stdout. This is what Claude Code, Cursor, Claude Desktop, and Continue all use by default. No port is opened, no listener is exposed, the server exits when the host closes the pipe.
+
+### Streamable HTTP
+
+Useful when you want a single shared server for multiple agents, or when you are running the agent inside a container that cannot easily fork an MCP child. Set `POSTWAVE_HTTP_LISTEN` and the server binds to that address:
+
+```bash
+POSTWAVE_HTTP_LISTEN=127.0.0.1:7799 \
+  POSTWAVE_API_KEY=pw_live_xxx \
+  npx -y @postwave/mcp-server@latest
+```
+
+Clients then connect with the standard Streamable HTTP transport URL `http://127.0.0.1:7799/mcp`. The server enforces an `Origin` allowlist (default: `localhost`, `127.0.0.1`) to prevent drive-by browser attacks; override with `POSTWAVE_HTTP_ORIGINS=https://your.host`.
+
+The HTTP server is not designed to be exposed to the public internet. Run it behind a private network or an authenticated reverse proxy.
+
+## Permissions
+
+API keys carry one of three role bands:
+
+- **read**, every read tool, no writes. Safe for analysis-only agents.
+- **send**, read plus campaign and sequence sends. Cannot create migrations, cannot modify subscribers in bulk.
+- **admin**, every tool. Required for `migrate_*` and `subscriber_suppress`.
+
+Tools that require a higher band than the active key carry the failure code `permission_denied` rather than `unauthorized`, so an agent can recover by asking the user to upgrade the key rather than re-authenticating.
+
+## Versioning
+
+The server reports a `serverInfo.version` that follows the underlying API version, plus a `protocolVersion` matching the MCP draft it targets. Tool IDs and shapes are stable within a major; deprecations land first as a `Deprecated` field on the tool description, then ship in the following major.
+
+## Next steps
+
+- [Tool reference](/mcp/tools), every tool, its inputs, outputs, and common errors.
+- [Recipes](/mcp/recipes), five end-to-end agent workflows.
+- [API reference](/api-reference), the underlying REST surface, useful when you want to call the same endpoints without an agent.

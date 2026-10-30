@@ -1,0 +1,569 @@
+.reviews-widget-toolbar {
+  grid-template-columns: minmax(240px, 1fr) auto;
+}
+
+.reviews-widget-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 332px;
+  padding: 20px;
+  border: 1px solid var(--pw-border);
+  border-radius: 18px;
+  flex-direction: column;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--reviews-mint) 8%, transparent),
+      transparent 42%
+    ),
+    color-mix(in srgb, var(--pw-bg-elev) 96%, transparent);
+  box-shadow: 0 10px 30px
+    color-mix(in srgb, var(--pw-shadow-color) 6%, transparent);
+  overflow: hidden;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.reviews-widget-card::before {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 64px;
+  height: 2px;
+  border-radius: 0 0 99px 99px;
+  background: linear-gradient(90deg, var(--reviews-mint), transparent);
+  content: "";
+  opacity: 0.72;
+}
+
+.reviews-widget-card:not(:has(> .modal-backdrop)):hover {
+  border-color: color-mix(in srgb, var(--reviews-mint) 34%, var(--pw-border));
+  box-shadow: 0 18px 42px
+    color-mix(in srgb, var(--pw-shadow-color) 10%, transparent);
+  transform: translateY(-1px);
+}
+
+.reviews-widget-card:has(> .modal-backdrop) {
+  /* A transformed ancestor becomes the containing block for fixed-position
+   * descendants. Keep this nested shared Modal viewport-bound and unclipped
+   * for the entire open lifecycle, including the pointer frame that opened it. */
+  overflow: visible;
+  transform: none;
+}
+
+.reviews-widget-card-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.reviews-widget-card-header > div {
+  min-width: 0;
+}
+
+.reviews-widget-card-eyebrow {
+  display: block;
+  color: var(--reviews-accent);
+  font-size: 8px;
+  font-weight: 730;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.reviews-widget-card h3 {
+  margin: 7px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--pw-fg);
+  font-size: 17px;
+  font-weight: 710;
+  letter-spacing: -0.018em;
+  line-height: 1.25;
+}
+
+.reviews-widget-card-header > .badge {
+  flex: 0 0 auto;
+}
+
+.reviews-widget-metadata {
+  display: grid;
+  min-width: 0;
+  padding: 14px 0;
+  margin: 18px 0 0;
+  border-block: 1px solid var(--pw-border);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reviews-widget-metadata > div {
+  min-width: 0;
+}
+
+.reviews-widget-metadata dt,
+.reviews-widget-metadata dd {
+  margin: 0;
+}
+
+.reviews-widget-metadata dt {
+  color: var(--pw-fg-subtle);
+  font-size: 8px;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reviews-widget-metadata dd {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 620;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviews-widget-lifecycle-note,
+.reviews-widget-installation-unavailable {
+  margin: auto 0 0;
+  padding-top: 18px;
+  color: var(--pw-fg-subtle);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.reviews-widget-lifecycle-note::before {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--pw-warning);
+  content: "";
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pw-warning) 10%, transparent);
+}
+
+.reviews-widget-url-warning {
+  display: flex;
+  margin-top: auto;
+  padding: 13px;
+  border: 1px solid color-mix(in srgb, var(--pw-danger) 30%, var(--pw-border));
+  border-radius: 12px;
+  flex-direction: column;
+  gap: 5px;
+  background: color-mix(in srgb, var(--pw-danger) 7%, transparent);
+}
+
+.reviews-widget-url-warning strong {
+  color: color-mix(in srgb, var(--pw-danger) 80%, var(--pw-fg));
+  font-size: 10px;
+}
+
+.reviews-widget-url-warning span {
+  color: var(--pw-fg-subtle);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.reviews-widget-deployment {
+  display: flex;
+  min-width: 0;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--pw-success) 28%, var(--pw-border));
+  border-radius: 14px;
+  flex-direction: column;
+  gap: 9px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--pw-success) 7%, transparent),
+    color-mix(in srgb, var(--reviews-accent) 5%, transparent)
+  );
+}
+
+.reviews-widget-deployment h4 {
+  margin: 0;
+  color: color-mix(in srgb, var(--pw-success) 72%, var(--pw-fg));
+  font-size: 9px;
+  font-weight: 720;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.reviews-widget-public-url {
+  display: block;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--pw-bg) 82%, transparent);
+  color: var(--pw-fg-muted);
+  font-size: 9px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviews-widget-endpoint-blocker {
+  display: grid;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 32%, var(--pw-border));
+  border-radius: 9px;
+  gap: 3px;
+  background: color-mix(in srgb, var(--pw-warning) 7%, transparent);
+}
+
+.reviews-widget-endpoint-blocker strong {
+  color: var(--pw-fg);
+  font-size: 9px;
+}
+
+.reviews-widget-endpoint-blocker span {
+  color: var(--pw-fg-subtle);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.reviews-widget-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.reviews-widget-actions .btn {
+  min-height: 40px;
+  padding-inline: 11px;
+  font-size: 10px;
+}
+
+.reviews-installation {
+  display: grid;
+  min-width: 0;
+  min-height: 390px;
+  grid-template-columns: minmax(190px, 0.34fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+}
+
+.reviews-installation-methods {
+  display: flex;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--pw-border);
+  border-radius: 15px;
+  flex-direction: column;
+  gap: 6px;
+  background: color-mix(in srgb, var(--pw-bg-elev) 82%, transparent);
+}
+
+.reviews-installation-method {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 78px;
+  padding: 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  align-items: center;
+  background: transparent;
+  color: var(--pw-fg-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.reviews-installation-method::after {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--pw-border);
+  border-radius: 50%;
+  content: "";
+  transform: translateY(-50%);
+}
+
+.reviews-installation-method:hover {
+  background: color-mix(in srgb, var(--pw-fg) 4%, transparent);
+  color: var(--pw-fg);
+}
+
+.reviews-installation-method.is-selected {
+  border-color: color-mix(in srgb, var(--reviews-accent) 42%, var(--pw-border));
+  background: color-mix(in srgb, var(--reviews-accent) 10%, transparent);
+  color: var(--pw-fg);
+}
+
+.reviews-installation-method.is-selected::after {
+  border-color: var(--reviews-accent);
+  background: var(--reviews-accent);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--reviews-accent) 12%, transparent);
+}
+
+.reviews-installation-method > span {
+  display: flex;
+  min-width: 0;
+  padding-right: 18px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.reviews-installation-method strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reviews-installation-method small {
+  color: var(--pw-fg-subtle);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.reviews-installation-method.is-selected small {
+  color: var(--pw-fg-muted);
+}
+
+.reviews-installation-code {
+  display: flex;
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--pw-border);
+  border-radius: 15px;
+  flex-direction: column;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--reviews-accent) 7%, transparent),
+      transparent 38%
+    ),
+    var(--pw-bg-elev);
+}
+
+.reviews-installation-code > h3 {
+  margin: 0;
+  color: var(--pw-fg);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.reviews-installation-state,
+.reviews-installation-error {
+  display: flex;
+  min-height: 260px;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.reviews-installation-state::before {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 13px;
+  border: 2px solid color-mix(in srgb, var(--reviews-accent) 20%, transparent);
+  border-top-color: var(--reviews-accent);
+  border-radius: 50%;
+  animation: reviews-spin 700ms linear infinite;
+  content: "";
+}
+
+.reviews-installation-error {
+  gap: 14px;
+}
+
+.reviews-installation-error p {
+  max-width: 48ch;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.reviews-installation-blocker,
+.reviews-installation-warning {
+  display: flex;
+  padding: 12px 13px;
+  border: 1px solid color-mix(in srgb, var(--pw-warning) 34%, var(--pw-border));
+  border-radius: 11px;
+  flex-direction: column;
+  gap: 5px;
+  background: color-mix(in srgb, var(--pw-warning) 7%, transparent);
+}
+
+.reviews-installation-blocker strong,
+.reviews-installation-warning strong {
+  color: color-mix(in srgb, var(--pw-warning) 82%, var(--pw-fg));
+  font-size: 10px;
+}
+
+.reviews-installation-blocker span,
+.reviews-installation-warning span {
+  color: var(--pw-fg-subtle);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.reviews-installation-snippet {
+  width: 100%;
+  min-height: 228px;
+  padding: 14px;
+  border: 1px solid var(--pw-border);
+  border-radius: 11px;
+  margin-top: 12px;
+  resize: vertical;
+  background:
+    linear-gradient(
+      color-mix(in srgb, var(--pw-bg) 94%, transparent),
+      color-mix(in srgb, var(--pw-bg) 94%, transparent)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 21px,
+      color-mix(in srgb, var(--pw-border) 35%, transparent) 22px
+    );
+  color: var(--pw-fg-muted);
+  font-family: var(--pw-font-mono, ui-monospace, SFMono-Regular, monospace);
+  font-size: 10px;
+  line-height: 1.55;
+  overflow-wrap: normal;
+  white-space: pre;
+}
+
+.reviews-installation-snippet:focus {
+  border-color: var(--reviews-accent);
+  outline: 0;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--reviews-accent) 13%, transparent);
+}
+
+.reviews-installation-copy {
+  display: flex;
+  margin-top: 11px;
+  justify-content: flex-end;
+}
+
+.reviews-installation-copy .btn {
+  min-height: 42px;
+}
+
+/* This file is imported after the shared Reviews route stylesheet. Keep
+ * widget-owned responsive and user-preference overrides after these base
+ * declarations so the cascade cannot silently restore desktop geometry. */
+@media (max-width: 920px) {
+  .reviews-installation {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reviews-installation-methods {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .reviews-widget-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reviews-widget-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reviews-widget-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 430px) {
+  .reviews-widget-metadata {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reviews-widget-metadata > div + div {
+    padding-top: 9px;
+    border-top: 1px solid var(--pw-border);
+  }
+
+  .reviews-installation-snippet {
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 360px) {
+  .reviews-installation-methods {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reviews-widget-card,
+  .reviews-installation-method,
+  .reviews-installation-state::before {
+    animation: none;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .reviews-widget-card,
+  .reviews-widget-deployment,
+  .reviews-installation-methods,
+  .reviews-installation-method,
+  .reviews-installation-code,
+  .reviews-installation-snippet,
+  .reviews-installation-blocker,
+  .reviews-installation-warning {
+    border-color: CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+
+  .reviews-widget-card::before {
+    display: none;
+  }
+
+  .reviews-widget-actions .btn,
+  .reviews-installation-copy .btn {
+    border-color: ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+  }
+}
+
+@media print {
+  .reviews-widget-actions {
+    display: none !important;
+  }
+
+  .reviews-widget-card {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    color: CanvasText;
+  }
+}
+
+@keyframes reviews-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

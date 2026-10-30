@@ -1,0 +1,12 @@
+# Trivy ignore file — list CVE IDs (one per line) that we have evaluated
+# and determined are not exploitable in our deployment context. Each entry
+# MUST include a comment explaining the rationale and a re-evaluation date.
+#
+# Format:
+#   CVE-YYYY-NNNNN  # <rationale> (review by YYYY-MM-DD)
+#
+# Example:
+#   CVE-2024-12345  # transitive in pdf renderer, not reachable from API (review by 2026-12-01)
+#
+# Keep this file lean — every entry is technical debt. Prefer bumping the
+# vulnerable dep over silencing the alert.

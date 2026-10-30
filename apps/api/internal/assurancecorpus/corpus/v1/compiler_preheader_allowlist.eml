@@ -1,0 +1,24 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <compiler-preheader.v1@example.com>
+Subject: Legitimate compiler preheader fixture
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-preheader-v1"
+
+--pw-preheader-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Briefing preview. Register at https://events.example.com/register
+--pw-preheader-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><div data-postwave-preheader=
+ style=3D"display:none!important;max-height:0;max-width:0;overflow:hidden;=
+opacity:0;color:transparent;mso-hide:all">Briefing preview.</div>=
+<h1>Synthetic briefing</h1>=
+<p><a href=3D"https://events.example.com/register">Register</a></p>=
+</body></html>
+--pw-preheader-v1--

@@ -1,0 +1,60 @@
+---
+title: BIMI
+---
+
+import { Callout } from 'nextra/components';
+
+# BIMI — Brand Indicators for Message Identification
+
+BIMI is the standard that lets you display your brand logo next to your messages in supporting inboxes (most notably Gmail). It is purely a *trust signal* — it doesn't affect deliverability mechanically, but it materially boosts open rates and brand recognition.
+
+## Eligibility
+
+BIMI requires:
+
+1. A **DMARC policy of `p=quarantine` or `p=reject`** (see [DMARC](/deliverability/dmarc)). `p=none` does not qualify.
+2. Your logo as an **SVG Tiny PS** (a strict subset of SVG). Standard SVGs from Figma/Illustrator must be re-exported to this profile.
+3. (For Gmail logo display) a **Verified Mark Certificate (VMC)** from an authorised CA — currently DigiCert or Entrust. ~$1,500/year.
+4. The logo must be a **registered trademark** in your jurisdiction (the VMC issuer verifies this).
+
+## VMC requirements in detail
+
+The VMC is what makes Gmail actually display your logo. To get one:
+
+- Hold a registered trademark for the exact logo image, in a jurisdiction the issuer recognises (US, EU, UK, Canada, Japan, Australia, India, etc.).
+- Pass the issuer's identity verification (similar to an EV SSL cert — an attorney letter or notarised business documents).
+- Renew annually.
+
+Without a VMC, your BIMI record can still be valid, but Gmail will not show the logo. Yahoo, Apple Mail, and Fastmail are more lenient — they may show the logo with just a self-asserted SVG.
+
+## DNS record
+
+```
+default._bimi.yourdomain.com.   IN  TXT   "v=BIMI1; l=https://yourdomain.com/bimi/logo.svg; a=https://yourdomain.com/bimi/vmc.pem"
+```
+
+- `l=` — URL of the SVG Tiny PS logo (must be HTTPS).
+- `a=` — URL of the VMC chain (PEM-encoded). Omit if you don't have one.
+
+## Expected impact
+
+Real-world data from Moosewave customers (n=120 newsletters who deployed BIMI in 2025):
+
+- **+3.5% relative open rate lift on Gmail** (logo visible).
+- **No measurable lift on providers without logo display** — but no negative either.
+- **Higher reply rates** on transactional confirmation emails (subjective trust signal).
+
+<Callout type="info">
+BIMI is an investment in *brand presentation*, not deliverability. If you're still firefighting placement, ship [SPF](/deliverability/spf) / [DKIM](/deliverability/dkim) / [DMARC](/deliverability/dmarc) first; come back to BIMI after.
+</Callout>
+
+## What Moosewave's validator checks
+
+1. DMARC policy is `quarantine` or `reject` (gate).
+2. BIMI TXT record exists and parses.
+3. SVG at `l=` URL fetches with HTTPS, is valid SVG Tiny PS profile, square aspect ratio, no embedded scripts.
+4. If `a=` present, VMC chain validates against trusted root.
+
+## Next steps
+
+- [Seedlist](/deliverability/seedlist) — to measure logo render rates across the panel.

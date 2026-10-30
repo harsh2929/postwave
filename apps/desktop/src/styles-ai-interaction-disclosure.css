@@ -1,0 +1,36 @@
+/* Canonical AI-interaction disclosure; text remains package-owned verbatim. */
+
+.ai-interaction-disclosure {
+  position: relative;
+  min-height: 34px;
+  margin: 0;
+  padding: 8px 12px 8px 31px;
+  color: var(--pw-fg-subtle);
+  font-size: 11px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 68%, transparent);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+}
+
+.ai-interaction-disclosure::before {
+  position: absolute;
+  top: 11px;
+  left: 13px;
+  width: 8px;
+  height: 8px;
+  content: "";
+  background: color-mix(in srgb, var(--pw-accent) 74%, var(--pw-fg));
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pw-accent) 9%, transparent);
+}
+
+@media (forced-colors: active) {
+  .ai-interaction-disclosure {
+    border-color: CanvasText;
+  }
+
+  .ai-interaction-disclosure::before {
+    background: Highlight;
+  }
+}

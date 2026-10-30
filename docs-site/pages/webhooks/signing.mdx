@@ -1,0 +1,182 @@
+---
+title: Signature verification
+---
+
+import { Callout } from 'nextra/components';
+
+# Signature verification
+
+HMAC destinations receive:
+
+```text
+X-Postwave-Signature: t=1784801664,v1=64a0c...
+```
+
+`v1` is the lowercase hexadecimal HMAC-SHA256 of:
+
+```text
+<timestamp>.<exact raw request body>
+```
+
+The HMAC key is the `owhsec_*` secret returned once when the outbound
+destination is created or rotated.
+
+## Verification algorithm
+
+1. Read the exact raw request bytes before JSON parsing.
+2. Parse `t` and every `v1` value from `X-Postwave-Signature`.
+3. Reject a malformed timestamp or one outside your replay-tolerance window
+   (five minutes is recommended).
+4. Compute `HMAC-SHA256(secret, t + "." + raw_body)`.
+5. Accept if any supplied `v1` value matches in constant time.
+6. Parse the verified body and deduplicate with its signed `event.id`. If a
+   payload transform is enabled, include `/event/id` in the transformed body.
+
+During rotation Moosewave can include signatures from both the primary and
+secondary key. Verifiers must therefore accept any matching `v1` entry
+instead of keeping only the last one.
+
+<Callout type="warning">
+Do not parse and reserialize JSON before verification. Whitespace, key order,
+and escaping are signed bytes. Do not use ordinary string equality for the
+digest.
+</Callout>
+
+## JavaScript / Node.js
+
+```js
+import crypto from "node:crypto";
+
+function verifyPostwaveSignature(header, rawBody, secret, now = Date.now()) {
+  if (!header || !secret) return false;
+
+  let timestamp;
+  const signatures = [];
+  for (const part of header.split(",")) {
+    const [key, value] = part.trim().split("=", 2);
+    if (key === "t") {
+      if (timestamp !== undefined) return false;
+      timestamp = value;
+    }
+    if (key === "v1" && value) signatures.push(value);
+  }
+
+  if (!/^\d+$/.test(timestamp ?? "")) return false;
+  const signedAt = Number(timestamp);
+  if (!Number.isSafeInteger(signedAt) || signedAt <= 0) return false;
+  if (Math.abs(Math.floor(now / 1000) - signedAt) > 300) return false;
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(Buffer.concat([Buffer.from(`${timestamp}.`), rawBody]))
+    .digest();
+
+  return signatures.some((candidate) => {
+    if (!/^[a-fA-F0-9]{64}$/.test(candidate)) return false;
+    const supplied = Buffer.from(candidate, "hex");
+    return crypto.timingSafeEqual(expected, supplied);
+  });
+}
+```
+
+## Python
+
+```python
+import hashlib
+import hmac
+import time
+
+def verify_postwave_signature(header: str, raw_body: bytes, secret: str) -> bool:
+    timestamp = None
+    signatures: list[str] = []
+    for part in header.split(","):
+        key, _, value = part.strip().partition("=")
+        if key == "t":
+            if timestamp is not None:
+                return False
+            timestamp = value
+        elif key == "v1" and value:
+            signatures.append(value)
+
+    if timestamp is None or not timestamp.isdigit() or int(timestamp) <= 0:
+        return False
+    if abs(int(time.time()) - int(timestamp)) > 300:
+        return False
+
+    expected = hmac.new(
+        secret.encode(),
+        timestamp.encode() + b"." + raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    return any(hmac.compare_digest(expected, value.lower()) for value in signatures)
+```
+
+## Go
+
+```go
+func verifyPostwaveSignature(header string, body []byte, secret string, now time.Time) bool {
+    var timestamp string
+    seenTimestamp := false
+    var signatures []string
+    for _, part := range strings.Split(header, ",") {
+        key, value, ok := strings.Cut(strings.TrimSpace(part), "=")
+        if !ok { continue }
+        if key == "t" {
+            if seenTimestamp { return false }
+            seenTimestamp = true
+            timestamp = value
+        }
+        if key == "v1" { signatures = append(signatures, value) }
+    }
+
+    unix, err := strconv.ParseInt(timestamp, 10, 64)
+    if err != nil || unix <= 0 { return false }
+    skew := now.Unix() - unix
+    if skew < 0 { skew = -skew }
+    if skew > 300 { return false }
+
+    mac := hmac.New(sha256.New, []byte(secret))
+    mac.Write([]byte(timestamp))
+    mac.Write([]byte("."))
+    mac.Write(body)
+    expected := mac.Sum(nil)
+
+    for _, candidate := range signatures {
+        supplied, err := hex.DecodeString(candidate)
+        if err == nil && hmac.Equal(expected, supplied) { return true }
+    }
+    return false
+}
+```
+
+## Asymmetric algorithms
+
+Destinations can use `ecdsa_p256` or `ed25519` instead of HMAC. Their public
+key is returned as `public_key_pem`. The corresponding private signing key
+stays encrypted inside Moosewave and is never returned through the management
+API. Use the `X-Postwave-Key-Id` fingerprints to select public keys during the
+rotation grace window.
+
+<Callout type="warning">
+The current v1/v2/v3 signature covers the timestamp and exact body bytes, not
+the auxiliary `X-Postwave-Event-Id` or `X-Postwave-Delivery` headers. Never
+treat either header as authenticated identity unless it agrees with identity
+inside the already verified body.
+</Callout>
+
+## Secret rotation
+
+`POST /api/v1/outbound-webhooks/{id}/rotate-secret` creates fresh signing
+material and retains the prior key for a bounded grace window (24 hours by
+default, up to seven days via `grace_minutes`). Deploy the new verifier before
+that window expires.
+
+Omit `grace_minutes` to use the 1,440-minute default. When present, the query
+parameter must occur exactly once and contain a nonempty integer from 1 through
+10,080; empty, duplicate, fractional, or out-of-range values return
+`400 invalid_grace_minutes`.
+
+## See also
+
+- [Webhooks overview](/webhooks)
+- [Event catalog](/webhooks/events)

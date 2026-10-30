@@ -1,0 +1,142 @@
+name: Verify Image Signatures
+
+# -----------------------------------------------------------------------------
+# Nightly cosign verification against the most recent main-branch images on
+# GHCR. Catches:
+#
+#   - drift in the workflow's signing identity (e.g. someone forks the repo
+#     and pushes from a different OIDC issuer; the cert-identity check
+#     below still expects this owner + workflow file)
+#   - accidental untagged-image pushes (verify exits non-zero, paging the
+#     on-call)
+#   - Sigstore log compromise → cosign refuses to verify entries that
+#     can't be re-derived from Rekor
+#
+# The job is intentionally OFF the PR critical path: it runs on a cron and
+# can also be kicked manually. A failure here is operational, not a merge
+# block.
+#
+# Hard rules honored:
+#   - Read-only permissions; no secrets needed (verification is public).
+#   - All user-controlled inputs (workflow_dispatch tag) are routed
+#     through env: blocks rather than ${{ ... }} interpolation in
+#     run: scripts so workflow-injection is structurally impossible.
+# -----------------------------------------------------------------------------
+
+on:
+  schedule:
+    # 04:17 UTC nightly. The odd minute reduces the chance of colliding
+    # with GitHub's hourly-job thundering herd.
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to verify (default: latest)"
+        required: false
+        default: "latest"
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  verify:
+    name: Verify cosign signature
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          [
+            api,
+            voice,
+            automation,
+            deliverability,
+            migration,
+            db-migrator,
+            campaign-assurance,
+            campaign-assurance-image-services,
+            web,
+            observability-collector,
+          ]
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+
+      - name: Log in to GHCR (read-only)
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+        with:
+          cosign-release: v2.4.1
+
+      - name: Lowercase repository owner
+        id: repo
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          OWNER_LC="$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "owner_lc=$OWNER_LC" >> "$GITHUB_OUTPUT"
+
+      - name: Verify signature
+        env:
+          # Pinned to the exact docker-push.yml workflow identity that
+          # signs the images. If you rename the file or move it to a
+          # different ref, update this regex (or push from a fork —
+          # which is what we want this job to catch).
+          CERT_IDENTITY: "https://github.com/${{ github.repository }}/.github/workflows/docker-push.yml@refs/heads/main"
+          OIDC_ISSUER: "https://token.actions.githubusercontent.com"
+          OWNER_LC: ${{ steps.repo.outputs.owner_lc }}
+          SERVICE: ${{ matrix.service }}
+          SOURCE_URL: https://github.com/${{ github.repository }}
+          # workflow_dispatch tag can be anything an operator types;
+          # routing through env defeats workflow-injection patterns.
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          set -euo pipefail
+          TAG="${INPUT_TAG:-latest}"
+          if ! printf '%s' "$TAG" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'; then
+            echo "::error::invalid container tag: $TAG"
+            exit 1
+          fi
+          IMAGE_TAG="ghcr.io/${OWNER_LC}/postwave-${SERVICE}:${TAG}"
+          # Resolve the mutable operator-facing tag once, then verify and
+          # inspect only the immutable digest. This prevents a concurrent
+          # main build from moving :latest between the signature and
+          # provenance checks (or making those checks describe two images).
+          digest="$(docker buildx imagetools inspect "$IMAGE_TAG" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          if ! printf '%s' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "::error::could not resolve a valid immutable digest for $IMAGE_TAG"
+            exit 1
+          fi
+          IMAGE_REF="ghcr.io/${OWNER_LC}/postwave-${SERVICE}@${digest}"
+          echo "Verifying ${IMAGE_REF} (resolved from ${IMAGE_TAG})"
+          cosign verify \
+            --certificate-identity "$CERT_IDENTITY" \
+            --certificate-oidc-issuer "$OIDC_ISSUER" \
+            "$IMAGE_REF" >/dev/null
+
+          images="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{ json .Image }}')"
+          printf '%s' "$images" | jq -e --arg source "$SOURCE_URL" '
+            (keys | sort) == ["linux/amd64", "linux/arm64"] and
+            ([.[] .config.Labels["org.opencontainers.image.revision"]] | unique | length) == 1 and
+            all(.[];
+              .config.Labels["org.opencontainers.image.source"] == $source and
+              (.config.Labels["org.opencontainers.image.revision"] | test("^[0-9a-f]{40}$")))
+          ' >/dev/null
+
+          provenance="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{ json .Provenance }}')"
+          sbom="$(docker buildx imagetools inspect "$IMAGE_REF" --format '{{ json .SBOM }}')"
+          printf '%s' "$provenance" \
+            | jq -e '.. | objects | select(has("SLSA")) | .SLSA | select(type == "object" and length > 0)' >/dev/null
+          printf '%s' "$sbom" \
+            | jq -e '.. | objects | select(has("SPDX")) | .SPDX | select(.SPDXID == "SPDXRef-DOCUMENT")' >/dev/null
+          echo "OK: ${IMAGE_REF}"

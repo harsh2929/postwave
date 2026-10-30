@@ -1,0 +1,82 @@
+---
+title: Sessions & viewer mode
+---
+
+import { Callout } from 'nextra/components';
+
+# Sessions & viewer mode
+
+Operators can see every device they are logged in on, cut access on any of them, and (for admins) preview the read-only UI without a second account.
+
+## Active sessions
+
+| Method | Path                                       | Purpose                                              |
+| ------ | ------------------------------------------ | ---------------------------------------------------- |
+| GET    | `/api/v1/auth/sessions`                    | List the current user's active sessions.             |
+| DELETE | `/api/v1/auth/sessions/{id}`               | Revoke one session.                                  |
+| POST   | `/api/v1/auth/sessions/logout-all`         | Revoke **every other** session (keeps the current).  |
+
+These require a resolved session user (cookie auth), not an API key.
+
+```bash
+curl https://api.moosewave.com/api/v1/auth/sessions \
+  -H "Cookie: $POSTWAVE_SESSION"
+```
+
+```json
+[
+  {
+    "id": "ses_01HK...",
+    "issued_at": "2026-05-01T08:00:00Z",
+    "last_seen_at": "2026-05-01T11:30:00Z",
+    "expires_at": "2026-05-08T08:00:00Z",
+    "ip": "203.0.113.7",
+    "user_agent": "Mozilla/5.0 ...",
+    "auth_method": "oauth_google",
+    "current": true
+  }
+]
+```
+
+The `verifier_hash` is never returned — only sessions you own and that are active appear. `current: true` marks the session making the request.
+
+### Log out everywhere
+
+`POST /api/v1/auth/sessions/logout-all` revokes all of your sessions except the one making the call — the "you've been signed out of all other devices" button.
+
+<Callout type="info">
+Session revokes are written to the audit log so a security team can review who
+used a session and when access was cut. This control is not evidence of a SOC
+examination or certification by itself.
+</Callout>
+
+## Preview as a viewer
+
+An admin/owner can preview the viewer (read-only) UI without logging out and signing in as a separate account. The preview is scoped to **one session** (this browser/cookie) and never mutates the durable role.
+
+```
+PATCH /api/v1/auth/me/viewer-mode   { "enabled": true, "role": "viewer" }
+```
+
+```bash
+curl -X PATCH https://api.moosewave.com/api/v1/auth/me/viewer-mode \
+  -H "Cookie: $POSTWAVE_SESSION" \
+  -d '{ "enabled": true }'
+```
+
+```json
+{ "viewer_mode": true, "effective_role": "viewer", "role": "admin" }
+```
+
+Rules:
+
+- Only `admin`/`owner` durable roles may activate the preview; `editor`/`viewer` get `403`.
+- The preview role must be a strict **downgrade** of the caller's durable role — you can preview *down*, never escalate.
+- `enabled: false` clears the override (exit preview).
+
+The session resolver surfaces the override as `effective_role` on [`/api/v1/auth/me`](/team#identity-endpoints); the dashboard's `useCanWrite` / `useCanAdmin` hooks gate the UI on `effective_role`, so the admin genuinely sees what a viewer sees.
+
+## See also
+
+- [Roles & RBAC](/team/roles).
+- [Enterprise auth → MFA](/security/mfa) — step-up that can apply per session.

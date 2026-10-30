@@ -1,0 +1,309 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Moosewave Dev Preview</title>
+    <style>
+      :root {
+        --bg: #0b0d12;
+        --panel: #131722;
+        --border: #232838;
+        --fg: #e6e8ee;
+        --muted: #8b93a7;
+        --accent: #6ea8fe;
+        --good: #4ade80;
+        --warn: #f59e0b;
+        --bad: #f87171;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+      body { display: grid; grid-template-rows: 48px 1fr; }
+      header { display: flex; align-items: center; gap: 12px; padding: 0 14px; border-bottom: 1px solid var(--border); background: var(--panel); }
+      header h1 { font-size: 14px; margin: 0; font-weight: 600; }
+      header .grow { flex: 1; }
+      header button, header select { background: var(--panel); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+      header button:hover { border-color: var(--accent); }
+      main { display: grid; grid-template-columns: 240px 1fr 320px; min-height: 0; }
+      aside { background: var(--panel); border-right: 1px solid var(--border); overflow: auto; }
+      aside.right { border-right: none; border-left: 1px solid var(--border); padding: 12px; }
+      .file-list { list-style: none; padding: 0; margin: 0; }
+      .file-list li { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--muted); }
+      .file-list li.active { color: var(--fg); background: #1b2030; }
+      .file-list li:hover { color: var(--fg); }
+      .preview-wrap { display: flex; flex-direction: column; min-width: 0; }
+      .preview-toolbar { display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); align-items: center; font-size: 12px; color: var(--muted); }
+      .frame-host { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 16px; overflow: auto; background: #06080d; }
+      iframe { background: #fff; border: 1px solid var(--border); border-radius: 6px; height: 100%; min-height: 600px; transition: width 0.2s; }
+      iframe.dark { background: #1a1a1a; }
+      .field { margin-bottom: 10px; }
+      .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+      .field input, .field select { width: 100%; background: #0b0d12; color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; font-size: 13px; }
+      h2 { font-size: 12px; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; letter-spacing: 0.06em; }
+      .subject-row { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+      .subject-row .text { font-size: 13px; }
+      .bars { display: grid; grid-template-columns: 50px 1fr; gap: 4px; align-items: center; font-size: 11px; color: var(--muted); }
+      .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+      .bar > span { display: block; height: 100%; }
+      .bar.primary > span { background: var(--good); }
+      .bar.promotions > span { background: var(--warn); }
+      .bar.spam > span { background: var(--bad); }
+      .errors { color: var(--bad); font-size: 12px; padding: 8px; }
+      .status { font-size: 11px; color: var(--muted); padding: 4px 12px; border-top: 1px solid var(--border); background: var(--panel); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Moosewave Dev</h1>
+      <select id="width">
+        <option value="640">Desktop (640)</option>
+        <option value="375">Mobile (375)</option>
+      </select>
+      <button id="dark">Dark mode</button>
+      <span class="grow"></span>
+      <button id="send-test">Send test to me</button>
+    </header>
+    <main>
+      <aside><ul class="file-list" id="files"></ul></aside>
+      <section class="preview-wrap">
+        <div class="preview-toolbar">
+          <span id="current-file">No file selected</span>
+          <span class="grow" style="flex:1"></span>
+          <span id="reload-flag"></span>
+        </div>
+        <div class="frame-host">
+          <iframe id="frame" width="640"></iframe>
+        </div>
+        <div class="status" id="status">disconnected</div>
+      </section>
+      <aside class="right">
+        <h2>Persona</h2>
+        <select id="persona"></select>
+        <h2>Variables</h2>
+        <div id="vars"></div>
+        <h2>Subject co-pilot</h2>
+        <div class="field">
+          <input id="subject-input" placeholder="Type a subject..." />
+        </div>
+        <div id="suggestions"></div>
+      </aside>
+    </main>
+    <script>
+      (function () {
+        const state = { files: [], current: null, personas: [], vars: {}, dark: false };
+        const MAX_JSON_RESPONSE_BYTES = 2 * 1024 * 1024;
+        const MAX_SSE_EVENT_CHARS = 128 * 1024;
+        const FETCH_TIMEOUT_MS = 15000;
+
+        async function fetchJson(path) {
+          const r = await fetchWithTimeout(path);
+          if (!r.ok) throw new Error(path + " " + r.status);
+          return readJsonLimited(r, path);
+        }
+
+        async function fetchWithTimeout(input, options) {
+          if (!window.AbortController) return fetch(input, options);
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+          try {
+            return await fetch(input, Object.assign({}, options, { signal: controller.signal }));
+          } finally {
+            clearTimeout(timer);
+          }
+        }
+
+        async function readJsonLimited(response, label) {
+          const text = await response.text();
+          if (byteLength(text) > MAX_JSON_RESPONSE_BYTES) {
+            throw new Error(label + " response too large");
+          }
+          try {
+            return text ? JSON.parse(text) : null;
+          } catch (err) {
+            throw new Error(label + " returned invalid JSON");
+          }
+        }
+
+        function byteLength(text) {
+          if (window.TextEncoder) return new TextEncoder().encode(String(text)).length;
+          return unescape(encodeURIComponent(String(text))).length;
+        }
+
+        function parseEventJson(data) {
+          if (typeof data !== "string" || data.length > MAX_SSE_EVENT_CHARS) return null;
+          try {
+            return JSON.parse(data);
+          } catch {
+            return null;
+          }
+        }
+
+        function el(tag, attrs, children) {
+          const n = document.createElement(tag);
+          for (const k in (attrs || {})) {
+            if (k === "onclick") n.addEventListener("click", attrs[k]);
+            else if (k === "oninput") n.addEventListener("input", attrs[k]);
+            else if (k === "onchange") n.addEventListener("change", attrs[k]);
+            else n.setAttribute(k, attrs[k]);
+          }
+          for (const c of children || []) n.append(typeof c === "string" ? document.createTextNode(c) : c);
+          return n;
+        }
+
+        function renderFiles() {
+          const ul = document.getElementById("files");
+          ul.replaceChildren();
+          for (const f of state.files) {
+            const li = el("li", { onclick: () => selectFile(f) }, [shortName(f)]);
+            if (f === state.current) li.className = "active";
+            ul.append(li);
+          }
+        }
+
+        function shortName(p) { return p.split(/[\\\\/]/).pop(); }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        function errorPreviewHtml(message) {
+          return "<!doctype html><meta charset=\"utf-8\"><pre>" + escapeHtml(message) + "</pre>";
+        }
+
+        function renderVars(vars) {
+          const host = document.getElementById("vars");
+          host.replaceChildren();
+          for (const v of vars) {
+            const id = "var-" + v;
+            const input = el("input", { id, value: state.vars[v] || "", oninput: (e) => { state.vars[v] = e.target.value; renderPreview(); } });
+            host.append(el("div", { class: "field" }, [el("label", { for: id }, [v]), input]));
+          }
+        }
+
+        function renderSuggestions(list) {
+          const host = document.getElementById("suggestions");
+          host.replaceChildren();
+          for (const raw of Array.isArray(list) ? list : []) {
+            const s = normalizeSuggestion(raw);
+            if (!s) continue;
+            host.append(el("div", { class: "subject-row" }, [
+              el("div", { class: "text" }, ["#" + s.rank + " " + s.subject]),
+              bar("primary", s.predicted.primary),
+              bar("promotions", s.predicted.promotions),
+              bar("spam", s.predicted.spam),
+            ]));
+          }
+        }
+
+        function normalizeSuggestion(raw) {
+          if (!raw || typeof raw !== "object") return null;
+          const predicted = raw.predicted && typeof raw.predicted === "object" ? raw.predicted : {};
+          return {
+            rank: Number.isFinite(Number(raw.rank)) ? Number(raw.rank) : 0,
+            subject: typeof raw.subject === "string" ? raw.subject : "(untitled)",
+            predicted: {
+              primary: clamp01(predicted.primary),
+              promotions: clamp01(predicted.promotions),
+              spam: clamp01(predicted.spam),
+            },
+          };
+        }
+
+        function clamp01(value) {
+          const n = Number(value);
+          if (!Number.isFinite(n)) return 0;
+          return Math.max(0, Math.min(1, n));
+        }
+
+        function bar(kind, v) {
+          const pct = Math.round((v || 0) * 100);
+          const fill = el("span", {}); fill.style.width = pct + "%";
+          return el("div", { class: "bars" }, [el("span", {}, [kind]), el("div", { class: "bar " + kind }, [fill])]);
+        }
+
+        async function selectFile(path) {
+          state.current = path;
+          document.getElementById("current-file").textContent = shortName(path);
+          renderFiles();
+          await renderPreview();
+        }
+
+        async function renderPreview() {
+          if (!state.current) return;
+          const body = JSON.stringify({ path: state.current, variables: state.vars });
+          const r = await fetchWithTimeout("/api/render", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+          const data = await readJsonLimited(r, "/api/render");
+          const frame = document.getElementById("frame");
+          frame.srcdoc = data && data.html || errorPreviewHtml(data && data.error || "render failed");
+          if (data && data.detected_variables) renderVars(data.detected_variables);
+          maybeSuggestSubject(data && data.html);
+        }
+
+        let subjectTimer = null;
+        function maybeSuggestSubject(html) {
+          const subj = document.getElementById("subject-input").value;
+          if (!subj) return;
+          if (subjectTimer) clearTimeout(subjectTimer);
+          subjectTimer = setTimeout(async () => {
+            const candidates = [subj, subj + " (open me)", "Re: " + subj];
+            const r = await fetchWithTimeout("/api/subject", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ html, candidates }),
+            });
+            renderSuggestions(await readJsonLimited(r, "/api/subject").catch(() => []));
+          }, 400);
+        }
+
+        async function init() {
+          const f = await fetchJson("/api/files");
+          state.files = f.files;
+          renderFiles();
+          if (state.files[0]) await selectFile(state.files[0]);
+          const p = await fetchJson("/api/personas");
+          state.personas = p.personas;
+          const sel = document.getElementById("persona");
+          for (const persona of state.personas) sel.append(el("option", { value: persona.email }, [persona.name + " <" + persona.email + ">"]));
+          sel.addEventListener("change", () => {
+            const chosen = state.personas.find((x) => x.email === sel.value);
+            if (chosen) { state.vars = Object.assign({}, chosen.custom_fields); renderPreview(); }
+          });
+          if (state.personas[0]) state.vars = Object.assign({}, state.personas[0].custom_fields);
+
+          document.getElementById("width").addEventListener("change", (e) => { document.getElementById("frame").width = e.target.value; });
+          document.getElementById("dark").addEventListener("click", () => { state.dark = !state.dark; document.getElementById("frame").classList.toggle("dark", state.dark); });
+          document.getElementById("subject-input").addEventListener("input", () => maybeSuggestSubject(""));
+          document.getElementById("send-test").addEventListener("click", async () => {
+            const subject = document.getElementById("subject-input").value || "Moosewave preview";
+            const r = await fetchWithTimeout("/api/send-test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: state.current, subject, variables: state.vars }) });
+            if (!r.ok) {
+              const data = await readJsonLimited(r, "/api/send-test").catch(() => null);
+              throw new Error(data && data.error || "send-test failed");
+            }
+            alert("Test queued");
+          });
+
+          const ev = new EventSource("/api/stream");
+          ev.addEventListener("hello", () => { document.getElementById("status").textContent = "connected"; });
+          ev.addEventListener("reload", async (e) => {
+            document.getElementById("reload-flag").textContent = "reloaded " + new Date().toLocaleTimeString();
+            await renderPreview();
+            const fr = await fetchJson("/api/files"); state.files = fr.files; renderFiles();
+          });
+          ev.addEventListener("subject", (e) => {
+            renderSuggestions(parseEventJson(e.data) || []);
+          });
+        }
+
+        init().catch((err) => {
+          document.body.replaceChildren(el("pre", {}, [err && err.message ? err.message : String(err)]));
+        });
+      })();
+    </script>
+  </body>
+</html>

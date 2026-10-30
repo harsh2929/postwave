@@ -1,0 +1,294 @@
+name: Publish VS Code extension
+
+# A workflow_dispatch run builds and verifies the exact VSIX but never uploads
+# it to the Marketplace. Only a canonical vscode-vX.Y.Z tag can enter the
+# protected publish job.
+on:
+  push:
+    tags:
+      - "vscode-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vscode-marketplace-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CANONICAL_REPOSITORY: harsh2929/postwave
+  NODE_VERSION: 20.19.5
+  PNPM_VERSION: 9.12.0
+  VSCE_VERSION: 3.9.1
+  EXTENSION_DIRECTORY: packages/vscode-extension
+  EXTENSION_ID: postwave.postwave-vscode
+  MARKETPLACE_PUBLISHER: postwave
+
+jobs:
+  package:
+    name: Build, inspect, and attest VSIX
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    outputs:
+      filename: ${{ steps.metadata.outputs.filename }}
+      is_release: ${{ steps.metadata.outputs.is_release }}
+      version: ${{ steps.metadata.outputs.version }}
+    env:
+      ARTIFACT_DIRECTORY: ${{ github.workspace }}/.release/vscode
+
+    steps:
+      - name: Checkout immutable release source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Validate release identity and version
+        id: metadata
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./packages/vscode-extension/package.json').version")"
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::extension version must be stable major.minor.patch, got $version"
+            exit 1
+          fi
+
+          is_release=false
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            if [[ "$REF_TYPE" != "tag" || ! "$REF_NAME" =~ ^vscode-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+              echo "::error::release tag must be exactly vscode-vX.Y.Z"
+              exit 1
+            fi
+            if [[ "${BASH_REMATCH[1]}" != "$version" ]]; then
+              echo "::error::tag version ${BASH_REMATCH[1]} does not match package version $version"
+              exit 1
+            fi
+            if [[ "$GITHUB_REPOSITORY" != "$CANONICAL_REPOSITORY" ]]; then
+              echo "::error::only $CANONICAL_REPOSITORY may publish Marketplace releases"
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "::error::release tag commit is not reachable from origin/main"
+              exit 1
+            fi
+            is_release=true
+          fi
+
+          filename="postwave-vscode-${version}.vsix"
+          {
+            printf 'filename=%s\n' "$filename"
+            printf 'is_release=%s\n' "$is_release"
+            printf 'version=%s\n' "$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install locked workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify pinned Marketplace CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(pnpm --dir "$EXTENSION_DIRECTORY" exec vsce --version)"
+          test "$actual" = "$VSCE_VERSION"
+
+      - name: Typecheck, test, and build extension
+        run: |
+          pnpm --filter postwave-vscode typecheck
+          pnpm --filter postwave-vscode test
+          pnpm --filter postwave-vscode build
+
+      - name: Dry-run packaged file list
+        run: pnpm --dir "$EXTENSION_DIRECTORY" exec vsce ls --no-dependencies
+
+      - name: Package and inspect VSIX
+        shell: bash
+        env:
+          FILENAME: ${{ steps.metadata.outputs.filename }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$ARTIFACT_DIRECTORY"
+          pnpm --dir "$EXTENSION_DIRECTORY" exec vsce package \
+            --no-dependencies \
+            --githubBranch main \
+            --out "$ARTIFACT_DIRECTORY/$FILENAME"
+          scripts/release/verify-vscode-vsix.sh \
+            "$ARTIFACT_DIRECTORY/$FILENAME" \
+            "$VERSION" \
+            "$CANONICAL_REPOSITORY"
+          (
+            cd "$ARTIFACT_DIRECTORY"
+            sha256sum "$FILENAME" > "$FILENAME.sha256"
+            sha256sum --check "$FILENAME.sha256"
+          )
+
+      - name: Create signed SLSA provenance
+        id: attest
+        if: steps.metadata.outputs.is_release == 'true'
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          subject-path: ${{ env.ARTIFACT_DIRECTORY }}/${{ steps.metadata.outputs.filename }}
+
+      - name: Verify exact provenance identity
+        if: steps.metadata.outputs.is_release == 'true'
+        shell: bash
+        env:
+          FILENAME: ${{ steps.metadata.outputs.filename }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh attestation verify "$ARTIFACT_DIRECTORY/$FILENAME" \
+            --bundle "${{ steps.attest.outputs.bundle-path }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "github.com/$GITHUB_REPOSITORY/.github/workflows/publish-vscode.yml" \
+            --source-ref "$GITHUB_REF" \
+            --source-digest "$GITHUB_SHA" \
+            --deny-self-hosted-runners
+          cp "${{ steps.attest.outputs.bundle-path }}" \
+            "$ARTIFACT_DIRECTORY/$FILENAME.attestation.json"
+
+      - name: Upload verified release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: postwave-vscode-${{ steps.metadata.outputs.version }}-${{ github.sha }}
+          path: ${{ env.ARTIFACT_DIRECTORY }}/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish exact attested VSIX
+    needs: package
+    if: needs.package.outputs.is_release == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: vscode-marketplace
+      url: https://marketplace.visualstudio.com/items?itemName=postwave.postwave-vscode
+    permissions:
+      contents: read
+      id-token: write
+      attestations: read
+    env:
+      ARTIFACT_DIRECTORY: ${{ github.workspace }}/.release/vscode
+      FILENAME: ${{ needs.package.outputs.filename }}
+      VERSION: ${{ needs.package.outputs.version }}
+
+    steps:
+      - name: Checkout verifier and locked tooling
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install locked Marketplace CLI
+        run: pnpm install --frozen-lockfile
+
+      - name: Download verified release candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: postwave-vscode-${{ needs.package.outputs.version }}-${{ github.sha }}
+          path: ${{ env.ARTIFACT_DIRECTORY }}
+
+      - name: Reverify archive, checksum, and provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          (
+            cd "$ARTIFACT_DIRECTORY"
+            sha256sum --check "$FILENAME.sha256"
+          )
+          scripts/release/verify-vscode-vsix.sh \
+            "$ARTIFACT_DIRECTORY/$FILENAME" \
+            "$VERSION" \
+            "$CANONICAL_REPOSITORY"
+          gh attestation verify "$ARTIFACT_DIRECTORY/$FILENAME" \
+            --bundle "$ARTIFACT_DIRECTORY/$FILENAME.attestation.json" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "github.com/$GITHUB_REPOSITORY/.github/workflows/publish-vscode.yml" \
+            --source-ref "$GITHUB_REF" \
+            --source-digest "$GITHUB_SHA" \
+            --deny-self-hosted-runners
+          actual="$(pnpm --dir "$EXTENSION_DIRECTORY" exec vsce --version)"
+          test "$actual" = "$VSCE_VERSION"
+
+      - name: Require keyless Marketplace identity configuration
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$AZURE_CLIENT_ID" || -z "$AZURE_TENANT_ID" ]]; then
+            echo "::error::vscode-marketplace must provide AZURE_CLIENT_ID and AZURE_TENANT_ID"
+            exit 1
+          fi
+
+      - name: Log in to Microsoft Entra with GitHub OIDC
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Verify Marketplace publisher authorization
+        run: pnpm --dir "$EXTENSION_DIRECTORY" exec vsce verify-pat "$MARKETPLACE_PUBLISHER" --azure-credential
+
+      - name: Publish exact attested VSIX
+        run: pnpm --dir "$EXTENSION_DIRECTORY" exec vsce publish --packagePath "$ARTIFACT_DIRECTORY/$FILENAME" --azure-credential
+
+      - name: Confirm published Marketplace version
+        shell: bash
+        run: |
+          set -euo pipefail
+          published=false
+          for attempt in $(seq 1 12); do
+            if pnpm --dir "$EXTENSION_DIRECTORY" exec vsce show "$EXTENSION_ID" --json \
+              > "$RUNNER_TEMP/marketplace-extension.json"; then
+              if jq -e --arg version "$VERSION" \
+                '.versions | any(.version == $version)' \
+                "$RUNNER_TEMP/marketplace-extension.json" >/dev/null; then
+                published=true
+                break
+              fi
+            fi
+            echo "Marketplace has not exposed $EXTENSION_ID $VERSION yet (attempt $attempt/12)"
+            sleep 10
+          done
+          if [[ "$published" != true ]]; then
+            echo "::error::Marketplace did not expose $EXTENSION_ID $VERSION after publish"
+            exit 1
+          fi

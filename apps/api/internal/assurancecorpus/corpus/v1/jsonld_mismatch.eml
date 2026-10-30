@@ -1,0 +1,24 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <jsonld-mismatch.v1@example.com>
+Subject: Mismatched JSON-LD synthetic fixture
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-json-mismatch-v1"
+
+--pw-json-mismatch-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Buy for USD 20.00: https://offers.example.com/buy
+--pw-json-mismatch-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><head><script type=3D"application/ld+json">=
+{"@context":"https://schema.org","@type":"Offer","price":"25.00",=
+"priceCurrency":"USD","url":"https://offers.example.com/renew"}=
+</script></head><body><h1>Synthetic offer</h1>=
+<p>Buy for USD 20.00.</p>=
+<p><a href=3D"https://offers.example.com/buy">Buy now</a></p></body></html>
+--pw-json-mismatch-v1--

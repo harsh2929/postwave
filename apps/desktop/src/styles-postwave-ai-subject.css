@@ -1,0 +1,363 @@
+/* Subject Lab route adapter: evidence-first staging, never direct sending. */
+
+.ai-subject-workspace {
+  position: relative;
+  display: grid;
+  gap: 15px;
+  overflow: hidden;
+  padding: clamp(16px, 2.5vw, 24px);
+  background:
+    radial-gradient(
+      circle at 92% 0%,
+      color-mix(in srgb, var(--pw-accent) 10%, transparent),
+      transparent 31%
+    ),
+    var(--pw-bg-elev);
+  border-radius: calc(var(--pw-radius-md) + 3px);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, white 4%, transparent) inset,
+    0 18px 44px color-mix(in srgb, var(--pw-shadow-color) 9%, transparent);
+}
+
+.ai-subject-header {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(260px, 1.3fr);
+  gap: 18px;
+  align-items: end;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+
+.ai-subject-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-subject-kicker {
+  color: var(--pw-accent);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.ai-subject-header .section-title {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: -0.018em;
+}
+
+.ai-subject-intro {
+  max-width: 570px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.ai-subject-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-subject-steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  min-width: 0;
+  padding: 10px;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 72%, transparent);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+}
+
+.ai-subject-steps li[data-active="true"] {
+  background: color-mix(in srgb, var(--pw-accent) 8%, var(--pw-bg-elev-2));
+  border-color: color-mix(in srgb, var(--pw-accent) 30%, var(--pw-border));
+}
+
+.ai-subject-steps li > span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--pw-fg-subtle);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+  background: color-mix(in srgb, var(--pw-bg) 58%, transparent);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: 8px;
+}
+
+.ai-subject-steps li[data-active="true"] > span {
+  /* Accent-hover is the theme's contrast-safe ember. The base accent falls
+     below AA at this 9px size once it is placed on the active tinted tile. */
+  color: var(--pw-accent-hover);
+  background: color-mix(in srgb, var(--pw-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--pw-accent) 30%, transparent);
+}
+
+.ai-subject-steps li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ai-subject-steps strong {
+  color: var(--pw-fg);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.ai-subject-steps small {
+  color: var(--pw-fg-subtle);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.ai-subject-steps li[data-active="true"] small {
+  /* The active tint lowers subtle-text contrast; muted remains AA in both
+     paper and ink themes while preserving the intended secondary hierarchy. */
+  color: var(--pw-fg-muted);
+}
+
+.ai-subject-input-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.82fr) minmax(300px, 1.18fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.ai-subject-field {
+  min-width: 0;
+}
+
+.ai-subject-field .label {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-subject-field input,
+.ai-subject-field textarea {
+  width: 100%;
+  color: var(--pw-fg);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--pw-bg-elev-2) 92%, transparent);
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-md);
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+.ai-subject-field input {
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.ai-subject-field textarea {
+  min-height: 112px;
+  max-height: 280px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+
+.ai-subject-field input:focus,
+.ai-subject-field textarea:focus {
+  background: var(--pw-bg);
+  border-color: color-mix(in srgb, var(--pw-accent) 68%, var(--pw-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pw-accent) 12%, transparent);
+}
+
+.ai-subject-field > small {
+  color: var(--pw-fg-subtle);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.ai-subject-permission {
+  margin: 0;
+}
+
+.ai-subject-error {
+  display: grid;
+  gap: 3px;
+  padding: 10px 11px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  background: color-mix(in srgb, var(--pw-danger) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-danger) 28%, var(--pw-border));
+  border-radius: var(--pw-radius-md);
+}
+
+.ai-subject-error strong {
+  color: color-mix(in srgb, var(--pw-danger) 78%, var(--pw-fg));
+}
+
+.ai-subject-candidates {
+  display: grid;
+  gap: 10px;
+  padding: clamp(13px, 2vw, 18px);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pw-accent) 8%, transparent),
+      transparent 48%
+    ),
+    color-mix(in srgb, var(--pw-bg-elev-2) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pw-accent) 24%, var(--pw-border));
+  border-radius: calc(var(--pw-radius-md) + 2px);
+}
+
+.ai-subject-candidates-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-subject-candidates-header > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-subject-candidates-header strong {
+  color: var(--pw-fg);
+  font-size: 12px;
+}
+
+.ai-subject-candidates > p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.ai-subject-candidate-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.ai-subject-candidate-list label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  min-width: 0;
+  min-height: 46px;
+  padding: 9px 10px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--pw-bg) 54%, transparent);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+}
+
+.ai-subject-candidate-list label[data-selected="true"] {
+  color: var(--pw-fg);
+  background: color-mix(in srgb, var(--pw-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--pw-accent) 50%, var(--pw-border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pw-accent) 7%, transparent);
+}
+
+.ai-subject-candidate-list input {
+  margin-top: 2px;
+  accent-color: var(--pw-accent);
+}
+
+.ai-subject-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
+
+.ai-subject-action-note {
+  flex: 1 1 260px;
+  color: var(--pw-fg-subtle);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+@media (max-width: 820px) {
+  .ai-subject-header,
+  .ai-subject-input-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ai-subject-header {
+    gap: 7px;
+    align-items: start;
+  }
+
+  .ai-subject-candidate-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 620px) {
+  .ai-subject-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ai-subject-candidates-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-subject-workspace {
+    padding: 13px;
+  }
+
+  .ai-subject-actions > .btn {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-subject-field input,
+  .ai-subject-field textarea {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ai-subject-workspace,
+  .ai-subject-steps li,
+  .ai-subject-field input,
+  .ai-subject-field textarea,
+  .ai-subject-error,
+  .ai-subject-candidates,
+  .ai-subject-candidate-list label {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+
+  .ai-subject-candidate-list label[data-selected="true"] {
+    color: HighlightText;
+    background: Highlight;
+  }
+}

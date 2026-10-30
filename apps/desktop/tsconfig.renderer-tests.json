@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "@playwright/test"]
+  },
+  "include": [
+    "tests/accessibility/**/*.ts",
+    "tests/performance/**/*.ts",
+    "tests/visual/**/*.ts",
+    "playwright-a11y.config.ts",
+    "playwright.commerce-evidence.config.ts",
+    "playwright.config.ts",
+    "playwright.helpdesk-optimized.config.ts",
+    "playwright-performance.config.ts",
+    "playwright-storybook.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", "src-tauri"],
+  "references": []
+}

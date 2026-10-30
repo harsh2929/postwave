@@ -1,0 +1,20 @@
+From: "Postwave Synthetic" <sender@example.com>
+To: "Synthetic Recipient" <recipient@example.net>
+Date: Sun, 09 Aug 2026 12:00:00 +0000
+Message-ID: <verification-code-do-not-share.v1@example.com>
+Subject: Your verification code
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="pw-otp-v1"
+
+--pw-otp-v1
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Your code is 418209. Do not share it with anyone, including our staff.
+Help: https://help.example.com/codes
+--pw-otp-v1
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+<html><body><h1>Your verification code</h1><p>Your code is <strong>418209</strong>.</p><p>Do not share it with anyone, including our staff. We will never ask you for it.</p><p><a href="https://help.example.com/codes">Learn more</a></p></body></html>
+--pw-otp-v1--

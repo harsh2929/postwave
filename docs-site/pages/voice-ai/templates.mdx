@@ -1,0 +1,132 @@
+---
+title: Templates
+---
+
+import { Callout } from 'nextra/components';
+
+# The 50-template library
+
+Moosewave ships with **50 hand-authored templates** organised into 11 categories. Each template is a structured *sequence skeleton* — number of emails, send-cadence, per-email purpose, variables — that generation fills in using your [voice profile](/voice-ai/profile).
+
+## How to filter and pick
+
+In **Voice AI → New sequence**, you can filter by:
+
+- **Category** (welcome, re-engagement, product launch, course launch, SaaS onboarding, sales, partnership, community, crisis, newsletter series, misc).
+- **Length** (single email, 2–3 emails, 5+ emails, 7+ emails).
+- **Audience type** (cold, warm, paid, churned, prospect, customer).
+
+Click any template to see its email-by-email outline before generating.
+
+## How to use one
+
+1. Pick a template.
+2. Fill in template variables (your product/newsletter name, the offer, key dates, etc.).
+3. Confirm the [voice profile](/voice-ai/profile) to use.
+4. Set the [4 sliders](/voice-ai/generation) (formality, length, urgency, personalisation).
+5. Click **Generate**. Each email returns with a [fidelity score](/voice-ai/fidelity-scoring); regenerate any below 60.
+6. Review and edit each email. Save as an [automation](/automation) and wire to a [trigger](/automation/triggers).
+
+## The 50 templates, by category
+
+### Welcome (6)
+
+- `welcome-confirmation-only` — single double-opt-in confirmation
+- `welcome-2-email-quickstart` — 2-email rapid welcome
+- `welcome-3-email` — classic 3-email welcome
+- `welcome-5-email` — extended 5-email warmth-builder
+- `welcome-7-email` — full nurture welcome
+- `welcome-10-email` — long-tail course-style welcome
+
+### Newsletter series (6)
+
+- `newsletter-series-design`
+- `newsletter-series-engineering`
+- `newsletter-series-marketing`
+- `newsletter-series-productivity`
+- `newsletter-series-sales`
+- `newsletter-series-writing-tips`
+
+### Re-engagement (5)
+
+- `re-engagement-direct` — straight "are you still there?"
+- `re-engagement-gentle` — warmer, story-led
+- `re-engagement-incentive-discount` — discount-driven
+- `re-engagement-last-call` — final unsub-or-stay
+- `re-engagement-survey-driven` — feedback-as-engagement
+
+### SaaS onboarding (6)
+
+- `saas-onboarding-trial-start`
+- `saas-onboarding-day-3-activation`
+- `saas-onboarding-day-7-feature-tour`
+- `saas-onboarding-day-14-conversion`
+- `saas-onboarding-power-user-features`
+- `saas-onboarding-team-invite`
+
+### Course launch (5)
+
+- `course-launch-pre` — pre-launch warmup
+- `course-launch-presale` — early-bird presale
+- `course-launch-launch` — launch day
+- `course-launch-bonus-day` — bonus-stack day
+- `course-launch-post` — post-launch wrap
+
+### Product launch (3)
+
+- `product-launch-pre`
+- `product-launch-launch`
+- `product-launch-post`
+
+### Product (2)
+
+- `product-beta-invite`
+- `product-changelog-monthly`
+
+### Sales (2)
+
+- `sales-cold-warm-outbound`
+- `sales-renewal-reminder`
+
+### Partnership (4)
+
+- `partnership-affiliate-launch`
+- `partnership-announcement`
+- `partnership-cross-promo`
+- `partnership-sponsorship-pitch`
+
+### Cold-warm (2)
+
+- `cold-warm-founder-intro`
+- `cold-warm-post-event-followup`
+
+### Community (2)
+
+- `community-event-invitation`
+- `community-meetup-recap`
+
+### Crisis (2)
+
+- `crisis-apology`
+- `crisis-pivot-announcement`
+
+<Callout type="warning">
+Crisis templates are the **one category we strongly recommend you do not ship without heavy editing**. AI-drafted crisis communications miss tonal subtleties that read as evasive even when the content is fine. See [Best practices](/voice-ai/best-practices).
+</Callout>
+
+### Misc (5)
+
+- `misc-feedback-survey`
+- `misc-policy-update`
+- `misc-system-status`
+- `misc-testimonial-request`
+- `year-in-review`
+
+## Total
+
+50 templates — covering ~95% of newsletter operators' needs. If you have a sequence shape that isn't covered, you can author a custom template under **Voice AI → Templates → New** (admin role required).
+
+## Next steps
+
+- [Generation](/voice-ai/generation) — how the template + profile becomes drafts.
+- [Best practices](/voice-ai/best-practices) — when to and not to ship AI drafts.

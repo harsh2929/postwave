@@ -1,0 +1,79 @@
+{
+  "name": "@postwave/sdk",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for the Moosewave email platform \u2014 campaigns, subscribers, sequences, voice, sandbox, budgets, approvals. Designed for software agents and developer-driven workflows.",
+  "keywords": [
+    "postwave",
+    "email",
+    "newsletter",
+    "marketing-automation",
+    "transactional-email",
+    "agent",
+    "agents",
+    "ai",
+    "mcp",
+    "sdk",
+    "typescript"
+  ],
+  "author": "Moosewave",
+  "license": "MIT",
+  "homepage": "https://moosewave.com/forge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh2929/postwave.git",
+    "directory": "packages/sdk-ts"
+  },
+  "bugs": {
+    "url": "https://github.com/harsh2929/postwave/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./webhook": {
+      "types": "./dist/webhook.d.ts",
+      "import": "./dist/webhook.js",
+      "require": "./dist/webhook.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "generate:operations": "node scripts/generate-operations.mjs",
+    "generate:operations:check": "node scripts/generate-operations.mjs --self-test && node scripts/generate-operations.mjs --check"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

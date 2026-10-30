@@ -1,0 +1,245 @@
+{
+  "schema_version": "postwave.inbox-capability-registry.v1",
+  "registry_version": "2026-08-09.1",
+  "published_at": "2026-08-09T12:00:00Z",
+  "sources": [
+    {
+      "id": "google-gemini-summary-cards-2025-05-29",
+      "kind": "first_party_documentation",
+      "publisher": "Google Workspace Updates",
+      "title": "Gemini summary cards in the Gmail app",
+      "locator": "https://workspaceupdates.googleblog.com/2025/05/gemini-summary-cards-gmail-app.html",
+      "published_at": "2025-05-29T00:00:00Z",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "google-gmail-api-message-resource",
+      "kind": "first_party_documentation",
+      "publisher": "Google for Developers",
+      "title": "Gmail API users.messages resource",
+      "locator": "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "google-email-markup-overview",
+      "kind": "first_party_documentation",
+      "publisher": "Google for Developers",
+      "title": "Email markup in Gmail",
+      "locator": "https://developers.google.com/workspace/gmail/markup/getting-started",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "apple-mail-summaries-ios",
+      "kind": "first_party_documentation",
+      "publisher": "Apple Support",
+      "title": "Summarize emails and email threads in Mail on iPhone",
+      "locator": "https://support.apple.com/en-ie/guide/iphone/iph9ae667055/ios",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "microsoft-outlook-copilot-thread-summary",
+      "kind": "first_party_documentation",
+      "publisher": "Microsoft Support",
+      "title": "Summarize an email thread with Copilot in Outlook",
+      "locator": "https://support.microsoft.com/en-au/office/summarize-an-email-thread-with-copilot-in-outlook-a79873f2-396b-46dc-b852-7fe5947ab640",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "imap4rev2-rfc9051",
+      "kind": "standard",
+      "publisher": "RFC Editor",
+      "title": "RFC 9051 Internet Message Access Protocol Version 4rev2",
+      "locator": "https://www.rfc-editor.org/rfc/rfc9051",
+      "published_at": "2021-08-01T00:00:00Z",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "postwave-ai-inbox-blueprint-2026-08-09",
+      "kind": "internal_decision",
+      "publisher": "Moosewave",
+      "title": "AI Inbox and Campaign Assurance implementation blueprint",
+      "locator": "docs/moosewave-ai-inbox-campaign-assurance-implementation-blueprint-2026-08-09.md",
+      "published_at": "2026-08-09T00:00:00Z",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "inbox-monster-ai-preview-vendor-claim",
+      "kind": "vendor_claim",
+      "publisher": "Inbox Monster",
+      "title": "Controlled Gemini AI preview announcement",
+      "locator": "https://inboxmonster.com/blog/inbox-monster-launches-gemini-ai-previews--see-how-gmails-ai-summarizes-your-emails",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    },
+    {
+      "id": "validity-ai-summary-preview-vendor-claim",
+      "kind": "vendor_claim",
+      "publisher": "Validity",
+      "title": "Validity capability list",
+      "locator": "https://www.validity.com/capabilities/",
+      "retrieved_at": "2026-08-09T12:00:00Z"
+    }
+  ],
+  "vendor_candidates": [
+    {
+      "id": "inbox_monster",
+      "name": "Inbox Monster",
+      "source_ids": ["inbox-monster-ai-preview-vendor-claim"],
+      "status": "unevaluated",
+      "note": "Candidate based on a vendor-published capability claim; procurement, API fit, capture provenance, privacy, and controlled certification are not complete."
+    },
+    {
+      "id": "validity",
+      "name": "Validity",
+      "source_ids": ["validity-ai-summary-preview-vendor-claim"],
+      "status": "unevaluated",
+      "note": "Candidate based on a vendor-published capability list; procurement, API fit, capture provenance, privacy, and controlled certification are not complete."
+    }
+  ],
+  "launch_observation_decision": {
+    "status": "not_selected",
+    "strategy": "Evaluate a replaceable controlled-preview vendor before funding an owned browser or device lab.",
+    "candidate_vendor_ids": ["inbox_monster", "validity"],
+    "reviewed_at": "2026-08-09T12:00:00Z",
+    "decision_evidence_source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"]
+  },
+  "profiles": [
+    {
+      "id": "gmail-gmail-android-opened-message-summary-card",
+      "revision": 1,
+      "key": {
+        "mailbox_provider": "gmail",
+        "client_app": "gmail",
+        "os_family": "android",
+        "device_class": "mobile",
+        "account_tier": "gemini_eligible",
+        "locale": "en-US",
+        "smart_feature_settings": [
+          {"name": "gemini", "state": "enabled"},
+          {"name": "smart_features", "state": "enabled"}
+        ],
+        "surface": "opened_message_summary_card"
+      },
+      "capabilities": [
+        {"capability": "message_headers_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "This exact provider, client, account, locale, settings, and device profile has not completed live connector certification."},
+        {"capability": "raw_mime_acquisition", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["google-gmail-api-message-resource"], "assessed_at": "2026-08-09T12:00:00Z", "note": "The Gmail API documents message payload and raw formats, but this exact profile and Moosewave acquisition path have not completed live byte-preservation certification."},
+        {"capability": "mime_body_parts_acquisition", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["google-gmail-api-message-resource"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Documented message parts do not substitute for live certification of Moosewave's bounded acquisition path."},
+        {"capability": "folder_or_category_placement", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live placement capture is attached to this profile revision."},
+        {"capability": "documented_summary_surface", "state": "available", "evidence_class": "published_documentation", "source_ids": ["google-gemini-summary-cards-2025-05-29"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Google documents summary cards for some useful messages or threads in the Gmail mobile app after message content is opened.", "constraints": ["Eligibility, rollout, language, account, and smart-feature settings vary.", "This is an opened-message surface, not proof of a pre-open inbox-list summary."]},
+        {"capability": "controlled_summary_observation", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Moosewave has no certified controlled-client adapter for this exact surface revision."},
+        {"capability": "summary_via_standard_imap", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["imap4rev2-rfc9051", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Standard IMAP exposes stored-message and mailbox data, not the Gmail client's Gemini-rendered summary surface."},
+        {"capability": "summary_via_gmail_api", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["google-gmail-api-message-resource", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "The documented Gmail Message resource does not expose the Gmail client's Gemini-rendered summary."},
+        {"capability": "structured_markup_summary_effect", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["google-email-markup-overview", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Gmail email markup documentation covers actions, cards, highlights, and promotions; it does not guarantee display or a beneficial Gemini-summary effect."}
+      ]
+    },
+    {
+      "id": "gmail-apple-mail-ios-inbox-list-summary",
+      "revision": 1,
+      "key": {
+        "mailbox_provider": "gmail",
+        "client_app": "apple_mail",
+        "os_family": "ios",
+        "device_class": "mobile",
+        "account_tier": "apple_intelligence_eligible",
+        "locale": "en-US",
+        "smart_feature_settings": [
+          {"name": "apple_intelligence", "state": "enabled"},
+          {"name": "summarize_message_previews", "state": "enabled"}
+        ],
+        "surface": "inbox_list_summary"
+      },
+      "capabilities": [
+        {"capability": "message_headers_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "This exact Gmail mailbox read by Apple Mail has not completed live connector certification."},
+        {"capability": "raw_mime_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live byte-preservation result is attached to this cross-provider/client profile."},
+        {"capability": "mime_body_parts_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No certified body-part acquisition result is attached to this profile."},
+        {"capability": "folder_or_category_placement", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live placement capture is attached to this profile revision."},
+        {"capability": "documented_summary_surface", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["apple-mail-summaries-ios"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Apple documents Mail summaries broadly, but the reviewed source does not certify this exact Gmail-provider and Apple-Mail-client profile.", "constraints": ["This would be Apple Mail client behavior even though the mailbox provider is Gmail.", "Device, language, model download, region, account type, and Apple Intelligence settings can affect availability."]},
+        {"capability": "controlled_summary_observation", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Moosewave has no certified Apple Mail device adapter for this exact surface revision."},
+        {"capability": "summary_via_standard_imap", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["imap4rev2-rfc9051", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "IMAP cannot return a summary rendered locally by the Apple Mail client."},
+        {"capability": "summary_via_gmail_api", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["google-gmail-api-message-resource", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "The Gmail Message API does not return Apple Mail's client-rendered summary."},
+        {"capability": "structured_markup_summary_effect", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "No source or controlled observation establishes that email structured markup improves Apple Mail summaries."}
+      ]
+    },
+    {
+      "id": "icloud-apple-mail-ios-inbox-list-summary",
+      "revision": 1,
+      "key": {
+        "mailbox_provider": "icloud_mail",
+        "client_app": "apple_mail",
+        "os_family": "ios",
+        "device_class": "mobile",
+        "account_tier": "apple_intelligence_eligible",
+        "locale": "en-US",
+        "smart_feature_settings": [
+          {"name": "apple_intelligence", "state": "enabled"},
+          {"name": "summarize_message_previews", "state": "enabled"}
+        ],
+        "surface": "inbox_list_summary"
+      },
+      "capabilities": [
+        {"capability": "message_headers_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "This exact iCloud Mail and Apple Mail profile has not completed live connector certification."},
+        {"capability": "raw_mime_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live byte-preservation result is attached to this profile revision."},
+        {"capability": "mime_body_parts_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No certified body-part acquisition result is attached to this profile."},
+        {"capability": "folder_or_category_placement", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live placement capture is attached to this profile revision."},
+        {"capability": "documented_summary_surface", "state": "available", "evidence_class": "published_documentation", "source_ids": ["apple-mail-summaries-ios"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Apple documents automatic Mail message previews and opened-message or thread summaries on eligible devices.", "constraints": ["Device, language, model download, region, and Apple Intelligence settings can affect availability."]},
+        {"capability": "controlled_summary_observation", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Moosewave has no certified Apple Mail device adapter for this exact surface revision."},
+        {"capability": "summary_via_standard_imap", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["imap4rev2-rfc9051", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "IMAP cannot return a summary rendered locally by the Apple Mail client."},
+        {"capability": "summary_via_gmail_api", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "The Gmail API is not a collection path for an iCloud mailbox and does not return Apple Mail's client-rendered summary."},
+        {"capability": "structured_markup_summary_effect", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "No source or controlled observation establishes that email structured markup improves Apple Mail summaries."}
+      ]
+    },
+    {
+      "id": "microsoft365-outlook-web-selected-thread-summary",
+      "revision": 1,
+      "key": {
+        "mailbox_provider": "microsoft_365",
+        "client_app": "outlook_web",
+        "os_family": "web",
+        "device_class": "desktop",
+        "account_tier": "copilot_eligible",
+        "locale": "en-US",
+        "smart_feature_settings": [
+          {"name": "copilot", "state": "enabled"}
+        ],
+        "surface": "selected_thread_summary"
+      },
+      "capabilities": [
+        {"capability": "message_headers_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "This exact Microsoft 365 and Outlook profile has not completed live connector certification."},
+        {"capability": "raw_mime_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live byte-preservation result is attached to this profile revision."},
+        {"capability": "mime_body_parts_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No certified body-part acquisition result is attached to this profile."},
+        {"capability": "folder_or_category_placement", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live placement capture is attached to this profile revision."},
+        {"capability": "documented_summary_surface", "state": "available", "evidence_class": "published_documentation", "source_ids": ["microsoft-outlook-copilot-thread-summary"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Microsoft documents a Copilot summary for a selected email conversation.", "constraints": ["The documented interaction is generally user-triggered, not an automatic inbox-list summary.", "Account, license, language, and client eligibility vary."]},
+        {"capability": "controlled_summary_observation", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Moosewave has no certified controlled Outlook adapter for this exact surface revision."},
+        {"capability": "summary_via_standard_imap", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["imap4rev2-rfc9051", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "IMAP does not return Outlook's Copilot-rendered thread summary."},
+        {"capability": "summary_via_gmail_api", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "The Gmail API is not a collection path for Microsoft 365 and does not return Outlook's Copilot surface."},
+        {"capability": "structured_markup_summary_effect", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "No source or controlled observation establishes that Gmail-style email markup improves Outlook Copilot summaries."}
+      ]
+    },
+    {
+      "id": "yahoo-yahoo-mail-web-summary-surface-unknown",
+      "revision": 1,
+      "key": {
+        "mailbox_provider": "yahoo",
+        "client_app": "yahoo_mail_web",
+        "os_family": "web",
+        "device_class": "desktop",
+        "account_tier": "standard",
+        "locale": "en-US",
+        "smart_feature_settings": [
+          {"name": "ai_summary_features", "state": "unknown"}
+        ],
+        "surface": "summary_surface_unknown"
+      },
+      "capabilities": [
+        {"capability": "message_headers_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "This exact Yahoo Mail profile has not completed live connector certification."},
+        {"capability": "raw_mime_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live byte-preservation result is attached to this profile revision."},
+        {"capability": "mime_body_parts_acquisition", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No certified body-part acquisition result is attached to this profile."},
+        {"capability": "folder_or_category_placement", "state": "unknown", "evidence_class": "research_gap", "assessed_at": "2026-08-09T12:00:00Z", "note": "No live placement capture is attached to this profile revision."},
+        {"capability": "documented_summary_surface", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "The reviewed research set does not establish a named Yahoo Mail AI-summary surface for this exact environment."},
+        {"capability": "controlled_summary_observation", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "Moosewave has no certified controlled Yahoo Mail adapter for this exact surface revision."},
+        {"capability": "summary_via_standard_imap", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["imap4rev2-rfc9051", "postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "IMAP does not expose a Yahoo client-rendered summary surface, if one is present."},
+        {"capability": "summary_via_gmail_api", "state": "unavailable", "evidence_class": "protocol_boundary", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "The Gmail API is not a collection path for Yahoo Mail and cannot expose a Yahoo client-rendered summary."},
+        {"capability": "structured_markup_summary_effect", "state": "unknown", "evidence_class": "research_gap", "source_ids": ["postwave-ai-inbox-blueprint-2026-08-09"], "assessed_at": "2026-08-09T12:00:00Z", "note": "No source or controlled observation establishes a structured-markup effect on a Yahoo Mail AI summary."}
+      ]
+    }
+  ]
+}

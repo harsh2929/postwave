@@ -1,0 +1,43 @@
+---
+title: Forms
+---
+
+# Forms
+
+Forms are how new subscribers find their way onto your list. Moosewave's forms are built on top of [GrapesJS](https://grapesjs.com/) — a visual block-based builder — and can be used in two modes:
+
+- **Hosted** — Moosewave gives you a public URL (`forms.moosewave.com/<your-form>`) where the form lives. No code on your site.
+- **Embedded** — drop a script tag on your site for inline, popup, or sidebar widgets. See [Embedding](/forms/embedding).
+
+## What you can build
+
+- Single-field email signup.
+- Multi-field signup with custom attributes.
+- Multi-step / wizard forms.
+- Lead-magnet forms (form submission triggers a download + email-confirm flow).
+- Survey forms (responses stored, optionally tagging the subscriber).
+
+## The shape of a form
+
+Every form has:
+
+- A **schema** (the GrapesJS document — blocks + styling).
+- A **field map** — which form fields write to which subscriber attributes.
+- A **destination** — list/segment to add submitters to, optional tags to apply.
+- An **opt-in mode** — single or [double](/forms/opt-in).
+- **Spam protections** — honeypot, optional reCAPTCHA, IP rate limit. See [Spam protection](/forms/spam-protection).
+- **Submissions** view — every submission stored and exportable. See [Submissions](/forms/submissions).
+
+## Quick start
+
+1. **Forms → New form**.
+2. Pick a starter ("Single email", "Lead magnet", "Multi-step", "Survey").
+3. Use the [builder](/forms/builder) to customise.
+4. Choose your [destination list](/forms/builder) and [opt-in mode](/forms/opt-in).
+5. Publish — you get the hosted URL and the embed snippet.
+
+## Next steps
+
+- [Builder](/forms/builder)
+- [Embedding](/forms/embedding)
+- [Opt-in modes](/forms/opt-in)

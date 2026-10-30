@@ -1,0 +1,1464 @@
+.dmarc-page {
+  --dmarc-teal: var(--pw-success);
+  --dmarc-blue: var(--pw-info);
+  --dmarc-amber: var(--pw-warning);
+  --dmarc-red: var(--pw-danger);
+  display: grid;
+  gap: var(--pw-sp-4, 16px);
+  min-width: 0;
+  padding-bottom: var(--pw-sp-8, 32px);
+}
+
+.dmarc-scope {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(230px, 0.9fr) minmax(360px, 1.4fr) auto;
+  grid-template-areas:
+    "domain range refresh"
+    "receipts receipts receipts"
+    "warning warning warning";
+  gap: 14px;
+  align-items: end;
+  padding: 16px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--pw-border) 78%, var(--dmarc-teal));
+  border-radius: var(--pw-radius-lg, 14px);
+  background:
+    radial-gradient(
+      circle at 82% -40%,
+      color-mix(in srgb, var(--dmarc-teal) 12%, transparent),
+      transparent 48%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--pw-bg-elev) 96%, var(--dmarc-blue)),
+      var(--pw-bg-elev)
+    );
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--pw-fg) 10%, transparent);
+}
+
+.dmarc-scope::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: linear-gradient(var(--dmarc-teal), var(--dmarc-blue));
+}
+
+.dmarc-scope__control,
+.dmarc-range-picker {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.dmarc-scope__control {
+  grid-area: domain;
+}
+
+.dmarc-range-picker {
+  grid-area: range;
+}
+
+.dmarc-scope__control label,
+.dmarc-range-picker legend,
+.dmarc-search > span {
+  padding: 0;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dmarc-domain-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.dmarc-domain-input input {
+  width: 100%;
+  min-width: 0;
+}
+
+.dmarc-scope__control > span {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.dmarc-scope__control > span.is-invalid {
+  color: var(--dmarc-red);
+}
+
+.dmarc-segmented {
+  display: inline-flex;
+  min-width: 0;
+  padding: 3px;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--pw-bg) 76%, transparent);
+}
+
+.dmarc-segmented button {
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--pw-fg-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+}
+
+.dmarc-segmented button:hover {
+  color: var(--pw-fg);
+  background: color-mix(in srgb, var(--pw-fg) 5%, transparent);
+}
+
+.dmarc-segmented button[aria-pressed="true"] {
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--pw-fg) 14%, transparent);
+}
+
+.dmarc-segmented button:focus-visible,
+.dmarc-table-link:focus-visible,
+.dmarc-workspace-tabs button:focus-visible {
+  outline: 2px solid var(--pw-focus, var(--dmarc-blue));
+  outline-offset: 2px;
+}
+
+.dmarc-scope__receipt {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  min-width: 0;
+  min-height: 40px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--pw-border) 86%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--pw-bg) 48%, transparent);
+}
+
+.dmarc-scope__receipt div {
+  display: grid;
+  min-width: 0;
+}
+
+.dmarc-scope__receipt strong {
+  font-size: 12px;
+}
+
+.dmarc-scope__receipt span:not(.dmarc-receipt-dot) {
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.dmarc-scope__receipt small {
+  color: color-mix(in srgb, var(--pw-fg-muted) 82%, transparent);
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.dmarc-scope__receipts {
+  display: grid;
+  grid-area: receipts;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(240px, 0.8fr);
+  gap: 8px;
+  min-width: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--pw-border);
+}
+
+.dmarc-scope__recency {
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--dmarc-blue) 24%, var(--pw-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--dmarc-blue) 5%, var(--pw-bg));
+}
+
+.dmarc-scope__recency[data-tone="caution"],
+.dmarc-scope__recency[data-tone="unknown"] {
+  border-color: color-mix(in srgb, var(--dmarc-amber) 38%, var(--pw-border));
+  background: color-mix(in srgb, var(--dmarc-amber) 7%, var(--pw-bg));
+}
+
+.dmarc-scope__recency strong {
+  font-size: 12px;
+}
+
+.dmarc-scope__recency span {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.dmarc-scope__independent-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.dmarc-receipt-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--dmarc-teal);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--dmarc-teal) 12%, transparent);
+}
+
+.dmarc-receipt-dot.is-stale {
+  background: var(--dmarc-amber);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--dmarc-amber) 12%, transparent);
+}
+
+.dmarc-refresh {
+  grid-area: refresh;
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+.dmarc-scope__warning {
+  grid-area: warning;
+  padding-top: 10px;
+  border-top: 1px solid var(--pw-border);
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+}
+
+.dmarc-resource-notices {
+  display: grid;
+  gap: 8px;
+}
+
+.dmarc-resource-notices:empty {
+  display: none;
+}
+
+.dmarc-truth-note {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 11px 14px;
+  border: 1px solid color-mix(in srgb, var(--dmarc-blue) 25%, var(--pw-border));
+  border-radius: 10px;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--dmarc-blue) 5%, var(--pw-bg-elev));
+}
+
+.dmarc-truth-note strong {
+  color: var(--pw-fg);
+}
+
+.dmarc-workspace-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--pw-border);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--pw-bg-elev) 76%, transparent);
+}
+
+.dmarc-workspace-tabs button {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--pw-fg-muted);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+}
+
+.dmarc-workspace-tabs button::after {
+  position: absolute;
+  right: 14px;
+  bottom: 0;
+  left: 14px;
+  height: 2px;
+  border-radius: 2px;
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.4);
+  background: linear-gradient(90deg, var(--dmarc-teal), var(--dmarc-blue));
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.dmarc-workspace-tabs button:hover {
+  color: var(--pw-fg);
+  background: color-mix(in srgb, var(--pw-fg) 4%, transparent);
+}
+
+.dmarc-workspace-tabs button[aria-selected="true"] {
+  color: var(--pw-fg);
+  background: var(--pw-bg-elev);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--pw-fg) 11%, transparent);
+}
+
+.dmarc-workspace-tabs button[aria-selected="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.dmarc-workspace-tabs strong {
+  font-size: 13px;
+}
+
+.dmarc-workspace-tabs span {
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmarc-overview,
+.dmarc-workspace-stack {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.dmarc-health-cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.dmarc-health-refresh {
+  grid-column: 1 / -1;
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--dmarc-blue) 24%, var(--pw-border));
+  border-radius: 8px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--dmarc-blue) 5%, var(--pw-bg-elev));
+}
+
+.dmarc-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 205px;
+  flex-direction: column;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg, 14px);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--pw-bg-elev) 98%, var(--dmarc-blue)),
+    var(--pw-bg-elev)
+  );
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--pw-fg) 8%, transparent);
+}
+
+.dmarc-card::before {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 130px;
+  height: 130px;
+  border: 1px solid color-mix(in srgb, var(--dmarc-blue) 12%, transparent);
+  border-radius: 50%;
+  content: "";
+}
+
+.dmarc-card--alignment {
+  background:
+    radial-gradient(
+      circle at 105% -30%,
+      color-mix(in srgb, var(--dmarc-teal) 14%, transparent),
+      transparent 47%
+    ),
+    var(--pw-bg-elev);
+}
+
+.dmarc-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.dmarc-card__eyebrow,
+.dmarc-kicker {
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dmarc-card h2 {
+  margin: 5px 0 0;
+  font-size: clamp(24px, 2.25vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.dmarc-card > p,
+.dmarc-card__header + p {
+  max-width: 52ch;
+  margin: 8px 0 0;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dmarc-status-orb {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 3px;
+  border-radius: 50%;
+  background: var(--dmarc-teal);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--dmarc-teal) 12%, transparent);
+}
+
+.dmarc-status-orb[data-tone="caution"] {
+  background: var(--dmarc-amber);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--dmarc-amber) 12%, transparent);
+}
+
+.dmarc-status-orb[data-tone="negative"] {
+  background: var(--dmarc-red);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--dmarc-red) 12%, transparent);
+}
+
+.dmarc-mini-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 14px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+  background: var(--pw-border);
+}
+
+.dmarc-mini-metrics div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px;
+  background: color-mix(in srgb, var(--pw-bg) 70%, var(--pw-bg-elev));
+}
+
+.dmarc-mini-metrics dt,
+.dmarc-disposition-legend dt,
+.dmarc-coverage-grid dt {
+  overflow: hidden;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmarc-mini-metrics dd,
+.dmarc-disposition-legend dd,
+.dmarc-coverage-grid dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmarc-mini-metrics [data-tone="negative"] dd {
+  color: var(--dmarc-red);
+}
+
+.dmarc-card__chart {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, auto);
+  gap: 10px;
+  align-items: end;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.dmarc-card__chart > .pw-chart-data {
+  grid-column: 1 / -1;
+  margin-top: 0 !important;
+}
+
+.dmarc-card__chart > small {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.dmarc-sparkline {
+  display: block;
+  max-width: 100%;
+  color: var(--pw-fg-muted);
+}
+
+.dmarc-disposition-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  margin-top: auto;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--pw-fg-muted) 12%, transparent);
+}
+
+.dmarc-disposition-bar > span {
+  display: block;
+  height: 100%;
+}
+
+.dmarc-disposition-bar .is-none,
+.dmarc-disposition-legend .is-none {
+  background: var(--dmarc-teal);
+}
+
+.dmarc-disposition-bar .is-quarantine,
+.dmarc-disposition-legend .is-quarantine {
+  background: var(--dmarc-amber);
+}
+
+.dmarc-disposition-bar .is-reject,
+.dmarc-disposition-legend .is-reject {
+  background: var(--dmarc-red);
+}
+
+.dmarc-disposition-bar .is-unknown,
+.dmarc-disposition-legend .is-unknown {
+  background: var(--pw-fg-muted);
+}
+
+.dmarc-disposition-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0 0;
+}
+
+.dmarc-disposition-legend div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.dmarc-disposition-legend dt {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.dmarc-disposition-legend dt span {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.dmarc-coverage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: auto 0 0;
+}
+
+.dmarc-coverage-grid div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--pw-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--pw-bg) 55%, transparent);
+}
+
+.dmarc-card__footnote {
+  margin-top: 8px;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+}
+
+.dmarc-overview__grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 12px;
+}
+
+.dmarc-policy-advisor,
+.dmarc-recommendations {
+  position: relative;
+  min-width: 0;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg, 14px);
+  background: var(--pw-bg-elev);
+}
+
+.dmarc-policy-advisor {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 14px;
+  background:
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--dmarc-blue) 11%, transparent),
+      transparent 45%
+    ),
+    var(--pw-bg-elev);
+}
+
+.dmarc-policy-advisor__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--dmarc-blue) 36%, var(--pw-border));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--dmarc-blue) 9%, transparent);
+}
+
+.dmarc-policy-advisor__icon span {
+  width: 14px;
+  height: 17px;
+  border: 2px solid var(--dmarc-blue);
+  border-radius: 8px 8px 5px 5px;
+  box-shadow: inset 0 -5px 0
+    color-mix(in srgb, var(--dmarc-blue) 30%, transparent);
+}
+
+.dmarc-policy-advisor h2,
+.dmarc-recommendations h2,
+.dmarc-section-heading h2,
+.dmarc-zero-evidence h2,
+.dmarc-unavailable h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+}
+
+.dmarc-policy-advisor p:not(.dmarc-kicker),
+.dmarc-section-heading p:not(.dmarc-kicker),
+.dmarc-zero-evidence p:not(.dmarc-kicker),
+.dmarc-unavailable p {
+  margin: 7px 0 0;
+  color: var(--pw-fg-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dmarc-policy-advisor__boundary,
+.dmarc-detail-boundary {
+  display: grid;
+  gap: 3px;
+  margin-top: 14px;
+  padding: 10px 11px;
+  border: 1px solid color-mix(in srgb, var(--dmarc-blue) 24%, var(--pw-border));
+  border-radius: 8px;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  background: color-mix(in srgb, var(--dmarc-blue) 5%, transparent);
+}
+
+.dmarc-policy-advisor__boundary strong,
+.dmarc-detail-boundary strong {
+  color: var(--pw-fg);
+}
+
+.dmarc-recommendations > header,
+.dmarc-detail-section__heading,
+.dmarc-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.dmarc-evidence-pill {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid var(--pw-border);
+  border-radius: 99px;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--pw-bg) 58%, transparent);
+}
+
+.dmarc-recommendations ol {
+  display: grid;
+  gap: 1px;
+  margin: 13px 0 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--pw-border);
+  border-radius: 10px;
+  list-style: none;
+  background: var(--pw-border);
+}
+
+.dmarc-recommendations li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 11px;
+  padding: 11px 12px;
+  background: color-mix(in srgb, var(--pw-bg) 48%, var(--pw-bg-elev));
+}
+
+.dmarc-recommendation-marker {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--dmarc-blue);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dmarc-blue) 10%, transparent);
+}
+
+.dmarc-recommendations
+  li[data-severity="warning"]
+  .dmarc-recommendation-marker {
+  background: var(--dmarc-amber);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dmarc-amber) 10%, transparent);
+}
+
+.dmarc-recommendations li[data-severity="action"] .dmarc-recommendation-marker {
+  background: var(--dmarc-red);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dmarc-red) 10%, transparent);
+}
+
+.dmarc-recommendations li > div {
+  display: grid;
+  gap: 3px;
+}
+
+.dmarc-recommendation-label {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dmarc-recommendations li strong {
+  font-size: 12px;
+}
+
+.dmarc-recommendations li p,
+.dmarc-recommendations__footnote,
+.dmarc-recommendations__empty span {
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.dmarc-recommendations__footnote {
+  margin-top: 10px;
+}
+
+.dmarc-recommendations__empty {
+  display: grid;
+  gap: 3px;
+  margin-top: 13px;
+  padding: 13px;
+  border: 1px dashed var(--pw-border);
+  border-radius: 9px;
+}
+
+.dmarc-recommendations__empty strong {
+  font-size: 12px;
+}
+
+.dmarc-section-heading {
+  padding: 18px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg, 14px);
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--dmarc-blue) 6%, var(--pw-bg-elev)),
+    var(--pw-bg-elev)
+  );
+}
+
+.dmarc-report-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 11px;
+  background: var(--pw-bg-elev);
+}
+
+.dmarc-search {
+  display: grid;
+  min-width: min(310px, 100%);
+  flex: 1;
+  gap: 6px;
+}
+
+.dmarc-export-receipt {
+  display: grid;
+  gap: 3px;
+  margin: -6px 2px 0;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+}
+
+.dmarc-filter-result {
+  color: var(--pw-fg);
+  font-weight: 650;
+}
+
+.dmarc-export-receipt strong[data-status="saved"] {
+  color: var(--pw-success);
+}
+
+.dmarc-export-receipt strong[data-status="cancelled"] {
+  color: var(--pw-fg);
+}
+
+.dmarc-export-receipt strong[data-status="error"] {
+  color: var(--dmarc-red);
+}
+
+.dmarc-table-link {
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  color: var(--pw-link, var(--dmarc-blue));
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentcolor 30%, transparent);
+  text-underline-offset: 3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+}
+
+.dmarc-table-link:hover {
+  text-decoration-color: currentcolor;
+}
+
+.dmarc-source-alignment {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.dmarc-source-alignment[data-tone="positive"] {
+  color: var(--pw-success);
+}
+
+.dmarc-source-alignment[data-tone="caution"] {
+  color: var(--dmarc-amber);
+}
+
+.dmarc-source-alignment[data-tone="negative"] {
+  color: var(--dmarc-red);
+}
+
+.dmarc-source-alignment[data-tone="unknown"] {
+  color: var(--pw-fg-muted);
+}
+
+.dmarc-policy-action {
+  display: inline-flex;
+  padding: 3px 7px;
+  border: 1px solid var(--pw-border);
+  border-radius: 99px;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.dmarc-policy-action[data-action="quarantine"] {
+  border-color: color-mix(in srgb, var(--dmarc-amber) 35%, var(--pw-border));
+  color: var(--dmarc-amber);
+}
+
+.dmarc-policy-action[data-action="reject"] {
+  border-color: color-mix(in srgb, var(--dmarc-red) 35%, var(--pw-border));
+  color: var(--dmarc-red);
+}
+
+.dmarc-truncate {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmarc-loading-panel,
+.dmarc-detail-loading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 160px;
+  justify-content: center;
+  padding: 24px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg, 14px);
+  background: var(--pw-bg-elev);
+}
+
+.dmarc-loading-panel div {
+  display: grid;
+  gap: 2px;
+}
+
+.dmarc-loading-panel strong,
+.dmarc-detail-loading span:last-child {
+  font-size: 13px;
+}
+
+.dmarc-loading-panel div span {
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+
+.dmarc-spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 2px solid color-mix(in srgb, var(--dmarc-teal) 24%, var(--pw-border));
+  border-top-color: var(--dmarc-teal);
+  border-radius: 50%;
+  animation: dmarc-spin 800ms linear infinite;
+}
+
+.dmarc-unavailable,
+.dmarc-zero-evidence {
+  min-height: 260px;
+  padding: 32px;
+  border: 1px solid var(--pw-border);
+  border-radius: var(--pw-radius-lg, 14px);
+  background: var(--pw-bg-elev);
+}
+
+.dmarc-unavailable {
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.dmarc-zero-evidence {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.6fr) minmax(280px, 1fr);
+  gap: 28px;
+  align-items: center;
+  background:
+    radial-gradient(
+      circle at 8% 50%,
+      color-mix(in srgb, var(--dmarc-blue) 12%, transparent),
+      transparent 32%
+    ),
+    var(--pw-bg-elev);
+}
+
+.dmarc-zero-evidence__signal {
+  position: relative;
+  display: flex;
+  height: 120px;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.dmarc-zero-evidence__signal::before,
+.dmarc-zero-evidence__signal::after {
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--dmarc-blue),
+    transparent
+  );
+}
+
+.dmarc-zero-evidence__signal::after {
+  transform: rotate(60deg);
+}
+
+.dmarc-zero-evidence__signal span {
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--dmarc-blue);
+  border-radius: 50%;
+  background: var(--pw-bg-elev);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--dmarc-blue) 8%, transparent);
+}
+
+.dmarc-zero-evidence__receipt {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 0;
+}
+
+.dmarc-zero-evidence__receipt div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--pw-bg) 58%, transparent);
+}
+
+.dmarc-zero-evidence__receipt dt {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dmarc-zero-evidence__receipt dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.dmarc-detail-slideover .slideover-body {
+  gap: 16px;
+}
+
+.dmarc-detail-slideover .slideover-header > div,
+.dmarc-detail-slideover .slideover-title,
+.dmarc-detail-slideover .slideover-title code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dmarc-sources-table .pw-data-table__scroll,
+.dmarc-reports-table .pw-data-table__scroll {
+  background:
+    linear-gradient(90deg, var(--pw-bg-elev) 22px, transparent 44px) left / 44px
+      100% no-repeat,
+    linear-gradient(270deg, var(--pw-bg-elev) 22px, transparent 44px) right /
+      44px 100% no-repeat;
+}
+
+.dmarc-sources-table .pw-data-table__scroll th:first-child,
+.dmarc-sources-table .pw-data-table__scroll td:first-child,
+.dmarc-reports-table .pw-data-table__scroll th:first-child,
+.dmarc-reports-table .pw-data-table__scroll td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--pw-bg-elev);
+  box-shadow: 1px 0 0 var(--pw-border);
+}
+
+.dmarc-sources-table .pw-data-table__scroll thead th:first-child,
+.dmarc-reports-table .pw-data-table__scroll thead th:first-child {
+  z-index: 3;
+}
+
+.dmarc-detail-scope {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--pw-bg) 55%, transparent);
+}
+
+.dmarc-detail-scope span {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dmarc-detail-scope strong {
+  font-size: 12px;
+}
+
+.dmarc-detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dmarc-detail-metrics > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+  background: var(--pw-bg-elev);
+}
+
+.dmarc-detail-metrics span,
+.dmarc-detail-metrics small {
+  overflow: hidden;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.dmarc-detail-metrics strong {
+  overflow: hidden;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+}
+
+.dmarc-detail-metrics [data-tone="negative"] strong {
+  color: var(--dmarc-red);
+}
+
+.dmarc-detail-section {
+  display: grid;
+  gap: 9px;
+  padding-top: 15px;
+  border-top: 1px solid var(--pw-border);
+}
+
+.dmarc-detail-section h3 {
+  margin: 3px 0 0;
+  font-size: 15px;
+}
+
+.dmarc-detail-list {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+  background: var(--pw-border);
+}
+
+.dmarc-detail-list div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1.3fr);
+  gap: 12px;
+  padding: 9px 11px;
+  background: var(--pw-bg-elev);
+}
+
+.dmarc-detail-list dt {
+  color: var(--pw-fg-muted);
+  font-size: 11px;
+}
+
+.dmarc-detail-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  text-align: right;
+}
+
+.dmarc-detail-list--stacked div {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.dmarc-detail-list--stacked dd {
+  text-align: left;
+}
+
+.dmarc-detail-footnote {
+  margin: 0;
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.dmarc-breakable {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.dmarc-source-report-table {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--pw-border);
+  border-radius: 9px;
+}
+
+.dmarc-source-report-table table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.dmarc-source-report-table th,
+.dmarc-source-report-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--pw-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dmarc-source-report-table thead th {
+  color: var(--pw-fg-muted);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--pw-bg-elev);
+}
+
+.dmarc-source-report-table tbody th {
+  font-weight: 650;
+}
+
+.dmarc-source-report-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+@keyframes dmarc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1200px) {
+  .dmarc-scope {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "domain refresh"
+      "range range"
+      "receipts receipts"
+      "warning warning";
+  }
+
+  .dmarc-scope__receipts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dmarc-scope__recency {
+    grid-column: 1 / -1;
+  }
+
+  .dmarc-health-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dmarc-card--alignment {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 820px) {
+  .dmarc-scope,
+  .dmarc-health-cards,
+  .dmarc-overview__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dmarc-scope {
+    grid-template-areas:
+      "domain"
+      "range"
+      "refresh"
+      "receipts"
+      "warning";
+  }
+
+  .dmarc-scope__receipts {
+    grid-template-columns: 1fr;
+  }
+
+  .dmarc-scope__recency,
+  .dmarc-card--alignment {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .dmarc-workspace-tabs span {
+    display: none;
+  }
+
+  .dmarc-workspace-tabs button {
+    text-align: center;
+  }
+
+  .dmarc-truth-note,
+  .dmarc-zero-evidence {
+    grid-template-columns: 1fr;
+  }
+
+  .dmarc-zero-evidence__signal {
+    height: 72px;
+  }
+}
+
+@media (max-width: 560px) {
+  .dmarc-scope,
+  .dmarc-card,
+  .dmarc-policy-advisor,
+  .dmarc-recommendations,
+  .dmarc-section-heading,
+  .dmarc-unavailable,
+  .dmarc-zero-evidence {
+    padding: 13px;
+  }
+
+  .dmarc-segmented {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .dmarc-segmented button {
+    flex: 1 0 auto;
+  }
+
+  .dmarc-range-picker .dmarc-segmented {
+    display: grid;
+    overflow: visible;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dmarc-range-picker .dmarc-segmented button {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .dmarc-mini-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dmarc-card__chart {
+    grid-template-columns: 1fr;
+  }
+
+  .dmarc-card__chart > .pw-chart-data {
+    grid-column: auto;
+  }
+
+  .dmarc-disposition-legend,
+  .dmarc-zero-evidence__receipt {
+    grid-template-columns: 1fr;
+  }
+
+  .dmarc-policy-advisor {
+    grid-template-columns: 1fr;
+  }
+
+  .dmarc-detail-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dmarc-detail-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .dmarc-detail-list dd {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dmarc-spinner {
+    animation: none;
+    border-color: var(--dmarc-teal);
+  }
+
+  .dmarc-workspace-tabs button::after {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .dmarc-scope,
+  .dmarc-card,
+  .dmarc-policy-advisor,
+  .dmarc-recommendations,
+  .dmarc-section-heading,
+  .dmarc-truth-note,
+  .dmarc-zero-evidence,
+  .dmarc-unavailable {
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .dmarc-scope::before,
+  .dmarc-card::before,
+  .dmarc-zero-evidence__signal::before,
+  .dmarc-zero-evidence__signal::after {
+    display: none;
+  }
+
+  .dmarc-receipt-dot,
+  .dmarc-status-orb,
+  .dmarc-recommendation-marker,
+  .dmarc-disposition-bar span {
+    border: 1px solid CanvasText;
+    background: CanvasText;
+    box-shadow: none;
+  }
+
+  .dmarc-workspace-tabs button[aria-selected="true"],
+  .dmarc-segmented button[aria-pressed="true"] {
+    outline: 2px solid Highlight;
+  }
+
+  .dmarc-workspace-tabs button[aria-selected="true"] {
+    border-bottom: 4px solid Highlight;
+  }
+
+  .dmarc-workspace-tabs button:focus-visible,
+  .dmarc-segmented button:focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 3px;
+  }
+}

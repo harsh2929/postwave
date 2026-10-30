@@ -1,0 +1,184 @@
+.tour-launcher-panel.contextual-help-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(390px, calc(100dvw - 40px));
+  max-height: calc(100dvh - 136px);
+  padding: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.contextual-help-panel.is-left {
+  right: auto;
+  left: 20px;
+}
+
+.contextual-help-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  border-bottom: 1px solid var(--pw-border-soft);
+  background: var(--pw-bg-elev);
+}
+
+.contextual-help-header h2,
+.contextual-help-panel h3 {
+  margin: 0;
+  color: var(--pw-fg);
+}
+
+.contextual-help-header h2 {
+  font-size: var(--pw-text-body);
+}
+
+.contextual-help-header p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pw-sp-2);
+  margin: var(--pw-sp-1) 0 0;
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+}
+
+.contextual-help-header-actions,
+.contextual-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pw-sp-2);
+}
+
+.contextual-help-header-actions {
+  flex: 0 0 auto;
+}
+
+.contextual-help-scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.contextual-help-scroll > section,
+.contextual-help-shortcuts {
+  padding: var(--pw-sp-3);
+  border-bottom: 1px solid var(--pw-border-soft);
+}
+
+.contextual-help-panel h3,
+.contextual-help-shortcuts summary {
+  font-size: var(--pw-text-sm);
+  font-weight: 650;
+}
+
+.contextual-help-guide {
+  margin-block: var(--pw-sp-3);
+  padding: var(--pw-sp-3);
+  border: 1px solid var(--pw-border-soft);
+  border-radius: var(--pw-radius-md);
+  background: var(--pw-bg-elev-2);
+}
+
+.contextual-help-guide p,
+.contextual-help-support p,
+.contextual-help-panel .notice p {
+  margin-block: var(--pw-sp-1) 0;
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+  line-height: 1.45;
+}
+
+.contextual-help-guide ol {
+  margin: var(--pw-sp-2) 0 0;
+  padding-inline-start: var(--pw-sp-4);
+  color: var(--pw-fg-muted);
+  font-size: var(--pw-text-sm);
+}
+
+.contextual-help-guide li + li {
+  margin-top: var(--pw-sp-1);
+}
+
+.contextual-help-panel .notice {
+  margin-block: var(--pw-sp-2);
+}
+
+.contextual-help-actions .btn span {
+  color: var(--pw-fg-subtle);
+  font-size: var(--pw-text-xs);
+}
+
+.contextual-help-shortcuts summary {
+  cursor: pointer;
+  color: var(--pw-fg);
+}
+
+.contextual-help-shortcuts .tour-launcher-shortcuts-list {
+  margin-top: var(--pw-sp-3);
+}
+
+.contextual-help-support {
+  background: var(--pw-bg-elev-2);
+}
+
+.contextual-help-support .contextual-help-actions {
+  margin-top: var(--pw-sp-3);
+}
+
+.contextual-help-feedback {
+  min-height: 1.4em;
+  margin-bottom: 0 !important;
+}
+
+.contextual-help-feedback:empty {
+  visibility: hidden;
+}
+
+/* On wide workstations, reserve the exact panel rail so help can remain open
+   beside the task instead of covering it. Compact windows keep the non-modal,
+   movable overlay because reserving 390px would make the task less usable. */
+@media (min-width: 1500px) {
+  html[data-contextual-help-side="right"] .content {
+    margin-inline-end: 410px;
+  }
+
+  html[data-contextual-help-side="left"] .content {
+    margin-inline-start: 410px;
+  }
+}
+
+@media (max-height: 560px) {
+  .tour-launcher-panel.contextual-help-panel {
+    max-height: calc(100dvh - 136px);
+  }
+
+  .contextual-help-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .tour-launcher-panel.contextual-help-panel,
+  .contextual-help-panel.is-left {
+    top: calc(100% + 8px);
+    right: 12px;
+    bottom: auto;
+    left: 12px;
+    width: auto;
+    max-height: calc(100dvh - 136px);
+  }
+}
+
+@media (forced-colors: active) {
+  .contextual-help-guide,
+  .contextual-help-header,
+  .contextual-help-scroll > section,
+  .contextual-help-shortcuts {
+    border-color: CanvasText;
+  }
+
+  .contextual-help-panel .badge {
+    border: 1px solid CanvasText;
+  }
+}

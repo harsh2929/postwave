@@ -1,0 +1,44 @@
+{
+  "family": "postwave-db-migrator",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<account>:role/postwave-ecs-task-execution-role",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "containerDefinitions": [
+    {
+      "name": "postwave-db-migrator",
+      "image": "<account>.dkr.ecr.<region>.amazonaws.com/postwave-db-migrator@<image-digest>",
+      "essential": true,
+      "environment": [
+        { "name": "POSTWAVE_MIGRATOR_TIMEOUT", "value": "30m" },
+        { "name": "POSTWAVE_MIGRATOR_VERIFY_TIMEOUT", "value": "1m" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:<region>:<account>:secret:postwave/prod/migration-db-dsn-XXXXXX"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/postwave-db-migrator",
+          "awslogs-region": "<region>",
+          "awslogs-stream-prefix": "migrate"
+        }
+      },
+      "readonlyRootFilesystem": true,
+      "stopTimeout": 120
+    }
+  ],
+  "tags": [
+    { "key": "Service", "value": "postwave-db-migrator" },
+    { "key": "Environment", "value": "prod" },
+    { "key": "ManagedBy", "value": "ecs-migrator-task-definition.json" }
+  ]
+}

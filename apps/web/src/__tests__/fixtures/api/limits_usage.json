@@ -1,0 +1,54 @@
+{
+  "tier": "studio",
+  "rows": [
+    {
+      "resource": "contacts",
+      "current": 12,
+      "limit": 1000,
+      "percent": 1.2,
+      "exceeded": false
+    },
+    {
+      "resource": "campaigns",
+      "current": 3,
+      "limit": 25,
+      "percent": 12,
+      "exceeded": false
+    },
+    {
+      "resource": "automations",
+      "current": 0,
+      "limit": 3,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "landing_pages",
+      "current": 0,
+      "limit": 2,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "popup_forms",
+      "current": 0,
+      "limit": 1,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "ecommerce_integrations",
+      "current": 0,
+      "limit": 1,
+      "percent": 0,
+      "exceeded": false
+    },
+    {
+      "resource": "monthly_sends",
+      "current": 0,
+      "limit": 2000,
+      "percent": 0,
+      "exceeded": false
+    }
+  ]
+}
